@@ -77,10 +77,11 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   uses the local files (`teamLogo(teamId)` in `src/data/teams.ts`); never the NBA CDN at runtime (tested).
 - **Visibility on the dark background** (contact sheet at 18 px and 64 px, not recolored): hard to see at line size —
   **SAS** (black spurs), **MEM** and **NOP** (navy), **UTA** (dark purple); borderline — **CHA** (navy/purple) and
-  **PHI** (blue "76"). All others are clear.
+  **PHI** (blue "76"). All others are clear. → Solved without editing the files: all logos now sit on a light
+  circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 92 tests) · `npm run e2e` (Playwright, desktop 1280 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml`.
+`npm test` (Vitest, 100 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -89,8 +90,13 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   +1 grouping and the default-day rule with a mocked clock.
 - `card.test.tsx` / `views.test.tsx` (jsdom): markers, TV badge/filter, TBD, B2B, rotationkit action contract,
   navigation.
-- `month.test.tsx` / `logos.test.ts`: full league month (15-game day, logo lines, TBD without `<img>`, TV filter,
-  click → day, today highlight, count navigator at 360/700 px), 30 logo files + feed mapping.
+- `month.test.tsx` / `logos.test.ts`: full league month (15-game day, logo lines without "@", legend, TBD without
+  `<img>`, logo backing, TV filter, click → day, today highlight; time groups under two zones incl. (+1) and TBD;
+  column count and fill-down order; TV pill text/tooltip and no network names as text; B2B marks per team; count
+  navigator at 360/700 px), 30 logo files + feed mapping.
+- e2e month check also measures the layout and prints it (`[project] content …, cols …, cell inner …, line …,
+  2-col spare …`): at 1920 px content ≥ 1700, 2 columns with ≥ 8 px spare, fill-down by position; 1 column at
+  1280; 11 px / 16 px lines at both; bundled font loaded; every line the same width; TV tooltip on hover.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, month jump, no console errors; league month on Nov
   2026: 15 lines on Nov 2, every `<img>` loaded (`naturalWidth > 0`), no clipped line, no sideways scroll, no
   request to cdn.nba.com; screenshots to
@@ -119,20 +125,42 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - **League day arrows** step one calendar day (empty days say "No games this day"); range = first..last game date.
 - **Phone team grid**: cells show time, vs/@, opponent, markers; national TV shrinks to a dot; tapping a game shows
   the full card (with TV names and the rotationkit action) below the grid.
-- **League → Month** (`LeagueMonthView`, since 2026-10-23): a full month calendar listing **every** game of each
-  day as `[logo] AWAY @ [logo] HOME` (no time, TV, markers or rotationkit action; no "+N more"), in tip-off order;
-  rows grow to their busiest day (15 games); TBD teams show "TBD" with no image; the TV filter applies; clicking a
-  day opens it in the day view; today's cell is highlighted (new — the old navigator had no today highlight; it has
-  one now too). Logo + tricode columns line up per cell (CSS subgrid sized to the widest tricode in the cell).
-  Props: data, month, size, tvOnly, today; events: `onSelectDate`, `onMonthChange` (no `onOpenGame`: the cells
-  have no action). Logos come from `teamLogo()` in the teams layer.
-- **Narrow widths keep the count navigator** (`MonthNavigator`): the full month needs a widget ≥ **736 px** wide
-  (`FULL_MONTH_MIN_WIDTH`, = a 768 px window). Measured: a line needs ~90 px and a 7-column cell has ~73 px inside at
-  a 640 px window, ~97 px at 768. So phones (< 640) **and** 640–767 px windows show the count navigator; tablets
-  from 768 px (iPad portrait) and desktops get the full month. Logos are 16 px below 1000 px widget width, 18 px
-  above. Tricode text scales with the cell's width (CSS container units, 9–12 px), because fixed sizes clipped
-  on Linux: its default UI font (DejaVu) is ~15 % wider than Windows' Segoe UI, and CI caught 102 clipped lines at
-  768 px with fixed 10 px text. At 768 px the text is 9 px (small but readable); 12 px from ~1100 px windows.
+- **Page width**: content up to **1840 px** (`.app` max-width 1872 px incl. 16 px padding; `MAX_CONTENT_WIDTH` in
+  `App.tsx`) — ~40 px side margins at a 1920 px window — for every view. The shell passes the widget its *measured*
+  content width (ResizeObserver on `.app`), not `window.innerWidth`, and `html { scrollbar-gutter: stable }` keeps
+  that width from jumping when a view grows taller than the window.
+- **Font**: Inter (variable, latin subset, 48 KB, SIL OFL 1.1 — `public/fonts/Inter-OFL.txt`), self-hosted at
+  `public/fonts/inter-latin-wght-normal.woff2`, preloaded in `index.html`, used app-wide. Reason: identical text
+  widths on Windows, Linux and CI, which the month view's fixed column widths rely on (before it, Linux's wider
+  default font clipped lines). Tabular digits for times. No third-party font request.
+- **League → Month** (`LeagueMonthView`): a month calendar listing **every** game of each day (no "+N more"); rows
+  grow to their busiest day; TBD teams show "TBD" with no image; the TV filter applies; clicking a day opens it in
+  the day view; today's cell is highlighted. Props: data, month, size, tvOnly, today, timeZone; events:
+  `onSelectDate`, `onMonthChange` (no `onOpenGame`: cells have no action). Logos come from `teamLogo()`.
+  - **Line**: `[logo] AWAY [logo] HOME [TV]` — away always left, home right, **no "@"** in this view; a legend
+    "Away · Home" sits under the month title ("@" stays everywhere else). 11 px Inter semibold tricodes, 16 px
+    logos. Geometry in `MONTH_LINE` (CalendarView.tsx): logo 16 · gap 2 · tricode 28 · away/home gap 6 · logo 16 ·
+    gap 2 · tricode 28 · gap 2 · TV 15 = **115 px**, fixed for every line, so columns line up across columns and
+    across cells. Tricode column 28 px fits the widest tricode (MEM 26.95 px).
+  - **Time groups**: each day's games grouped by local tip-off label (same as the day view: "20:00",
+    "00:00 (+1)", "TBD" last), small muted label above each group; no time on the lines.
+  - **TV pill**: literal "TV" in a 15 px green pill on national-TV games; network names only in its tooltip
+    (hover/focus). The pill's column is reserved on every line.
+  - **B2B mark**: 5 px orange dot over the top-right corner of the tricode of the team on the second night (same
+    `isBackToBack` rule as elsewhere); takes no width; tooltip "Back-to-back".
+  - **Columns**: per day cell, `monthColumns(width)` = as many 115 px lines as fit the cell's inner width with a
+    10 px gap (cell inner width computed from the widget width, matching the CSS grid gap/padding/border — no DOM
+    measuring, so no flicker). Filled **down** the first column, then the second, within each time group.
+    **2 columns at a 1920 px window, 1 at 1280 px.** Measured with the bundled font (e2e `desktop-xl`): cell
+    inner 249.42 px, line 115.00 px, 2 × 115 + 10 = 240 → **9.42 px spare**, identical in Chrome on Windows and on
+    Linux CI (2026-10-23).
+  - **Logo backing**: every logo sits on a 16 px light disc (`rgba(226,231,238,.92)`), logo drawn at 80 % inside
+    it; SVG files unchanged. Fixes the dark logos (SAS, MEM, NOP, UTA; CHA, PHI).
+- **Narrow widths keep the count navigator** (`MonthNavigator`): the full month needs a measured content width
+  ≥ **718 px** (`FULL_MONTH_MIN_WIDTH`) = a **768 px window** (768 − 32 padding − up to 17 px scrollbar; the value
+  was 736 when the shell ignored the scrollbar). Phones and 640–767 px windows get the count navigator. Between
+  768 px and ~860 px windows, where one 115 px line is wider than the cell, lines scale down to fit
+  (`monthLineScale`, e.g. 9.1 px text / 13 px logos at 768); from ~860 px they are full size.
 - **Snapshot size**: the raw feed is ~4 MB (≈ 200–300 KB gzipped over the wire). Committed daily only when it
   changes. Kept raw so no information is lost (scores later).
 
