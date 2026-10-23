@@ -3,7 +3,7 @@
 
 import { Fragment } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { isOver, markers, nationalTv, perspective, teamLabel, tipoff, type B2BPair } from '../data/model';
+import { finalScore, isOver, markers, nationalTv, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine } from '../data/model';
 import { teamLogo } from '../data/teams';
 import './calendar.css';
 
@@ -40,6 +40,8 @@ export interface GameCardProps {
   dateLabel?: string;
   /** Marks the row the list opened at (team list: next game not over). */
   next?: boolean;
+  /** Team list: regular-season game number and record going in (right side), and the final score by the names. */
+  season?: SeasonLine;
 }
 
 /** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
@@ -85,7 +87,7 @@ export function B2BLabel({ night, short = false }: { night: B2BNight; short?: bo
 /** Orange dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -94,6 +96,14 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
   const canOpen = !!onOpenGame && isOver(game, now);
   const away = teamLabel(game.awayTeam);
   const home = teamLabel(game.homeTeam);
+  const result = season && teamId ? finalScore(game, teamId) : undefined;
+  // the space keeps textContent readable ("BOS 113"); inline-flex drops it, the margin spaces the score
+  const score = (n: number, win: boolean) => (
+    <>
+      {' '}
+      <span className={`ck-score${win ? ' ck-score-win' : ''}`}>{n}</span>
+    </>
+  );
 
   const matchup = side ? (
     <span className="ck-matchup">
@@ -102,6 +112,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
           <span className="ck-side">
             {logos && <TeamLogo team={side.team} />}
             <span className="ck-team ck-self">{teamLabel(side.team)}</span>
+            {result && score(result.score, result.win)}
           </span>{' '}
         </>
       )}
@@ -111,6 +122,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
           {teamLabel(side.opponent)}
           {opponentB2B && <B2BDot tip={opponentB2B} />}
         </span>
+        {result && score(result.oppScore, !result.win)}
       </span>
     </span>
   ) : (
@@ -125,14 +137,15 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
     </span>
   );
 
+  const seasonText = season?.game ? `Game ${season.game}${season.record ? `, record ${season.record.wins}-${season.record.losses} going in` : ''}` : '';
   const label = side
-    ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}`
+    ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}` : ''}${seasonText ? `, ${seasonText}` : ''}`
     : `${away} at ${home}, ${tip.label}`;
   const bracket = side && b2b.length ? b2b.map((n) => n.night).join(' ') : undefined;
 
   return (
     <article
-      className={`ck-card ck-card-${size}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}`}
+      className={`ck-card ck-card-${size}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}${result ? ' ck-card-final' : ''}`}
       data-game-id={game.gameId}
       data-next={next || undefined}
       data-b2b={bracket}
@@ -163,6 +176,12 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
           </span>
         )}
       </span>
+      {season?.game && (
+        <span className="ck-season" data-tip={seasonText} data-testid="season">
+          <span className="ck-gnum">G{season.game}</span>
+          <span className="ck-record">{season.record ? `${season.record.wins}-${season.record.losses}` : ''}</span>
+        </span>
+      )}
       {canOpen && (
         <button type="button" className="ck-open" onClick={() => onOpenGame!(game.gameId)} data-testid="open-game" title="Open rotations in rotationkit">
           Rotations ↗

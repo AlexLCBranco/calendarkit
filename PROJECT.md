@@ -5,12 +5,13 @@ own repo (github.com/AlexLCBranco/calendarkit) and own Vercel project.
 
 ## Goals (v1)
 - League and Team views of the NBA schedule, each as a List or a Calendar (month).
-- **Schedule only**: no scores, no live status shown. Full game objects are kept in the data layer so scores can
-  be added later with UI changes plus a fresher refresh strategy.
+- **Schedule first**: no live status. Final scores and records only in the Team List (Alex, 2026-10-23; see
+  "Team list season line"), from the daily snapshot. Full game objects are kept in the data layer, so scores
+  elsewhere need only UI changes; live scores would also need a fresher refresh strategy.
 - Components are widget-first so they can later be dropped into **gauntlet** (whiteboard with live widgets).
 - Links into **rotationkit** for games that are over.
 
-Out of scope for v1: scores, live status, New Event, event categories, calendar settings, other leagues,
+Out of scope for v1: scores outside the Team List, live status, New Event, event categories, calendar settings, other leagues,
 where-to-watch info, embedding in gauntlet.
 
 ## Status
@@ -81,7 +82,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 179 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 186 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -147,6 +148,14 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - `scale.test.tsx`: `weekScale` (1.5 at 1920 × 1080 with line and busiest day inside 80 %, max, min 1, the cutoff → 1, 1280 px → 1.1, 0.05 steps), `scaleLine`; week view: 1 week scaled (every line variable = base × 1.5)
   vs 2 weeks at base size, 2 columns unchanged; Team Calendar: scale > 1 on desktop, probe gone after render,
   phone scale 1, TV names one span per network.
+- `season.test.tsx`: `teamSeason` on synthetic games (numbers skip the Cup Final, record from scores, unknown after
+  a game not yet final), `finalScore` from either side; real feed, all 30 teams: numbers 1…n, every known record =
+  the feed's W-L on the previous game; BOS rows: "G1 0-0", "G2 0-1", "G3" only, score + winner class, aria-label;
+  no season line or score in the league views or Team Calendar. e2e (all 4 widths, served snapshot): BOS list
+  game numbers, records and scores = the snapshot; season block inside the row at its right edge, records aligned;
+  phone rows: time left out only on played rows, ≤ 2 lines without tags, ≤ 3 with. Team-list matchup checks
+  elsewhere compare the text without scores. Before the change: `season.test.tsx` fails as a whole (`teamSeason`
+  missing) and the 2 updated team-list matchup tests fail.
 - e2e **fit** (above) also checks: 1-week scale ≥ 1.4 and line wider than 2-week (119 px, 11 px, scale 1), no
   tricode wider than its column. New e2e (desktop 1280 and desktop-xl 1920): **every team × every month** of the
   Team Calendar — no cell clipped (height or width), no page scroll, B2B bars on the cells' bottom edge (0–6 px),
@@ -199,6 +208,21 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   "BOS vs CHI" / "BOS @ DET" with both logos, Cup/Play-In/Playoffs markers, national TV badge with names, B2B labels. All rows rendered
   (~82, cheap); opens scrolled so the next game not over is at the top (accent border); earlier games are above
   (scroll up). Same team picker as Team → Calendar.
+- **Team list season line** (2026-10-23, `teamSeason` / `finalScore` in model.ts): on the right of each row the
+  regular-season **game number** ("G1"–"G82") and the team's **record going into the game** ("0-1"), in fixed
+  tabular columns right-aligned to the row; tooltip "Game 2, record 0-1 going in". Only regular-season games
+  (gameType `regular`, Cup group and knockout games included) are numbered and counted; the Cup Final, play-in and
+  playoff rows have neither, as in the standings. The record is counted from the final scores (status `final`)
+  and is known through the first game not yet final; later rows show the number only (the record going into G5
+  isn't known before G4 is played). Once a game is final its **score** sits beside each tricode ("BOS 113 @ DET
+  121"), the winner's bright and bold, the loser's muted; the row's aria-label adds "lost 113–121". Scores and
+  records come from the daily snapshot (~11:00 UTC), so last night's result appears the next morning. Not in the
+  league views or the Team Calendar. Tests check each known record against the feed's own `wins`/`losses` on the
+  previous game (an independent source).
+  - **Phone** (measured): line 1 = date, time and "BOS 113 @ DET 121" with logos needs 345 px of a 304–334 px row,
+    so a **played** game's phone row leaves out its tip-off time (it stays in the aria-label); line 1 then needs
+    271 px. Tags and the season line share line 2 (season right-aligned), so every phone row is two lines (47.5 px);
+    three (66.5 px) when a B2B label plus "Peacock · NBC Sports Network" fill line 2.
 - **List layouts fill the window**: the shell passes height = window below the widget's top (min 360 px); in List
   layouts the widget is that tall and the list scrolls inside it (top bar and week strip stay put). Calendar
   layouts fill at least that height (equal rows share it) on desktop/tablet and grow past it only if the content

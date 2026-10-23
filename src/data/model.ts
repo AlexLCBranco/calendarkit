@@ -275,3 +275,41 @@ export function countsByDate(data: CalendarData, tvOnly = false): Map<string, nu
   }
   return out;
 }
+
+// ---------------------------------------------------------------- season line (team list): game number, record, score
+
+/** Final score from one team's side; undefined until the game is final. */
+export function finalScore(g: ScheduleGame, teamId: number): { score: number; oppScore: number; win: boolean } | undefined {
+  const p = perspective(g, teamId);
+  if (!p || g.status !== 'final') return undefined;
+  const score = Number(p.team.score);
+  const oppScore = Number(p.opponent.score);
+  return { score, oppScore, win: score > oppScore };
+}
+
+export interface SeasonLine {
+  /** Regular-season game number (1–82); undefined for the Cup Final, play-in and playoff games. */
+  game?: number;
+  /** Regular-season record going into the game; undefined while an earlier regular-season game isn't final. */
+  record?: { wins: number; losses: number };
+}
+
+/**
+ * A team's regular-season game numbers and the record it takes into each game, counted from the final scores (the
+ * Cup Final doesn't count, as in the standings). A record is known up to the first game not yet final, inclusive.
+ */
+export function teamSeason(data: CalendarData, teamId: number): Map<string, SeasonLine> {
+  const out = new Map<string, SeasonLine>();
+  let n = 0;
+  let rec: SeasonLine['record'] = { wins: 0, losses: 0 };
+  for (const g of teamGames(data, teamId)) {
+    if (g.gameType !== 'regular') {
+      out.set(g.gameId, {});
+      continue;
+    }
+    out.set(g.gameId, { game: ++n, record: rec && { ...rec } });
+    const r = finalScore(g, teamId);
+    rec = rec && r ? { wins: rec.wins + (r.win ? 1 : 0), losses: rec.losses + (r.win ? 0 : 1) } : undefined;
+  }
+  return out;
+}

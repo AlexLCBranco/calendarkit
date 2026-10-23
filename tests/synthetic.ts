@@ -24,24 +24,28 @@ export interface GameSpec {
   natl?: string[];
   subtype?: string;
   subLabel?: string;
+  /** Final score [away, home]: the game is Final. */
+  final?: [number, number];
+  /** Module gameType via the ID prefix: "006" = Cup Final. */
+  prefix?: string;
   raw?: Partial<RawScheduleGame>;
 }
 
-const team = (id: number) => ({ ...template.homeTeam, teamId: id, teamTricode: id ? TRI[id] ?? 'XXX' : '', teamName: id ? 'Team' : '', score: 0 });
+const team = (id: number, score = 0) => ({ ...template.homeTeam, teamId: id, teamTricode: id ? TRI[id] ?? 'XXX' : '', teamName: id ? 'Team' : '', score });
 
 export function game(s: GameSpec): ScheduleGame {
-  const id = s.id ?? `00226${String(9000 + ++seq).padStart(5, '0')}`;
+  const id = s.id ?? `${s.prefix ?? '002'}26${String(9000 + ++seq).padStart(5, '0')}`;
   const raw: RawScheduleGame = {
     ...template,
     gameId: id,
-    gameStatus: 1,
-    gameStatusText: s.utc ? '7:00 pm ET' : 'TBD',
+    gameStatus: s.final ? 3 : 1,
+    gameStatusText: s.final ? 'Final' : s.utc ? '7:00 pm ET' : 'TBD',
     gameDateEst: `${s.date}T00:00:00Z`,
     gameDateTimeUTC: s.utc ?? `${s.date}T05:00:00Z`,
     gameSubtype: s.subtype ?? '',
     gameSubLabel: s.subLabel ?? '',
-    homeTeam: team(s.home ?? TEAM.BOS),
-    awayTeam: team(s.away ?? TEAM.NYK),
+    homeTeam: team(s.home ?? TEAM.BOS, s.final?.[1]),
+    awayTeam: team(s.away ?? TEAM.NYK, s.final?.[0]),
     broadcasters: {
       ...template.broadcasters,
       nationalBroadcasters: (s.natl ?? []).map((n) => ({ ...template.broadcasters.nationalBroadcasters![0]!, broadcasterDisplay: n })),

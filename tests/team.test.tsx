@@ -152,7 +152,10 @@ describe('selected team first, both logos', () => {
         const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
         const home = g.homeTeam.teamId === teamId;
         const opp = home ? g.awayTeam : g.homeTeam;
-        expect(row.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim(), g.gameId).toBe(`${tri} ${home ? 'vs' : '@'} ${opp.teamTricode}`);
+        // final games: the score beside each tricode (straight from the feed's scores)
+        const self = home ? g.homeTeam : g.awayTeam;
+        const [s, o] = g.status === 'final' ? [` ${self.score}`, ` ${opp.score}`] : ['', ''];
+        expect(row.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim(), g.gameId).toBe(`${tri}${s} ${home ? 'vs' : '@'} ${opp.teamTricode}${o}`);
         expect(imgs(row), g.gameId).toEqual([`/logos/${tri}.svg`, `/logos/${opp.teamTricode}.svg`]);
         expect(row.querySelector('.ck-matchup > :first-child .ck-self')!.textContent).toBe(tri); // always first
       }

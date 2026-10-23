@@ -22,6 +22,7 @@ import {
   teamB2BPairs,
   teamGames,
   teamLabel,
+  teamSeason,
   weekOf,
   type B2BPair,
   type CalendarData,
@@ -750,6 +751,7 @@ export function TeamListView({ data, teamId, tvOnly, size, now, timeZone, onOpen
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)), [data, teamId, tvOnly]);
   const b2b = useTeamB2B(data, teamId);
+  const season = useMemo(() => teamSeason(data, teamId), [data, teamId]);
   const next = (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.gameId;
   const scroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -779,6 +781,7 @@ export function TeamListView({ data, teamId, tvOnly, size, now, timeZone, onOpen
               logos
               dateLabel={rowDate(g.dateEt)}
               next={g.gameId === next}
+              season={season.get(g.gameId)}
             />
           ))}
         </div>

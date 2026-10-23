@@ -143,15 +143,18 @@ test('team views: selected team first, vs/@ from its side, two loaded logos per 
   const rows = await page.getByTestId('team-list').evaluate((el) =>
     [...el.querySelectorAll<HTMLElement>('article')].map((a) => ({
       id: a.dataset.gameId!,
-      matchup: a.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim(),
+      // without the final scores (checked in lists.spec.ts)
+      matchup: [...a.querySelector('.ck-matchup')!.querySelectorAll('.ck-self, .ck-vsat, .ck-opp')].map((e) => e.textContent).join(' '),
       logos: [...a.querySelectorAll('.ck-matchup img')].filter((i) => (i as HTMLImageElement).naturalWidth > 0).length,
       selfX: a.querySelector('.ck-self')!.getBoundingClientRect().left,
+      final: !!a.querySelector('.ck-score'),
     })),
   );
   expect(rows.map((r) => r.id)).toEqual(games.map((g) => g.gameId));
   expect(rows.map((r) => r.matchup)).toEqual(games.map(want));
   expect(rows.every((r) => r.logos === 2)).toBe(true);
-  expect(new Set(rows.map((r) => Math.round(r.selfX))).size).toBe(1); // ORL in the same place on every row
+  // ORL in the same place on every row (phone: played rows leave out the time, so within played / upcoming rows)
+  for (const part of p === 'phone' ? [rows.filter((r) => r.final), rows.filter((r) => !r.final)] : [rows]) expect(new Set(part.map((r) => Math.round(r.selfX))).size).toBe(1);
 
   await page.getByRole('tab', { name: 'Calendar' }).click();
   await imagesLoaded(page);

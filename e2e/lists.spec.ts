@@ -262,7 +262,7 @@ test('team list: every game in order, opens at the next game, earlier games abov
       next: a.hasAttribute('data-next'),
       b2b: !!a.querySelector('.ck-b2b-n2'),
       date: a.querySelector('.ck-date')!.textContent!,
-      matchup: a.querySelector('.ck-matchup')!.textContent!,
+      matchup: [...a.querySelector('.ck-matchup')!.querySelectorAll('.ck-self, .ck-vsat, .ck-opp')].map((e) => e.textContent).join(' '), // without scores
       imgs: a.querySelectorAll('.ck-logo-backing img').length,
       offset: a.getBoundingClientRect().top - el.getBoundingClientRect().top,
     })),
@@ -287,17 +287,32 @@ test('team list: every game in order, opens at the next game, earlier games abov
   await expect(list.locator('.ck-cup').first()).toBeAttached();
   await expect(list.locator('[data-testid="tv-badge"]').first()).toHaveText(/\w/);
   if (info.project.name !== 'phone') expect(await rowsWithoutLogosDiffer(page)).toEqual([]);
-  // every width, phones included: date, time and "LAL vs OPP" (both logos) always share one line; rows without
-  // tags are single-line. On a phone, the selected team's logo leaves no room for tags on that line, so a row with
-  // a B2B label or TV names carries them on a second line (measured; see PROJECT.md).
+  // every width, phones included: date, time and "LAL vs OPP" (both logos, plus the final score) always share one
+  // line. Desktop/tablet: rows without tags are single-line (the season line "G12 5-6" fits at the right). Phone:
+  // the selected team's logo leaves no room on that line, so tags and the season line take a second line (every
+  // row is two lines; three when B2B + long TV names fill line 2), and a played game's row leaves out its tip-off
+  // time (measured; see PROJECT.md).
+  const phone = info.project.name === 'phone';
   const lines = await list.evaluate((el) =>
     [...el.querySelectorAll('article')].map((a) => {
-      const top = (s: string) => Math.round(a.querySelector(s)!.getBoundingClientRect().top + a.querySelector(s)!.getBoundingClientRect().height / 2);
-      return { oneLine: new Set([top('.ck-date'), top('[data-testid="tipoff"]'), top('.ck-matchup')]).size === 1, tags: a.querySelector('.ck-tags')!.children.length, h: a.getBoundingClientRect().height };
+      const shown = ['.ck-date', '[data-testid="tipoff"]', '.ck-matchup'].map((s) => a.querySelector(s)!.getBoundingClientRect()).filter((r) => r.height > 0);
+      return {
+        id: a.dataset.gameId,
+        oneLine: new Set(shown.map((r) => Math.round(r.top + r.height / 2))).size === 1,
+        time: a.querySelector('[data-testid="tipoff"]')!.getBoundingClientRect().height > 0,
+        final: !!a.querySelector('.ck-score'),
+        tags: a.querySelector('.ck-tags')!.children.length,
+        h: a.getBoundingClientRect().height,
+        text: a.textContent,
+      };
     }),
   );
   expect(lines.filter((l) => !l.oneLine)).toEqual([]);
-  expect(Math.max(...lines.filter((l) => !l.tags).map((l) => l.h))).toBeLessThanOrEqual(info.project.name === 'phone' ? 28.5 : 36.5);
+  expect(lines.filter((l) => l.time !== (!phone || !l.final))).toEqual([]); // time left out only on played phone rows
+  if (phone) {
+    expect(lines.filter((l) => !l.tags && l.h > 47.5).map((l) => `${l.id} ${l.h} ${l.text}`)).toEqual([]);
+    expect(lines.filter((l) => l.h > 66.5).map((l) => `${l.id} ${l.h} ${l.text}`)).toEqual([]); // long tags (B2B + "Peacock · NBC Sports Network"): season on a 3rd line
+  } else expect(Math.max(...lines.filter((l) => !l.tags).map((l) => l.h))).toBeLessThanOrEqual(36.5);
   // earlier games: scroll up
   await list.hover();
   for (let i = 0; i < 40; i++) await page.mouse.wheel(0, -600);
@@ -310,6 +325,65 @@ test('team list: every game in order, opens at the next game, earlier games abov
   await expect(page.getByRole('region', { name: 'Heat games' })).toBeVisible();
   await selected(page, 'Calendar').click();
   await expect(page.getByTestId('team-picker')).toHaveAttribute('data-team-id', '1610612748');
+  expect(errors).toEqual([]);
+});
+
+test('team list season line: game number + record going in on the right, final score beside the names', async ({ page }, info) => {
+  const errors = collectErrors(page);
+  await open(page, '?view=team&layout=list&team=BOS');
+  const list = page.getByTestId('team-list');
+  await expect(list.locator('article').first()).toBeAttached();
+  // expected straight from the served snapshot: regular games (002…) numbered in order; record going in = the
+  // feed's own W-L on the previous game once that game is Final (gameStatus 3)
+  const want = await page.evaluate(async () => {
+    const BOS = 1610612738;
+    const raw = await (await fetch('/data/schedule.json')).json();
+    type T = { teamId: number; teamTricode: string; score: number; wins: number; losses: number };
+    const games = (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string; gameStatus: number; homeTeam: T; awayTeam: T }[] }[])
+      .flatMap((d) => d.games)
+      .filter((g) => /^00[2456]/.test(g.gameId) && (g.homeTeam.teamId === BOS || g.awayTeam.teamId === BOS))
+      .sort((a, b) => a.gameDateEst.localeCompare(b.gameDateEst));
+    let n = 0;
+    let rec: string | null = '0-0';
+    return games.map((g) => {
+      const [self, opp] = g.homeTeam.teamId === BOS ? [g.homeTeam, g.awayTeam] : [g.awayTeam, g.homeTeam];
+      const final = g.gameStatus === 3;
+      const regular = g.gameId.startsWith('002');
+      const row = { id: g.gameId, game: regular ? `G${++n}` : null, record: regular ? (rec ?? '') : null, scores: final ? [String(self.score), String(opp.score)] : [] };
+      if (regular) rec = final && rec !== null ? `${self.wins}-${self.losses}` : null;
+      return row;
+    });
+  });
+  expect(want.some((w) => w.scores.length)).toBe(true); // the snapshot has final games
+  const rows = await list.evaluate((el) =>
+    [...el.querySelectorAll<HTMLElement>('article')].map((a) => {
+      const s = a.querySelector('[data-testid="season"]');
+      const b = a.getBoundingClientRect();
+      const r = s?.getBoundingClientRect();
+      const pad = parseFloat(getComputedStyle(a).paddingRight) + parseFloat(getComputedStyle(a).borderRightWidth);
+      return {
+        id: a.dataset.gameId!,
+        game: s?.children[0]!.textContent ?? null,
+        record: s ? s.children[1]!.textContent : null,
+        scores: [...a.querySelectorAll('.ck-score')].map((x) => x.textContent),
+        // right side: the block ends at the row's content edge, inside the row
+        right: r ? b.right - pad - r.right : 0,
+        inside: !r || (r.left >= b.left && r.right <= b.right + 0.5),
+        recRight: s ? s.children[1]!.getBoundingClientRect().right : 0,
+      };
+    }),
+  );
+  expect(rows.map(({ id, game, record, scores }) => ({ id, game, record, scores }))).toEqual(want);
+  for (const r of rows) {
+    expect(r.inside, r.id).toBe(true);
+    expect(Math.abs(r.right), r.id).toBeLessThanOrEqual(0.5);
+  }
+  // records line up down the list (same right edge)
+  expect(new Set(rows.filter((r) => r.game).map((r) => Math.round(r.recRight))).size).toBe(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  await list.evaluate((el) => (el.scrollTop = 0));
+  await page.mouse.move(0, 0);
+  await shot(page, 'team-list-season', info.project.name);
   expect(errors).toEqual([]);
 });
 

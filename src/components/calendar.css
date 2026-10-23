@@ -1082,3 +1082,43 @@
   white-space: nowrap;
   font-weight: 500;
 }
+
+/* Team list: final score beside each tricode (winner bright), and on the right the regular-season game number
+   and the record going into the game, in fixed tabular columns so they line up down the list. */
+.ck-score {
+  margin-left: 4px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--ck-muted);
+}
+.ck-score-win {
+  color: var(--ck-text);
+  font-weight: 700;
+}
+.ck-season {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 10px;
+  color: var(--ck-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ck-gnum {
+  min-width: 2.2em;
+  text-align: right;
+}
+.ck-record {
+  min-width: 3.2em;
+  text-align: right;
+  color: var(--ck-text);
+  font-weight: 600;
+}
+.ck-season + .ck-open {
+  margin-left: 0;
+}
+/* Phone team list: a played game's row has no room for date + time + "BOS 113 @ DET 121" with logos (345 px of a
+   304–334 px row), so its tip-off time is left out (still in the row's aria-label); the season line wraps to the
+   row's second line, right-aligned. */
+.ck-card-compact.ck-card-final .ck-time {
+  display: none;
+}
