@@ -18,7 +18,7 @@ where-to-watch info, embedding in gauntlet.
 - [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
 - [x] Views — `src/components/CalendarView.tsx`: `TeamMonthGrid`, `LeagueDayView` (week strip, prev/next day), `MonthNavigator` (counts, click → day), `TeamPicker`, and `CalendarView` combining them. App shell `src/App.tsx` (URL state `?view=&team=&date=&tv=`).
 - [x] Game card — `src/components/GameCard.tsx`: vs/@ (team view) or AWAY @ HOME, local tip-off with (+1), TBD, B2B per team, Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed.
-- [ ] Tests (unit + Playwright)
+- [x] Tests — see "Tests" below
 - [ ] Deploy (Vercel import by Alex) — live URL: _not yet_
 
 ## Probe (2026-10-23)
@@ -62,6 +62,21 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - 290 games tip at/after 02:00 UTC (late West Coast games), so the "+1" marker matters for users east of ET.
 - No postponed games (`postponedStatus` always "N").
 
+## Tests
+`npm test` (Vitest, 77 tests) · `npm run e2e` (Playwright, desktop 1280 px + phone 390 px) · CI: `.github/workflows/ci.yml`.
+- Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
+- `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
+  `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
+- `*.tz.test.ts` run twice, under America/New_York and America/Sao_Paulo; the zone is set as `env.TZ` per Vitest
+  project in `vite.config.ts` (no shell prefix, works on Windows/Linux/CI). Cover the Nov 1, 2026 DST change,
+  +1 grouping and the default-day rule with a mocked clock.
+- `card.test.tsx` / `views.test.tsx` (jsdom): markers, TV badge/filter, TBD, B2B, rotationkit action contract,
+  navigation.
+- `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, month jump, no console errors; screenshots to
+  `e2e/screenshots/` (git-ignored; uploaded as a CI artifact). `E2E_BASE_URL=<url> npm run e2e` runs it against
+  a deployed site (set the variable in the Playwright config's environment, e.g. `npx cross-env`, or in CI).
+- Manual only: none needed for v1 beyond judging look and feel.
+
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.
 - **Shared module** `src/shared/nba-schedule/` copied unchanged from rotationkit (see its `SOURCE.md`; the
@@ -92,6 +107,8 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   (and series/game number) to `deriveGame`; calendarkit will switch to it on the next copy.
 
 ## Open questions / items
+- The scheduled snapshot ran at 15:36 UTC on day 1 instead of 11:00 (GitHub delays cron runs under load).
+  Harmless for a schedule; the job now rebases before pushing in case it races a normal push.
 - **ROTATIONKIT_BASE_URL** is a placeholder until rotationkit has a production URL (it isn't merged to main).
 - Confirm CORS refusal from the first Vercel preview deploy.
 - Repo growth from daily 4 MB snapshot commits (~a few hundred KB compressed per change). Fine for a season;

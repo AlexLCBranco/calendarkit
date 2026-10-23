@@ -50,5 +50,6 @@ jobs:
           else
             git add public/data/schedule.json
             git commit -m "data: schedule snapshot $(date -u +%Y-%m-%d)"
+            git pull --rebase
             git push
           fi
