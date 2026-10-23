@@ -619,9 +619,22 @@
 }
 .ck-month-game > :nth-child(1) { grid-column: 1; }
 .ck-month-game > :nth-child(2) { grid-column: 3; }
-.ck-month-game > :nth-child(3) { grid-column: 5; }
-.ck-month-game > :nth-child(4) { grid-column: 7; }
-.ck-month-game > :nth-child(5) { grid-column: 9; }
+.ck-month-game > :nth-child(3) { grid-column: 4; }
+.ck-month-game > :nth-child(4) { grid-column: 5; }
+.ck-month-game > :nth-child(5) { grid-column: 7; }
+.ck-month-game > :nth-child(6) { grid-column: 9; }
+/* away tricode right-aligned against the "@" */
+.ck-month-game > :nth-child(2) {
+  text-align: right;
+}
+/* "@" between the teams, centered in the away/home gap; smaller and muted like the other "@"s */
+.ck-at {
+  font-size: var(--ck-at-font);
+  font-weight: 400;
+  color: var(--ck-muted);
+  text-align: center;
+  line-height: var(--ck-logo);
+}
 .ck-mtri-text {
   position: relative;
   display: inline-block;
@@ -1025,15 +1038,6 @@
   bottom: -4px;
 }
 
-/* Week view legend: away team left, home team right (no "@" on the lines). */
-.ck-month-legend {
-  flex: none;
-  text-align: center;
-  font-size: 11px;
-  color: var(--ck-muted);
-  margin: -4px 0 6px;
-  letter-spacing: 0.02em;
-}
 
 /* Team views: each side (selected team; vs/@ + opponent) wraps as one unit in narrow cells. */
 .ck-side {

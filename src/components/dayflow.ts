@@ -7,16 +7,18 @@ import { tipoff } from '../data/model';
 /**
  * Game line geometry in px. Widths are fixed rather than measured at runtime: the text is the bundled Inter font,
  * so they are the same on every OS. `tri` fits the widest tricode (MEM, 26.95 px at 11 px semibold).
- * Line: logo · gap · AWAY · sep · logo · gap · HOME · pillGap · TV. `labelGap`: below a time label; `dot`: B2B dot.
+ * Line: logo · gap · AWAY · sep (the "@", `atFont` px: 8.69 px wide at 9 px) · logo · gap · HOME · pillGap · TV.
+ * AWAY is right-aligned in its column, so every line reads "AWAY @ HOME" with the "@" in one column.
+ * `labelGap`: below a time label; `dot`: B2B dot.
  */
-export const MONTH_LINE = { logo: 16, gap: 2, tri: 28, sep: 6, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5 } as const;
+export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5 } as const;
 export type MonthLine = { [K in keyof typeof MONTH_LINE]: number };
 export const lineWidth = (L: MonthLine) => 2 * (L.logo + L.gap + L.tri) + L.sep + L.pillGap + L.pill;
 export const MONTH_LINE_WIDTH = lineWidth(MONTH_LINE);
 /** MONTH_LINE with every length (fonts included) times `s`. */
 export const scaleLine = (s: number): MonthLine => Object.fromEntries(Object.entries(MONTH_LINE).map(([k, v]) => [k, v * s])) as MonthLine;
-/** Space between game columns inside a day cell. */
-export const MONTH_COL_GAP = 10;
+/** Space between game columns inside a day cell (2 × 119 + 8 = 246 of the 249.42 px cell at 1920 px). */
+export const MONTH_COL_GAP = 8;
 /** Below this widget width the day grid uses 2 px gaps and cell padding (instead of 4 px). */
 export const ROOMY_WIDTH = 1000;
 
@@ -34,8 +36,8 @@ export function monthColumns(width: number): number {
 }
 
 /**
- * Smallest widget width where a full-size game line fits a 7-column day cell (monthCellInner ≥ 115 px). Below it,
- * League → Calendar shows the count grid. (width − 12) / 7 − 6 ≥ 115 → 859.
+ * Smallest widget width where a full-size game line fits a 7-column day cell (monthCellInner ≥ 119 px). Below it,
+ * League → Calendar shows the count grid. (width − 12) / 7 − 6 ≥ 119 → 887.
  */
 export const WEEK_MIN_WIDTH = Math.ceil(7 * (MONTH_LINE_WIDTH + 2 * 2 + 2) + 6 * 2);
 

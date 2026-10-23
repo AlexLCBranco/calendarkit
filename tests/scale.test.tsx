@@ -34,9 +34,9 @@ describe('weekScale (1-week League Calendar)', () => {
 
   it('never above WEEK_SCALE_MAX, never below 1 (the 2-week size), 0.05 steps; limited by width or height', () => {
     expect(weekScale(5000, 5000, busiest)).toBe(WEEK_SCALE_MAX);
-    expect(weekScale(115, 400, busiest)).toBe(1); // the width cutoff: a full-size line just fits
+    expect(weekScale(MONTH_LINE_WIDTH, 400, busiest)).toBe(1); // the width cutoff: a full-size line just fits
     expect(weekScale(100, 100, busiest)).toBe(1);
-    expect(weekScale(monthCellInner(1233), 2000, busiest)).toBe(1.1); // 1280 px window (content 1233 px): 162.7 × 0.8 / 115 = 1.13
+    expect(weekScale(monthCellInner(1233), 2000, busiest)).toBe(1.05); // 1280 px window (content 1233 px): 162.7 × 0.8 / 119 = 1.09
     expect(weekScale(1000, 24 + busiest * 1.3 / WEEK_SCALE_FILL, busiest)).toBe(1.3);
     for (let w = 100; w < 400; w += 7.3) expect((weekScale(w, 900, busiest) * 20) % 1).toBeCloseTo(0);
   });
@@ -44,7 +44,7 @@ describe('weekScale (1-week League Calendar)', () => {
   it('scaleLine multiplies every length; the scaled line width is the base width × s', () => {
     const L = scaleLine(1.5);
     for (const k of Object.keys(MONTH_LINE) as (keyof typeof MONTH_LINE)[]) expect(L[k]).toBe(MONTH_LINE[k] * 1.5);
-    expect(lineWidth(L)).toBe(172.5);
+    expect(lineWidth(L)).toBe(178.5);
   });
 });
 
@@ -58,16 +58,16 @@ describe('week view sizes', () => {
     const two = render(<LeagueWeekView data={data} start="2026-12-27" weeks={2} tvOnly={false} size={XL} onSelectDate={() => {}} />);
     const v2 = two.container.querySelector('.ck-week-view')!;
     expect(v2.getAttribute('data-scale')).toBe('1');
-    for (const [name, base] of [['--ck-logo', 16], ['--ck-font', 11], ['--ck-label-font', 10], ['--ck-pill', 15], ['--ck-dot', 5], ['--ck-line', 115]] as const) {
+    for (const [name, base] of [['--ck-logo', 16], ['--ck-font', 11], ['--ck-label-font', 10], ['--ck-pill', 15], ['--ck-dot', 5], ['--ck-at-font', 9], ['--ck-line', 119]] as const) {
       expect(vars(v2).getPropertyValue(name), name).toBe(`${base}px`);
       expect(vars(v1).getPropertyValue(name), name).toBe(`${base * s}px`);
     }
   });
 
-  it('2 weeks: unchanged (115 px line, 2 columns at 1920 px)', () => {
+  it('2 weeks: 119 px line, still 2 columns at 1920 px', () => {
     const el = render(<LeagueWeekView data={data} start="2026-11-15" weeks={2} tvOnly={false} size={XL} onSelectDate={() => {}} />);
     expect(el.container.querySelector('.ck-month-day')!.getAttribute('data-cols')).toBe('2');
-    expect(vars(el.container.querySelector('.ck-week-view')!).getPropertyValue('--ck-line')).toBe('115px');
+    expect(vars(el.container.querySelector('.ck-week-view')!).getPropertyValue('--ck-line')).toBe('119px');
   });
 
   it('a narrow widget keeps the full-size line (scale 1) and the same columns', () => {

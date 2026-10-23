@@ -122,6 +122,9 @@ test('league week view: every game listed with local logos, no broken images, no
         clipped: lines.filter((l) => { const c = inner(l.closest('.ck-cell')!); const b = box(l); return b.left < c.left - 0.5 || b.right > c.right + 0.5; }).length,
         triOverflow: [...document.querySelectorAll('.ck-mtri')].filter((t) => box(t.firstElementChild!).width > box(t).width + 0.01).length,
         visibleText: document.querySelector('.ck-week-view')!.textContent ?? '',
+        lineTexts: lines.map((l) => l.textContent ?? ''),
+        // the "@" sits between the away tricode and the home logo without touching either
+        atClear: lines.filter((l) => { const at = box(l.querySelector('.ck-at')!); const t = l.querySelectorAll('.ck-mtri-text'); const logo = l.querySelectorAll('.ck-logo-backing')[1]!; return !(at.width > 0 && at.left >= box(t[0]!).right && at.right <= box(logo).left); }).length,
       };
     });
     console.log(`[${project}] content ${r.content}px, cols ${r.cols}, cell inner ${r.cellInner.toFixed(2)}px, line ${r.lineW.toFixed(2)}px, col gap ${r.colGap}px, 2-col spare ${r.spare.toFixed(2)}px, font ${r.font}, logo ${r.logo}px`);
@@ -130,8 +133,10 @@ test('league week view: every game listed with local logos, no broken images, no
     expect(r.unbacked).toBe(0);
     expect(r.clipped).toBe(0);
     expect(r.triOverflow).toBe(0);
+    expect(r.atClear).toBe(0);
     expect(r.lineWidths).toHaveLength(1); // every line the same width → columns line up across cells
-    expect(r.visibleText).not.toMatch(/ESPN|NBC|Peacock|Prime Video|NBA TV|ABC|Telemundo|@/);
+    expect(r.visibleText).not.toMatch(/ESPN|NBC|Peacock|Prime Video|NBA TV|ABC|Telemundo/);
+    expect(r.lineTexts.every((t) => /^[A-Z]{3}@[A-Z]{3}(TV)?$/.test(t)), r.lineTexts.find((t) => !/^[A-Z]{3}@[A-Z]{3}(TV)?$/.test(t))).toBe(true); // "HOU@ATL" on every line
     if (project === 'desktop' || project === 'desktop-xl') {
       expect(r.font).toBe('11px'); // same game-line size at 1280 and 1920
       expect(r.logo).toBe(16);
@@ -140,7 +145,7 @@ test('league week view: every game listed with local logos, no broken images, no
     if (project === 'desktop-xl') {
       expect(r.content).toBeGreaterThanOrEqual(1700);
       expect(r.cols).toBe(2);
-      expect(r.spare).toBeGreaterThanOrEqual(8);
+      expect(r.spare).toBeGreaterThanOrEqual(3); // 2 × 119 + 8 = 246 of 249.42 px
       // newspaper flow on Nov 15: both columns used, each a single x position, balanced within one row,
       // reading column 1 then column 2 = DOM order (= tip-off order, checked in month.test.tsx), no label last
       const [c1, c2] = r.flow;

@@ -92,12 +92,12 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   navigation.
 - `week.test.tsx` (replaces `month.test.tsx`): league week view — opens on the default day's week, 7 cells / 14 in
   2-week mode, game count per week = data for **every week of the season** in both modes, 15-game day, lines
-  without "@" + legend, TBD without `<img>`, logo backing, today, equal rows; prev/next by 1 or 2 weeks and disabled
+  with "AWAY@HOME" on every line and no legend, TBD without `<img>`, logo backing, today, equal rows; prev/next by 1 or 2 weeks and disabled
   at the season's ends, cross-year title, month popup (counts, month arrows, jump, Escape), day header → League List,
   TV filter (per day TV-only ⊆ all); time groups under two zones incl. (+1) and TBD; columns (1 week = 1 column,
   2 weeks = as many as fit), day flow (balance, newspaper order, no label ends a column, repeated label, no
   needless split); TV pill + floating tooltip on hover and focus; league B2B dot on the 2/2 team only, no team marks;
-  cutoff 859 and the count grid at 360/700/858 px. `logos.test.ts`: 30 logo files + feed mapping.
+  cutoff 887 and the count grid at 360/700/886 px. `logos.test.ts`: 30 logo files + feed mapping.
 - `team.test.tsx`: team header (48 px / 40 px logo, full name) in both team layouts; picker (logos on button and all
   30 options, 6 conference · division groups, mouse, keyboard ↓/↑/←/→/Home/End/letters/Enter/Escape, focus back to
   the button, phone tricode); selected team first + vs/@ + logos [team, opponent] on every BOS and LAL game, list and
@@ -121,7 +121,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   weeks, count grid), no page scroll at 1920 × 1080 and 1280 × 900, nothing cut off in a cell; week view: 7 equal
   columns, counts vs snapshot, toggle, prev/next, popup jump, day header → list; **fit**: walks every week of the
   season in 1- and 2-week mode at 1920 × 1080 (no page scroll, no line outside its cell, counts match), prints the
-  busiest week(s) and the tallest day; cutoff: week view at widget 859 px with 115 px lines and nothing clipped,
+  busiest week(s) and the tallest day; cutoff: week view at widget 887 px with 119 px lines and nothing clipped,
   count grid 1 px below; B2B for ORL Nov 2026: bar geometry (inside night 1 → across the gap → inside night 2),
   week-break halves with arrow triangles, 1/2 transparent vs 2/2 filled, code, plane iff metro change, tooltip on
   hover and focus inside the viewport, opponent dot (5 px × the Team Calendar scale) + tooltip, list bracket (2 px orange, the two halves meet
@@ -137,18 +137,17 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   views. Screenshots `<project>-<league|team>-<list|calendar>.png` and `<project>-f-*.png`.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, calendar → day, no console errors; week view: 15 lines
   on Nov 2, two weeks around Nov 15 measured (`[project] content …, cols …, cell inner …, line …, 2-col spare …`):
-  2 columns with ≥ 8 px spare at 1920 px, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
+  2 columns with ≥ 3 px spare at 1920 px, "AWAY@HOME" text on every line with the "@" clear of the tricode and logo, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
   loaded, nothing clipped, TV tooltip on hover, no request to cdn.nba.com; screenshots to `e2e/screenshots/`
   (git-ignored; uploaded as a CI artifact). `npm run e2e:live -- <url>` runs all e2e against a deployed site.
 - `metro.test.tsx`: table (Inglewood → LA, Brooklyn → NY, other cities unchanged); real feed: 30 home cities → 28
   metros, only LAL/LAC and NYK/BKN shared, every table entry is a real arena city; synthetic LAL → @ LAC and NYK →
   @ BKN pairs: no plane, no travel in the tooltip; BKN → @ LAC: plane + "travels Brooklyn → Inglewood"; LA →
   Mexico City: plane; every crosstown pair in the real schedule: no travel.
-- `scale.test.tsx`: `weekScale` (1.5 at 1920 × 1080 with line and busiest day inside 80 %, max, min 1, the 859 px
-  cutoff → 1, 1280 px → 1.1, 0.05 steps), `scaleLine`; week view: 1 week scaled (every line variable = base × 1.5)
+- `scale.test.tsx`: `weekScale` (1.5 at 1920 × 1080 with line and busiest day inside 80 %, max, min 1, the cutoff → 1, 1280 px → 1.1, 0.05 steps), `scaleLine`; week view: 1 week scaled (every line variable = base × 1.5)
   vs 2 weeks at base size, 2 columns unchanged; Team Calendar: scale > 1 on desktop, probe gone after render,
   phone scale 1, TV names one span per network.
-- e2e **fit** (above) also checks: 1-week scale ≥ 1.4 and line wider than 2-week (115 px, 11 px, scale 1), no
+- e2e **fit** (above) also checks: 1-week scale ≥ 1.4 and line wider than 2-week (119 px, 11 px, scale 1), no
   tricode wider than its column. New e2e (desktop 1280 and desktop-xl 1920): **every team × every month** of the
   Team Calendar — no cell clipped (height or width), no page scroll, B2B bars on the cells' bottom edge (0–6 px),
   at 1920 px scale > 1 with logos 16 × scale; prints the fullest cell for 5- and 6-week months.
@@ -156,6 +155,9 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   Metro / scale work (2026-10-23): the 2 metro behaviour tests fail on the old code (the other 4 cover the table and
   cases that already worked), `scale.test.tsx` fails as a whole (functions missing), and the 5 new/changed e2e
   checks (team walk ×2, fit, B2B dot ×2) fail against an old build.
+  "@" on every week-view line (2026-10-23): 7 new/changed unit tests fail on the code before it. The week test that
+  walks every week of the season in jsdom takes 4–6 s, so it now has a 30 s timeout (it hit Vitest's 5 s default
+  on a busy machine — the one unexplained failure in the previous change).
 - Manual only: none needed beyond judging look and feel.
 
 ## Decisions
@@ -178,7 +180,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   links. Styles are in `calendar.css` imported by the components, colors as CSS variables.
 - **List | Calendar switch** (2026-10-23): a segmented control next to League | Team, both options always visible;
   replaces the old "Month" toggle. League + List = continuous day list, League + Calendar = week view (count
-  grid below 859 px; see below), Team + List = team list, Team + Calendar = team month grid. The layout is kept when
+  grid below 887 px; see below), Team + List = team list, Team + Calendar = team month grid. The layout is kept when
   switching League ↔ Team and stored as `layout=list|calendar`. Old links without `layout` map to what they
   showed: `?view=team` → Calendar, `?view=league` → List. "TV games only" is shown and applies in all four.
   Clicking a day header in League → Calendar opens League → List at that day. The URL always carries `tv=1` when on
@@ -316,34 +318,37 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
     width and the season's busiest one-column day (`busiestDayHeight`, all games, in the viewer's zone) ≤ 80 % of
     the cell height below the day header; never below 1. Cell width from `monthCellInner(width)`; cell height = the
     widget height below the grid's top (measured once per size; independent of s, so no feedback loop). The day
-    header and legend keep their size. Measured: **1920 × 1080 → 1.5** (line 172.5 px in a 249.4 px cell = 69 %,
-    logos 24 px, tricodes 16.5 px); 1280 × 900 → 1.1 (bound by width: 162.7 px inner cell width); 2560 × 1440 → 1.5; the 859 px
-    cutoff → 1. 2-week mode unchanged (1×, 115 px, 2 columns at 1920 px).
-  - **Line**: `[logo] AWAY [logo] HOME [TV]` — away always left, home right, **no "@"** in this view; a legend
-    "Away · Home" above the grid ("@" stays everywhere else). 11 px Inter semibold tricodes, 16 px logos (2-week mode; 1-week mode scales it, see "1-week scale"). Geometry
-    in `MONTH_LINE` (`dayflow.ts`): logo 16 · gap 2 · tricode 28 · away/home gap 6 · logo 16 · gap 2 · tricode 28 ·
-    gap 2 · TV 15 = **115 px**, fixed for every line. Tricode column 28 px fits the widest tricode (MEM 26.95 px).
+    header keeps its size. Measured: **1920 × 1080 → 1.5** (line 178.5 px in a 249.4 px cell = 72 %, logos 24 px,
+    tricodes 16.5 px, "@" 13.5 px); 1280 × 900 → 1.05 (bound by width: 162.7 px inner cell width); 2560 × 1440 → 1.5;
+    the 887 px cutoff → 1. 2-week mode: 1× (119 px, 2 columns at 1920 px).
+  - **Line**: `[logo] AWAY @ [logo] HOME [TV]` — **"@" on every line** (Alex, 2026-10-23: "HOU @ ATL"; replaces
+    the earlier no-"@" line + "Away · Home" legend, which is gone). 11 px Inter semibold tricodes, 16 px logos;
+    the "@" 9 px regular, muted (8.69 px wide), centered in its own 12 px column; the away tricode is right-aligned
+    against it, so the "@" forms one straight column down a day. 2-week mode; 1-week mode scales it all, see
+    "1-week scale". Geometry in `MONTH_LINE` (`dayflow.ts`): logo 16 · gap 1 · tricode 28 · "@" 12 · logo 16 ·
+    gap 1 · tricode 28 · gap 2 · TV 15 = **119 px** (was 115: the logo→tricode gaps went 2 → 1 px to make room),
+    fixed for every line. Tricode column 28 px fits the widest tricode (MEM 26.95 px).
   - **Time groups**: each day's games grouped by local tip-off label ("20:00", "00:00 (+1)", "TBD" last), small
     muted label above each group; no time on the lines.
   - **TV pill**: literal "TV" in a 15 px green pill on national-TV games; network names only in its tooltip
     (hover/focus). The pill's column is reserved on every line.
   - **B2B mark**: 5 px orange dot over the top-right corner of the tricode of the team on the second night (same
     `isBackToBack` rule as elsewhere); takes no width; tooltip "Back-to-back".
-  - **Columns** (2 weeks): `monthColumns(width)` = as many 115 px lines as fit the cell's inner width with a 10 px
-    gap (computed from the widget width, no DOM measuring). Measured at 1920 px: cell inner 249.42 px, 2 × 115 + 10 =
-    240 → 9.42 px spare, identical on Windows and Linux CI.
+  - **Columns** (2 weeks): `monthColumns(width)` = as many 119 px lines as fit the cell's inner width with an 8 px
+    gap (`MONTH_COL_GAP`, was 10 before the "@"; computed from the widget width, no DOM measuring). Measured at
+    1920 px: cell inner 249.42 px, 2 × 119 + 8 = 246 → 3.42 px spare (was 9.42), so still 2 columns.
   - **Day flow** (`flowDay`): a day's content (time labels + games, in tip-off order) is one list filling column 1,
     then column 2 (newspaper order). Break points minimise the tallest column (heights estimated from
     `MONTH_LINE`); each column starts with a game's group, so a label never ends a column; a group is split only
     when that balances the columns by more than a row, and then repeats its label (`data-repeat`). On ties, fewer
     splits, then the longer column first.
-  - **Game background dropped** (earlier): with 2 px padding the line is 119 px → only 1.42 px spare at 1920 px.
+  - **Game background dropped** (earlier): 2 px padding on each side would cost 4 px more than the 3.42 px spare.
   - **Logo backing**: every logo sits on a 16 px light disc (`rgba(226,231,238,.92)`), logo drawn at 80 % inside
     it; SVG files unchanged. Fixes the dark logos (SAS, MEM, NOP, UTA; CHA, PHI).
 - **Narrow widths: count grid** (`MonthNavigator`, month of counts per day, click → League List): below a widget
-  width of **859 px** (`WEEK_MIN_WIDTH`), where a full-size 115 px line no longer fits a 7-column cell
-  ((w − 12) / 7 − 6 ≥ 115). Measured (e2e `desktop`, headless Chromium): window **906 px** (859 + 32 padding + 15
-  px scrollbar gutter) → content 859 px, line 115.00 px, nothing clipped; 905 px → count grid. Tablets (768 px) and
+  width of **887 px** (`WEEK_MIN_WIDTH`; 859 before the "@"), where a full-size 119 px line no longer fits a
+  7-column cell ((w − 12) / 7 − 6 ≥ 119). Measured (e2e `desktop`, headless Chromium): window **934 px** (887 + 32
+  padding + 15 px scrollbar gutter) → content 887 px, line 119.00 px, nothing clipped; 933 px → count grid. Tablets (768 px) and
   phones get the count grid. The old month view's line scaling (768–860 px windows) is gone: lines are never shrunk.
 - **Snapshot size**: the raw feed is ~4 MB (≈ 200–300 KB gzipped over the wire). Committed daily only when it
   changes. Kept raw so no information is lost (scores later).

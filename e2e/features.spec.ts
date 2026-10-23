@@ -331,7 +331,7 @@ test('league week view fits 1920×1080 without page scroll: every week of the se
     console.log(`[desktop-xl] ${weeks} week(s): scale ${size.scale}, line ${size.line} px, logo ${size.logo} px, tricode ${size.font}`);
     lineWidths[weeks] = size.line;
     if (weeks === 1) expect(size.scale).toBeGreaterThanOrEqual(1.4); // about 1.5× (weekScale)
-    else expect([size.scale, size.line, size.font]).toEqual([1, 115, '11px']);
+    else expect([size.scale, size.line, size.font]).toEqual([1, 119, '11px']);
     for (let guard = 0; guard < 40; guard++) {
       const r = await page.evaluate(() => {
         const cells = [...document.querySelectorAll<HTMLElement>('.ck-week-view [role="gridcell"]')];
@@ -373,7 +373,7 @@ test('week view width cutoff: full-size lines at the cutoff, count grid one pixe
   // window width − widget width = page padding + scrollbar gutter (innerWidth − clientWidth reads 0 here even
   // though scrollbar-gutter: stable reserves the gutter, so it is measured from the widget)
   const sb = 1000 - 32 - (await page.locator('.ck-root').evaluate((e) => e.getBoundingClientRect().width));
-  const cutoff = 859 + 32 + sb; // widget width 859 (WEEK_MIN_WIDTH) + page padding + scrollbar gutter
+  const cutoff = 887 + 32 + sb; // widget width 887 (WEEK_MIN_WIDTH) + page padding + scrollbar gutter
   await page.setViewportSize({ width: cutoff, height: 900 });
   await open(page, '?view=league&layout=calendar&date=2026-11-02');
   await expect(page.getByRole('region', { name: 'League week' })).toBeVisible();
@@ -392,8 +392,8 @@ test('week view width cutoff: full-size lines at the cutoff, count grid one pixe
     };
   });
   console.log(`[desktop] week view cutoff: window ${cutoff} px (scrollbar ${sb} px) → content ${r.content} px, line ${r.line} px, clipped ${r.clipped}`);
-  expect(r.content).toBe(859);
-  expect(r.line).toBe(115);
+  expect(r.content).toBe(887);
+  expect(r.line).toBe(119);
   expect(r.font).toBe('11px');
   expect(r.clipped).toBe(0);
   await page.setViewportSize({ width: cutoff - 1, height: 900 });

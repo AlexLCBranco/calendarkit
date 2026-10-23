@@ -59,7 +59,8 @@ describe('week view: structure', () => {
       expect(guard).toBeGreaterThan(weeks === 1 ? 25 : 12);
       cleanup();
     }
-  });
+    // ~110 renders of a full week in jsdom take 4–6 s: above Vitest's 5 s default on a busy machine
+  }, 30_000);
 
   it('a 15-game day (Nov 2) lists all 15 games in tip-off order', () => {
     const el = openWeek(realData, '2026-11-02');
@@ -68,7 +69,7 @@ describe('week view: structure', () => {
     expect(lines(el.container, '2026-11-02').map((l) => l.getAttribute('data-game-id'))).toEqual(day.map((g) => g.gameId));
   });
 
-  it('each line: away logo + AWAY on the left, home logo + HOME on the right, no "@"; legend "Away · Home"', () => {
+  it('each line: away logo + AWAY, "@", home logo + HOME — every line; no legend', () => {
     const tips = [5, 2, 9, 0, 14, 7, 1, 12, 3, 10, 6, 13, 4, 11, 8];
     const games = tips.map((h, i) =>
       game({ date: '2026-11-10', utc: new Date(Date.UTC(2026, 10, 10, 23, 0) + h * 600_000).toISOString(), away: TEAMS[2 * i]!.id, home: TEAMS[2 * i + 1]!.id }),
@@ -81,10 +82,11 @@ describe('week view: structure', () => {
     for (const l of shown) {
       const g = games.find((x) => x.gameId === l.getAttribute('data-game-id'))!;
       expect(tris(l)).toEqual([g.awayTeam.teamTricode, g.homeTeam.teamTricode]);
-      expect(l.textContent).not.toMatch(/@/);
+      expect(l.textContent).toBe(`${g.awayTeam.teamTricode}@${g.homeTeam.teamTricode}`);
+      expect([...l.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-logo-backing', 'ck-mtri', 'ck-at', 'ck-logo-backing', 'ck-mtri', 'ck-tv-slot']);
       expect([...l.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([`/logos/${g.awayTeam.teamTricode}.svg`, `/logos/${g.homeTeam.teamTricode}.svg`]);
     }
-    expect(screen.getByTestId('month-legend').textContent).toBe('Away · Home');
+    expect(screen.queryByTestId('month-legend')).toBeNull();
     expect(cellOf(el.container, '2026-11-10').querySelector('[data-testid="tipoff"], [data-testid="tv-badge"], [data-testid="open-game"], .ck-tag')).toBeNull();
   });
 
@@ -342,13 +344,14 @@ describe('TV pill and B2B dots (league)', () => {
 });
 
 describe('narrow widths: count grid', () => {
-  it(`cutoff ${WEEK_MIN_WIDTH} px: a full-size line (115 px) just fits a 7-column cell`, () => {
-    expect(WEEK_MIN_WIDTH).toBe(859);
-    expect(CV.monthCellInner(859)).toBeGreaterThanOrEqual(CV.MONTH_LINE_WIDTH);
-    expect(CV.monthCellInner(858)).toBeLessThan(CV.MONTH_LINE_WIDTH);
+  it(`cutoff ${WEEK_MIN_WIDTH} px: a full-size line (119 px with "@") just fits a 7-column cell`, () => {
+    expect(CV.MONTH_LINE_WIDTH).toBe(119);
+    expect(WEEK_MIN_WIDTH).toBe(887);
+    expect(CV.monthCellInner(887)).toBeGreaterThanOrEqual(CV.MONTH_LINE_WIDTH);
+    expect(CV.monthCellInner(886)).toBeLessThan(CV.MONTH_LINE_WIDTH);
   });
 
-  for (const width of [360, 700, 858]) {
+  for (const width of [360, 700, 886]) {
     it(`${width} px: count-per-day grid (month), no game lines; a day opens the list`, () => {
       const el = openWeek(realData, '2026-11-02', { width, height: 800 });
       expect(screen.getByRole('region', { name: 'Month navigator' })).toBeTruthy();
@@ -360,8 +363,8 @@ describe('narrow widths: count grid', () => {
     });
   }
 
-  it('859 px: week view', () => {
-    openWeek(realData, '2026-11-02', { width: 859, height: 800 });
+  it('887 px: week view', () => {
+    openWeek(realData, '2026-11-02', { width: 887, height: 800 });
     expect(region()).toBeTruthy();
   });
 });

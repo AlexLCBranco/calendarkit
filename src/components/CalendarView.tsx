@@ -883,6 +883,7 @@ function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame 
   return (
     <li className="ck-month-game" data-game-id={game.gameId} aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}>
       <MonthTeam team={game.awayTeam} b2b={b2b(game.awayTeam.teamId)} />
+      <span className="ck-at">@</span>
       <MonthTeam team={game.homeTeam} b2b={b2b(game.homeTeam.teamId)} />
       <span className="ck-tv-slot">
         {tv.length > 0 && (
@@ -897,7 +898,7 @@ function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame 
 
 /**
  * League → Calendar: 7 equal day columns, one or two week rows, every game of each day at full line size
- * (logos + tricodes, away left, home right; TV pill; B2B dot), grouped by local tip-off time. 1 week: one column
+ * (logos + tricodes, "AWAY @ HOME"; TV pill; B2B dot), grouped by local tip-off time. 1 week: one column
  * of games per day; 2 weeks: the day flows into as many columns as fit (see flowDay). Rows are equal and fill the
  * height they're given. A day header opens that day in the list.
  */
@@ -921,6 +922,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
     '--ck-gap': `${L.gap}px`,
     '--ck-tri': `${L.tri}px`,
     '--ck-sep': `${L.sep}px`,
+    '--ck-at-font': `${L.atFont}px`,
     '--ck-pill-gap': `${L.pillGap}px`,
     '--ck-pill': `${L.pill}px`,
     '--ck-font': `${L.font}px`,
@@ -936,9 +938,6 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
 
   return (
     <section className={`ck-week-view${size.width < ROOMY_WIDTH ? ' ck-month-tight' : ''}`} aria-label="League week" data-weeks={weeks} data-scale={scale} style={vars}>
-      <div className="ck-month-legend" data-testid="month-legend">
-        Away · Home
-      </div>
       <div ref={grid} className="ck-grid ck-week-grid" role="grid" style={{ gridTemplateRows: `repeat(${weeks}, 1fr)` }}>
         {dates.map((date) => {
           const all = data.byDate.get(date) ?? [];
