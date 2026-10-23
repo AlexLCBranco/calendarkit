@@ -14,11 +14,18 @@ export function openGameInRotationkit(gameId: string, open: (url: string) => voi
   open(rotationkitUrl(gameId));
 }
 
-function readUrlState(): Partial<CalendarState> {
-  const p = new URLSearchParams(window.location.search);
+/**
+ * URL: ?view=league|team&layout=list|calendar&team=&date=&tv=1. Links from before the List | Calendar switch have
+ * no layout: ?view=team opened the team month grid (→ Calendar), ?view=league the day list (→ List).
+ */
+export function readUrlState(search = window.location.search): Partial<CalendarState> {
+  const p = new URLSearchParams(search);
   const team = TEAMS.find((t) => t.tricode === p.get('team')?.toUpperCase());
+  const view = p.get('view');
+  const layout = p.get('layout');
   return {
-    mode: p.get('view') === 'team' ? 'team' : p.get('view') === 'league' ? 'league' : undefined,
+    mode: view === 'team' ? 'team' : view === 'league' ? 'league' : undefined,
+    layout: layout === 'list' || layout === 'calendar' ? layout : view === 'team' ? 'calendar' : undefined,
     teamId: team?.id,
     date: p.get('date') ?? undefined,
     tvOnly: p.get('tv') === '1' ? true : undefined,
@@ -28,22 +35,25 @@ function readUrlState(): Partial<CalendarState> {
 function writeUrlState(s: CalendarState) {
   const p = new URLSearchParams();
   p.set('view', s.mode);
+  p.set('layout', s.layout);
   if (s.mode === 'team') p.set('team', TEAM_BY_ID.get(s.teamId)?.tricode ?? '');
-  else {
-    p.set('date', s.date);
-    if (s.tvOnly) p.set('tv', '1');
-  }
+  else p.set('date', s.date);
+  if (s.tvOnly) p.set('tv', '1');
   window.history.replaceState(null, '', `${window.location.pathname}?${p}`);
 }
 
 /** Page content width cap (app.css `.app` max-width minus its padding): ~40 px side margins at a 1920 px window. */
 export const MAX_CONTENT_WIDTH = 1840;
 
+/** Smallest widget height the shell passes (list layouts scroll inside it). */
+const MIN_WIDGET_HEIGHT = 360;
+
 /**
  * The widget's size = the app's real content box (not window.innerWidth, which includes the scrollbar), so the
- * month view's column maths matches the cells it renders. Measured before paint, then on every resize.
+ * month view's column maths matches the cells it renders; height = the window below the widget's top, so the list
+ * layouts fill the screen and scroll inside. Measured before paint, then on every resize.
  */
-function useContentSize(ref: RefObject<HTMLElement | null>) {
+function useContentSize(ref: RefObject<HTMLElement | null>, widgetRef: RefObject<HTMLElement | null>) {
   const fallback = () => ({ width: Math.min(document.documentElement.clientWidth - 32, MAX_CONTENT_WIDTH), height: window.innerHeight });
   const [size, setSize] = useState(fallback);
   useLayoutEffect(() => {
@@ -52,16 +62,18 @@ function useContentSize(ref: RefObject<HTMLElement | null>) {
       if (!el) return setSize(fallback());
       const cs = getComputedStyle(el);
       const width = Math.floor(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
-      setSize((s) => (s.width === width && s.height === window.innerHeight ? s : { width, height: window.innerHeight }));
+      const top = (widgetRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY;
+      const height = Math.max(MIN_WIDGET_HEIGHT, Math.floor(window.innerHeight - top - parseFloat(cs.paddingBottom)));
+      setSize((s) => (s.width === width && s.height === height ? s : { width, height }));
     };
     measure();
-    if (typeof ResizeObserver === 'undefined' || !el) {
-      window.addEventListener('resize', measure);
-      return () => window.removeEventListener('resize', measure);
-    }
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener('resize', measure);
+    const ro = typeof ResizeObserver === 'undefined' || !el ? undefined : new ResizeObserver(measure);
+    if (el) ro?.observe(el);
+    return () => {
+      window.removeEventListener('resize', measure);
+      ro?.disconnect();
+    };
   }, []);
   return size;
 }
@@ -70,7 +82,8 @@ export function App() {
   const [data, setData] = useState<CalendarData>();
   const [error, setError] = useState<string>();
   const appRef = useRef<HTMLDivElement>(null);
-  const size = useContentSize(appRef);
+  const widgetRef = useRef<HTMLDivElement>(null);
+  const size = useContentSize(appRef, widgetRef);
   const [initial] = useState(readUrlState);
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
@@ -88,7 +101,7 @@ export function App() {
       </header>
       {error && <p className="app-status" role="alert">Couldn’t load the schedule: {error}</p>}
       {!data && !error && <p className="app-status">Loading schedule…</p>}
-      {data && <CalendarView data={data} size={size} initial={initial} onOpenGame={onOpenGame} onStateChange={writeUrlState} />}
+      <div ref={widgetRef}>{data && <CalendarView data={data} size={size} initial={initial} onOpenGame={onOpenGame} onStateChange={writeUrlState} />}</div>
     </div>
   );
 }

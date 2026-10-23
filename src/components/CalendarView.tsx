@@ -1,11 +1,11 @@
-// Calendar widgets: team month grid, league day view, month navigator, and CalendarView, which combines them.
+// Calendar widgets: team month grid and list, league list, league month and month navigator, and CalendarView,
+// which combines them behind a League | Team and a List | Calendar switch.
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import {
-  addDays,
   addMonths,
   countsByDate,
   defaultDay,
@@ -23,8 +23,8 @@ import {
   weekOf,
   type CalendarData,
 } from '../data/model';
-import { DIVISIONS, TEAMS, TEAM_BY_ID, teamLogo } from '../data/teams';
-import { GameCard } from './GameCard';
+import { DIVISIONS, TEAMS, TEAM_BY_ID } from '../data/teams';
+import { GameCard, TeamLogo } from './GameCard';
 import './calendar.css';
 
 export interface WidgetSize {
@@ -102,11 +102,13 @@ export interface TeamMonthGridProps {
   now: number;
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
+  /** National TV games only. */
+  tvOnly?: boolean;
 }
 
-export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame }: TeamMonthGridProps) {
+export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, tvOnly = false }: TeamMonthGridProps) {
   const compact = isCompact(size);
-  const byDate = useMemo(() => new Map(teamGames(data, teamId).map((g) => [g.dateEt, g])), [data, teamId]);
+  const byDate = useMemo(() => new Map(teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)).map((g) => [g.dateEt, g])), [data, teamId, tvOnly]);
   const [selected, setSelected] = useState<string | undefined>();
   const selectedGame = selected ? byDate.get(selected) : undefined;
   const months = seasonMonths(data);
@@ -142,12 +144,14 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
   );
 }
 
-// ---------------------------------------------------------------- league: day view
+// ---------------------------------------------------------------- league: continuous list
 
-export interface LeagueDayViewProps {
+export interface LeagueListViewProps {
   data: CalendarData;
+  /** Day to show at the top: on open, and whenever the host changes it. */
   date: string;
-  onDateChange: (date: string) => void;
+  /** Raised when another day reaches the top of the list (scrolling, week strip, arrows). */
+  onSelectDate: (date: string) => void;
   tvOnly: boolean;
   size: WidgetSize;
   now: number;
@@ -155,40 +159,171 @@ export interface LeagueDayViewProps {
   onOpenGame?: (gameId: string) => void;
 }
 
-export function LeagueDayView({ data, date, onDateChange, tvOnly, size, now, timeZone, onOpenGame }: LeagueDayViewProps) {
+/** Height estimates (px) for a day not measured yet: sticky header + one card row per game (+ 6 px gap). */
+const LIST_HEAD = 38;
+const listRow = (compact: boolean) => (compact ? 27 : 35) + 6;
+/** Days stay rendered this far (in viewport heights) above and below the visible part. */
+const LIST_OVERSCAN = 0.75;
+
+type ListDay = { date: string; games: ScheduleGame[] };
+
+/** The list's day for a date: that day, else the next one with games, else the last. */
+const nearestDay = (days: ListDay[], date: string) => (days.find((d) => d.date >= date) ?? days.at(-1))?.date ?? date;
+
+/** Index of the day at scroll offset `y` (tops = cumulative day tops, plus the total at the end). */
+function dayAt(tops: number[], y: number): number {
+  let i = 0;
+  while (i < tops.length - 2 && tops[i + 1]! <= y + 1) i++;
+  return i;
+}
+
+/**
+ * The league schedule as one continuous list of game days, each under a sticky header ("Sun, Nov 15 · 9 games").
+ * Only the days near the viewport are rendered; the rest are spacers sized from measured (or estimated) heights,
+ * and the day at the top stays put while heights above it get measured. The week strip follows the day at the top.
+ */
+export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, timeZone, onOpenGame }: LeagueListViewProps) {
   const compact = isCompact(size);
-  const first = data.dates[0] ?? date;
-  const last = data.dates.at(-1) ?? date;
-  const all = data.byDate.get(date) ?? [];
-  const games = tvOnly ? all.filter(hasNationalTv) : all;
-  const counts = useMemo(() => countsByDate(data, tvOnly), [data, tvOnly]);
+  const days = useMemo(() => {
+    const out: ListDay[] = [];
+    for (const d of data.dates) {
+      const all = data.byDate.get(d)!;
+      const games = tvOnly ? all.filter(hasNationalTv) : all;
+      if (games.length) out.push({ date: d, games });
+    }
+    return out;
+  }, [data, tvOnly]);
+  const index = useMemo(() => new Map(days.map((d, i) => [d.date, i])), [days]);
+  const counts = useMemo(() => new Map(days.map((d) => [d.date, d.games.length])), [days]);
   const today = localDate(now, timeZone);
 
+  // Measured day heights, keyed by date and game count; dropped when the width changes (cards rewrap).
+  const heights = useRef({ width: size.width, map: new Map<string, number>() });
+  if (heights.current.width !== size.width) heights.current = { width: size.width, map: new Map() };
+  const hKey = (d: ListDay) => `${d.date}/${d.games.length}`;
+  const [measured, setMeasured] = useState(0);
+  const tops = useMemo(() => {
+    const out = [0];
+    for (const d of days) out.push(out.at(-1)! + (heights.current.map.get(hKey(d)) ?? LIST_HEAD + d.games.length * listRow(compact)));
+    return out;
+    // `measured` signals a change inside the heights ref
+  }, [days, compact, measured, size.width]);
+
+  const scroller = useRef<HTMLDivElement>(null);
+  const [viewH, setViewH] = useState(size.height);
+  // The day at the top and how far into it the list is scrolled: kept in place across re-measuring.
+  const anchor = useRef({ date: nearestDay(days, date), within: 0 });
+  const [topDay, setTopDay] = useState(anchor.current.date);
+  const [scrollTop, setScrollTop] = useState(() => tops[index.get(anchor.current.date) ?? 0] ?? 0);
+  const reported = useRef(date);
+
+  const jump = (d: string) => {
+    const day = nearestDay(days, d);
+    anchor.current = { date: day, within: 0 };
+    setTopDay(day);
+    setScrollTop(tops[index.get(day) ?? 0] ?? 0);
+  };
+
+  // The layout the browser last showed and the scroll position it was left at: a scroll is read against these.
+  const painted = useRef({ tops, y: 0 });
+  const follow = (y: number) => {
+    const t = painted.current.tops;
+    const i = dayAt(t, y);
+    if (!days[i]) return;
+    anchor.current = { date: days[i].date, within: y - t[i]! };
+    painted.current.y = y;
+    setTopDay(days[i].date);
+  };
+  const onScroll = () => {
+    const y = scroller.current!.scrollTop;
+    follow(y);
+    setScrollTop(y);
+  };
+
+  // Host moved the date (e.g. a day picked in the month view): scroll there. Our own reports are skipped.
+  useEffect(() => {
+    if (date !== reported.current) {
+      reported.current = date;
+      jump(date);
+    }
+  }, [date]);
+  useEffect(() => {
+    if (topDay !== reported.current) {
+      reported.current = topDay;
+      onSelectDate(topDay);
+    }
+  }, [topDay, onSelectDate]);
+
+  // After every render: measure the rendered days; once heights are stable, put the anchor day back in place.
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    if (el.clientHeight && el.clientHeight !== viewH) setViewH(el.clientHeight);
+    // a user scroll whose event hasn't arrived yet: take it in first, or restoring the anchor would undo it
+    if (Math.abs(el.scrollTop - painted.current.y) > 0.5) follow(el.scrollTop);
+    let changed = false;
+    for (const node of el.querySelectorAll<HTMLElement>('[data-day]')) {
+      const h = node.getBoundingClientRect().height; // not offsetHeight: rows can be 28.5 px, rounding would drift
+      const k = node.dataset.key!;
+      if (h && Math.abs((heights.current.map.get(k) ?? 0) - h) > 0.01) {
+        heights.current.map.set(k, h);
+        changed = true;
+      }
+    }
+    if (changed) return setMeasured((m) => m + 1);
+    let i = index.get(anchor.current.date);
+    if (i === undefined) {
+      // the filter removed the anchor day: the nearest day that's left
+      const day = nearestDay(days, anchor.current.date);
+      anchor.current = { date: day, within: 0 };
+      setTopDay(day);
+      i = index.get(day) ?? 0;
+    }
+    const want = (tops[i] ?? 0) + anchor.current.within;
+    if (Math.abs(el.scrollTop - want) > 0.5) el.scrollTop = want;
+    painted.current = { tops, y: el.scrollTop };
+    setScrollTop(want);
+  });
+
+  const lo = scrollTop - viewH * LIST_OVERSCAN;
+  const hi = scrollTop + viewH * (1 + LIST_OVERSCAN);
+  let start = 0;
+  while (start < days.length - 1 && tops[start + 1]! <= lo) start++;
+  let end = start;
+  while (end < days.length && tops[end]! < hi) end++;
+  const total = tops[days.length]!;
+  const lastH = days.length ? total - tops[days.length - 1]! : 0;
+  // room after the last day, so every day can reach the top
+  const tail = Math.max(0, viewH - lastH);
+
+  const ti = index.get(topDay) ?? 0;
+  const go = (i: number) => days[i] && jump(days[i].date);
+
   return (
-    <section className="ck-league-day" aria-label="League schedule by day">
+    <section className="ck-league-list" aria-label="League schedule" style={{ maxHeight: size.height }}>
       <div className="ck-nav">
-        <button type="button" className="ck-arrow" aria-label="Previous day" disabled={date <= first} onClick={() => onDateChange(addDays(date, -1))}>
+        <button type="button" className="ck-arrow" aria-label="Previous day" disabled={ti <= 0} onClick={() => go(ti - 1)}>
           ‹
         </button>
         <h2 className="ck-nav-title" data-testid="day-title">
-          {fmtDate(date, { weekday: compact ? 'short' : 'long', month: compact ? 'short' : 'long', day: 'numeric', year: 'numeric' })}
+          {fmtDate(topDay, { weekday: compact ? 'short' : 'long', month: compact ? 'short' : 'long', day: 'numeric', year: 'numeric' })}
         </h2>
-        <button type="button" className="ck-arrow" aria-label="Next day" disabled={date >= last} onClick={() => onDateChange(addDays(date, 1))}>
+        <button type="button" className="ck-arrow" aria-label="Next day" disabled={ti >= days.length - 1} onClick={() => go(ti + 1)}>
           ›
         </button>
       </div>
       <div className="ck-week" role="tablist" aria-label="Week">
-        {weekOf(date).map((d) => {
+        {weekOf(topDay).map((d) => {
           const n = counts.get(d) ?? 0;
           return (
             <button
               key={d}
               type="button"
               role="tab"
-              aria-selected={d === date}
-              className={`ck-weekday${d === date ? ' ck-weekday-selected' : ''}${d === today ? ' ck-weekday-today' : ''}`}
-              disabled={d < first || d > last}
-              onClick={() => onDateChange(d)}
+              aria-selected={d === topDay}
+              className={`ck-weekday${d === topDay ? ' ck-weekday-selected' : ''}${d === today ? ' ck-weekday-today' : ''}`}
+              disabled={!n}
+              onClick={() => jump(d)}
               data-date={d}
             >
               <span className="ck-weekday-name">{fmtDate(d, { weekday: 'short' })}</span>
@@ -198,11 +333,79 @@ export function LeagueDayView({ data, date, onDateChange, tvOnly, size, now, tim
           );
         })}
       </div>
-      <div className="ck-daylist" data-testid="day-games">
-        {games.length === 0 && <p className="ck-empty">{all.length ? 'No national TV games this day.' : 'No games this day.'}</p>}
-        {games.map((g) => (
-          <GameCard key={g.gameId} game={g} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} />
+      <div className="ck-llist" ref={scroller} onScroll={onScroll} data-testid="league-list">
+        {days.length === 0 && <p className="ck-empty">No games.</p>}
+        <div style={{ height: tops[start] }} aria-hidden="true" />
+        {days.slice(start, end).map((d) => (
+          <section key={d.date} className="ck-lday" data-day={d.date} data-key={hKey(d)} aria-label={dayHeading(d.date, d.games.length)}>
+            <h3 className="ck-lday-head">{dayHeading(d.date, d.games.length)}</h3>
+            <div className="ck-daylist">
+              {d.games.map((g) => (
+                <GameCard key={g.gameId} game={g} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos />
+              ))}
+            </div>
+          </section>
         ))}
+        <div style={{ height: total - tops[end]! + tail }} aria-hidden="true" />
+      </div>
+    </section>
+  );
+}
+
+const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'short', month: 'short', day: 'numeric' })} · ${n} game${n === 1 ? '' : 's'}`;
+
+// ---------------------------------------------------------------- team: list
+
+export interface TeamListViewProps {
+  data: CalendarData;
+  teamId: number;
+  tvOnly: boolean;
+  size: WidgetSize;
+  now: number;
+  timeZone?: string;
+  onOpenGame?: (gameId: string) => void;
+}
+
+/** "Sun 15/11" */
+const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })} ${date.slice(8)}/${date.slice(5, 7)}`;
+
+/**
+ * One team's games in order, one row each. Opens scrolled to the next game not over (marked); the earlier games
+ * are above it.
+ */
+export function TeamListView({ data, teamId, tvOnly, size, now, timeZone, onOpenGame }: TeamListViewProps) {
+  const compact = isCompact(size);
+  const games = useMemo(() => teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)), [data, teamId, tvOnly]);
+  const next = (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.gameId;
+  const scroller = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    const row = el?.querySelector<HTMLElement>('[data-next]');
+    if (el && row) el.scrollTop = row.offsetTop - el.querySelector<HTMLElement>('.ck-daylist')!.offsetTop;
+    // reopen at the next game only when the list changes (not every minute as `now` ticks)
+  }, [games]);
+
+  return (
+    <section className="ck-team-list" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} games`} style={{ maxHeight: size.height }}>
+      <div className="ck-llist" ref={scroller} data-testid="team-list">
+        {games.length === 0 && <p className="ck-empty">No games.</p>}
+        <div className="ck-daylist">
+          {games.map((g) => (
+            <GameCard
+              key={g.gameId}
+              game={g}
+              teamId={teamId}
+              backToBackTeamIds={b2bIds(data, g)}
+              now={now}
+              timeZone={timeZone}
+              size={compact ? 'compact' : 'regular'}
+              onOpenGame={onOpenGame}
+              logos
+              dateLabel={rowDate(g.dateEt)}
+              next={g.gameId === next}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -314,17 +517,10 @@ export interface LeagueMonthViewProps {
 }
 
 function MonthTeam({ team, b2b }: { team: ScheduleGame['homeTeam']; b2b: boolean }) {
-  const logo = teamLogo(team.teamId);
   const label = teamLabel(team);
   return (
     <>
-      {logo ? (
-        <span className="ck-logo-backing">
-          <img src={logo} alt="" width={16} height={16} />
-        </span>
-      ) : (
-        <span className="ck-logo-empty" aria-hidden="true" />
-      )}
+      <TeamLogo team={team} />
       <span className="ck-mtri" data-tricode={label}>
         <span className="ck-mtri-text">
           {label}
@@ -497,11 +693,14 @@ export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSe
 // ---------------------------------------------------------------- CalendarView: the combined widget
 
 export type CalendarMode = 'team' | 'league';
+export type CalendarLayout = 'list' | 'calendar';
 
 export interface CalendarState {
   mode: CalendarMode;
+  /** List or Calendar; kept when switching League ↔ Team. */
+  layout: CalendarLayout;
   teamId: number;
-  /** League view: selected game date. */
+  /** League view: the day at the top of the list (the month view opens on its month). */
   date: string;
   tvOnly: boolean;
 }
@@ -509,95 +708,102 @@ export interface CalendarState {
 export interface CalendarViewProps {
   data: CalendarData;
   size: WidgetSize;
-  /** Initial state; anything missing gets a default (league view, default day). */
+  /** Initial state; anything missing gets a default (League → List, default day). */
   initial?: Partial<CalendarState>;
   /** Fixed clock (ms) for tests or replays; default: live clock. */
   now?: number;
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
-  /** Told whenever the user changes mode, team, day or the TV filter (e.g. to sync a URL). */
+  /** Told whenever the user changes mode, layout, team, day or the TV filter (e.g. to sync a URL). */
   onStateChange?: (state: CalendarState) => void;
 }
 
 const DEFAULT_TEAM = TEAMS[0]!.id;
 
+function Segmented<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: [T, string][]; onChange: (v: T) => void }) {
+  return (
+    <div className="ck-tabs" role="tablist" aria-label={label}>
+      {options.map(([v, text]) => (
+        <button key={v} type="button" role="tab" aria-selected={value === v} className={`ck-tab${value === v ? ' ck-tab-selected' : ''}`} onClick={() => onChange(v)}>
+          {text}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onStateChange }: CalendarViewProps) {
   const now = useNow(fixedNow);
   const [state, setState] = useState<CalendarState>(() => ({
     mode: initial?.mode ?? 'league',
+    layout: initial?.layout ?? 'list',
     teamId: initial?.teamId && TEAM_BY_ID.has(initial.teamId) ? initial.teamId : DEFAULT_TEAM,
     date: initial?.date && /^\d{4}-\d{2}-\d{2}$/.test(initial.date) ? initial.date : (defaultDay(data, now) ?? localDate(now, timeZone)),
     tvOnly: initial?.tvOnly ?? false,
   }));
-  const [leagueMonth, setLeagueMonth] = useState<string | undefined>(); // set while the month navigator is open
+  const [leagueMonth, setLeagueMonth] = useState(() => monthOf(state.date));
   const [teamMonth, setTeamMonth] = useState(() => monthOf(teamDefaultDate(data, state.teamId, now) ?? state.date));
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
-  const update = (patch: Partial<CalendarState>) => {
-    const next = { ...state, ...patch };
-    setState(next);
-    onStateChange?.(next);
-  };
+  const update = useCallback(
+    (patch: Partial<CalendarState>) => {
+      const next = { ...stateRef.current, ...patch };
+      stateRef.current = next;
+      setState(next);
+      onStateChange?.(next);
+    },
+    [onStateChange],
+  );
   const pickTeam = (teamId: number) => {
     update({ teamId });
     setTeamMonth(monthOf(teamDefaultDate(data, teamId, now) ?? state.date));
   };
+  const setLayout = (layout: CalendarLayout) => {
+    if (layout === 'calendar') setLeagueMonth(monthOf(state.date));
+    update({ layout });
+  };
+  const onSelectDate = useCallback((date: string) => update({ date }), [update]);
+  const openDay = (date: string) => update({ date, layout: 'list' });
+  const list = state.layout === 'list';
+  const today = localDate(now, timeZone);
 
   return (
-    <div className={`ck-root${isCompact(size) ? ' ck-compact' : ''}`} style={{ maxWidth: size.width }}>
+    <div className={`ck-root${isCompact(size) ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ''}`} style={{ maxWidth: size.width, height: list ? size.height : undefined }}>
       <div className="ck-toolbar">
-        <div className="ck-tabs" role="tablist" aria-label="View">
-          {(['league', 'team'] as const).map((m) => (
-            <button key={m} type="button" role="tab" aria-selected={state.mode === m} className={`ck-tab${state.mode === m ? ' ck-tab-selected' : ''}`} onClick={() => update({ mode: m })}>
-              {m === 'league' ? 'League' : 'Team'}
-            </button>
-          ))}
+        <div className="ck-switches">
+          <Segmented label="View" value={state.mode} options={[['league', 'League'], ['team', 'Team']]} onChange={(mode) => update({ mode })} />
+          <Segmented label="Layout" value={state.layout} options={[['list', 'List'], ['calendar', 'Calendar']]} onChange={setLayout} />
         </div>
-        {state.mode === 'team' ? (
-          <TeamPicker teamId={state.teamId} onChange={pickTeam} />
-        ) : (
-          <div className="ck-league-tools">
-            <button type="button" className={`ck-toggle${leagueMonth ? ' ck-toggle-on' : ''}`} aria-pressed={!!leagueMonth} onClick={() => setLeagueMonth(leagueMonth ? undefined : monthOf(state.date))}>
-              Month
-            </button>
-            <label className="ck-check">
-              <input type="checkbox" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> TV games only
-            </label>
-          </div>
-        )}
+        <div className="ck-league-tools">
+          {state.mode === 'team' && <TeamPicker teamId={state.teamId} onChange={pickTeam} />}
+          <label className="ck-check">
+            <input type="checkbox" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> TV games only
+          </label>
+        </div>
       </div>
       {state.mode === 'team' ? (
-        <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
-      ) : leagueMonth && size.width >= FULL_MONTH_MIN_WIDTH ? (
+        list ? (
+          <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
+        ) : (
+          <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} />
+        )
+      ) : list ? (
+        <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
+      ) : size.width >= FULL_MONTH_MIN_WIDTH ? (
         <LeagueMonthView
           data={data}
           month={leagueMonth}
           onMonthChange={setLeagueMonth}
           selectedDate={state.date}
-          onSelectDate={(date) => {
-            setLeagueMonth(undefined);
-            update({ date });
-          }}
+          onSelectDate={openDay}
           tvOnly={state.tvOnly}
           size={size}
-          today={localDate(now, timeZone)}
+          today={today}
           timeZone={timeZone}
         />
-      ) : leagueMonth ? (
-        <MonthNavigator
-          today={localDate(now, timeZone)}
-          data={data}
-          month={leagueMonth}
-          onMonthChange={setLeagueMonth}
-          selectedDate={state.date}
-          onSelectDate={(date) => {
-            setLeagueMonth(undefined);
-            update({ date });
-          }}
-          tvOnly={state.tvOnly}
-          size={size}
-        />
       ) : (
-        <LeagueDayView data={data} date={state.date} onDateChange={(date) => update({ date })} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
+        <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} />
       )}
     </div>
   );

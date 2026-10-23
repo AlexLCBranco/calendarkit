@@ -3,6 +3,7 @@
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { isOver, markers, nationalTv, perspective, teamLabel, tipoff } from '../data/model';
+import { teamLogo } from '../data/teams';
 import './calendar.css';
 
 export interface GameCardProps {
@@ -18,9 +19,27 @@ export interface GameCardProps {
   size?: 'compact' | 'regular';
   /** Raised when the user asks to open the game (only offered once the game is over). */
   onOpenGame?: (gameId: string) => void;
+  /** Team logos (local files, on the light backing) before the tricodes. */
+  logos?: boolean;
+  /** Date shown first on the row (team list), e.g. "Sun 15/11". */
+  dateLabel?: string;
+  /** Marks the row the list opened at (team list: next game not over). */
+  next?: boolean;
 }
 
-export function GameCard({ game, teamId, backToBackTeamIds = [], now, timeZone, size = 'regular', onOpenGame }: GameCardProps) {
+/** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
+export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
+  const src = teamLogo(team.teamId);
+  return src ? (
+    <span className="ck-logo-backing">
+      <img src={src} alt="" width={16} height={16} />
+    </span>
+  ) : (
+    <span className="ck-logo-empty" aria-hidden="true" />
+  );
+}
+
+export function GameCard({ game, teamId, backToBackTeamIds = [], now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -32,14 +51,16 @@ export function GameCard({ game, teamId, backToBackTeamIds = [], now, timeZone, 
 
   const matchup = side ? (
     <span className="ck-matchup">
-      <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> <span className="ck-team">{teamLabel(side.opponent)}</span>
+      <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}<span className="ck-team">{teamLabel(side.opponent)}</span>
       {b2b.has(teamId!) && <span className="ck-tag ck-b2b" title="Back-to-back: also played the previous day">B2B</span>}
     </span>
   ) : (
     <span className="ck-matchup">
+      {logos && <TeamLogo team={game.awayTeam} />}
       <span className="ck-team">{away}</span>
       {b2b.has(game.awayTeam.teamId) && <span className="ck-tag ck-b2b" title={`${away} back-to-back`}>B2B</span>}
       <span className="ck-vsat"> @ </span>
+      {logos && <TeamLogo team={game.homeTeam} />}
       <span className="ck-team">{home}</span>
       {b2b.has(game.homeTeam.teamId) && <span className="ck-tag ck-b2b" title={`${home} back-to-back`}>B2B</span>}
     </span>
@@ -50,7 +71,8 @@ export function GameCard({ game, teamId, backToBackTeamIds = [], now, timeZone, 
     : `${away} at ${home}, ${tip.label}`;
 
   return (
-    <article className={`ck-card ck-card-${size}`} data-game-id={game.gameId} aria-label={label}>
+    <article className={`ck-card ck-card-${size}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}`} data-game-id={game.gameId} data-next={next || undefined} aria-label={dateLabel ? `${dateLabel}, ${label}` : label}>
+      {dateLabel && <span className="ck-date">{dateLabel}</span>}
       <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
         {tip.time}
         {tip.dayOffset !== 0 && <span className="ck-dayoff" title="Local calendar day after the NBA game date">{` (${tip.dayOffset > 0 ? '+' : ''}${tip.dayOffset})`}</span>}

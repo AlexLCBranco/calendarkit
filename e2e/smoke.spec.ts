@@ -17,20 +17,17 @@ test('league view and team view render without console errors', async ({ page },
   const errors = collectErrors(page);
   await page.goto('/');
 
-  // League view (default): a day with games, week strip, TV filter.
+  // League → List (default): game days with games, week strip, TV filter.
   await expect(page.getByTestId('day-title')).toBeVisible();
   await expect(page.locator('[data-game-id]').first()).toBeVisible();
-  const all = await page.locator('[data-game-id]').count();
   await shot(page, 'league-day', info.project.name);
 
   await page.getByLabel('TV games only').check();
-  const tv = await page.locator('[data-game-id]').count();
-  expect(tv).toBeLessThanOrEqual(all);
   await expect(page.locator('[data-game-id]:not(:has([data-testid="tv-badge"]))')).toHaveCount(0);
   await page.getByLabel('TV games only').uncheck();
 
-  // League → Month (full month on desktop/tablet, count navigator on phone) → click a day → day view.
-  await page.getByRole('button', { name: 'Month' }).click();
+  // League → Calendar (full month on desktop/tablet, count navigator on phone) → click a day → list at that day.
+  await page.getByRole('tab', { name: 'Calendar' }).click();
   const full = info.project.name !== 'phone';
   await expect(page.getByRole('region', { name: full ? 'League month' : 'Month navigator' })).toBeVisible();
   await shot(page, 'league-month', info.project.name);
@@ -40,8 +37,9 @@ test('league view and team view render without console errors', async ({ page },
   await expect(page).toHaveURL(new RegExp(`date=${date}`));
   await expect(page.locator('[data-game-id]').first()).toBeVisible();
 
-  // Team view.
+  // Team view (month grid).
   await page.getByRole('tab', { name: 'Team' }).click();
+  await page.getByRole('tab', { name: 'Calendar' }).click();
   await page.getByLabel('Team').selectOption({ label: 'Los Angeles Lakers' });
   await expect(page).toHaveURL(/team=LAL/);
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
@@ -55,7 +53,7 @@ test('league month: every game listed with local logos, no broken images, no sid
   const cdn: string[] = [];
   page.on('request', (r) => r.url().includes('cdn.nba.com') && cdn.push(r.url()));
   await page.goto('/?view=league&date=2026-11-02'); // Nov 2: 15 games
-  await page.getByRole('button', { name: 'Month' }).click();
+  await page.getByRole('tab', { name: 'Calendar' }).click();
   const project = info.project.name;
 
   if (project === 'phone') {
@@ -167,9 +165,11 @@ test('league month: every game listed with local logos, no broken images, no sid
 test('Rotations action on a finished day only when ROTATIONKIT_BASE_URL is set', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('/?view=league&date=2026-10-21'); // opening night week: long over
-  await expect(page.locator('[data-game-id]').first()).toBeVisible();
-  const games = await page.locator('[data-game-id]').count();
-  await expect(page.getByTestId('open-game')).toHaveCount(isRotationkitConfigured() ? games : 0);
+  const day = page.locator('[data-day="2026-10-21"]');
+  await expect(day.locator('[data-game-id]').first()).toBeVisible();
+  const games = await day.locator('[data-game-id]').count();
+  await expect(day.getByTestId('open-game')).toHaveCount(isRotationkitConfigured() ? games : 0);
+  if (!isRotationkitConfigured()) await expect(page.getByTestId('open-game')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

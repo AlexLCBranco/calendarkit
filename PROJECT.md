@@ -4,7 +4,7 @@ NBA schedule calendar: every team's schedule plus the full-league schedule. Stan
 own repo (github.com/AlexLCBranco/calendarkit) and own Vercel project.
 
 ## Goals (v1)
-- Team view (month grid) and league view (day list + month navigator) of the NBA schedule.
+- League and Team views of the NBA schedule, each as a List or a Calendar (month).
 - **Schedule only**: no scores, no live status shown. Full game objects are kept in the data layer so scores can
   be added later with UI changes plus a fresher refresh strategy.
 - Components are widget-first so they can later be dropped into **gauntlet** (whiteboard with live widgets).
@@ -16,7 +16,7 @@ where-to-watch info, embedding in gauntlet.
 ## Status
 - [x] Step 0 — probe (below)
 - [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
-- [x] Views — `src/components/CalendarView.tsx`: `TeamMonthGrid`, `LeagueDayView` (week strip, prev/next day), `LeagueMonthView` (every game per day with logos; desktop/tablet), `MonthNavigator` (counts, click → day; narrow widths), `TeamPicker`, and `CalendarView` combining them. App shell `src/App.tsx` (URL state `?view=&team=&date=&tv=`).
+- [x] Views — `src/components/CalendarView.tsx`: `LeagueListView` (continuous, virtualized day list + week strip), `TeamListView`, `TeamMonthGrid`, `LeagueMonthView` (every game per day with logos; desktop/tablet), `MonthNavigator` (counts, click → day; narrow widths), `TeamPicker`, and `CalendarView` combining them behind League | Team and List | Calendar switches. App shell `src/App.tsx` (URL state `?view=&layout=&team=&date=&tv=`).
 - [x] Game card — `src/components/GameCard.tsx`: vs/@ (team view) or AWAY @ HOME, local tip-off with (+1), TBD, B2B per team, Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
 - [x] Tests — see "Tests" below
 - [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
@@ -81,7 +81,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 104 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 126 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -99,6 +99,19 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   2-col spare …`, then Nov 15 column games/heights): at 1920 px content ≥ 1700, 2 columns with ≥ 8 px spare; Nov 15
   flows across both columns (one x per column, heights within one row, visual order = DOM order, a game at the
   bottom of each column); 1 column at 1280; 11 px / 16 px lines at both; bundled font loaded; every line the same width; TV tooltip on hover.
+- `lists.test.tsx` (jsdom): List | Calendar switch in League and Team, the 4 views, layout kept across League ↔ Team,
+  League → Calendar day click opens the list there, TV filter in all 4 views; league list opens on the default day,
+  consecutive game days with headers, bounded rendering, scroll → week strip/date, no snap-back when a render lands
+  between a scroll and its event, arrows/week strip; team list: every game in order, next game marked, row
+  date/time/(+1)/vs-@/logo, markers + TV names + B2B on exactly the right games (3 teams). `app.test.tsx`: old and
+  new `?view=` links, layout and TV written to the URL.
+- `e2e/lists.spec.ts` (fixed clock Nov 15, 2026 15:00 UTC; all 4 widths): switch + 4 views with layout checks
+  (images loaded, logos backed, nothing clipped, no sideways scroll, list layouts fill the window without page
+  scroll), reload keeps the state, old links; league list: opens at Nov 15 at the top, wheel scrolling (sticky
+  header, week strip + title + URL follow, days in order, ≤ 12 days rendered), week-strip click and arrows, fast
+  jumps, no position jumps while scrolling up, rows no taller with logos than without; team list against the served
+  snapshot (every game, order, B2B by the calendar-day rule), opens at the next game, top reachable; TV filter in
+  all 4 views. Screenshots `<project>-<league|team>-<list|calendar>.png`.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, month jump, no console errors; league month on Nov
   2026: 15 lines on Nov 2, every `<img>` loaded (`naturalWidth > 0`), no clipped line, no sideways scroll, no
   request to cdn.nba.com; screenshots to
@@ -124,7 +137,32 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - **Widget API**: components take `data` (`CalendarData`) + `size` ({width, height}; compact below 640 px) and
   optional `now`/`timeZone`; they raise `onOpenGame(gameId)` / `onStateChange` and never touch the URL or open
   links. Styles are in `calendar.css` imported by the components, colors as CSS variables.
-- **League day arrows** step one calendar day (empty days say "No games this day"); range = first..last game date.
+- **List | Calendar switch** (2026-10-23): a segmented control next to League | Team, both options always visible;
+  replaces the old "Month" toggle. League + List = continuous day list, League + Calendar = full month (count
+  navigator below 718 px), Team + List = team list, Team + Calendar = team month grid. The layout is kept when
+  switching League ↔ Team and stored as `layout=list|calendar`. Old links without `layout` map to what they
+  showed: `?view=team` → Calendar, `?view=league` → List. "TV games only" is shown and applies in all four.
+  Clicking a day in League → Calendar opens League → List at that day. The URL always carries `tv=1` when on.
+- **League list** (`LeagueListView`): one scrolling list of game days (days without games — or without TV games
+  when filtered — are left out), each under a sticky header "Sun, Nov 15 · 9 games". The nav title and week strip
+  show the day at the top of the list; week-strip days without games are disabled; clicking one scrolls it to the
+  top; arrows jump to the previous/next game day. Opens on the default day. **Rendering**: only days within 0.75
+  viewport heights above/below the visible part are rendered (4–8 days in practice); the rest are spacers sized
+  from measured heights (`getBoundingClientRect`, sub-pixel — integer `offsetHeight` drifted) or estimates. The
+  day at the top and the offset into it are kept in place when heights above it get measured (`overflow-anchor:
+  none`, the component restores it itself before paint); a scroll not yet seen by the handler is read first so a
+  re-render can't undo it. Space after the last day lets every day reach the top. Events: `onSelectDate` (day at the
+  top changed), `onOpenGame`.
+- **Team list** (`TeamListView`): every game of the team, one row: date "Sun 15/11", local tip-off ((+1)/TBD),
+  vs/@ + opponent logo + tricode, Cup/Play-In/Playoffs markers, national TV badge with names, B2B. All rows rendered
+  (~82, cheap); opens scrolled so the next game not over is at the top (accent border); earlier games are above
+  (scroll up). Same team picker as Team → Calendar.
+- **List layouts fill the window**: the shell passes height = window below the widget's top (min 360 px); in List
+  layouts the widget is that tall and the list scrolls inside it (toolbar, nav and week strip stay put). Calendar
+  layouts grow with the page as before.
+- **Logos in the lists**: `GameCard logos` — the month view's 16 px light disc before each tricode, "@" kept. Rows
+  keep their size (35 / 36.5 px desktop, 27 / 28.5 px phone single-line rows); on phone the date is 12 px and gaps
+  4 px so a logo never pushes a row onto a second line (tested: no row height changes when logos are hidden).
 - **Phone team grid**: cells show time, vs/@, opponent, markers; national TV shrinks to a dot; tapping a game shows
   the full card (with TV names and the rotationkit action) below the grid.
 - **Page width**: content up to **1840 px** (`.app` max-width 1872 px incl. 16 px padding; `MAX_CONTENT_WIDTH` in

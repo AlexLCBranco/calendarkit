@@ -23,7 +23,7 @@ const NOW = Date.parse('2026-10-23T15:00:00Z');
 
 function openMonth(data: CalendarData, date: string, size = WIDE, timeZone = 'UTC') {
   const el = render(<CalendarView data={data} size={size} now={NOW} timeZone={timeZone} initial={{ date }} />);
-  fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
   return el;
 }
 const cellOf = (root: ParentNode, date: string) => root.querySelector(`[data-date="${date}"]`)!;

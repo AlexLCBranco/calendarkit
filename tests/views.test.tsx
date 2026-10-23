@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
-// Views with a fixed clock: league day list, TV-only toggle, month navigator jump, team grid, TBD in views.
+// Views with a fixed clock: league list, TV-only toggle, month view jump, team grid, TBD in views.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { CalendarView, LeagueDayView, TeamMonthGrid } from '../src/components/CalendarView';
+import { CalendarView, LeagueListView, TeamMonthGrid } from '../src/components/CalendarView';
 import { data as realData } from './feed';
 import { dataOf, game, TEAM } from './synthetic';
 
@@ -12,20 +12,21 @@ afterEach(cleanup);
 const WIDE = { width: 1000, height: 800 };
 const PHONE = { width: 360, height: 800 };
 const NOW = Date.parse('2026-10-23T15:00:00Z');
+const day = (date: string) => document.querySelector<HTMLElement>(`[data-day="${date}"]`)!;
 const ids = (root: HTMLElement) => [...root.querySelectorAll('[data-game-id]')].map((e) => e.getAttribute('data-game-id'));
 
 describe('CalendarView (league)', () => {
   it('opens on the default day and lists that game date', () => {
     render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="America/Sao_Paulo" />);
     expect(screen.getByTestId('day-title').textContent).toBe('Friday, October 23, 2026');
-    expect(ids(screen.getByTestId('day-games'))).toEqual(realData.byDate.get('2026-10-23')!.map((g) => g.gameId));
+    expect(ids(day('2026-10-23'))).toEqual(realData.byDate.get('2026-10-23')!.map((g) => g.gameId));
   });
 
   it('TV games only: lists only games with a national broadcaster', () => {
     const onStateChange = vi.fn();
     render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" onStateChange={onStateChange} />);
     fireEvent.click(screen.getByLabelText('TV games only'));
-    const shown = ids(screen.getByTestId('day-games'));
+    const shown = ids(day('2026-10-23'));
     const tv = realData.byDate.get('2026-10-23')!.filter((g) => g.broadcasters.nationalBroadcasters?.length).map((g) => g.gameId);
     expect(tv.length).toBeGreaterThan(0);
     expect(shown).toEqual(tv);
@@ -46,7 +47,7 @@ describe('CalendarView (league)', () => {
 
   it('league month (wide) jumps to the clicked day', () => {
     render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" />);
-    fireEvent.click(screen.getByRole('button', { name: 'Month' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
     const nav = screen.getByRole('region', { name: 'League month' });
     const cell = within(nav).getByLabelText(`October 28: ${realData.byDate.get('2026-10-28')!.length} games`);
     fireEvent.click(cell);
@@ -57,8 +58,8 @@ describe('CalendarView (league)', () => {
 
 describe('views: TBD and +1', () => {
   it('league day: TBD knockout game shows TBD time and TBD teams', () => {
-    render(<LeagueDayView data={realData} date="2026-12-04" onDateChange={() => {}} tvOnly={false} size={WIDE} now={NOW} timeZone="UTC" />);
-    const qf = screen.getAllByRole('article').filter((a) => a.getAttribute('data-game-id')!.startsWith('002260120'));
+    render(<LeagueListView data={realData} date="2026-12-04" onSelectDate={() => {}} tvOnly={false} size={WIDE} now={NOW} timeZone="UTC" />);
+    const qf = within(day('2026-12-04')).getAllByRole('article').filter((a) => a.getAttribute('data-game-id')!.startsWith('002260120'));
     expect(qf).toHaveLength(2);
     for (const a of qf) {
       expect(within(a).getByTestId('tipoff').textContent).toBe('TBD');
@@ -87,7 +88,7 @@ describe('views: TBD and +1', () => {
   });
 
   it('team view: one game per day cell, opponent and vs/@ from the team side', () => {
-    const el = render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', teamId: TEAM.LAL }} />);
+    const el = render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'calendar', teamId: TEAM.LAL }} />);
     const cells = [...el.container.querySelectorAll('.ck-cell-game')];
     expect(cells.length).toBeGreaterThan(3);
     for (const c of cells) expect(c.querySelectorAll('[data-game-id]')).toHaveLength(1);

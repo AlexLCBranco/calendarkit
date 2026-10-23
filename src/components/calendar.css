@@ -48,14 +48,18 @@
   justify-content: space-between;
   margin-bottom: 12px;
 }
+.ck-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .ck-tabs {
   display: inline-flex;
   border: 1px solid var(--ck-border);
   border-radius: 8px;
   overflow: hidden;
 }
-.ck-tab,
-.ck-toggle {
+.ck-tab {
   background: var(--ck-surface);
   color: var(--ck-muted);
   border: 0;
@@ -63,15 +67,10 @@
   font: inherit;
   cursor: pointer;
 }
-.ck-tab-selected,
-.ck-toggle-on {
+.ck-tab-selected {
   background: var(--ck-accent);
   color: #06121f;
   font-weight: 600;
-}
-.ck-toggle {
-  border: 1px solid var(--ck-border);
-  border-radius: 8px;
 }
 .ck-league-tools {
   display: flex;
@@ -164,6 +163,51 @@
   font-weight: 600;
 }
 
+/* List layouts fill the widget's height; the list scrolls inside it (week strip and toolbar stay put). */
+.ck-root-fill {
+  display: flex;
+  flex-direction: column;
+}
+.ck-root-fill > .ck-toolbar {
+  flex: none;
+}
+.ck-league-list,
+.ck-team-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.ck-league-list > .ck-nav,
+.ck-league-list > .ck-week {
+  flex: none;
+}
+.ck-league-list > .ck-week {
+  margin-bottom: 0;
+}
+.ck-llist {
+  position: relative; /* rows' offsetTop is relative to the list */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-anchor: none; /* the virtualizer keeps the top day in place itself */
+  overscroll-behavior: contain;
+}
+.ck-lday {
+  padding-bottom: 12px;
+}
+.ck-lday-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 10px 2px 6px;
+  background: var(--ck-bg);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ck-muted);
+  letter-spacing: 0.01em;
+}
 .ck-daylist {
   display: flex;
   flex-direction: column;
@@ -416,6 +460,39 @@
   border: 1px solid var(--ck-border);
   border-radius: 8px;
   padding: 8px 10px;
+}
+.ck-date {
+  color: var(--ck-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 5.4em;
+}
+.ck-card-next {
+  border-color: var(--ck-accent);
+}
+/* Logos in list rows: the month view's 16 px disc, sized to the row (no taller than the text line). */
+.ck-card-logos {
+  --ck-logo: 16px;
+}
+.ck-card-logos .ck-matchup {
+  gap: 5px;
+}
+/* phone rows: tighter date/time columns so the logos never push a row onto a second line */
+.ck-card-compact.ck-card-logos {
+  column-gap: 4px;
+}
+.ck-card-compact.ck-card-logos .ck-date {
+  font-size: 12px;
+  min-width: 5.4em;
+}
+.ck-card-compact.ck-card-logos .ck-time {
+  min-width: 5em;
+}
+.ck-card-compact.ck-card-logos .ck-matchup {
+  gap: 4px;
+}
+/* team rows: "vs" and "@" take the same width so the opponent logos line up */
+.ck-card-logos .ck-vsat:first-child {
+  min-width: 1.3em;
 }
 .ck-time {
   font-variant-numeric: tabular-nums;
