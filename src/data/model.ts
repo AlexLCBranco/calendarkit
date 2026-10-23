@@ -292,24 +292,32 @@ export interface SeasonLine {
   game?: number;
   /** Regular-season record going into the game; undefined while an earlier regular-season game isn't final. */
   record?: { wins: number; losses: number };
+  /** Win/loss streak going into the game (W3 = won the last 3); undefined before the first result or with the record. */
+  streak?: { kind: 'W' | 'L'; n: number };
 }
 
 /**
- * A team's regular-season game numbers and the record it takes into each game, counted from the final scores (the
- * Cup Final doesn't count, as in the standings). A record is known up to the first game not yet final, inclusive.
+ * A team's regular-season game numbers and the record and streak it takes into each game, counted from the final
+ * scores (the Cup Final doesn't count, as in the standings). Both are known up to the first game not yet final,
+ * inclusive.
  */
 export function teamSeason(data: CalendarData, teamId: number): Map<string, SeasonLine> {
   const out = new Map<string, SeasonLine>();
   let n = 0;
   let rec: SeasonLine['record'] = { wins: 0, losses: 0 };
+  let streak: SeasonLine['streak'];
   for (const g of teamGames(data, teamId)) {
     if (g.gameType !== 'regular') {
       out.set(g.gameId, {});
       continue;
     }
-    out.set(g.gameId, { game: ++n, record: rec && { ...rec } });
+    out.set(g.gameId, { game: ++n, record: rec && { ...rec }, streak: rec && streak && { ...streak } });
     const r = finalScore(g, teamId);
     rec = rec && r ? { wins: rec.wins + (r.win ? 1 : 0), losses: rec.losses + (r.win ? 0 : 1) } : undefined;
+    if (r) {
+      const kind = r.win ? 'W' : 'L';
+      streak = streak?.kind === kind ? { kind, n: streak.n + 1 } : { kind, n: 1 };
+    }
   }
   return out;
 }

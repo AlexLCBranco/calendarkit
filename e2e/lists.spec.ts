@@ -328,7 +328,7 @@ test('team list: every game in order, opens at the next game, earlier games abov
   expect(errors).toEqual([]);
 });
 
-test('team list season line: game number + record going in on the right, final score beside the names', async ({ page }, info) => {
+test('team list season line: game number + record + streak going in on the right, final score beside the names', async ({ page }, info) => {
   const errors = collectErrors(page);
   await open(page, '?view=team&layout=list&team=BOS');
   const list = page.getByTestId('team-list');
@@ -345,12 +345,19 @@ test('team list season line: game number + record going in on the right, final s
       .sort((a, b) => a.gameDateEst.localeCompare(b.gameDateEst));
     let n = 0;
     let rec: string | null = '0-0';
+    let streak = ''; // e.g. "L1": the run of equal results ending with the previous regular-season game
     return games.map((g) => {
       const [self, opp] = g.homeTeam.teamId === BOS ? [g.homeTeam, g.awayTeam] : [g.awayTeam, g.homeTeam];
       const final = g.gameStatus === 3;
       const regular = g.gameId.startsWith('002');
-      const row = { id: g.gameId, game: regular ? `G${++n}` : null, record: regular ? (rec ?? '') : null, scores: final ? [String(self.score), String(opp.score)] : [] };
-      if (regular) rec = final && rec !== null ? `${self.wins}-${self.losses}` : null;
+      const row = { id: g.gameId, game: regular ? `G${++n}` : null, record: regular ? (rec ?? '') : null, streak: regular ? (rec === null ? '' : streak) : null, scores: final ? [String(self.score), String(opp.score)] : [] };
+      if (regular) {
+        rec = final && rec !== null ? `${self.wins}-${self.losses}` : null;
+        if (final) {
+          const k = self.score > opp.score ? 'W' : 'L';
+          streak = streak.startsWith(k) ? `${k}${Number(streak.slice(1)) + 1}` : `${k}1`;
+        }
+      }
       return row;
     });
   });
@@ -365,6 +372,7 @@ test('team list season line: game number + record going in on the right, final s
         id: a.dataset.gameId!,
         game: s?.children[0]!.textContent ?? null,
         record: s ? s.children[1]!.textContent : null,
+        streak: s ? s.children[2]!.textContent : null,
         scores: [...a.querySelectorAll('.ck-score')].map((x) => x.textContent),
         // right side: the block ends at the row's content edge, inside the row
         right: r ? b.right - pad - r.right : 0,
@@ -373,7 +381,8 @@ test('team list season line: game number + record going in on the right, final s
       };
     }),
   );
-  expect(rows.map(({ id, game, record, scores }) => ({ id, game, record, scores }))).toEqual(want);
+  expect(rows.map(({ id, game, record, streak, scores }) => ({ id, game, record, streak, scores }))).toEqual(want);
+  expect(want.some((w) => w.streak)).toBe(true);
   for (const r of rows) {
     expect(r.inside, r.id).toBe(true);
     expect(Math.abs(r.right), r.id).toBeLessThanOrEqual(0.5);

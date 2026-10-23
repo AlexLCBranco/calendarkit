@@ -137,7 +137,10 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
     </span>
   );
 
-  const seasonText = season?.game ? `Game ${season.game}${season.record ? `, record ${season.record.wins}-${season.record.losses} going in` : ''}` : '';
+  const streak = season?.streak;
+  const seasonText = season?.game
+    ? `Game ${season.game}${season.record ? `, record ${season.record.wins}-${season.record.losses} going in` : ''}${streak ? `, on a ${streak.n}-game ${streak.kind === 'W' ? 'winning' : 'losing'} streak` : ''}`
+    : '';
   const label = side
     ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}` : ''}${seasonText ? `, ${seasonText}` : ''}`
     : `${away} at ${home}, ${tip.label}`;
@@ -180,6 +183,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
         <span className="ck-season" data-tip={seasonText} data-testid="season">
           <span className="ck-gnum">G{season.game}</span>
           <span className="ck-record">{season.record ? `${season.record.wins}-${season.record.losses}` : ''}</span>
+          <span className={`ck-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`}>{streak ? `${streak.kind}${streak.n}` : ''}</span>
         </span>
       )}
       {canOpen && (

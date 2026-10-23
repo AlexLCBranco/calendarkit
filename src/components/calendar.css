@@ -1012,6 +1012,11 @@
 .ck-team-rows .ck-card {
   position: relative;
 }
+/* 8 px between date, time, matchup, tags and the season line (10 elsewhere): keeps the widest tablet row
+   (B2B + "Peacock · NBC Sports Network" + G/record/streak) on one line at 768 px */
+.ck-team-rows .ck-card-regular {
+  column-gap: 8px;
+}
 .ck-team-rows .ck-card[data-b2b]::before {
   content: '';
   position: absolute;
@@ -1098,20 +1103,33 @@
 .ck-season {
   margin-left: auto;
   display: inline-flex;
-  gap: 10px;
+  gap: 6px;
   color: var(--ck-muted);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* min-widths fit "G82", "41-41" and "W9" (tabular Inter); longer values just widen their column */
 .ck-gnum {
-  min-width: 2.2em;
+  min-width: 2em;
   text-align: right;
 }
 .ck-record {
-  min-width: 3.2em;
+  min-width: 3em;
   text-align: right;
   color: var(--ck-text);
   font-weight: 600;
+}
+/* streak going in: W green, L red; the column is reserved so records line up */
+.ck-streak {
+  min-width: 2em;
+  text-align: right;
+  font-weight: 600;
+}
+.ck-streak-w {
+  color: var(--ck-tv);
+}
+.ck-streak-l {
+  color: var(--ck-playoffs);
 }
 .ck-season + .ck-open {
   margin-left: 0;

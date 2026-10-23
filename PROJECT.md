@@ -82,7 +82,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 186 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 187 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -148,14 +148,15 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - `scale.test.tsx`: `weekScale` (1.5 at 1920 × 1080 with line and busiest day inside 80 %, max, min 1, the cutoff → 1, 1280 px → 1.1, 0.05 steps), `scaleLine`; week view: 1 week scaled (every line variable = base × 1.5)
   vs 2 weeks at base size, 2 columns unchanged; Team Calendar: scale > 1 on desktop, probe gone after render,
   phone scale 1, TV names one span per network.
-- `season.test.tsx`: `teamSeason` on synthetic games (numbers skip the Cup Final, record from scores, unknown after
-  a game not yet final), `finalScore` from either side; real feed, all 30 teams: numbers 1…n, every known record =
-  the feed's W-L on the previous game; BOS rows: "G1 0-0", "G2 0-1", "G3" only, score + winner class, aria-label;
+- `season.test.tsx`: `teamSeason` on synthetic games (numbers skip the Cup Final, record and streak from scores —
+  W W W L L → –, W1, W2, W3, L1, L2 and the mirror for the opponent — unknown after a game not yet final), `finalScore` from either side; real feed, all 30 teams: numbers 1…n, every known record =
+  the feed's W-L on the previous game, every streak = one counted in the test; BOS rows: "G1 0-0", "G2 0-1 L1"
+  (red, tooltip), "G3" only, score + winner class, aria-label;
   no season line or score in the league views or Team Calendar. e2e (all 4 widths, served snapshot): BOS list
-  game numbers, records and scores = the snapshot; season block inside the row at its right edge, records aligned;
+  game numbers, records, streaks and scores = the snapshot; season block inside the row at its right edge, records aligned;
   phone rows: time left out only on played rows, ≤ 2 lines without tags, ≤ 3 with. Team-list matchup checks
   elsewhere compare the text without scores. Before the change: `season.test.tsx` fails as a whole (`teamSeason`
-  missing) and the 2 updated team-list matchup tests fail.
+  missing) and the 2 updated team-list matchup tests fail. Streak: 3 new/changed unit tests fail before it.
 - e2e **fit** (above) also checks: 1-week scale ≥ 1.4 and line wider than 2-week (119 px, 11 px, scale 1), no
   tricode wider than its column. New e2e (desktop 1280 and desktop-xl 1920): **every team × every month** of the
   Team Calendar — no cell clipped (height or width), no page scroll, B2B bars on the cells' bottom edge (0–6 px),
@@ -209,8 +210,11 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   (~82, cheap); opens scrolled so the next game not over is at the top (accent border); earlier games are above
   (scroll up). Same team picker as Team → Calendar.
 - **Team list season line** (2026-10-23, `teamSeason` / `finalScore` in model.ts): on the right of each row the
-  regular-season **game number** ("G1"–"G82") and the team's **record going into the game** ("0-1"), in fixed
-  tabular columns right-aligned to the row; tooltip "Game 2, record 0-1 going in". Only regular-season games
+  regular-season **game number** ("G1"–"G82"), the team's **record going into the game** ("0-1") and its
+  **streak going in** ("W3" green / "L1" red; Alex, 2026-10-23), in fixed tabular columns right-aligned to the row
+  (min-widths fit "G82", "41-41", "W9"; gaps 6 px); tooltip "Game 2, record 0-1 going in, on a 1-game losing
+  streak". The streak is the run of equal results ending with the previous regular-season game; none on G1 or where
+  the record is unknown. Only regular-season games
   (gameType `regular`, Cup group and knockout games included) are numbered and counted; the Cup Final, play-in and
   playoff rows have neither, as in the standings. The record is counted from the final scores (status `final`)
   and is known through the first game not yet final; later rows show the number only (the record going into G5
@@ -218,7 +222,9 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   121"), the winner's bright and bold, the loser's muted; the row's aria-label adds "lost 113–121". Scores and
   records come from the daily snapshot (~11:00 UTC), so last night's result appears the next morning. Not in the
   league views or the Team Calendar. Tests check each known record against the feed's own `wins`/`losses` on the
-  previous game (an independent source).
+  previous game (an independent source), and each streak against one worked out in the test from the scores.
+  Team-list rows use 8 px between their parts (10 elsewhere): the widest tablet row (LAL Nov 30: B2B + "Peacock ·
+  NBC Sports Network" + season line) needs 682.2 of 689 px at 768 px; with 10 px it would wrap.
   - **Phone** (measured): line 1 = date, time and "BOS 113 @ DET 121" with logos needs 345 px of a 304–334 px row,
     so a **played** game's phone row leaves out its tip-off time (it stays in the aria-label); line 1 then needs
     271 px. Tags and the season line share line 2 (season right-aligned), so every phone row is two lines (47.5 px);

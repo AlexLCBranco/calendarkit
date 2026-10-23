@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-// Team list season line: regular-season game number and the record going into each game (right side of the row),
+// Team list season line: regular-season game number, the record and the win/loss streak going into each game
+// (right side of the row),
 // and the final score beside each tricode once a game is Final.
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -35,6 +36,18 @@ describe('teamSeason (model)', () => {
     expect(rec).toEqual(['0-0', '1-0', '1-1', undefined, '2-1', undefined]);
   });
 
+  it('streak going into each game (W1, L1, …): none before the first result or once a result is missing', () => {
+    expect(s.map((x) => x.streak && `${x.streak.kind}${x.streak.n}`)).toEqual([undefined, 'W1', 'L1', undefined, 'W1', undefined]);
+    const run = dataOf(
+      [[100, 110], [90, 120], [99, 101], [130, 100], [100, 90], null].map((f, i) =>
+        game({ date: `2026-12-0${i + 1}`, utc: `2026-12-0${i + 1}T23:00:00Z`, home: TEAM.BOS, away: TEAM.NYK, final: (f ?? undefined) as [number, number] | undefined }),
+      ),
+    );
+    // BOS at home: W W W L L, then the next game
+    expect([...teamSeason(run, TEAM.BOS).values()].map((x) => x.streak && `${x.streak.kind}${x.streak.n}`)).toEqual([undefined, 'W1', 'W2', 'W3', 'L1', 'L2']);
+    expect([...teamSeason(run, TEAM.NYK).values()].map((x) => x.streak && `${x.streak.kind}${x.streak.n}`)).toEqual([undefined, 'L1', 'L2', 'L3', 'W1', 'W2']);
+  });
+
   it('finalScore from the team’s side; undefined before the game is final', () => {
     const games = teamGames(d, TEAM.BOS);
     expect(finalScore(games[0]!, TEAM.BOS)).toEqual({ score: 110, oppScore: 100, win: true });
@@ -59,6 +72,11 @@ describe('teamSeason (model)', () => {
         // the feed's wins/losses on a final game are the team's record after it (independent of our count)
         const side = prev.homeTeam.teamId === t.id ? prev.homeTeam : prev.awayTeam;
         expect(rec, `${t.tricode} G${i + 1}`).toEqual({ wins: side.wins, losses: side.losses });
+        // streak worked out here from the feed's scores: the run of equal results ending with the previous game
+        const won = (g: (typeof games)[number]) => (g.homeTeam.teamId === t.id ? g.homeTeam.score > g.awayTeam.score : g.awayTeam.score > g.homeTeam.score);
+        let n = 0;
+        while (n < i && won(games[i - 1 - n]!) === won(prev)) n++;
+        expect(season.get(games[i]!.gameId)!.streak, `${t.tricode} G${i + 1}`).toEqual({ kind: won(prev) ? 'W' : 'L', n });
         checked++;
       }
       expect(season.get(games[0]!.gameId)!.record).toEqual({ wins: 0, losses: 0 });
@@ -71,13 +89,15 @@ describe('team list row', () => {
   const bos = teamGames(data, TEAM.BOS);
   const row = (el: HTMLElement, id: string) => el.querySelector(`[data-game-id="${id}"]`)!;
 
-  it('right side: "G1" and the record going in; G2 after a loss; later games: number only', () => {
+  it('right side: "G1" and the record going in, then the streak; G2 after a loss: L1; later games: number only', () => {
     const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />).container;
     const season = (id: string) => [...row(el, id).querySelectorAll('[data-testid="season"] > *')].map((e) => e.textContent);
     expect(bos[0]!.status).toBe('final');
-    expect(season(bos[0]!.gameId)).toEqual(['G1', '0-0']);
-    expect(season(bos[1]!.gameId)).toEqual(['G2', bos[0]!.awayTeam.teamId === TEAM.BOS ? `${bos[0]!.awayTeam.wins}-${bos[0]!.awayTeam.losses}` : `${bos[0]!.homeTeam.wins}-${bos[0]!.homeTeam.losses}`]);
-    expect(season(bos[2]!.gameId)).toEqual(['G3', '']);
+    expect(season(bos[0]!.gameId)).toEqual(['G1', '0-0', '']);
+    expect(season(bos[1]!.gameId)).toEqual(['G2', bos[0]!.awayTeam.teamId === TEAM.BOS ? `${bos[0]!.awayTeam.wins}-${bos[0]!.awayTeam.losses}` : `${bos[0]!.homeTeam.wins}-${bos[0]!.homeTeam.losses}`, 'L1']);
+    expect(row(el, bos[1]!.gameId).querySelector('.ck-streak')!.classList).toContain('ck-streak-l');
+    expect(row(el, bos[1]!.gameId).querySelector('[data-testid="season"]')!.getAttribute('data-tip')).toBe('Game 2, record 0-1 going in, on a 1-game losing streak');
+    expect(season(bos[2]!.gameId)).toEqual(['G3', '', '']);
     expect(row(el, bos[0]!.gameId).querySelector('[data-testid="season"]')!.getAttribute('data-tip')).toBe('Game 1, record 0-0 going in');
     // the season block is the row's last part (right side) while the rotationkit action is hidden
     expect(row(el, bos[0]!.gameId).lastElementChild!.getAttribute('data-testid')).toBe('season');
