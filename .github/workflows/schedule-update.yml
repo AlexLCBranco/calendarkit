@@ -1,0 +1,54 @@
+# Daily schedule snapshot: download cdn.nba.com's schedule feed, run the tests, and commit
+# public/data/schedule.json to main if it changed (Vercel then redeploys production).
+# The browser can't fetch the feed itself (CORS), so this file is the app's data source.
+# Any failing step fails the run and nothing is committed; GitHub emails the repo owner.
+name: Daily schedule update
+
+on:
+  schedule:
+    - cron: '0 11 * * *' # 11:00 UTC, after all US games have finished
+  workflow_dispatch: {}
+  # Dry run (no commit) when the pipeline itself changes: checks the CDN answers GitHub's runners.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/schedule-update.yml'
+      - 'scripts/update-schedule.ts'
+      - 'src/shared/nba-schedule/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: schedule-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Download feed
+        run: npx tsx scripts/update-schedule.ts
+      - run: npm test
+      - name: Commit snapshot
+        if: github.event_name != 'push'
+        env:
+          GIT_AUTHOR_NAME: ${{ vars.DATA_COMMIT_NAME || 'github-actions[bot]' }}
+          GIT_AUTHOR_EMAIL: ${{ vars.DATA_COMMIT_EMAIL || '41898282+github-actions[bot]@users.noreply.github.com' }}
+          GIT_COMMITTER_NAME: ${{ vars.DATA_COMMIT_NAME || 'github-actions[bot]' }}
+          GIT_COMMITTER_EMAIL: ${{ vars.DATA_COMMIT_EMAIL || '41898282+github-actions[bot]@users.noreply.github.com' }}
+        run: |
+          if git diff --quiet -- public/data/schedule.json; then
+            echo "Schedule unchanged; nothing to commit."
+          else
+            git add public/data/schedule.json
+            git commit -m "data: schedule snapshot $(date -u +%Y-%m-%d)"
+            git push
+          fi
