@@ -2,6 +2,7 @@
 // e2e/screenshots/ (git-ignored).
 
 import { expect, test, type Page } from '@playwright/test';
+import { isRotationkitConfigured } from '../src/config';
 
 function collectErrors(page: Page) {
   const errors: string[] = [];
@@ -45,6 +46,15 @@ test('league view and team view render without console errors', async ({ page },
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   await shot(page, 'team-month', info.project.name);
 
+  expect(errors).toEqual([]);
+});
+
+test('Rotations action on a finished day only when ROTATIONKIT_BASE_URL is set', async ({ page }) => {
+  const errors = collectErrors(page);
+  await page.goto('/?view=league&date=2026-10-21'); // opening night week: long over
+  await expect(page.locator('[data-game-id]').first()).toBeVisible();
+  const games = await page.locator('[data-game-id]').count();
+  await expect(page.getByTestId('open-game')).toHaveCount(isRotationkitConfigured() ? games : 0);
   expect(errors).toEqual([]);
 });
 

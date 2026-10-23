@@ -17,7 +17,7 @@ where-to-watch info, embedding in gauntlet.
 - [x] Step 0 — probe (below)
 - [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
 - [x] Views — `src/components/CalendarView.tsx`: `TeamMonthGrid`, `LeagueDayView` (week strip, prev/next day), `MonthNavigator` (counts, click → day), `TeamPicker`, and `CalendarView` combining them. App shell `src/App.tsx` (URL state `?view=&team=&date=&tv=`).
-- [x] Game card — `src/components/GameCard.tsx`: vs/@ (team view) or AWAY @ HOME, local tip-off with (+1), TBD, B2B per team, Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed.
+- [x] Game card — `src/components/GameCard.tsx`: vs/@ (team view) or AWAY @ HOME, local tip-off with (+1), TBD, B2B per team, Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
 - [x] Tests — see "Tests" below
 - [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
@@ -112,6 +112,10 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - The scheduled snapshot ran at 15:36 UTC on day 1 instead of 11:00 (GitHub delays cron runs under load).
   Harmless for a schedule; the job now rebases before pushing in case it races a normal push.
 - **ROTATIONKIT_BASE_URL** is a placeholder until rotationkit has a production URL (it isn't merged to main).
+  While it is, the app **hides the "Rotations ↗" action everywhere** (league day, team grid, phone detail card):
+  `isRotationkitConfigured()` in `src/config.ts` is the single check, and the shell then passes no `onOpenGame`.
+  **To turn it on, set `ROTATIONKIT_BASE_URL` in `src/config.ts` to the real URL — that is the only step.** The
+  tests follow the config (the e2e expects the action iff it is configured), so no test edits are needed.
 - Check that the next daily snapshot commit (by `github-actions[bot]`) triggers a Vercel deploy. If Vercel refuses
   bot-authored commits, set repo variables `DATA_COMMIT_NAME` / `DATA_COMMIT_EMAIL`.
 - Repo is private; the standard for these projects is public (needs Alex's yes to change).

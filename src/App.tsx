@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { CalendarView, type CalendarState } from './components/CalendarView';
+import { isRotationkitConfigured } from './config';
 import { loadCalendarData } from './data/load';
 import type { CalendarData } from './data/model';
 import { TEAMS, TEAM_BY_ID } from './data/teams';
@@ -52,6 +53,8 @@ export function App() {
   const size = useWindowSize();
   const [initial] = useState(readUrlState);
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
+  const onOpenGame = isRotationkitConfigured() ? (id: string) => openGameInRotationkit(id) : undefined;
 
   useEffect(() => {
     loadCalendarData().then(setData, (e: Error) => setError(e.message));
@@ -65,7 +68,7 @@ export function App() {
       </header>
       {error && <p className="app-status" role="alert">Couldn’t load the schedule: {error}</p>}
       {!data && !error && <p className="app-status">Loading schedule…</p>}
-      {data && <CalendarView data={data} size={size} initial={initial} onOpenGame={(id) => openGameInRotationkit(id)} onStateChange={writeUrlState} />}
+      {data && <CalendarView data={data} size={size} initial={initial} onOpenGame={onOpenGame} onStateChange={writeUrlState} />}
     </div>
   );
 }
