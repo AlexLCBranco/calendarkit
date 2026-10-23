@@ -17,7 +17,7 @@ where-to-watch info, embedding in gauntlet.
 - [x] Step 0 — probe (below)
 - [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
 - [x] Views — `src/components/CalendarView.tsx`: `TeamMonthGrid`, `LeagueDayView` (week strip, prev/next day), `MonthNavigator` (counts, click → day), `TeamPicker`, and `CalendarView` combining them. App shell `src/App.tsx` (URL state `?view=&team=&date=&tv=`).
-- [ ] Game card
+- [x] Game card — `src/components/GameCard.tsx`: vs/@ (team view) or AWAY @ HOME, local tip-off with (+1), TBD, B2B per team, Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed.
 - [ ] Tests (unit + Playwright)
 - [ ] Deploy (Vercel import by Alex) — live URL: _not yet_
 
