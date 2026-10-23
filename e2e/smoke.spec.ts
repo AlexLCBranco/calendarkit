@@ -29,11 +29,12 @@ test('league view and team view render without console errors', async ({ page },
   await expect(page.locator('[data-game-id]:not(:has([data-testid="tv-badge"]))')).toHaveCount(0);
   await page.getByLabel('TV games only').uncheck();
 
-  // Month navigator → click a day → back on the day view for that date.
+  // League → Month (full month on desktop/tablet, count navigator on phone) → click a day → day view.
   await page.getByRole('button', { name: 'Month' }).click();
-  await expect(page.getByRole('region', { name: 'Month navigator' })).toBeVisible();
+  const full = info.project.name !== 'phone';
+  await expect(page.getByRole('region', { name: full ? 'League month' : 'Month navigator' })).toBeVisible();
   await shot(page, 'league-month', info.project.name);
-  const day = page.locator('.ck-count-cell:not([disabled])').last();
+  const day = page.locator(full ? '.ck-month-cell.ck-cell-game' : '.ck-count-cell:not([disabled])').last();
   const date = await day.getAttribute('data-date');
   await day.click();
   await expect(page).toHaveURL(new RegExp(`date=${date}`));
@@ -46,6 +47,38 @@ test('league view and team view render without console errors', async ({ page },
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   await shot(page, 'team-month', info.project.name);
 
+  expect(errors).toEqual([]);
+});
+
+test('league month: every game listed with local logos, no broken images, no sideways scroll', async ({ page }, info) => {
+  const errors = collectErrors(page);
+  const cdn: string[] = [];
+  page.on('request', (r) => r.url().includes('cdn.nba.com') && cdn.push(r.url()));
+  await page.goto('/?view=league&date=2026-11-02'); // Nov 2: 15 games
+  await page.getByRole('button', { name: 'Month' }).click();
+
+  if (info.project.name === 'phone') {
+    await expect(page.getByRole('region', { name: 'Month navigator' })).toBeVisible();
+    await expect(page.getByLabel('November 2: 15 games')).toBeVisible();
+    await expect(page.locator('.ck-month-game')).toHaveCount(0);
+  } else {
+    await expect(page.getByRole('region', { name: 'League month' })).toBeVisible();
+    await expect(page.locator('[data-date="2026-11-02"] .ck-month-game')).toHaveCount(15);
+    // All logos loaded (none broken), and every line fits its cell (nothing clipped).
+    await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+    const report = await page.evaluate(() => ({
+      images: document.images.length,
+      broken: [...document.images].filter((i) => i.naturalWidth === 0).map((i) => i.src),
+      clipped: [...document.querySelectorAll('.ck-month-game')].filter((l) => l.scrollWidth > l.clientWidth + 1 || l.getBoundingClientRect().right > l.closest('.ck-cell')!.getBoundingClientRect().right + 0.5).length,
+    }));
+    expect(report.images).toBeGreaterThan(300);
+    expect(report.broken).toEqual([]);
+    expect(report.clipped).toBe(0);
+    await shot(page, 'league-month-nov', info.project.name);
+  }
+  const sideways = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(sideways).toBeLessThanOrEqual(0);
+  expect(cdn).toEqual([]);
   expect(errors).toEqual([]);
 });
 

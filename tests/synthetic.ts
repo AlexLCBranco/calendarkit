@@ -4,11 +4,12 @@
 import fixture from '../src/shared/nba-schedule/fixture.json';
 import { deriveGame, type RawScheduleGame, type Schedule, type ScheduleGame } from '../src/shared/nba-schedule/parse';
 import { buildCalendarData } from '../src/data/model';
+import { TEAMS } from '../src/data/teams';
 
 const template = (fixture.leagueSchedule.gameDates as unknown as { games: RawScheduleGame[] }[])[0]!.games[0]!;
 
 export const TEAM = { BOS: 1610612738, NYK: 1610612752, LAL: 1610612747, DEN: 1610612743, MIA: 1610612748 } as const;
-const TRI: Record<number, string> = Object.fromEntries(Object.entries(TEAM).map(([k, v]) => [v, k]));
+const TRI: Record<number, string> = Object.fromEntries(TEAMS.map((t) => [t.id, t.tricode]));
 
 let seq = 0;
 

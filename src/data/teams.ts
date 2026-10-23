@@ -56,6 +56,15 @@ export const TEAMS: Team[] = [
 
 export const TEAM_BY_ID = new Map(TEAMS.map((t) => [t.id, t]));
 
+/**
+ * Local team logo (public/logos/<tricode>.svg, downloaded once by scripts/fetch-logos.ts; never the NBA CDN at
+ * runtime). Undefined for an undecided team (teamId 0) or an unknown id.
+ */
+export function teamLogo(teamId: number): string | undefined {
+  const t = TEAM_BY_ID.get(teamId);
+  return t && `${import.meta.env.BASE_URL}logos/${t.tricode}.svg`;
+}
+
 export const DIVISIONS: { conference: Conference; division: Division }[] = [
   { conference: 'East', division: 'Atlantic' },
   { conference: 'East', division: 'Central' },

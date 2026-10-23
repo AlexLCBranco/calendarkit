@@ -16,7 +16,7 @@ where-to-watch info, embedding in gauntlet.
 ## Status
 - [x] Step 0 — probe (below)
 - [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
-- [x] Views — `src/components/CalendarView.tsx`: `TeamMonthGrid`, `LeagueDayView` (week strip, prev/next day), `MonthNavigator` (counts, click → day), `TeamPicker`, and `CalendarView` combining them. App shell `src/App.tsx` (URL state `?view=&team=&date=&tv=`).
+- [x] Views — `src/components/CalendarView.tsx`: `TeamMonthGrid`, `LeagueDayView` (week strip, prev/next day), `LeagueMonthView` (every game per day with logos; desktop/tablet), `MonthNavigator` (counts, click → day; narrow widths), `TeamPicker`, and `CalendarView` combining them. App shell `src/App.tsx` (URL state `?view=&team=&date=&tv=`).
 - [x] Game card — `src/components/GameCard.tsx`: vs/@ (team view) or AWAY @ HOME, local tip-off with (+1), TBD, B2B per team, Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
 - [x] Tests — see "Tests" below
 - [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
@@ -64,8 +64,23 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - 290 games tip at/after 02:00 UTC (late West Coast games), so the "+1" marker matters for users east of ET.
 - No postponed games (`postponedStatus` always "N").
 
+### 4. Team logos (probe 2026-10-23)
+- URL pattern confirmed: `https://cdn.nba.com/logos/nba/<teamId>/primary/L/logo.svg` → `200 image/svg+xml`
+  (LAL 12 KB; `/global/L/` serves the same file). Unlike the schedule feed, plain `curl` and Node `fetch` get it
+  (no bot blocking on downloads).
+- **Real browser** (browser pane, page on the live site): loads (150×150 for LAL, BOS, BKN, SAS).
+- **Headless Playwright** Chromium: **fails** (`onerror` for all 3 tried) — the same CDN bot blocking as the feed.
+  So runtime hotlinking would break the e2e tests and any blocked client; local files avoid it.
+- **Source / license**: downloaded once with `npm run fetch-logos` (`scripts/fetch-logos.ts`, Node `fetch`, checks
+  HTTP 200 + SVG) to `public/logos/<tricode>.svg` (30 files, 1.5–12 KB, no scripts or external references).
+  NBA team logos are trademarks of the NBA and its teams; stored locally for this personal project. The app only
+  uses the local files (`teamLogo(teamId)` in `src/data/teams.ts`); never the NBA CDN at runtime (tested).
+- **Visibility on the dark background** (contact sheet at 18 px and 64 px, not recolored): hard to see at line size —
+  **SAS** (black spurs), **MEM** and **NOP** (navy), **UTA** (dark purple); borderline — **CHA** (navy/purple) and
+  **PHI** (blue "76"). All others are clear.
+
 ## Tests
-`npm test` (Vitest, 77 tests) · `npm run e2e` (Playwright, desktop 1280 px + phone 390 px) · CI: `.github/workflows/ci.yml`.
+`npm test` (Vitest, 92 tests) · `npm run e2e` (Playwright, desktop 1280 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml`.
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -74,7 +89,11 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   +1 grouping and the default-day rule with a mocked clock.
 - `card.test.tsx` / `views.test.tsx` (jsdom): markers, TV badge/filter, TBD, B2B, rotationkit action contract,
   navigation.
-- `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, month jump, no console errors; screenshots to
+- `month.test.tsx` / `logos.test.ts`: full league month (15-game day, logo lines, TBD without `<img>`, TV filter,
+  click → day, today highlight, count navigator at 360/700 px), 30 logo files + feed mapping.
+- `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, month jump, no console errors; league month on Nov
+  2026: 15 lines on Nov 2, every `<img>` loaded (`naturalWidth > 0`), no clipped line, no sideways scroll, no
+  request to cdn.nba.com; screenshots to
   `e2e/screenshots/` (git-ignored; uploaded as a CI artifact). `npm run e2e:live -- <url>` runs it against a
   deployed site.
 - Manual only: none needed for v1 beyond judging look and feel.
@@ -100,6 +119,18 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - **League day arrows** step one calendar day (empty days say "No games this day"); range = first..last game date.
 - **Phone team grid**: cells show time, vs/@, opponent, markers; national TV shrinks to a dot; tapping a game shows
   the full card (with TV names and the rotationkit action) below the grid.
+- **League → Month** (`LeagueMonthView`, since 2026-10-23): a full month calendar listing **every** game of each
+  day as `[logo] AWAY @ [logo] HOME` (no time, TV, markers or rotationkit action; no "+N more"), in tip-off order;
+  rows grow to their busiest day (15 games); TBD teams show "TBD" with no image; the TV filter applies; clicking a
+  day opens it in the day view; today's cell is highlighted (new — the old navigator had no today highlight; it has
+  one now too). Logo + tricode columns line up per cell (CSS subgrid sized to the widest tricode in the cell).
+  Props: data, month, size, tvOnly, today; events: `onSelectDate`, `onMonthChange` (no `onOpenGame`: the cells
+  have no action). Logos come from `teamLogo()` in the teams layer.
+- **Narrow widths keep the count navigator** (`MonthNavigator`): the full month needs a widget ≥ **736 px** wide
+  (`FULL_MONTH_MIN_WIDTH`, = a 768 px window). Measured: a line needs ~90 px and a 7-column cell has ~73 px inside at
+  a 640 px window, ~97 px at 768. So phones (< 640) **and** 640–767 px windows show the count navigator; tablets
+  from 768 px (iPad portrait) and desktops get the full month. Below 1000 px widget width the full month uses
+  16 px logos / 10 px tricodes; above, 18 px / 12 px.
 - **Snapshot size**: the raw feed is ~4 MB (≈ 200–300 KB gzipped over the wire). Committed daily only when it
   changes. Kept raw so no information is lost (scores later).
 

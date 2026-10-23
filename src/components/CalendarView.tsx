@@ -17,10 +17,11 @@ import {
   monthOf,
   seasonMonths,
   teamGames,
+  teamLabel,
   weekOf,
   type CalendarData,
 } from '../data/model';
-import { DIVISIONS, TEAMS, TEAM_BY_ID } from '../data/teams';
+import { DIVISIONS, TEAMS, TEAM_BY_ID, teamLogo } from '../data/teams';
 import { GameCard } from './GameCard';
 import './calendar.css';
 
@@ -215,10 +216,12 @@ export interface MonthNavigatorProps {
   onSelectDate: (date: string) => void;
   tvOnly: boolean;
   size: WidgetSize;
+  /** Local calendar date to highlight as today. */
+  today?: string;
 }
 
 /** Month overview for navigation only: number of games per day; clicking a day jumps to it. */
-export function MonthNavigator({ data, month, onMonthChange, selectedDate, onSelectDate, tvOnly, size }: MonthNavigatorProps) {
+export function MonthNavigator({ data, month, onMonthChange, selectedDate, onSelectDate, tvOnly, size, today }: MonthNavigatorProps) {
   const compact = isCompact(size);
   const counts = useMemo(() => countsByDate(data, tvOnly), [data, tvOnly]);
   return (
@@ -237,7 +240,7 @@ export function MonthNavigator({ data, month, onMonthChange, selectedDate, onSel
             <button
               key={date}
               type="button"
-              className={`ck-cell ck-count-cell${n ? ' ck-cell-game' : ''}${selectedDate === date ? ' ck-cell-selected' : ''}`}
+              className={`ck-cell ck-count-cell${n ? ' ck-cell-game' : ''}${selectedDate === date ? ' ck-cell-selected' : ''}${today === date ? ' ck-cell-today' : ''}`}
               disabled={!n}
               onClick={() => onSelectDate(date)}
               data-date={date}
@@ -246,6 +249,85 @@ export function MonthNavigator({ data, month, onMonthChange, selectedDate, onSel
               <span className="ck-daynum">{Number(date.slice(8))}</span>
               {n > 0 && <span className="ck-count">{n}</span>}
             </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------- league: full month
+
+/**
+ * Below this widget width a "[logo] AWAY @ [logo] HOME" line doesn't fit a 7-column cell (measured: ~90 px per
+ * line), so League → Month falls back to the count navigator. 736 px = a 768 px window minus the page padding.
+ */
+export const FULL_MONTH_MIN_WIDTH = 736;
+/** Below this width the full month uses its tight type sizes. */
+const ROOMY_MONTH_WIDTH = 1000;
+
+export interface LeagueMonthViewProps {
+  data: CalendarData;
+  month: string;
+  onMonthChange: (month: string) => void;
+  selectedDate?: string;
+  /** Raised when a day with games is clicked. */
+  onSelectDate: (date: string) => void;
+  tvOnly: boolean;
+  size: WidgetSize;
+  /** Local calendar date to highlight as today. */
+  today?: string;
+}
+
+function MonthTeam({ team }: { team: ScheduleGame['homeTeam'] }) {
+  const logo = teamLogo(team.teamId);
+  return (
+    <>
+      {logo ? <img className="ck-logo" src={logo} alt="" width={18} height={18} /> : <span className="ck-logo" aria-hidden="true" />}
+      <span className="ck-mtri">{teamLabel(team)}</span>
+    </>
+  );
+}
+
+/** Month calendar listing every game of each day (logos + tricodes only), in tip-off order. Click a day → onSelectDate. */
+export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSelectDate, tvOnly, size, today }: LeagueMonthViewProps) {
+  const tight = size.width < ROOMY_MONTH_WIDTH;
+  return (
+    <section className={`ck-month-full${tight ? ' ck-month-tight' : ''}`} aria-label="League month">
+      <MonthHeader month={month} months={seasonMonths(data)} onMonthChange={onMonthChange} />
+      <div className="ck-grid" role="grid">
+        {WEEKDAYS.map((d) => (
+          <div key={d} className="ck-grid-head" role="columnheader">
+            {d}
+          </div>
+        ))}
+        {monthCells(month).map((date, i) => {
+          if (!date) return <div key={`x${i}`} className="ck-cell ck-cell-empty" />;
+          const all = data.byDate.get(date) ?? [];
+          const games = tvOnly ? all.filter(hasNationalTv) : all;
+          const open = games.length ? () => onSelectDate(date) : undefined;
+          return (
+            <div
+              key={date}
+              role="gridcell"
+              className={`ck-cell ck-month-cell${games.length ? ' ck-cell-game' : ''}${selectedDate === date ? ' ck-cell-selected' : ''}${today === date ? ' ck-cell-today' : ''}`}
+              data-date={date}
+              tabIndex={open ? 0 : undefined}
+              aria-label={`${fmtDate(date, { month: 'long', day: 'numeric' })}: ${games.length} game${games.length === 1 ? '' : 's'}`}
+              onClick={open}
+              onKeyDown={open && ((e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()))}
+            >
+              <span className="ck-daynum">{Number(date.slice(8))}</span>
+              {games.length > 0 && (
+                <ul className="ck-month-games">
+                  {games.map((g) => (
+                    <li key={g.gameId} className="ck-month-game" data-game-id={g.gameId}>
+                      <MonthTeam team={g.awayTeam} /> <span className="ck-vsat">@</span> <MonthTeam team={g.homeTeam} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           );
         })}
       </div>
@@ -326,8 +408,23 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       </div>
       {state.mode === 'team' ? (
         <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
+      ) : leagueMonth && size.width >= FULL_MONTH_MIN_WIDTH ? (
+        <LeagueMonthView
+          data={data}
+          month={leagueMonth}
+          onMonthChange={setLeagueMonth}
+          selectedDate={state.date}
+          onSelectDate={(date) => {
+            setLeagueMonth(undefined);
+            update({ date });
+          }}
+          tvOnly={state.tvOnly}
+          size={size}
+          today={localDate(now, timeZone)}
+        />
       ) : leagueMonth ? (
         <MonthNavigator
+          today={localDate(now, timeZone)}
           data={data}
           month={leagueMonth}
           onMonthChange={setLeagueMonth}

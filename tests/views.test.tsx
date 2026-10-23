@@ -44,13 +44,13 @@ describe('CalendarView (league)', () => {
     expect((screen.getByLabelText('Previous day') as HTMLButtonElement).disabled).toBe(true); // season's first date
   });
 
-  it('month navigator shows game counts and jumps to the clicked day', () => {
+  it('league month (wide) jumps to the clicked day', () => {
     render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" />);
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
-    const nav = screen.getByRole('region', { name: 'Month navigator' });
+    const nav = screen.getByRole('region', { name: 'League month' });
     const cell = within(nav).getByLabelText(`October 28: ${realData.byDate.get('2026-10-28')!.length} games`);
     fireEvent.click(cell);
-    expect(screen.queryByRole('region', { name: 'Month navigator' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'League month' })).toBeNull();
     expect(screen.getByTestId('day-title').textContent).toBe('Wednesday, October 28, 2026');
   });
 });
