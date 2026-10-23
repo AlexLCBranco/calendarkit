@@ -163,10 +163,9 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
     a split group repeats its label (same muted style, `data-repeat`) at the top of the next column. On ties,
     fewer splits, then the longer column first. 1-column cells are one column in the same structure (look
     unchanged). Example: Nov 15 (São Paulo time, 9 games in 8 groups) → 4 + 5 games, 143 / 162 px.
-  - **Game background (not built)**: a padded rounded background per game was requested (2026-10-23) but doesn't
-    fit at 1920 px: with 2 px horizontal padding the line is 119 px, 2 × 119 + 10 = 248 → **1.42 px spare**
-    (measured, Windows Chrome) vs the ≥ 8 px rule. In general 4 × padding + column gap ≤ 11.42 px, and the column
-    gap must stay above the 6 px away/home gap, so padding ≤ ~1 px. Needs a decision (see Open questions).
+  - **Game background dropped** (2026-10-23): day flow made columns visually distinct; measured it wouldn't fit
+    with ≥ 8 px spare. With 2 px horizontal padding the line is 119 px, 2 × 119 + 10 = 248 → 1.42 px spare
+    (Windows Chrome); in general 4 × padding + column gap ≤ 11.42 px, with the column gap above the 6 px away/home gap.
   - **Logo backing**: every logo sits on a 16 px light disc (`rgba(226,231,238,.92)`), logo drawn at 80 % inside
     it; SVG files unchanged. Fixes the dark logos (SAS, MEM, NOP, UTA; CHA, PHI).
 - **Narrow widths keep the count navigator** (`MonthNavigator`): the full month needs a measured content width
@@ -183,9 +182,6 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   (and series/game number) to `deriveGame`; calendarkit will switch to it on the next copy.
 
 ## Open questions / items
-- **Game background in League → Month** doesn't fit the 1920 px 2-column budget with ≥ 2 px padding (see Decisions →
-  League → Month). Options: 1 px padding + 7 px column gap (8.42 px spare); keep 2 px and accept 1.42 px spare;
-  widen the content (~1886 px for 2 px padding at 8 px spare); or a background with no horizontal padding.
 - The scheduled snapshot ran at 15:36 UTC on day 1 instead of 11:00 (GitHub delays cron runs under load).
   Harmless for a schedule; the job now rebases before pushing in case it races a normal push.
 - **ROTATIONKIT_BASE_URL** is a placeholder until rotationkit has a production URL (it isn't merged to main).
