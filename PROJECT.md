@@ -81,7 +81,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 100 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 104 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -92,11 +92,13 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   navigation.
 - `month.test.tsx` / `logos.test.ts`: full league month (15-game day, logo lines without "@", legend, TBD without
   `<img>`, logo backing, TV filter, click → day, today highlight; time groups under two zones incl. (+1) and TBD;
-  column count and fill-down order; TV pill text/tooltip and no network names as text; B2B marks per team; count
+  column count; day flow: Nov 15 uses both columns and is balanced, newspaper order on every November day, no
+  label ends a column, a split group repeats its label, no split when not needed, 1 column unchanged; TV pill text/tooltip and no network names as text; B2B marks per team; count
   navigator at 360/700 px), 30 logo files + feed mapping.
 - e2e month check also measures the layout and prints it (`[project] content …, cols …, cell inner …, line …,
-  2-col spare …`): at 1920 px content ≥ 1700, 2 columns with ≥ 8 px spare, fill-down by position; 1 column at
-  1280; 11 px / 16 px lines at both; bundled font loaded; every line the same width; TV tooltip on hover.
+  2-col spare …`, then Nov 15 column games/heights): at 1920 px content ≥ 1700, 2 columns with ≥ 8 px spare; Nov 15
+  flows across both columns (one x per column, heights within one row, visual order = DOM order, a game at the
+  bottom of each column); 1 column at 1280; 11 px / 16 px lines at both; bundled font loaded; every line the same width; TV tooltip on hover.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, month jump, no console errors; league month on Nov
   2026: 15 lines on Nov 2, every `<img>` loaded (`naturalWidth > 0`), no clipped line, no sideways scroll, no
   request to cdn.nba.com; screenshots to
@@ -150,10 +152,21 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
     `isBackToBack` rule as elsewhere); takes no width; tooltip "Back-to-back".
   - **Columns**: per day cell, `monthColumns(width)` = as many 115 px lines as fit the cell's inner width with a
     10 px gap (cell inner width computed from the widget width, matching the CSS grid gap/padding/border — no DOM
-    measuring, so no flicker). Filled **down** the first column, then the second, within each time group.
-    **2 columns at a 1920 px window, 1 at 1280 px.** Measured with the bundled font (e2e `desktop-xl`): cell
-    inner 249.42 px, line 115.00 px, 2 × 115 + 10 = 240 → **9.42 px spare**, identical in Chrome on Windows and on
-    Linux CI (2026-10-23).
+    measuring, so no flicker). **2 columns at a 1920 px window, 1 at 1280 px.** Measured with the bundled font
+    (e2e `desktop-xl`): cell inner 249.42 px, line 115.00 px, 2 × 115 + 10 = 240 → **9.42 px spare**, identical in
+    Chrome on Windows and on Linux CI (2026-10-23).
+  - **Day flow** (`flowDay`): a day's content (time labels + games, in tip-off order) is **one list** that fills
+    down column 1, then continues in column 2 (newspaper order) — not each time group on its own. Break points are
+    chosen so the tallest column is as short as possible (heights estimated from `MONTH_LINE`). Each column starts
+    with a game's group, so a time label never sits alone at the bottom of a column. Splitting a time group costs
+    one game row in that comparison, so a group is split only when that balances the columns by more than a row;
+    a split group repeats its label (same muted style, `data-repeat`) at the top of the next column. On ties,
+    fewer splits, then the longer column first. 1-column cells are one column in the same structure (look
+    unchanged). Example: Nov 15 (São Paulo time, 9 games in 8 groups) → 4 + 5 games, 143 / 162 px.
+  - **Game background (not built)**: a padded rounded background per game was requested (2026-10-23) but doesn't
+    fit at 1920 px: with 2 px horizontal padding the line is 119 px, 2 × 119 + 10 = 248 → **1.42 px spare**
+    (measured, Windows Chrome) vs the ≥ 8 px rule. In general 4 × padding + column gap ≤ 11.42 px, and the column
+    gap must stay above the 6 px away/home gap, so padding ≤ ~1 px. Needs a decision (see Open questions).
   - **Logo backing**: every logo sits on a 16 px light disc (`rgba(226,231,238,.92)`), logo drawn at 80 % inside
     it; SVG files unchanged. Fixes the dark logos (SAS, MEM, NOP, UTA; CHA, PHI).
 - **Narrow widths keep the count navigator** (`MonthNavigator`): the full month needs a measured content width
@@ -170,6 +183,9 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   (and series/game number) to `deriveGame`; calendarkit will switch to it on the next copy.
 
 ## Open questions / items
+- **Game background in League → Month** doesn't fit the 1920 px 2-column budget with ≥ 2 px padding (see Decisions →
+  League → Month). Options: 1 px padding + 7 px column gap (8.42 px spare); keep 2 px and accept 1.42 px spare;
+  widen the content (~1886 px for 2 px padding at 8 px spare); or a background with no horizontal padding.
 - The scheduled snapshot ran at 15:36 UTC on day 1 instead of 11:00 (GitHub delays cron runs under load).
   Harmless for a schedule; the job now rebases before pushing in case it races a normal push.
 - **ROTATIONKIT_BASE_URL** is a placeholder until rotationkit has a production URL (it isn't merged to main).

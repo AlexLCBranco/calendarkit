@@ -365,9 +365,56 @@ function timeGroups(games: ScheduleGame[], timeZone?: string): { label: string; 
   return out;
 }
 
+type TimeGroup = ReturnType<typeof timeGroups>[number];
+/** A column's piece of a time group; `repeat` when the group started in the previous column (label shown again). */
+export interface ColumnGroup extends TimeGroup {
+  repeat: boolean;
+}
+
 /**
- * Month calendar listing every game of each day, grouped by tip-off time, in as many columns as fit (filled
- * down, then across). Lines: logos + tricodes (away left, home right), TV pill, B2B marks. Click a day → onSelectDate.
+ * Flows a day's time groups into `cols` columns in newspaper order (down column 1, then column 2, …), choosing the
+ * break points that make the tallest column as short as possible. Each column starts at a game, so a label never
+ * ends a column. Splitting a group (its label repeats atop the next column) costs one game row, so a group is only
+ * split when that balances the columns by more than a row. Heights are estimated from MONTH_LINE, not measured.
+ */
+export function flowDay(groups: TimeGroup[], cols: number): ColumnGroup[][] {
+  const L = MONTH_LINE;
+  const labelH = L.labelFont * 1.25 + 2; // .ck-tlabel line-height + margin
+  const rowH = L.logo + L.rowGap;
+  const flat = groups.flatMap((grp, gi) => grp.games.map((g, i) => ({ g, gi, first: i === 0 })));
+  const n = flat.length;
+  // Column = games [a, b), as group pieces.
+  const column = (a: number, b: number) => {
+    const out: ColumnGroup[] = [];
+    for (let i = a; i < b; i++) {
+      const { g, gi, first } = flat[i]!;
+      if (out.at(-1)?.label === groups[gi]!.label) out.at(-1)!.games.push(g);
+      else out.push({ label: groups[gi]!.label, games: [g], repeat: !first });
+    }
+    return out;
+  };
+  const height = (c: ColumnGroup[]) => c.reduce((h, grp, i) => h + (i ? L.groupGap : 0) + labelH + grp.games.length * rowH - L.rowGap, 0);
+  const parts = (cuts: number[]) => [...cuts, n].map((e, i, ends) => column(i ? ends[i - 1]! : 0, e));
+  const k = Math.max(1, Math.min(cols, n));
+  let best: { cost: number; splits: number; cuts: number[] } | undefined;
+  // Try every set of up to k − 1 break points (n ≤ ~15 games, 2 columns at most sizes: a handful of cases).
+  const walk = (cuts: number[], from: number) => {
+    const p = parts(cuts);
+    const splits = p.filter((c) => c[0]!.repeat).length;
+    const cost = Math.max(...p.map(height)) + splits * rowH;
+    // on a tie: fewer split groups, then the later break (earlier columns the longer ones, as in a newspaper)
+    if (!best || cost < best.cost - 0.01 || (cost <= best.cost + 0.01 && splits <= best.splits)) best = { cost, splits, cuts };
+    if (cuts.length < k - 1) for (let c = from; c < n; c++) walk([...cuts, c], c + 1);
+  };
+  if (n) walk([], 1);
+  const out: ColumnGroup[][] = best ? parts(best.cuts) : [];
+  while (out.length < cols) out.push([]);
+  return out;
+}
+
+/**
+ * Month calendar listing every game of each day, grouped by tip-off time, flowed as one list into as many columns
+ * as fit (newspaper order, balanced; see flowDay). Lines: logos + tricodes (away left, home right), TV pill, B2B marks. Click a day → onSelectDate.
  */
 export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSelectDate, tvOnly, size, today, timeZone }: LeagueMonthViewProps) {
   const cols = monthColumns(size.width);
@@ -419,18 +466,21 @@ export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSe
             >
               <span className="ck-daynum">{Number(date.slice(8))}</span>
               {games.length > 0 && (
-                <div className="ck-month-day" data-cols={cols}>
-                  {timeGroups(games, timeZone).map((grp) => (
-                    <div key={grp.label} className="ck-tgroup">
-                      <div className="ck-tlabel">{grp.label}</div>
-                      <ul
-                        className="ck-tgames"
-                        style={{ gridTemplateColumns: `repeat(${cols}, var(--ck-line))`, gridTemplateRows: `repeat(${Math.ceil(grp.games.length / cols)}, auto)`, gridAutoFlow: 'column' }}
-                      >
-                        {grp.games.map((g) => (
-                          <MonthGameLine key={g.gameId} data={data} game={g} />
-                        ))}
-                      </ul>
+                <div className="ck-month-day" data-cols={cols} style={{ gridTemplateColumns: `repeat(${cols}, var(--ck-line))` }}>
+                  {flowDay(timeGroups(games, timeZone), cols).map((col, ci) => (
+                    <div key={ci} className="ck-mcol">
+                      {col.map((grp) => (
+                        <div key={grp.label} className="ck-tgroup">
+                          <div className="ck-tlabel" data-repeat={grp.repeat || undefined}>
+                            {grp.label}
+                          </div>
+                          <ul className="ck-tgames">
+                            {grp.games.map((g) => (
+                              <MonthGameLine key={g.gameId} data={data} game={g} />
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
                     </div>
                   ))}
                 </div>

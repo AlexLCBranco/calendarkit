@@ -155,20 +155,84 @@ describe('columns', () => {
     expect(monthColumns(718)).toBe(1);
   });
 
-  it('2-column group fills down: first ceil(n/2) games in column 1, in time order', () => {
-    const el = openMonth(realData, '2026-11-02', XL, 'America/New_York');
-    const day = cellOf(el.container, '2026-11-02');
-    expect(day.querySelector('.ck-month-day')!.getAttribute('data-cols')).toBe('2');
-    const big = [...day.querySelectorAll('.ck-tgroup')].sort((a, b) => b.querySelectorAll('li').length - a.querySelectorAll('li').length)[0]!;
-    const items = [...big.querySelectorAll('li')];
-    expect(items.length).toBeGreaterThanOrEqual(3);
-    const ul = big.querySelector('ul')!;
-    const rows = Math.ceil(items.length / 2);
-    expect(ul.style.gridTemplateRows).toBe(`repeat(${rows}, auto)`);
-    expect(ul.style.gridAutoFlow).toBe('column');
-    // DOM order = fill order (down column 1, then column 2) = tip-off order
-    const ids = items.map((i) => i.getAttribute('data-game-id'));
-    expect(ids).toEqual(realData.byDate.get('2026-11-02')!.filter((g) => ids.includes(g.gameId)).map((g) => g.gameId));
+  // A day's content (time labels + games) is one list that fills down column 1, then column 2 (newspaper order).
+  const SP = 'America/Sao_Paulo';
+  const cols = (cell: Element) => [...cell.querySelectorAll('.ck-month-day > .ck-mcol')];
+  /** Rows of a column: its time labels plus its games. */
+  const rows = (col: Element) => col.querySelectorAll('.ck-tlabel, [data-game-id]').length;
+  const ids = (root: Element) => [...root.querySelectorAll('[data-game-id]')].map((l) => l.getAttribute('data-game-id'));
+
+  it('Nov 15 at 1920 px: games in both columns, rows about half of the 1-column count (balanced within one row)', () => {
+    const one = openMonth(realData, '2026-11-15', WIDE, SP);
+    const oneCols = cols(cellOf(one.container, '2026-11-15'));
+    expect(oneCols).toHaveLength(1);
+    const oneRows = rows(oneCols[0]!);
+    expect(oneRows).toBeGreaterThanOrEqual(15); // Nov 15: 9 games in many time groups
+    cleanup();
+    const el = openMonth(realData, '2026-11-15', XL, SP);
+    const [a, b, ...rest] = cols(cellOf(el.container, '2026-11-15'));
+    expect(rest).toHaveLength(0);
+    expect(ids(a!).length).toBeGreaterThan(0);
+    expect(ids(b!).length).toBeGreaterThan(0);
+    expect(Math.max(rows(a!), rows(b!))).toBeLessThanOrEqual(Math.ceil(oneRows / 2) + 1);
+    expect(Math.abs(rows(a!) - rows(b!))).toBeLessThanOrEqual(2); // one row = a label + its game at most
+  });
+
+  it('newspaper order: column 1 top to bottom, then column 2, gives the games in tip-off order (every November day)', () => {
+    const el = openMonth(realData, '2026-11-15', XL, SP);
+    for (const [date, games] of realData.byDate) {
+      if (!date.startsWith('2026-11')) continue;
+      const c = cols(cellOf(el.container, date));
+      expect(c, date).toHaveLength(2);
+      expect(c.flatMap(ids), date).toEqual(games.map((g) => g.gameId));
+      if (games.length >= 2) expect(ids(c[1]!).length, date).toBeGreaterThan(0);
+    }
+  });
+
+  it('no time label ends a column; a split group repeats its label (muted, same style) at the top of column 2', () => {
+    const el = openMonth(realData, '2026-11-15', XL, SP);
+    for (const date of [...realData.byDate.keys()].filter((d) => d.startsWith('2026-11'))) {
+      for (const col of cols(cellOf(el.container, date))) {
+        for (const grp of col.querySelectorAll('.ck-tgroup')) expect(grp.querySelectorAll('[data-game-id]').length, date).toBeGreaterThan(0);
+        const last = [...col.querySelectorAll('.ck-tlabel, [data-game-id]')].at(-1);
+        if (last) expect(last.matches('[data-game-id]'), date).toBe(true);
+      }
+    }
+    cleanup();
+    // One 8-game group at 19:00 plus a single late game: the big group has to split.
+    const games = Array.from({ length: 8 }, (_, i) => game({ date: '2026-11-20', utc: '2026-11-20T22:00:00Z', away: TEAMS[2 * i]!.id, home: TEAMS[2 * i + 1]!.id }));
+    games.push(game({ date: '2026-11-20', utc: '2026-11-21T03:00:00Z', away: TEAMS[16]!.id, home: TEAMS[17]!.id }));
+    const el2 = openMonth(dataOf(games), '2026-11-20', XL, 'UTC');
+    const [a, b] = cols(cellOf(el2.container, '2026-11-20'));
+    const labelsA = [...a!.querySelectorAll('.ck-tlabel')];
+    const labelsB = [...b!.querySelectorAll('.ck-tlabel')];
+    expect(labelsA.map((l) => l.textContent)).toEqual(['22:00']);
+    expect(labelsB.map((l) => l.textContent)).toEqual(['22:00', '03:00 (+1)']);
+    expect(labelsB[0]!.className).toBe(labelsA[0]!.className); // same muted label style
+    expect(labelsB[0]!.getAttribute('data-repeat')).toBe('true');
+    expect(labelsA[0]!.getAttribute('data-repeat')).toBeNull();
+    expect([...ids(a!), ...ids(b!)]).toEqual(games.map((g) => g.gameId));
+    expect(Math.abs(ids(a!).length - (ids(b!).length + 1))).toBeLessThanOrEqual(1); // balanced
+  });
+
+  it('a group is not split when an unsplit layout is as balanced', () => {
+    // 3 + 3 games in two time groups → one group per column, no repeated label.
+    const games = [0, 0, 0, 1, 1, 1].map((h, i) => game({ date: '2026-11-21', utc: `2026-11-21T2${h}:00:00Z`, away: TEAMS[2 * i]!.id, home: TEAMS[2 * i + 1]!.id }));
+    const el = openMonth(dataOf(games), '2026-11-21', XL, 'UTC');
+    const [a, b] = cols(cellOf(el.container, '2026-11-21'));
+    expect([...a!.querySelectorAll('.ck-tlabel')].map((l) => l.textContent)).toEqual(['20:00']);
+    expect([...b!.querySelectorAll('.ck-tlabel')].map((l) => l.textContent)).toEqual(['21:00']);
+    expect(el.container.querySelector('[data-repeat]')).toBeNull();
+  });
+
+  it('1-column cells keep one list: every group once, in order', () => {
+    const el = openMonth(realData, '2026-11-15', WIDE, SP);
+    for (const date of ['2026-11-02', '2026-11-15']) {
+      const c = cols(cellOf(el.container, date));
+      expect(c).toHaveLength(1);
+      expect(ids(c[0]!)).toEqual(realData.byDate.get(date)!.map((g) => g.gameId));
+      expect(c[0]!.querySelector('[data-repeat]')).toBeNull();
+    }
   });
 });
 

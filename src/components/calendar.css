@@ -273,11 +273,19 @@
 .ck-month-cell.ck-cell-game:hover {
   background: var(--ck-surface-2);
 }
+/* A day's time groups flow as one list down column 1, then column 2 (columns set inline; see flowDay). */
 .ck-month-day {
+  display: grid;
+  column-gap: var(--ck-col-gap);
+  align-items: start;
+  justify-content: start;
+  margin-top: 4px;
+}
+.ck-mcol {
   display: flex;
   flex-direction: column;
   gap: var(--ck-group-gap);
-  margin-top: 4px;
+  min-width: 0;
 }
 .ck-tlabel {
   font-size: var(--ck-label-font);
@@ -291,11 +299,9 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  /* columns and rows are set inline (fill down, then across) */
-  column-gap: var(--ck-col-gap);
-  row-gap: var(--ck-row-gap);
-  justify-content: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-row-gap);
 }
 .ck-month-game {
   display: grid;

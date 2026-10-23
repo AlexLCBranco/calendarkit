@@ -77,10 +77,24 @@ test('league month: every game listed with local logos, no broken images, no sid
       const lines = [...document.querySelectorAll('.ck-month-game')];
       const cell = document.querySelector('[data-date="2026-11-02"]')!;
       const ci = inner(cell);
-      const ul = cell.querySelector('.ck-tgames')!;
-      const colGap = parseFloat(getComputedStyle(ul).columnGap);
+      const colGap = parseFloat(getComputedStyle(cell.querySelector('.ck-month-day')!).columnGap);
       const lineW = box(lines[0]!).width;
-      const groups = [...cell.querySelectorAll('.ck-tgroup')].map((g) => [...g.querySelectorAll('li')].map((li) => Math.round(box(li).left)));
+      // Nov 15 (9 games, many time groups): the day flows as one list down column 1, then column 2.
+      const nov15 = document.querySelector('[data-date="2026-11-15"]')!;
+      const flow = [...nov15.querySelectorAll('.ck-mcol')].map((col) => {
+        const items = [...col.querySelectorAll('.ck-tlabel, li')];
+        const bottom = items.reduce((a, b) => (box(b).bottom > box(a).bottom ? b : a));
+        return {
+          ids: [...col.querySelectorAll('li')].map((li) => li.getAttribute('data-game-id')),
+          lefts: [...new Set([...col.querySelectorAll('li')].map((li) => Math.round(box(li).left)))],
+          height: box(bottom).bottom - box(items[0]!).top,
+          endsWithGame: bottom.tagName === 'LI',
+        };
+      });
+      const unit = box(nov15.querySelector('.ck-tgroup')!).height + parseFloat(getComputedStyle(nov15.querySelector('.ck-mcol')!).rowGap);
+      // visual reading order: by column position, then top to bottom
+      const visual = [...nov15.querySelectorAll('li')].sort((a, b) => box(a).left - box(b).left || box(a).top - box(b).top).map((li) => li.getAttribute('data-game-id'));
+      const domOrder = [...nov15.querySelectorAll('li')].map((li) => li.getAttribute('data-game-id'));
       const imgs = [...document.querySelectorAll('.ck-month-full img')];
       return {
         content: box(document.querySelector('.ck-root')!).width,
@@ -89,7 +103,10 @@ test('league month: every game listed with local logos, no broken images, no sid
         lineW,
         colGap,
         spare: ci.right - ci.left - (2 * lineW + colGap),
-        groups,
+        flow,
+        unit,
+        visual,
+        domOrder,
         lineWidths: [...new Set(lines.map((l) => Math.round(box(l).width * 100) / 100))],
         font: getComputedStyle(document.querySelector('.ck-mtri')!).fontSize,
         logo: box(document.querySelector('.ck-logo-backing')!).width,
@@ -119,14 +136,21 @@ test('league month: every game listed with local logos, no broken images, no sid
       expect(r.content).toBeGreaterThanOrEqual(1700);
       expect(r.cols).toBe(2);
       expect(r.spare).toBeGreaterThanOrEqual(8);
-      // fill down: in a group of n games, the first ceil(n/2) share column 1, the rest are in column 2
-      for (const g of r.groups.filter((x) => x.length >= 2)) {
-        const k = Math.ceil(g.length / 2);
-        expect(new Set(g.slice(0, k)).size).toBe(1);
-        expect(new Set(g.slice(k)).size).toBe(1);
-        expect(g[k]! > g[0]!).toBe(true);
+      // newspaper flow on Nov 15: both columns used, each a single x position, balanced within one row,
+      // reading column 1 then column 2 = DOM order (= tip-off order, checked in month.test.tsx), no label last
+      const [c1, c2] = r.flow;
+      console.log(`[${project}] Nov 15 columns: ${c1!.ids.length} + ${c2!.ids.length} games, heights ${c1!.height.toFixed(1)} / ${c2!.height.toFixed(1)}px, row ${r.unit.toFixed(1)}px`);
+      expect(r.flow).toHaveLength(2);
+      for (const c of r.flow) {
+        expect(c.ids.length).toBeGreaterThan(0);
+        expect(c.lefts).toHaveLength(1);
+        expect(c.endsWithGame).toBe(true);
       }
+      expect(c2!.lefts[0]! > c1!.lefts[0]!).toBe(true);
+      expect(Math.abs(c1!.height - c2!.height)).toBeLessThanOrEqual(r.unit + 0.5);
+      expect(r.visual).toEqual(r.domOrder);
     }
+    if (project === 'desktop') expect(r.flow).toHaveLength(1);
     // TV pill tooltip: network names on hover
     const pill = page.locator('[data-date="2026-11-02"] .ck-tv-pill').first();
     await pill.hover();
