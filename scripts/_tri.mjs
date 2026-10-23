@@ -1,0 +1,10 @@
+import { chromium } from '@playwright/test';
+import { readFileSync, readdirSync } from 'node:fs';
+const font = readFileSync('public/fonts/inter-latin-wght-normal.woff2').toString('base64');
+const tris = [...readdirSync('public/logos').map((f) => f.slice(0, 3)), 'TBD'];
+const b = await chromium.launch(); const p = await b.newPage();
+await p.setContent(`<style>@font-face{font-family:I;src:url(data:font/woff2;base64,${font}) format('woff2-variations');font-weight:100 900}span{font:600 11px I;white-space:nowrap}</style>${tris.map((t) => `<span>${t}</span><br>`).join('')}<span id=t style="font-weight:500;font-size:10px;font-variant-numeric:tabular-nums">00:00 (+1)</span>`);
+await p.evaluate('document.fonts.ready');
+const r = await p.evaluate(`[...document.querySelectorAll('span')].map((s) => [s.textContent, Math.round(s.getBoundingClientRect().width * 100) / 100])`);
+r.sort((a, b) => b[1] - a[1]); console.log(process.platform, JSON.stringify(r.slice(0, 6)), 'narrowest', JSON.stringify(r.at(-1)));
+await b.close();

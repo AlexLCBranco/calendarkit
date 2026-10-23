@@ -1,15 +1,21 @@
 :root {
   color-scheme: dark;
 }
+html {
+  /* reserve the scrollbar's space so the content width doesn't jump when a view gets taller than the window */
+  scrollbar-gutter: stable;
+}
 html,
 body {
   margin: 0;
   background: #0f1115;
   color: #e6e8ec;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter ck', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 .app {
-  max-width: 1100px;
+  /* content up to 1840 px (MAX_CONTENT_WIDTH in App.tsx): ~40 px side margins at a 1920 px window */
+  box-sizing: border-box;
+  max-width: 1872px;
   margin: 0 auto;
   padding: 16px;
 }

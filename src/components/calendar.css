@@ -1,5 +1,17 @@
 /* Calendar widgets. Dark by default; all colors are variables on .ck-root so a host can restyle them. */
 
+/* Inter (SIL OFL 1.1, public/fonts/Inter-OFL.txt), self-hosted: same text widths on every OS, no font request to
+   a third party. The month layout's fixed column widths rely on it. */
+@font-face {
+  font-family: 'Inter ck';
+  font-style: normal;
+  font-display: block;
+  font-weight: 100 900;
+  src: url('/fonts/inter-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 .ck-root,
 .ck-card {
   --ck-bg: #0f1115;
@@ -15,7 +27,7 @@
   --ck-tv: #3fb68b;
   --ck-b2b: #e08a3c;
   color: var(--ck-text);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter ck', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   box-sizing: border-box;
 }
@@ -236,13 +248,24 @@
   font-weight: 700;
 }
 
-/* League full month: every game, one line each. Rows grow to their busiest day; nothing scrolls sideways. */
+/* League full month. Every game of a day, grouped by local tip-off time, in as many columns as fit.
+   Line geometry comes from MONTH_LINE in CalendarView.tsx (set as variables on .ck-month-full); all widths are
+   fixed, which is safe because the text is the bundled Inter font. Rows grow to their busiest day. */
+.ck-month-legend {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ck-muted);
+  margin: -4px 0 8px;
+  letter-spacing: 0.02em;
+}
 .ck-month-cell {
   min-height: 92px;
   justify-content: flex-start;
-  overflow: hidden;
-  /* lines size their text to the cell's width (cqi), so they fit whatever font the system uses */
-  container-type: inline-size;
+  position: relative;
+}
+.ck-month-cell:hover,
+.ck-month-cell:focus-within {
+  z-index: 2; /* tooltips above the neighbouring cells */
 }
 .ck-month-cell.ck-cell-game {
   cursor: pointer;
@@ -250,49 +273,122 @@
 .ck-month-cell.ck-cell-game:hover {
   background: var(--ck-surface-2);
 }
-.ck-month-games {
-  --ck-logo-size: 18px;
-  --ck-mgap: 3px;
+.ck-month-day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ck-group-gap);
+  margin-top: 4px;
+}
+.ck-tlabel {
+  font-size: var(--ck-label-font);
+  line-height: 1.25;
+  font-weight: 500;
+  color: var(--ck-muted);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 2px;
+}
+.ck-tgames {
   list-style: none;
   margin: 0;
   padding: 0;
-  /* One column set per cell: fixed logo columns, tricode columns as wide as the widest tricode in the cell,
-     so every line lines up and no tricode overflows its column. Lines use it through subgrid. */
   display: grid;
-  grid-template-columns: var(--ck-logo-size) max-content max-content var(--ck-logo-size) max-content;
-  column-gap: var(--ck-mgap);
-  row-gap: 1px;
+  /* columns and rows are set inline (fill down, then across) */
+  column-gap: var(--ck-col-gap);
+  row-gap: var(--ck-row-gap);
   justify-content: start;
 }
 .ck-month-game {
   display: grid;
-  grid-column: 1 / -1;
-  grid-template-columns: subgrid;
+  /* logo | gap | tricode | away-home gap | logo | gap | tricode | gap | TV */
+  grid-template-columns:
+    var(--ck-logo) var(--ck-gap) var(--ck-tri) var(--ck-sep) var(--ck-logo) var(--ck-gap) var(--ck-tri)
+    var(--ck-pill-gap) var(--ck-pill);
   align-items: center;
-  /* "AWAY @ HOME" is ~6.4 em wide in the widest common UI fonts (DejaVu Sans bold); 9–12 px. */
-  font-size: clamp(9px, calc((100cqi - 2 * var(--ck-logo-size) - 4 * var(--ck-mgap) - 2px) / 6.4), 12px);
-  line-height: var(--ck-logo-size);
+  height: var(--ck-logo);
+  font-size: var(--ck-font);
   font-weight: 600;
   white-space: nowrap;
 }
-.ck-month-game .ck-vsat {
-  text-align: center;
+.ck-month-game > :nth-child(1) { grid-column: 1; }
+.ck-month-game > :nth-child(2) { grid-column: 3; }
+.ck-month-game > :nth-child(3) { grid-column: 5; }
+.ck-month-game > :nth-child(4) { grid-column: 7; }
+.ck-month-game > :nth-child(5) { grid-column: 9; }
+.ck-mtri-text {
+  position: relative;
+  display: inline-block;
+  line-height: var(--ck-logo);
 }
-.ck-logo {
+/* Logos sit on a subtle light disc so dark logos (SAS, MEM, NOP, UTA…) read on the dark background. */
+.ck-logo-backing {
+  display: grid;
+  place-items: center;
+  width: var(--ck-logo);
+  height: var(--ck-logo);
+  border-radius: 50%;
+  background: rgba(226, 231, 238, 0.92);
+}
+.ck-logo-backing img {
   display: block;
-  width: var(--ck-logo-size);
-  height: var(--ck-logo-size);
+  width: calc(var(--ck-logo) * 0.8);
+  height: calc(var(--ck-logo) * 0.8);
   object-fit: contain;
+}
+.ck-logo-empty {
+  width: var(--ck-logo);
+  height: var(--ck-logo);
+}
+.ck-tv-pill {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: var(--ck-pill);
+  height: calc(var(--ck-logo) * 0.72);
+  line-height: calc(var(--ck-logo) * 0.72 - 2px);
+  border: 1px solid var(--ck-tv);
+  border-radius: 3px;
+  color: var(--ck-tv);
+  font-size: calc(var(--ck-font) * 0.68);
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.02em;
+  outline-offset: 1px;
+}
+/* B2B: small dot over the top-right corner of the tricode; takes no width. */
+.ck-b2b-mark {
+  position: absolute;
+  top: -1px;
+  right: -3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ck-b2b);
+  box-shadow: 0 0 0 1px var(--ck-surface);
+}
+/* Tooltips for the TV pill and B2B mark (hover or keyboard focus). */
+.ck-month-full [data-tip]:hover::after,
+.ck-month-full [data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 5px);
+  right: -4px;
+  background: #05070a;
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
 }
 .ck-month-tight .ck-cell {
   padding: 2px;
 }
 .ck-month-tight .ck-grid {
   gap: 2px;
-}
-.ck-month-tight .ck-month-games {
-  --ck-logo-size: 16px;
-  --ck-mgap: 2px;
 }
 
 .ck-detail {

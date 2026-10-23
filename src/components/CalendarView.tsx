@@ -2,7 +2,7 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import {
   addDays,
@@ -16,8 +16,10 @@ import {
   monthCells,
   monthOf,
   seasonMonths,
+  nationalTv,
   teamGames,
   teamLabel,
+  tipoff,
   weekOf,
   type CalendarData,
 } from '../data/model';
@@ -259,12 +261,42 @@ export function MonthNavigator({ data, month, onMonthChange, selectedDate, onSel
 // ---------------------------------------------------------------- league: full month
 
 /**
- * Below this widget width a "[logo] AWAY @ [logo] HOME" line doesn't fit a 7-column cell (measured: ~90 px per
- * line), so League → Month falls back to the count navigator. 736 px = a 768 px window minus the page padding.
+ * Below this widget width a game line doesn't fit a 7-column cell, so League → Month falls back to the count
+ * navigator. The cutoff is a 768 px window: 768 − 32 px page padding − up to 17 px scrollbar (the app reserves the
+ * scrollbar's space with scrollbar-gutter, and measures its real content width) = 719, so 718.
  */
-export const FULL_MONTH_MIN_WIDTH = 736;
-/** Below this width the full month uses its tight type sizes. */
+export const FULL_MONTH_MIN_WIDTH = 718;
+/** Below this width the month grid uses 2 px gaps and cell padding (instead of 4 px). */
 const ROOMY_MONTH_WIDTH = 1000;
+
+/**
+ * Month game line geometry in px (at full size). Widths are fixed rather than measured at runtime: the text is the
+ * bundled Inter font, so they are the same on every OS. `tri` fits the widest tricode (MEM, 26.95 px at 11 px
+ * semibold). Line: logo · gap · AWAY · sep · logo · gap · HOME · pillGap · TV.
+ */
+export const MONTH_LINE = { logo: 16, gap: 2, tri: 28, sep: 6, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7 } as const;
+export const MONTH_LINE_WIDTH = 2 * (MONTH_LINE.logo + MONTH_LINE.gap + MONTH_LINE.tri) + MONTH_LINE.sep + MONTH_LINE.pillGap + MONTH_LINE.pill;
+/** Space between game columns inside a day cell. */
+export const MONTH_COL_GAP = 10;
+
+/** Inner width of one day cell for a given widget width (matches the grid gap, cell padding and border in CSS). */
+export function monthCellInner(width: number): number {
+  const roomy = width >= ROOMY_MONTH_WIDTH;
+  const gridGap = roomy ? 4 : 2;
+  const pad = roomy ? 4 : 2;
+  return (width - 6 * gridGap) / 7 - 2 * pad - 2;
+}
+
+/** Game columns per day cell: as many full-size lines as fit, with MONTH_COL_GAP between them; at least 1. */
+export function monthColumns(width: number): number {
+  return Math.max(1, Math.floor((monthCellInner(width) + MONTH_COL_GAP) / (MONTH_LINE_WIDTH + MONTH_COL_GAP)));
+}
+
+/**
+ * Lines keep their full size; only between the 768 px cutoff and ~860 px windows, where one line is wider than the
+ * cell, they scale down to fit.
+ */
+export const monthLineScale = (width: number) => Math.min(1, monthCellInner(width) / MONTH_LINE_WIDTH);
 
 export interface LeagueMonthViewProps {
   data: CalendarData;
@@ -277,24 +309,92 @@ export interface LeagueMonthViewProps {
   size: WidgetSize;
   /** Local calendar date to highlight as today. */
   today?: string;
+  /** IANA zone for the time labels; default: the browser's local zone. */
+  timeZone?: string;
 }
 
-function MonthTeam({ team }: { team: ScheduleGame['homeTeam'] }) {
+function MonthTeam({ team, b2b }: { team: ScheduleGame['homeTeam']; b2b: boolean }) {
   const logo = teamLogo(team.teamId);
+  const label = teamLabel(team);
   return (
     <>
-      {logo ? <img className="ck-logo" src={logo} alt="" width={18} height={18} /> : <span className="ck-logo" aria-hidden="true" />}
-      <span className="ck-mtri">{teamLabel(team)}</span>
+      {logo ? (
+        <span className="ck-logo-backing">
+          <img src={logo} alt="" width={16} height={16} />
+        </span>
+      ) : (
+        <span className="ck-logo-empty" aria-hidden="true" />
+      )}
+      <span className="ck-mtri" data-tricode={label}>
+        <span className="ck-mtri-text">
+          {label}
+          {b2b && <span className="ck-b2b-mark" data-tip="Back-to-back" aria-label="Back-to-back" role="img" tabIndex={0} />}
+        </span>
+      </span>
     </>
   );
 }
 
-/** Month calendar listing every game of each day (logos + tricodes only), in tip-off order. Click a day → onSelectDate. */
-export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSelectDate, tvOnly, size, today }: LeagueMonthViewProps) {
-  const tight = size.width < ROOMY_MONTH_WIDTH;
+function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame }) {
+  const tv = nationalTv(game);
+  const b2b = (id: number) => isBackToBack(data, id, game.dateEt);
   return (
-    <section className={`ck-month-full${tight ? ' ck-month-tight' : ''}`} aria-label="League month">
+    <li className="ck-month-game" data-game-id={game.gameId} aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}>
+      <MonthTeam team={game.awayTeam} b2b={b2b(game.awayTeam.teamId)} />
+      <MonthTeam team={game.homeTeam} b2b={b2b(game.homeTeam.teamId)} />
+      <span className="ck-tv-slot">
+        {tv.length > 0 && (
+          <span className="ck-tv-pill" data-tip={tv.join(', ')} aria-label={`National TV: ${tv.join(', ')}`} tabIndex={0}>
+            TV
+          </span>
+        )}
+      </span>
+    </li>
+  );
+}
+
+/** A day's games grouped by local tip-off label ("20:00", "00:30 (+1)", "TBD"), keeping tip-off order. */
+function timeGroups(games: ScheduleGame[], timeZone?: string): { label: string; games: ScheduleGame[] }[] {
+  const out: { label: string; games: ScheduleGame[] }[] = [];
+  for (const g of games) {
+    const label = tipoff(g, timeZone).label;
+    const last = out.at(-1);
+    if (last && last.label === label) last.games.push(g);
+    else out.push({ label, games: [g] });
+  }
+  return out;
+}
+
+/**
+ * Month calendar listing every game of each day, grouped by tip-off time, in as many columns as fit (filled
+ * down, then across). Lines: logos + tricodes (away left, home right), TV pill, B2B marks. Click a day → onSelectDate.
+ */
+export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSelectDate, tvOnly, size, today, timeZone }: LeagueMonthViewProps) {
+  const cols = monthColumns(size.width);
+  const s = monthLineScale(size.width);
+  const L = MONTH_LINE;
+  const px = (n: number) => `${Math.round(n * s * 100) / 100}px`;
+  const vars = {
+    '--ck-logo': px(L.logo),
+    '--ck-gap': px(L.gap),
+    '--ck-tri': px(L.tri),
+    '--ck-sep': px(L.sep),
+    '--ck-pill-gap': px(L.pillGap),
+    '--ck-pill': px(L.pill),
+    '--ck-font': px(L.font),
+    '--ck-label-font': px(L.labelFont),
+    '--ck-row-gap': px(L.rowGap),
+    '--ck-group-gap': px(L.groupGap),
+    '--ck-col-gap': `${MONTH_COL_GAP}px`,
+    '--ck-line': px(MONTH_LINE_WIDTH),
+  } as CSSProperties;
+
+  return (
+    <section className={`ck-month-full${size.width < ROOMY_MONTH_WIDTH ? ' ck-month-tight' : ''}`} aria-label="League month" style={vars}>
       <MonthHeader month={month} months={seasonMonths(data)} onMonthChange={onMonthChange} />
+      <div className="ck-month-legend" data-testid="month-legend">
+        Away · Home
+      </div>
       <div className="ck-grid" role="grid">
         {WEEKDAYS.map((d) => (
           <div key={d} className="ck-grid-head" role="columnheader">
@@ -315,17 +415,25 @@ export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSe
               tabIndex={open ? 0 : undefined}
               aria-label={`${fmtDate(date, { month: 'long', day: 'numeric' })}: ${games.length} game${games.length === 1 ? '' : 's'}`}
               onClick={open}
-              onKeyDown={open && ((e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()))}
+              onKeyDown={open && ((e) => e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()))}
             >
               <span className="ck-daynum">{Number(date.slice(8))}</span>
               {games.length > 0 && (
-                <ul className="ck-month-games">
-                  {games.map((g) => (
-                    <li key={g.gameId} className="ck-month-game" data-game-id={g.gameId}>
-                      <MonthTeam team={g.awayTeam} /> <span className="ck-vsat">@</span> <MonthTeam team={g.homeTeam} />
-                    </li>
+                <div className="ck-month-day" data-cols={cols}>
+                  {timeGroups(games, timeZone).map((grp) => (
+                    <div key={grp.label} className="ck-tgroup">
+                      <div className="ck-tlabel">{grp.label}</div>
+                      <ul
+                        className="ck-tgames"
+                        style={{ gridTemplateColumns: `repeat(${cols}, var(--ck-line))`, gridTemplateRows: `repeat(${Math.ceil(grp.games.length / cols)}, auto)`, gridAutoFlow: 'column' }}
+                      >
+                        {grp.games.map((g) => (
+                          <MonthGameLine key={g.gameId} data={data} game={g} />
+                        ))}
+                      </ul>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           );
@@ -334,6 +442,7 @@ export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSe
     </section>
   );
 }
+
 
 // ---------------------------------------------------------------- CalendarView: the combined widget
 
@@ -421,6 +530,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           tvOnly={state.tvOnly}
           size={size}
           today={localDate(now, timeZone)}
+          timeZone={timeZone}
         />
       ) : leagueMonth ? (
         <MonthNavigator
