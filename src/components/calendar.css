@@ -241,6 +241,8 @@
   min-height: 92px;
   justify-content: flex-start;
   overflow: hidden;
+  /* lines size their text to the cell's width (cqi), so they fit whatever font the system uses */
+  container-type: inline-size;
 }
 .ck-month-cell.ck-cell-game {
   cursor: pointer;
@@ -250,6 +252,7 @@
 }
 .ck-month-games {
   --ck-logo-size: 18px;
+  --ck-mgap: 3px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -257,7 +260,7 @@
      so every line lines up and no tricode overflows its column. Lines use it through subgrid. */
   display: grid;
   grid-template-columns: var(--ck-logo-size) max-content max-content var(--ck-logo-size) max-content;
-  column-gap: 3px;
+  column-gap: var(--ck-mgap);
   row-gap: 1px;
   justify-content: start;
 }
@@ -266,7 +269,8 @@
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: center;
-  font-size: 12px;
+  /* "AWAY @ HOME" is ~6.4 em wide in the widest common UI fonts (DejaVu Sans bold); 9–12 px. */
+  font-size: clamp(9px, calc((100cqi - 2 * var(--ck-logo-size) - 4 * var(--ck-mgap) - 2px) / 6.4), 12px);
   line-height: var(--ck-logo-size);
   font-weight: 600;
   white-space: nowrap;
@@ -288,10 +292,7 @@
 }
 .ck-month-tight .ck-month-games {
   --ck-logo-size: 16px;
-  column-gap: 2px;
-}
-.ck-month-tight .ck-month-game {
-  font-size: 10px;
+  --ck-mgap: 2px;
 }
 
 .ck-detail {

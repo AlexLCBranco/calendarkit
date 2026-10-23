@@ -129,8 +129,10 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - **Narrow widths keep the count navigator** (`MonthNavigator`): the full month needs a widget ≥ **736 px** wide
   (`FULL_MONTH_MIN_WIDTH`, = a 768 px window). Measured: a line needs ~90 px and a 7-column cell has ~73 px inside at
   a 640 px window, ~97 px at 768. So phones (< 640) **and** 640–767 px windows show the count navigator; tablets
-  from 768 px (iPad portrait) and desktops get the full month. Below 1000 px widget width the full month uses
-  16 px logos / 10 px tricodes; above, 18 px / 12 px.
+  from 768 px (iPad portrait) and desktops get the full month. Logos are 16 px below 1000 px widget width, 18 px
+  above. Tricode text scales with the cell's width (CSS container units, 9–12 px), because fixed sizes clipped
+  on Linux: its default UI font (DejaVu) is ~15 % wider than Windows' Segoe UI, and CI caught 102 clipped lines at
+  768 px with fixed 10 px text. At 768 px the text is 9 px (small but readable); 12 px from ~1100 px windows.
 - **Snapshot size**: the raw feed is ~4 MB (≈ 200–300 KB gzipped over the wire). Committed daily only when it
   changes. Kept raw so no information is lost (scores later).
 
