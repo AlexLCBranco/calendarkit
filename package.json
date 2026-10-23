@@ -11,7 +11,8 @@
     "e2e": "playwright test",
     "typecheck": "tsc",
     "update-schedule": "tsx scripts/update-schedule.ts",
-    "make-fixture": "tsx scripts/make-fixture.ts"
+    "make-fixture": "tsx scripts/make-fixture.ts",
+    "e2e:live": "tsx scripts/e2e-live.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

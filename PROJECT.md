@@ -73,8 +73,8 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - `card.test.tsx` / `views.test.tsx` (jsdom): markers, TV badge/filter, TBD, B2B, rotationkit action contract,
   navigation.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, month jump, no console errors; screenshots to
-  `e2e/screenshots/` (git-ignored; uploaded as a CI artifact). `E2E_BASE_URL=<url> npm run e2e` runs it against
-  a deployed site (set the variable in the Playwright config's environment, e.g. `npx cross-env`, or in CI).
+  `e2e/screenshots/` (git-ignored; uploaded as a CI artifact). `npm run e2e:live -- <url>` runs it against a
+  deployed site.
 - Manual only: none needed for v1 beyond judging look and feel.
 
 ## Decisions
