@@ -1,0 +1,369 @@
+/* Calendar widgets. Dark by default; all colors are variables on .ck-root so a host can restyle them. */
+
+.ck-root,
+.ck-card {
+  --ck-bg: #0f1115;
+  --ck-surface: #171a21;
+  --ck-surface-2: #1f232c;
+  --ck-border: #2a2f3a;
+  --ck-text: #e6e8ec;
+  --ck-muted: #8b93a3;
+  --ck-accent: #4ea1ff;
+  --ck-cup: #d9a521;
+  --ck-playoffs: #e5534b;
+  --ck-playin: #c06bd6;
+  --ck-tv: #3fb68b;
+  --ck-b2b: #e08a3c;
+  color: var(--ck-text);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.ck-root *,
+.ck-card * {
+  box-sizing: border-box;
+}
+.ck-root {
+  width: 100%;
+  background: var(--ck-bg);
+}
+
+.ck-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.ck-tabs {
+  display: inline-flex;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ck-tab,
+.ck-toggle {
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  border: 0;
+  padding: 7px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+.ck-tab-selected,
+.ck-toggle-on {
+  background: var(--ck-accent);
+  color: #06121f;
+  font-weight: 600;
+}
+.ck-toggle {
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+}
+.ck-league-tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.ck-check {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--ck-text);
+  cursor: pointer;
+}
+.ck-select {
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font: inherit;
+  max-width: 100%;
+}
+
+.ck-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ck-nav-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+}
+.ck-arrow {
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ck-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Week strip */
+.ck-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.ck-weekday {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 0;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+.ck-weekday:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ck-weekday-selected {
+  border-color: var(--ck-accent);
+  background: var(--ck-surface-2);
+}
+.ck-weekday-today .ck-weekday-num {
+  color: var(--ck-accent);
+}
+.ck-weekday-name,
+.ck-weekday-count {
+  font-size: 11px;
+  color: var(--ck-muted);
+}
+.ck-weekday-num {
+  font-weight: 600;
+}
+
+.ck-daylist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ck-empty {
+  color: var(--ck-muted);
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* Month grids */
+.ck-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.ck-grid-head {
+  text-align: center;
+  font-size: 12px;
+  color: var(--ck-muted);
+  padding: 4px 0;
+}
+.ck-cell {
+  min-height: 92px;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--ck-text);
+  font: inherit;
+  text-align: left;
+}
+.ck-cell-empty {
+  background: transparent;
+  border-color: transparent;
+}
+.ck-cell-past {
+  opacity: 0.6;
+}
+.ck-cell-selected {
+  border-color: var(--ck-accent);
+}
+.ck-daynum {
+  font-size: 11px;
+  color: var(--ck-muted);
+}
+.ck-count-cell {
+  min-height: 56px;
+  cursor: pointer;
+  align-items: flex-start;
+}
+.ck-count-cell:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.ck-count {
+  align-self: center;
+  font-size: 18px;
+  font-weight: 600;
+}
+.ck-compact .ck-cell {
+  min-height: 58px;
+  padding: 3px;
+}
+.ck-compact .ck-cell-game {
+  cursor: pointer;
+}
+.ck-compact .ck-count-cell {
+  min-height: 44px;
+}
+.ck-detail {
+  margin-top: 12px;
+}
+.ck-detail-date {
+  color: var(--ck-muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+/* Game card */
+.ck-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  background: var(--ck-surface-2);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.ck-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  min-width: 5.5em;
+}
+.ck-tbd {
+  color: var(--ck-muted);
+}
+.ck-dayoff {
+  font-weight: 400;
+  color: var(--ck-muted);
+  font-size: 0.85em;
+}
+.ck-matchup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.ck-vsat {
+  color: var(--ck-muted);
+  font-weight: 400;
+}
+.ck-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ck-tag {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--ck-border);
+  color: var(--ck-muted);
+  white-space: nowrap;
+  font-weight: 500;
+}
+.ck-cup,
+.ck-cup-final {
+  color: var(--ck-cup);
+  border-color: var(--ck-cup);
+}
+.ck-cup-final {
+  background: var(--ck-cup);
+  color: #1a1400;
+}
+.ck-play-in {
+  color: var(--ck-playin);
+  border-color: var(--ck-playin);
+}
+.ck-playoffs {
+  color: var(--ck-playoffs);
+  border-color: var(--ck-playoffs);
+}
+.ck-tv {
+  color: var(--ck-tv);
+  border-color: var(--ck-tv);
+}
+.ck-b2b {
+  color: var(--ck-b2b);
+  border-color: var(--ck-b2b);
+}
+.ck-open {
+  margin-left: auto;
+  background: transparent;
+  color: var(--ck-accent);
+  border: 1px solid var(--ck-accent);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Compact card: stacked, tiny (team month cells and phone lists) */
+.ck-card-compact {
+  gap: 2px 6px;
+  padding: 4px 6px;
+}
+.ck-cell .ck-card-compact {
+  flex-direction: column;
+  align-items: flex-start;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+}
+.ck-cell .ck-card-compact .ck-time {
+  min-width: 0;
+  font-weight: 500;
+  font-size: 11px;
+}
+.ck-cell .ck-card-compact .ck-open {
+  margin-left: 0;
+  font-size: 11px;
+  padding: 0 6px;
+}
+.ck-compact .ck-cell .ck-card-compact .ck-tags .ck-tv {
+  /* TV names don't fit a phone cell: a dot marks a national TV game; the detail card below shows the names. */
+  font-size: 0;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  background: var(--ck-tv);
+}
+.ck-compact .ck-cell .ck-card-compact .ck-tag {
+  font-size: 9px;
+  padding: 0 3px;
+}
+.ck-compact .ck-cell .ck-card-compact .ck-dayoff {
+  display: block;
+}
+.ck-cell .ck-card-compact .ck-matchup {
+  flex-wrap: wrap;
+  gap: 2px 4px;
+}
+.ck-cell {
+  overflow: hidden;
+}

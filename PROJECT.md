@@ -16,7 +16,7 @@ where-to-watch info, embedding in gauntlet.
 ## Status
 - [x] Step 0 — probe (below)
 - [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
-- [ ] Views
+- [x] Views — `src/components/CalendarView.tsx`: `TeamMonthGrid`, `LeagueDayView` (week strip, prev/next day), `MonthNavigator` (counts, click → day), `TeamPicker`, and `CalendarView` combining them. App shell `src/App.tsx` (URL state `?view=&team=&date=&tv=`).
 - [ ] Game card
 - [ ] Tests (unit + Playwright)
 - [ ] Deploy (Vercel import by Alex) — live URL: _not yet_
@@ -77,6 +77,12 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   (there is no "next upcoming" date then).
 - **Back-to-back** = the team also plays on the previous *calendar* day (ET game dates), not the previous league
   game date (which would flag games after the All-Star break).
+- **Widget API**: components take `data` (`CalendarData`) + `size` ({width, height}; compact below 640 px) and
+  optional `now`/`timeZone`; they raise `onOpenGame(gameId)` / `onStateChange` and never touch the URL or open
+  links. Styles are in `calendar.css` imported by the components, colors as CSS variables.
+- **League day arrows** step one calendar day (empty days say "No games this day"); range = first..last game date.
+- **Phone team grid**: cells show time, vs/@, opponent, markers; national TV shrinks to a dot; tapping a game shows
+  the full card (with TV names and the rotationkit action) below the grid.
 - **Snapshot size**: the raw feed is ~4 MB (≈ 200–300 KB gzipped over the wire). Committed daily only when it
   changes. Kept raw so no information is lost (scores later).
 
