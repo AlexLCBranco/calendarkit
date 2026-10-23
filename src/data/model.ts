@@ -200,11 +200,69 @@ export function markers(g: ScheduleGame): Marker[] {
 /** Team label for display: tricode, or "TBD" while the team isn't decided. */
 export const teamLabel = (t: ScheduleGame['homeTeam']) => (t.teamId && t.teamTricode ? t.teamTricode : 'TBD');
 
-/** From one team's point of view: opponent and home/away. Undefined if the team isn't in the game. */
-export function perspective(g: ScheduleGame, teamId: number): { home: boolean; opponent: ScheduleGame['homeTeam'] } | undefined {
-  if (g.homeTeam.teamId === teamId) return { home: true, opponent: g.awayTeam };
-  if (g.awayTeam.teamId === teamId) return { home: false, opponent: g.homeTeam };
+/** From one team's point of view: the team itself, opponent and home/away. Undefined if the team isn't in the game. */
+export function perspective(g: ScheduleGame, teamId: number): { home: boolean; team: ScheduleGame['homeTeam']; opponent: ScheduleGame['homeTeam'] } | undefined {
+  if (g.homeTeam.teamId === teamId) return { home: true, team: g.homeTeam, opponent: g.awayTeam };
+  if (g.awayTeam.teamId === teamId) return { home: false, team: g.awayTeam, opponent: g.homeTeam };
   return undefined;
+}
+
+/** "vs BKN" / "@ LAL" from the team's side. */
+const sideLabel = (g: ScheduleGame, teamId: number) => {
+  const p = perspective(g, teamId)!;
+  return `${p.home ? 'vs' : '@'} ${teamLabel(p.opponent)}`;
+};
+
+// ---------------------------------------------------------------- back-to-back pairs (team views)
+
+export type B2BCode = 'HH' | 'HA' | 'AH' | 'AA';
+
+/** One team's back-to-back: night 1 and night 2 on consecutive calendar days (ET game dates). */
+export interface B2BPair {
+  teamId: number;
+  first: ScheduleGame;
+  second: ScheduleGame;
+  /** Home/away of night 1, then night 2. */
+  code: B2BCode;
+  /** Arena cities from the feed (`arenaCity`); empty when the feed has none. */
+  fromCity: string;
+  toCity: string;
+  /** The team changes city between the nights. Only from the feed's arena cities; false if either is missing. */
+  travels: boolean;
+  /** "Back-to-back: vs BKN (home) → @ LAL (away) · travels Boston → Los Angeles" */
+  tip: string;
+}
+
+/** Every back-to-back of a team, in date order (from all its games, regardless of any filter). */
+export function teamB2BPairs(data: CalendarData, teamId: number): B2BPair[] {
+  const games = teamGames(data, teamId);
+  const out: B2BPair[] = [];
+  for (let i = 1; i < games.length; i++) {
+    const first = games[i - 1]!;
+    const second = games[i]!;
+    if (daysBetween(first.dateEt, second.dateEt) !== 1) continue;
+    const h1 = first.homeTeam.teamId === teamId;
+    const h2 = second.homeTeam.teamId === teamId;
+    const fromCity = String(first.arenaCity ?? '').trim();
+    const toCity = String(second.arenaCity ?? '').trim();
+    const travels = !!fromCity && !!toCity && fromCity !== toCity;
+    const where = (home: boolean) => (home ? 'home' : 'away');
+    const tip = `Back-to-back: ${sideLabel(first, teamId)} (${where(h1)}) → ${sideLabel(second, teamId)} (${where(h2)})${travels ? ` · travels ${fromCity} → ${toCity}` : ''}`;
+    out.push({ teamId, first, second, code: `${h1 ? 'H' : 'A'}${h2 ? 'H' : 'A'}` as B2BCode, fromCity, toCity, travels, tip });
+  }
+  return out;
+}
+
+/**
+ * The opponent's side when it plays the 2nd night of a back-to-back in this game: tooltip
+ * "CHI on 2nd night of a back-to-back · played @ MIA yesterday". Undefined otherwise (incl. its 1st night).
+ */
+export function opponentSecondNight(data: CalendarData, g: ScheduleGame, teamId: number): string | undefined {
+  const opp = perspective(g, teamId)?.opponent;
+  if (!opp?.teamId || !isBackToBack(data, opp.teamId, g.dateEt)) return undefined;
+  const yesterday = addDays(g.dateEt, -1);
+  const prev = data.byDate.get(yesterday)?.find((x) => x.homeTeam.teamId === opp.teamId || x.awayTeam.teamId === opp.teamId);
+  return `${teamLabel(opp)} on 2nd night of a back-to-back${prev ? ` · played ${sideLabel(prev, opp.teamId)} yesterday` : ''}`;
 }
 
 /** Number of shown games per date (for the month navigator), optionally TV games only. */

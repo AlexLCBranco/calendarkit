@@ -20,6 +20,14 @@ function collectCdn(page: Page) {
 }
 const shot = (page: Page, name: string, project: string) => page.screenshot({ path: `e2e/screenshots/${project}-${name}.png` });
 const selected = (page: Page, name: string) => page.getByRole('tab', { name, exact: true });
+/** Team picker (custom listbox with logos): open it and click the team. */
+async function pickTeam(page: Page, name: string) {
+  await page.getByTestId('team-picker').click();
+  await page.getByRole('option', { name, exact: true }).click();
+  await expect(page.getByTestId('team-header')).toHaveText(name);
+}
+/** League → Calendar is the week view where 7 columns fit a game line (desktop widths), else the count grid. */
+const weekView = (project: string) => project === 'desktop' || project === 'desktop-xl';
 const settle = (page: Page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 
 async function open(page: Page, search: string) {
@@ -82,13 +90,13 @@ test('List | Calendar switch: both options in League and Team, four views, layou
   await open(page, '');
   const views: [string, string, () => Promise<void>][] = [
     ['League', 'List', () => expect(page.getByRole('region', { name: 'League schedule' })).toBeVisible()],
-    ['League', 'Calendar', () => expect(page.getByRole('region', { name: project === 'phone' ? 'Month navigator' : 'League month' })).toBeVisible()],
+    ['League', 'Calendar', () => expect(page.getByRole('region', { name: weekView(project) ? 'League week' : 'Month navigator' })).toBeVisible()],
     ['Team', 'Calendar', () => expect(page.getByRole('region', { name: 'Celtics schedule' })).toBeVisible()],
     ['Team', 'List', () => expect(page.getByRole('region', { name: 'Celtics games' })).toBeVisible()],
   ];
   for (const [mode, layout, check] of views) {
     await selected(page, mode).click();
-    if (mode === 'Team') await page.getByLabel('Team', { exact: true }).selectOption({ label: 'Boston Celtics' });
+    if (mode === 'Team') await pickTeam(page, 'Boston Celtics');
     await selected(page, layout).click();
     await expect(selected(page, 'List')).toBeVisible();
     await expect(selected(page, 'Calendar')).toBeVisible();
@@ -242,7 +250,7 @@ test('league list: continuous days with sticky headers, week strip follows, boun
   expect(errors).toEqual([]);
 });
 
-test('team list: every game in order, opens at the next game, earlier games above, markers and B2B', async ({ page }) => {
+test('team list: every game in order, opens at the next game, earlier games above, markers and B2B', async ({ page }, info) => {
   const errors = collectErrors(page);
   await open(page, '?view=team&layout=list&team=LAL');
   const list = page.getByTestId('team-list');
@@ -252,7 +260,7 @@ test('team list: every game in order, opens at the next game, earlier games abov
     [...el.querySelectorAll<HTMLElement>('article')].map((a) => ({
       id: a.dataset.gameId!,
       next: a.hasAttribute('data-next'),
-      b2b: !!a.querySelector('.ck-b2b'),
+      b2b: !!a.querySelector('.ck-b2b-n2'),
       date: a.querySelector('.ck-date')!.textContent!,
       matchup: a.querySelector('.ck-matchup')!.textContent!,
       imgs: a.querySelectorAll('.ck-logo-backing img').length,
@@ -261,14 +269,14 @@ test('team list: every game in order, opens at the next game, earlier games abov
   );
   expect(rows.map((r) => r.id)).toEqual(expected.map((g) => g.id));
   expect(rows.length).toBeGreaterThanOrEqual(80);
-  // B2B exactly where the team also played the previous calendar day
+  // night 2 of a back-to-back exactly where the team also played the previous calendar day
   const dates = new Set(expected.map((g) => g.date));
   expect(rows.map((r) => r.b2b)).toEqual(expected.map((g) => dates.has(prevDay(g.date))));
   expect(rows.filter((r) => r.b2b).length).toBeGreaterThan(5);
   for (const r of rows) {
     expect(r.date).toMatch(/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat) \d\d\/\d\d$/);
-    expect(r.matchup).toMatch(/^(vs|@) /);
-    expect(r.imgs).toBe(1);
+    expect(r.matchup).toMatch(/^LAL (vs|@) [A-Z]{3}/);
+    expect(r.imgs).toBe(2);
   }
   // opens at the next game not over (first game on or after Nov 15 at 15:00 UTC), at the top of the list
   const nextIdx = rows.findIndex((r) => r.next);
@@ -278,7 +286,18 @@ test('team list: every game in order, opens at the next game, earlier games abov
   // markers and TV badge with network names
   await expect(list.locator('.ck-cup').first()).toBeAttached();
   await expect(list.locator('[data-testid="tv-badge"]').first()).toHaveText(/\w/);
-  expect(await rowsWithoutLogosDiffer(page)).toEqual([]);
+  if (info.project.name !== 'phone') expect(await rowsWithoutLogosDiffer(page)).toEqual([]);
+  // every width, phones included: date, time and "LAL vs OPP" (both logos) always share one line; rows without
+  // tags are single-line. On a phone, the selected team's logo leaves no room for tags on that line, so a row with
+  // a B2B label or TV names carries them on a second line (measured; see PROJECT.md).
+  const lines = await list.evaluate((el) =>
+    [...el.querySelectorAll('article')].map((a) => {
+      const top = (s: string) => Math.round(a.querySelector(s)!.getBoundingClientRect().top + a.querySelector(s)!.getBoundingClientRect().height / 2);
+      return { oneLine: new Set([top('.ck-date'), top('[data-testid="tipoff"]'), top('.ck-matchup')]).size === 1, tags: a.querySelector('.ck-tags')!.children.length, h: a.getBoundingClientRect().height };
+    }),
+  );
+  expect(lines.filter((l) => !l.oneLine)).toEqual([]);
+  expect(Math.max(...lines.filter((l) => !l.tags).map((l) => l.h))).toBeLessThanOrEqual(info.project.name === 'phone' ? 28.5 : 36.5);
   // earlier games: scroll up
   await list.hover();
   for (let i = 0; i < 40; i++) await page.mouse.wheel(0, -600);
@@ -287,10 +306,10 @@ test('team list: every game in order, opens at the next game, earlier games abov
   await page.waitForFunction(() => [...document.images].every((i) => i.complete));
   expect(await page.evaluate(() => [...document.images].filter((i) => i.naturalWidth === 0).length)).toBe(0);
   // same team picker as Team → Calendar
-  await page.getByLabel('Team', { exact: true }).selectOption({ label: 'Miami Heat' });
+  await pickTeam(page, 'Miami Heat');
   await expect(page.getByRole('region', { name: 'Heat games' })).toBeVisible();
   await selected(page, 'Calendar').click();
-  await expect(page.getByLabel('Team', { exact: true })).toHaveValue('1610612748');
+  await expect(page.getByTestId('team-picker')).toHaveAttribute('data-team-id', '1610612748');
   expect(errors).toEqual([]);
 });
 
@@ -307,7 +326,7 @@ test('TV games only in all four views', async ({ page }, info) => {
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   expect(await noTv('.ck-cell [data-game-id]:not(:has([data-testid="tv-badge"]))')).toBe(0);
   await open(page, '?view=league&layout=calendar&date=2026-11-02&tv=1');
-  if (info.project.name === 'phone') {
+  if (!weekView(info.project.name)) {
     await expect(page.getByRole('region', { name: 'Month navigator' })).toBeVisible();
   } else {
     await expect(page.locator('.ck-month-game').first()).toBeVisible();

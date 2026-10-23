@@ -2,16 +2,30 @@
 // "Open" actions are raised through onOpenGame(gameId) and the host decides what that means.
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { isOver, markers, nationalTv, perspective, teamLabel, tipoff } from '../data/model';
+import { isOver, markers, nationalTv, perspective, teamLabel, tipoff, type B2BPair } from '../data/model';
 import { teamLogo } from '../data/teams';
 import './calendar.css';
 
+/** The selected team's side of a back-to-back, as shown on one of its two nights. */
+export interface B2BNight {
+  pair: B2BPair;
+  night: 1 | 2;
+}
+
 export interface GameCardProps {
   game: ScheduleGame;
-  /** Team view: show the game from this team's side ("vs BOS" / "@ BOS"). League view: omit. */
+  /** Team view: show the game from this team's side ("BOS vs CHI" / "BOS @ DET"). League view: omit. */
   teamId?: number;
-  /** Teams in this game that also played the previous day (see isBackToBack). */
+  /** Team view: show the selected team first (with its logo) before vs/@; otherwise only "vs CHI". */
+  teamFirst?: boolean;
+  /** League view: teams in this game that also played the previous day (see isBackToBack). */
   backToBackTeamIds?: number[];
+  /** Team view: the selected team's back-to-back nights on this game ("1/2 · HA", "2/2 · HA"). */
+  b2b?: B2BNight[];
+  /** Team view: B2B labels without the home/away code ("1/2"), for cells too narrow for "1/2 · HA". */
+  shortB2B?: boolean;
+  /** Team view: tooltip when the opponent is on the 2nd night of a back-to-back (orange dot on its tricode). */
+  opponentB2B?: string;
   /** Current time (ms). Decides whether the game is over (rotationkit action). */
   now: number;
   /** IANA zone for tip-off; default: the browser's local zone. */
@@ -39,39 +53,90 @@ export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
   );
 }
 
-export function GameCard({ game, teamId, backToBackTeamIds = [], now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next }: GameCardProps) {
+/** Small plane: the team changes city between the two nights of a back-to-back. */
+export const PlaneIcon = () => (
+  <svg className="ck-plane" data-testid="plane" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+    <path fill="currentColor" transform="rotate(45 8 8)" d="M8 0c.6 0 1 .5 1 1.2v4.3l6 3.5v1.5L9 8.7v3.6l1.8 1.3V15L8 14.2 5.2 15v-1.4L7 12.3V8.7L1 10.5V9l6-3.5V1.2C7 .5 7.4 0 8 0Z" />
+  </svg>
+);
+
+/**
+ * "1/2 · HA" (outlined on night 1, solid on night 2), with the plane on a city change; tooltip with both games.
+ * `short`: "1/2" only (phone calendar cells, where the full label doesn't fit; the tooltip and detail card have it).
+ */
+export function B2BLabel({ night, short = false }: { night: B2BNight; short?: boolean }) {
+  const { pair } = night;
+  return (
+    <span
+      className={`ck-b2b-label ck-b2b-n${night.night}`}
+      data-b2b-night={night.night}
+      data-tip={pair.tip}
+      aria-label={pair.tip}
+      role="img"
+      tabIndex={0}
+    >
+      {night.night}/2{short ? '' : ` · ${pair.code}`}
+      {pair.travels && <PlaneIcon />}
+    </span>
+  );
+}
+
+/** Orange dot over a tricode: that team is on the 2nd night of a back-to-back. */
+export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
+
+export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
   const side = teamId ? perspective(game, teamId) : undefined;
-  const b2b = new Set(backToBackTeamIds);
+  const b2bIds = new Set(backToBackTeamIds);
   const canOpen = !!onOpenGame && isOver(game, now);
   const away = teamLabel(game.awayTeam);
   const home = teamLabel(game.homeTeam);
 
   const matchup = side ? (
     <span className="ck-matchup">
-      <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}<span className="ck-team">{teamLabel(side.opponent)}</span>
-      {b2b.has(teamId!) && <span className="ck-tag ck-b2b" title="Back-to-back: also played the previous day">B2B</span>}
+      {teamFirst && (
+        <>
+          <span className="ck-side">
+            {logos && <TeamLogo team={side.team} />}
+            <span className="ck-team ck-self">{teamLabel(side.team)}</span>
+          </span>{' '}
+        </>
+      )}
+      <span className="ck-side">
+        <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}
+        <span className="ck-team ck-opp">
+          {teamLabel(side.opponent)}
+          {opponentB2B && <B2BDot tip={opponentB2B} />}
+        </span>
+      </span>
     </span>
   ) : (
     <span className="ck-matchup">
       {logos && <TeamLogo team={game.awayTeam} />}
       <span className="ck-team">{away}</span>
-      {b2b.has(game.awayTeam.teamId) && <span className="ck-tag ck-b2b" title={`${away} back-to-back`}>B2B</span>}
+      {b2bIds.has(game.awayTeam.teamId) && <span className="ck-tag ck-b2b" title={`${away} back-to-back`}>B2B</span>}
       <span className="ck-vsat"> @ </span>
       {logos && <TeamLogo team={game.homeTeam} />}
       <span className="ck-team">{home}</span>
-      {b2b.has(game.homeTeam.teamId) && <span className="ck-tag ck-b2b" title={`${home} back-to-back`}>B2B</span>}
+      {b2bIds.has(game.homeTeam.teamId) && <span className="ck-tag ck-b2b" title={`${home} back-to-back`}>B2B</span>}
     </span>
   );
 
   const label = side
-    ? `${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}`
+    ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}`
     : `${away} at ${home}, ${tip.label}`;
+  const bracket = side && b2b.length ? b2b.map((n) => n.night).join(' ') : undefined;
 
   return (
-    <article className={`ck-card ck-card-${size}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}`} data-game-id={game.gameId} data-next={next || undefined} aria-label={dateLabel ? `${dateLabel}, ${label}` : label}>
+    <article
+      className={`ck-card ck-card-${size}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}`}
+      data-game-id={game.gameId}
+      data-next={next || undefined}
+      data-b2b={bracket}
+      aria-label={dateLabel ? `${dateLabel}, ${label}` : label}
+    >
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
       <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
         {tip.time}
@@ -79,6 +144,7 @@ export function GameCard({ game, teamId, backToBackTeamIds = [], now, timeZone, 
       </span>
       {matchup}
       <span className="ck-tags">
+        {side && b2b.map((n) => <B2BLabel key={n.night} night={n} short={shortB2B} />)}
         {marks.map((m) => (
           <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
             {size === 'compact' ? m.short : m.long}

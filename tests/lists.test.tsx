@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { CalendarView, LeagueListView } from '../src/components/CalendarView';
-import { hasNationalTv, isBackToBack, isOver, markers, nationalTv, teamGames } from '../src/data/model';
+import { addDays, hasNationalTv, isBackToBack, isOver, markers, nationalTv, teamGames } from '../src/data/model';
 import { TEAM_BY_ID } from '../src/data/teams';
 import { data } from './feed';
 import { TEAM } from './synthetic';
@@ -23,7 +23,7 @@ const days = (root: ParentNode) => [...root.querySelectorAll('[data-day]')].map(
 /** Which of the four views is showing. */
 function view(): string {
   if (screen.queryByRole('region', { name: 'League schedule' })) return 'league-list';
-  if (screen.queryByRole('region', { name: 'League month' }) || screen.queryByRole('region', { name: 'Month navigator' })) return 'league-calendar';
+  if (screen.queryByRole('region', { name: 'League week' }) || screen.queryByRole('region', { name: 'Month navigator' })) return 'league-calendar';
   if (screen.queryByRole('region', { name: /games$/ })) return 'team-list';
   if (screen.queryByRole('region', { name: /schedule$/ })) return 'team-calendar';
   return 'none';
@@ -66,8 +66,8 @@ describe('List | Calendar switch', () => {
   });
 
   it('a click on a day in League → Calendar opens the list at that day', () => {
-    const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ layout: 'calendar', date: '2026-11-02' }} />);
-    fireEvent.click(el.container.querySelector('[data-date="2026-11-14"]')!);
+    const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ layout: 'calendar', date: '2026-11-10' }} />);
+    fireEvent.click(within(el.container.querySelector<HTMLElement>('[data-date="2026-11-14"]')!).getByTestId('day-header'));
     expect(view()).toBe('league-list');
     expect(selected('List')).toBe(true);
     expect(screen.getByTestId('day-title').textContent).toBe('Saturday, November 14, 2026');
@@ -200,16 +200,16 @@ describe('team list', () => {
     expect(lal.indexOf(next)).toBeGreaterThan(0); // earlier games are in the list, above it
   });
 
-  it('row: date, local tip-off, vs/@ with the opponent logo and tricode', () => {
+  it('row: date, local tip-off, selected team first, vs/@, both logos', () => {
     const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="America/Sao_Paulo" initial={{ mode: 'team', teamId: TEAM.LAL }} />);
     const g = lal.find((x) => x.dateEt === '2026-10-28')!; // @ LAC, B2B
     const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
     expect(row.querySelector('.ck-date')!.textContent).toBe('Wed 28/10');
     expect(row.querySelector('[data-testid="tipoff"]')!.textContent).toBe('23:30');
-    expect(row.textContent).toMatch(/@\s*LAC/);
+    expect(row.textContent).toMatch(/LAL\s*@\s*LAC/);
     const imgs = [...row.querySelectorAll('img')];
-    expect(imgs.map((i) => i.getAttribute('src'))).toEqual(['/logos/LAC.svg']);
-    expect(imgs[0]!.parentElement!.classList).toContain('ck-logo-backing');
+    expect(imgs.map((i) => i.getAttribute('src'))).toEqual(['/logos/LAL.svg', '/logos/LAC.svg']);
+    for (const i of imgs) expect(i.parentElement!.classList).toContain('ck-logo-backing');
   });
 
   it('late tips show (+1); TBD shows TBD', () => {
@@ -225,7 +225,9 @@ describe('team list', () => {
       for (const g of teamGames(data, teamId)) {
         const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
         const name = `${TEAM_BY_ID.get(teamId)!.tricode} ${g.dateEt}`;
-        expect(!!row.querySelector('.ck-b2b'), name).toBe(isBackToBack(data, teamId, g.dateEt));
+        // night 2 = played the previous calendar day; night 1 = plays the next one (labels: team.test.tsx)
+        expect(!!row.querySelector('.ck-b2b-n2'), name).toBe(isBackToBack(data, teamId, g.dateEt));
+        expect(!!row.querySelector('.ck-b2b-n1'), name).toBe(teamGames(data, teamId).some((x) => x.dateEt === addDays(g.dateEt, 1)));
         const tv = nationalTv(g);
         expect(row.querySelector('[data-testid="tv-badge"]')?.textContent ?? '', name).toBe(tv.join(' · '));
         expect([...row.querySelectorAll('.ck-cup, .ck-cup-final, .ck-play-in, .ck-playoffs')].map((t) => t.textContent), name).toEqual(markers(g).map((m) => m.long));
@@ -237,10 +239,10 @@ describe('team list', () => {
 
   it('phone: rows are compact; same team picker as Team → Calendar', () => {
     render(<CalendarView data={data} size={PHONE} now={NOW} timeZone="UTC" initial={{ mode: 'team', teamId: TEAM.BOS }} />);
-    expect(screen.getByLabelText('Team')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Team'), { target: { value: String(TEAM.MIA) } });
+    fireEvent.click(screen.getByTestId('team-picker'));
+    fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
     expect(ids(screen.getByRole('region', { name: 'Heat games' }))).toEqual(teamGames(data, TEAM.MIA).map((g) => g.gameId));
     fireEvent.click(tab('Calendar'));
-    expect((screen.getByLabelText('Team') as HTMLSelectElement).value).toBe(String(TEAM.MIA));
+    expect(screen.getByTestId('team-picker').getAttribute('data-team-id')).toBe(String(TEAM.MIA));
   });
 });

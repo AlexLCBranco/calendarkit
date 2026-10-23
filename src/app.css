@@ -19,24 +19,8 @@ body {
   margin: 0 auto;
   padding: 16px;
 }
-.app-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 12px;
-  margin-bottom: 12px;
-}
-.app-title {
-  font-size: 20px;
-  margin: 0;
-}
-.app-tz,
 .app-status {
   color: #8b93a3;
-  font-size: 12px;
-}
-.app-status {
   padding: 32px 0;
   text-align: center;
   font-size: 14px;

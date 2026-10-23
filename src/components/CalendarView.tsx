@@ -1,11 +1,12 @@
-// Calendar widgets: team month grid and list, league list, league month and month navigator, and CalendarView,
-// which combines them behind a League | Team and a List | Calendar switch.
+// Calendar widgets: team month grid and list, league list, league week view and count grid, and CalendarView,
+// which combines them behind a League | Team and a List | Calendar switch in a one-row top bar.
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type SyntheticEvent } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import {
+  addDays,
   addMonths,
   countsByDate,
   defaultDay,
@@ -15,17 +16,22 @@ import {
   localDate,
   monthCells,
   monthOf,
-  seasonMonths,
   nationalTv,
+  opponentSecondNight,
+  seasonMonths,
+  teamB2BPairs,
   teamGames,
   teamLabel,
-  tipoff,
   weekOf,
+  type B2BPair,
   type CalendarData,
 } from '../data/model';
-import { DIVISIONS, TEAMS, TEAM_BY_ID } from '../data/teams';
-import { GameCard, TeamLogo } from './GameCard';
+import { DIVISIONS, TEAMS, TEAM_BY_ID, teamLogo, type Team } from '../data/teams';
+import { flowDay, MONTH_COL_GAP, MONTH_LINE, MONTH_LINE_WIDTH, monthColumns, ROOMY_WIDTH, timeGroups, WEEK_MIN_WIDTH } from './dayflow';
+import { B2BDot, GameCard, TeamLogo, type B2BNight } from './GameCard';
 import './calendar.css';
+
+export { flowDay, monthCellInner, monthColumns, MONTH_COL_GAP, MONTH_LINE, MONTH_LINE_WIDTH, WEEK_MIN_WIDTH, type ColumnGroup } from './dayflow';
 
 export interface WidgetSize {
   width: number;
@@ -36,11 +42,25 @@ export interface WidgetSize {
 export const COMPACT_WIDTH = 640;
 const isCompact = (size: WidgetSize) => size.width < COMPACT_WIDTH;
 
+/** List layouts: content column width cap (centered); calendars use the full width. */
+export const LIST_MAX_WIDTH = 960;
+/** Smallest team calendar row (px) on desktop/tablet; the grid fills the window above that. */
+export const TEAM_CELL_MIN_HEIGHT = 92;
+
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** Calendar-date formatting (the date is already an NBA game date; no time zone conversion). */
 const fmtDate = (date: string, opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', { ...opts, timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 const fmtMonth = (month: string) => fmtDate(`${month}-01`, { month: 'long', year: 'numeric' });
+const plural = (n: number) => `${n} game${n === 1 ? '' : 's'}`;
+
+/** "Nov 15 – 21, 2026", "Nov 29 – Dec 5, 2026", "Dec 27, 2026 – Jan 2, 2027". */
+export function fmtRange(from: string, to: string): string {
+  const md = (d: string) => fmtDate(d, { month: 'short', day: 'numeric' });
+  if (from.slice(0, 4) !== to.slice(0, 4)) return `${md(from)}, ${from.slice(0, 4)} – ${md(to)}, ${to.slice(0, 4)}`;
+  const end = from.slice(0, 7) === to.slice(0, 7) ? String(Number(to.slice(8))) : md(to);
+  return `${md(from)} – ${end}, ${to.slice(0, 4)}`;
+}
 
 /** The given clock, or a live one ticking every minute. */
 export function useNow(fixed?: number): number {
@@ -56,39 +76,280 @@ export function useNow(fixed?: number): number {
 const b2bIds = (data: CalendarData, g: ScheduleGame) =>
   [g.homeTeam.teamId, g.awayTeam.teamId].filter((id) => isBackToBack(data, id, g.dateEt));
 
+/** A team's back-to-back nights by gameId (a game can in theory be night 2 of one pair and night 1 of the next). */
+function useTeamB2B(data: CalendarData, teamId: number) {
+  return useMemo(() => {
+    const pairs = teamB2BPairs(data, teamId);
+    const byGame = new Map<string, B2BNight[]>();
+    const add = (g: ScheduleGame, n: B2BNight) => byGame.set(g.gameId, [...(byGame.get(g.gameId) ?? []), n]);
+    for (const pair of pairs) {
+      add(pair.first, { pair, night: 1 });
+      add(pair.second, { pair, night: 2 });
+    }
+    return { pairs, byGame };
+  }, [data, teamId]);
+}
+
+/** Clamp a fixed-position popup/tooltip of width `w` into the viewport. */
+const clampX = (x: number, w: number) => Math.max(8, Math.min(x, document.documentElement.clientWidth - w - 8));
+
+// ---------------------------------------------------------------- tooltip (hover + focus, any [data-tip] inside)
+
+/**
+ * One floating tooltip for every `[data-tip]` element in the widget, shown on hover and keyboard focus. Fixed
+ * positioning, so cells with overflow: hidden don't clip it, and clamped into the viewport.
+ */
+function useTooltip() {
+  const [tip, setTip] = useState<{ text: string; x: number; top: number; bottom: number }>();
+  const ref = useRef<HTMLDivElement>(null);
+  const show = (e: SyntheticEvent) => {
+    const el = (e.target as Element).closest?.('[data-tip]');
+    if (!el) return setTip(undefined);
+    const r = el.getBoundingClientRect();
+    const text = el.getAttribute('data-tip')!;
+    setTip((t) => (t && t.text === text && t.x === r.left + r.width / 2 && t.top === r.top ? t : { text, x: r.left + r.width / 2, top: r.top, bottom: r.bottom }));
+  };
+  const hide = () => setTip(undefined);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !tip) return;
+    el.style.left = `${clampX(tip.x - el.offsetWidth / 2, el.offsetWidth)}px`;
+    const above = tip.top - el.offsetHeight - 6;
+    el.style.top = `${above >= 4 ? above : tip.bottom + 6}px`;
+  });
+  useEffect(() => {
+    if (!tip) return;
+    window.addEventListener('scroll', hide, true);
+    return () => window.removeEventListener('scroll', hide, true);
+  }, [tip]);
+  return {
+    handlers: { onMouseOver: show, onFocus: show, onMouseLeave: hide, onBlur: hide },
+    node: tip && (
+      <div ref={ref} className="ck-tooltip" role="tooltip" data-testid="tooltip">
+        {tip.text}
+      </div>
+    ),
+  };
+}
+
 // ---------------------------------------------------------------- team picker
 
-export function TeamPicker({ teamId, onChange }: { teamId: number; onChange: (teamId: number) => void }) {
+const PICKER_ORDER: Team[] = DIVISIONS.flatMap(({ division }) => TEAMS.filter((t) => t.division === division));
+const fullName = (t: Team) => `${t.city} ${t.name}`;
+
+/** Big team logo on its light disc. */
+function BigLogo({ teamId, px }: { teamId: number; px: number }) {
+  const src = teamLogo(teamId);
   return (
-    <select className="ck-select" aria-label="Team" value={teamId} onChange={(e) => onChange(Number(e.target.value))}>
-      {DIVISIONS.map(({ conference, division }) => (
-        <optgroup key={division} label={`${conference} · ${division}`}>
-          {TEAMS.filter((t) => t.division === division).map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.city} {t.name}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
+    <span className="ck-logo-backing" style={{ '--ck-logo': `${px}px` } as CSSProperties}>
+      {src && <img src={src} alt="" width={px} height={px} />}
+    </span>
   );
 }
 
-// ---------------------------------------------------------------- month header (shared)
+/**
+ * Team picker with logos: a button (logo + name; tricode on phones) opening a listbox grouped by conference and
+ * division. Keyboard: Enter/Space/↓ open; arrows move (←/→ jump a division), Home/End, a letter jumps to the next
+ * team starting with it, Enter selects, Escape closes; focus returns to the button.
+ */
+export function TeamPicker({ teamId, onChange, compact = false }: { teamId: number; onChange: (teamId: number) => void; compact?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(teamId);
+  const [pos, setPos] = useState({ left: 0, top: 0 });
+  const btn = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const team = TEAM_BY_ID.get(teamId)!;
+  const id = `ck-team-${useId()}`;
 
-function MonthHeader({ month, months, onMonthChange }: { month: string; months: string[]; onMonthChange: (m: string) => void }) {
-  const i = months.indexOf(month);
+  const openList = () => {
+    const r = btn.current!.getBoundingClientRect();
+    setPos({ left: r.left, top: r.bottom + 4 });
+    setActive(teamId);
+    setOpen(true);
+  };
+  const close = (focus = true) => {
+    setOpen(false);
+    if (focus) btn.current?.focus();
+  };
+  const pick = (t: number) => {
+    close();
+    if (t !== teamId) onChange(t);
+  };
+  useLayoutEffect(() => {
+    const el = list.current;
+    if (!open || !el) return;
+    el.style.left = `${clampX(pos.left, el.offsetWidth)}px`;
+    el.focus();
+  }, [open, pos]);
+  useLayoutEffect(() => {
+    if (open) list.current?.querySelector(`[data-team-id="${active}"]`)?.scrollIntoView?.({ block: 'nearest' });
+  }, [open, active]);
+  useEffect(() => {
+    if (!open) return;
+    const outside = (e: Event) => !list.current?.contains(e.target as Node) && !btn.current?.contains(e.target as Node) && close(false);
+    document.addEventListener('mousedown', outside);
+    return () => document.removeEventListener('mousedown', outside);
+  }, [open]);
+
+  const move = (by: number) => {
+    const i = PICKER_ORDER.findIndex((t) => t.id === active);
+    setActive(PICKER_ORDER[Math.max(0, Math.min(PICKER_ORDER.length - 1, i + by))]!.id);
+  };
+  const onListKey = (e: KeyboardEvent) => {
+    const keys: Record<string, () => void> = {
+      ArrowDown: () => move(1),
+      ArrowUp: () => move(-1),
+      ArrowRight: () => move(compact ? 15 : 5),
+      ArrowLeft: () => move(compact ? -15 : -5),
+      Home: () => setActive(PICKER_ORDER[0]!.id),
+      End: () => setActive(PICKER_ORDER.at(-1)!.id),
+      Enter: () => pick(active),
+      ' ': () => pick(active),
+      Escape: () => close(),
+      Tab: () => close(),
+    };
+    if (keys[e.key]) {
+      if (e.key !== 'Tab') e.preventDefault();
+      keys[e.key]!();
+    } else if (/^[a-z]$/i.test(e.key)) {
+      // next team (after the active one) whose city or name starts with the letter
+      const i = PICKER_ORDER.findIndex((t) => t.id === active);
+      const rot = [...PICKER_ORDER.slice(i + 1), ...PICKER_ORDER.slice(0, i + 1)];
+      const hit = rot.find((t) => fullName(t).toLowerCase().startsWith(e.key.toLowerCase()) || t.name.toLowerCase().startsWith(e.key.toLowerCase()));
+      if (hit) setActive(hit.id);
+    }
+  };
+
   return (
-    <div className="ck-nav">
-      <button type="button" className="ck-arrow" aria-label="Previous month" disabled={i <= 0} onClick={() => onMonthChange(addMonths(month, -1))}>
+    <div className="ck-picker">
+      <span id={`${id}-label`} className="ck-sr">
+        Team
+      </span>
+      <button
+        ref={btn}
+        type="button"
+        id={`${id}-button`}
+        className="ck-picker-button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-labelledby={`${id}-label ${id}-button`}
+        data-testid="team-picker"
+        data-team-id={teamId}
+        onClick={() => (open ? close() : openList())}
+        onKeyDown={(e) => {
+          if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            e.preventDefault();
+            openList();
+          }
+        }}
+      >
+        <TeamLogo team={{ teamId } as ScheduleGame['homeTeam']} />
+        <span className="ck-picker-name">{compact ? team.tricode : fullName(team)}</span>
+        <span className="ck-caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div
+          ref={list}
+          className={`ck-picker-list${compact ? ' ck-picker-compact' : ''}`}
+          role="listbox"
+          aria-label="Teams"
+          tabIndex={-1}
+          aria-activedescendant={`${id}-${active}`}
+          onKeyDown={onListKey}
+          style={{ top: pos.top }}
+        >
+          {DIVISIONS.map(({ conference, division }) => (
+            <div key={division} role="group" aria-labelledby={`${id}-${division}`} className="ck-picker-group">
+              <div id={`${id}-${division}`} className="ck-picker-head" role="presentation">
+                {conference} · {division}
+              </div>
+              {TEAMS.filter((t) => t.division === division).map((t) => (
+                <div
+                  key={t.id}
+                  id={`${id}-${t.id}`}
+                  role="option"
+                  aria-selected={t.id === teamId}
+                  data-team-id={t.id}
+                  className={`ck-picker-option${t.id === active ? ' ck-picker-active' : ''}`}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => pick(t.id)}
+                  onMouseEnter={() => setActive(t.id)}
+                >
+                  <TeamLogo team={{ teamId: t.id } as ScheduleGame['homeTeam']} />
+                  {fullName(t)}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Team views: large logo on its disc + full name. */
+export function TeamHeader({ teamId, compact = false }: { teamId: number; compact?: boolean }) {
+  const t = TEAM_BY_ID.get(teamId);
+  return (
+    <div className="ck-team-header" data-testid="team-header">
+      <BigLogo teamId={teamId} px={compact ? 40 : 48} />
+      <h2 className="ck-team-name">{t ? fullName(t) : 'Team'}</h2>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- period navigation (shared)
+
+interface PeriodNavProps {
+  title: string;
+  unit: string;
+  onPrev: () => void;
+  onNext: () => void;
+  prevDisabled: boolean;
+  nextDisabled: boolean;
+  testId?: string;
+  /** Title is a button (e.g. opens the week picker). */
+  onTitleClick?: () => void;
+  titleExpanded?: boolean;
+}
+
+function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisabled, testId = 'period-title', onTitleClick, titleExpanded }: PeriodNavProps) {
+  return (
+    <div className="ck-nav ck-period">
+      <button type="button" className="ck-arrow" aria-label={`Previous ${unit}`} disabled={prevDisabled} onClick={onPrev}>
         ‹
       </button>
-      <h2 className="ck-nav-title">{fmtMonth(month)}</h2>
-      <button type="button" className="ck-arrow" aria-label="Next month" disabled={i < 0 || i >= months.length - 1} onClick={() => onMonthChange(addMonths(month, 1))}>
+      {onTitleClick ? (
+        <button type="button" className="ck-nav-title ck-title-button" data-testid={testId} aria-haspopup="dialog" aria-expanded={titleExpanded} onClick={onTitleClick}>
+          {title}
+          <span className="ck-caret" aria-hidden="true">
+            ▾
+          </span>
+        </button>
+      ) : (
+        <h2 className="ck-nav-title" data-testid={testId}>
+          {title}
+        </h2>
+      )}
+      <button type="button" className="ck-arrow" aria-label={`Next ${unit}`} disabled={nextDisabled} onClick={onNext}>
         ›
       </button>
     </div>
   );
+}
+
+function monthNav(month: string, months: string[], onMonthChange: (m: string) => void): PeriodNavProps {
+  const i = months.indexOf(month);
+  return {
+    title: fmtMonth(month),
+    unit: 'month',
+    onPrev: () => onMonthChange(addMonths(month, -1)),
+    onNext: () => onMonthChange(addMonths(month, 1)),
+    prevDisabled: i <= 0,
+    nextDisabled: i < 0 || i >= months.length - 1,
+  };
 }
 
 // ---------------------------------------------------------------- team month grid
@@ -104,40 +365,86 @@ export interface TeamMonthGridProps {
   onOpenGame?: (gameId: string) => void;
   /** National TV games only. */
   tvOnly?: boolean;
+  /** Own month header (default); off when the host shows the navigation (CalendarView's top bar). */
+  nav?: boolean;
 }
 
-export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, tvOnly = false }: TeamMonthGridProps) {
+type Bar = { kind: 'full' | 'start' | 'end'; i: number; pair: B2BPair };
+
+export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, tvOnly = false, nav = true }: TeamMonthGridProps) {
   const compact = isCompact(size);
   const byDate = useMemo(() => new Map(teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)).map((g) => [g.dateEt, g])), [data, teamId, tvOnly]);
+  const b2b = useTeamB2B(data, teamId);
   const [selected, setSelected] = useState<string | undefined>();
   const selectedGame = selected ? byDate.get(selected) : undefined;
-  const months = seasonMonths(data);
+  const cells = monthCells(month);
+  const weeks = cells.length / 7;
+  const visible = (g: ScheduleGame) => !tvOnly || hasNationalTv(g);
+
+  // B2B bars: one across both cells (through the gap) when the nights sit side by side in a week row; otherwise a
+  // half on each shown night ending in an arrow toward the other (week break, or the other night in another month).
+  const bars = useMemo(() => {
+    const at = new Map(cells.flatMap((d, i) => (d ? [[d, i] as const] : [])));
+    const out: Bar[] = [];
+    for (const pair of b2b.pairs) {
+      if (!visible(pair.first) || !visible(pair.second)) continue; // the other night is filtered out: label only
+      const a = at.get(pair.first.dateEt);
+      const b = at.get(pair.second.dateEt);
+      if (a !== undefined && b === a + 1 && a % 7 !== 6) out.push({ kind: 'full', i: a, pair });
+      else {
+        if (a !== undefined) out.push({ kind: 'start', i: a, pair });
+        if (b !== undefined) out.push({ kind: 'end', i: b, pair });
+      }
+    }
+    return out;
+  }, [month, b2b, tvOnly]);
+
+  const cardProps = (g: ScheduleGame) => ({
+    game: g,
+    teamId,
+    b2b: b2b.byGame.get(g.gameId),
+    opponentB2B: opponentSecondNight(data, g, teamId),
+    now,
+    timeZone,
+  });
+  const place = (i: number): CSSProperties => ({ gridRow: Math.floor(i / 7) + 2, gridColumn: (i % 7) + 1 });
 
   return (
     <section className="ck-team-month" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} schedule`}>
-      <MonthHeader month={month} months={months} onMonthChange={onMonthChange} />
-      <div className="ck-grid" role="grid">
-        {WEEKDAYS.map((d) => (
-          <div key={d} className="ck-grid-head" role="columnheader">
+      {nav && <PeriodNav {...monthNav(month, seasonMonths(data), onMonthChange)} />}
+      <div className="ck-grid ck-team-grid" role="grid" data-weeks={weeks} style={{ gridTemplateRows: `auto repeat(${weeks}, ${compact ? '1fr' : `minmax(${TEAM_CELL_MIN_HEIGHT}px, 1fr)`})` }}>
+        {WEEKDAYS.map((d, i) => (
+          <div key={d} className="ck-grid-head" role="columnheader" style={{ gridRow: 1, gridColumn: i + 1 }}>
             {compact ? d[0] : d}
           </div>
         ))}
-        {monthCells(month).map((date, i) => {
-          if (!date) return <div key={`x${i}`} className="ck-cell ck-cell-empty" />;
+        {cells.map((date, i) => {
+          if (!date) return <div key={`x${i}`} className="ck-cell ck-cell-empty" style={place(i)} />;
           const g = byDate.get(date);
-          const cls = `ck-cell${g ? ' ck-cell-game' : ''}${g && isOver(g, now) ? ' ck-cell-past' : ''}${selected === date ? ' ck-cell-selected' : ''}`;
+          const nights = g && b2b.byGame.get(g.gameId);
+          const cls = `ck-cell ck-day-cell${g ? ' ck-cell-game' : ''}${g && isOver(g, now) ? ' ck-cell-past' : ''}${selected === date ? ' ck-cell-selected' : ''}`;
           return (
-            <div key={date} className={cls} role="gridcell" data-date={date} onClick={() => g && setSelected(date)}>
+            <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               <span className="ck-daynum">{Number(date.slice(8))}</span>
-              {g && <GameCard game={g} teamId={teamId} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
+              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} shortB2B={compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
             </div>
           );
         })}
+        {bars.map((b) => (
+          <div
+            key={`${b.kind}${b.i}`}
+            className={`ck-b2b-bar ck-b2b-bar-${b.kind}`}
+            data-b2b-bar={b.kind}
+            data-pair={`${b.pair.first.dateEt}/${b.pair.second.dateEt}`}
+            aria-hidden="true"
+            style={{ gridRow: Math.floor(b.i / 7) + 2, gridColumn: `${(b.i % 7) + 1} / span ${b.kind === 'full' ? 2 : 1}` }}
+          />
+        ))}
       </div>
       {compact && selectedGame && (
         <div className="ck-detail">
           <div className="ck-detail-date">{fmtDate(selectedGame.dateEt, { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-          <GameCard game={selectedGame} teamId={teamId} backToBackTeamIds={b2bIds(data, selectedGame)} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
+          <GameCard {...cardProps(selectedGame)} teamFirst logos onOpenGame={onOpenGame} />
         </div>
       )}
     </section>
@@ -157,6 +464,8 @@ export interface LeagueListViewProps {
   now: number;
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
+  /** Own day title and arrows (default); off when the host shows the navigation (CalendarView's top bar). */
+  nav?: boolean;
 }
 
 /** Height estimates (px) for a day not measured yet: sticky header + one card row per game (+ 6 px gap). */
@@ -166,6 +475,17 @@ const listRow = (compact: boolean) => (compact ? 27 : 35) + 6;
 const LIST_OVERSCAN = 0.75;
 
 type ListDay = { date: string; games: ScheduleGame[] };
+
+/** The list's game days (only TV games when filtered; days left without games are dropped). */
+function listDays(data: CalendarData, tvOnly: boolean): ListDay[] {
+  const out: ListDay[] = [];
+  for (const d of data.dates) {
+    const all = data.byDate.get(d)!;
+    const games = tvOnly ? all.filter(hasNationalTv) : all;
+    if (games.length) out.push({ date: d, games });
+  }
+  return out;
+}
 
 /** The list's day for a date: that day, else the next one with games, else the last. */
 const nearestDay = (days: ListDay[], date: string) => (days.find((d) => d.date >= date) ?? days.at(-1))?.date ?? date;
@@ -177,22 +497,16 @@ function dayAt(tops: number[], y: number): number {
   return i;
 }
 
+const listTitle = (date: string, compact: boolean) => fmtDate(date, { weekday: compact ? 'short' : 'long', month: compact ? 'short' : 'long', day: 'numeric', year: 'numeric' });
+
 /**
  * The league schedule as one continuous list of game days, each under a sticky header ("Sun, Nov 15 · 9 games").
  * Only the days near the viewport are rendered; the rest are spacers sized from measured (or estimated) heights,
  * and the day at the top stays put while heights above it get measured. The week strip follows the day at the top.
  */
-export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, timeZone, onOpenGame }: LeagueListViewProps) {
+export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, timeZone, onOpenGame, nav = true }: LeagueListViewProps) {
   const compact = isCompact(size);
-  const days = useMemo(() => {
-    const out: ListDay[] = [];
-    for (const d of data.dates) {
-      const all = data.byDate.get(d)!;
-      const games = tvOnly ? all.filter(hasNationalTv) : all;
-      if (games.length) out.push({ date: d, games });
-    }
-    return out;
-  }, [data, tvOnly]);
+  const days = useMemo(() => listDays(data, tvOnly), [data, tvOnly]);
   const index = useMemo(() => new Map(days.map((d, i) => [d.date, i])), [days]);
   const counts = useMemo(() => new Map(days.map((d) => [d.date, d.games.length])), [days]);
   const today = localDate(now, timeZone);
@@ -240,7 +554,8 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
     setScrollTop(y);
   };
 
-  // Host moved the date (e.g. a day picked in the month view): scroll there. Our own reports are skipped.
+  // Host moved the date (e.g. a day picked in the calendar, the top bar's arrows): scroll there. Our own reports
+  // are skipped.
   useEffect(() => {
     if (date !== reported.current) {
       reported.current = date;
@@ -301,17 +616,17 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
 
   return (
     <section className="ck-league-list" aria-label="League schedule" style={{ maxHeight: size.height }}>
-      <div className="ck-nav">
-        <button type="button" className="ck-arrow" aria-label="Previous day" disabled={ti <= 0} onClick={() => go(ti - 1)}>
-          ‹
-        </button>
-        <h2 className="ck-nav-title" data-testid="day-title">
-          {fmtDate(topDay, { weekday: compact ? 'short' : 'long', month: compact ? 'short' : 'long', day: 'numeric', year: 'numeric' })}
-        </h2>
-        <button type="button" className="ck-arrow" aria-label="Next day" disabled={ti >= days.length - 1} onClick={() => go(ti + 1)}>
-          ›
-        </button>
-      </div>
+      {nav && (
+        <PeriodNav
+          title={listTitle(topDay, compact)}
+          unit="day"
+          testId="day-title"
+          onPrev={() => go(ti - 1)}
+          onNext={() => go(ti + 1)}
+          prevDisabled={ti <= 0}
+          nextDisabled={ti >= days.length - 1}
+        />
+      )}
       <div className="ck-week" role="tablist" aria-label="Week">
         {weekOf(topDay).map((d) => {
           const n = counts.get(d) ?? 0;
@@ -352,7 +667,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
   );
 }
 
-const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'short', month: 'short', day: 'numeric' })} · ${n} game${n === 1 ? '' : 's'}`;
+const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'short', month: 'short', day: 'numeric' })} · ${plural(n)}`;
 
 // ---------------------------------------------------------------- team: list
 
@@ -370,12 +685,13 @@ export interface TeamListViewProps {
 const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })} ${date.slice(8)}/${date.slice(5, 7)}`;
 
 /**
- * One team's games in order, one row each. Opens scrolled to the next game not over (marked); the earlier games
- * are above it.
+ * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
+ * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
  */
 export function TeamListView({ data, teamId, tvOnly, size, now, timeZone, onOpenGame }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)), [data, teamId, tvOnly]);
+  const b2b = useTeamB2B(data, teamId);
   const next = (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.gameId;
   const scroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -389,13 +705,15 @@ export function TeamListView({ data, teamId, tvOnly, size, now, timeZone, onOpen
     <section className="ck-team-list" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} games`} style={{ maxHeight: size.height }}>
       <div className="ck-llist" ref={scroller} data-testid="team-list">
         {games.length === 0 && <p className="ck-empty">No games.</p>}
-        <div className="ck-daylist">
+        <div className="ck-daylist ck-team-rows">
           {games.map((g) => (
             <GameCard
               key={g.gameId}
               game={g}
               teamId={teamId}
-              backToBackTeamIds={b2bIds(data, g)}
+              teamFirst
+              b2b={b2b.byGame.get(g.gameId)}
+              opponentB2B={opponentSecondNight(data, g, teamId)}
               now={now}
               timeZone={timeZone}
               size={compact ? 'compact' : 'regular'}
@@ -411,45 +729,51 @@ export function TeamListView({ data, teamId, tvOnly, size, now, timeZone, onOpen
   );
 }
 
-// ---------------------------------------------------------------- league: month navigator
+// ---------------------------------------------------------------- league: count grid (month)
 
 export interface MonthNavigatorProps {
   data: CalendarData;
   month: string;
   onMonthChange: (month: string) => void;
   selectedDate?: string;
+  /** Days to highlight (e.g. the week shown). */
+  selectedDates?: string[];
   onSelectDate: (date: string) => void;
   tvOnly: boolean;
   size: WidgetSize;
   /** Local calendar date to highlight as today. */
   today?: string;
+  /** Own month header (default); off when the host shows the navigation. */
+  nav?: boolean;
 }
 
 /** Month overview for navigation only: number of games per day; clicking a day jumps to it. */
-export function MonthNavigator({ data, month, onMonthChange, selectedDate, onSelectDate, tvOnly, size, today }: MonthNavigatorProps) {
+export function MonthNavigator({ data, month, onMonthChange, selectedDate, selectedDates, onSelectDate, tvOnly, size, today, nav = true }: MonthNavigatorProps) {
   const compact = isCompact(size);
   const counts = useMemo(() => countsByDate(data, tvOnly), [data, tvOnly]);
+  const sel = new Set(selectedDates ?? (selectedDate ? [selectedDate] : []));
+  const cells = monthCells(month);
   return (
     <section className="ck-month-nav" aria-label="Month navigator">
-      <MonthHeader month={month} months={seasonMonths(data)} onMonthChange={onMonthChange} />
-      <div className="ck-grid" role="grid">
+      {nav && <PeriodNav {...monthNav(month, seasonMonths(data), onMonthChange)} />}
+      <div className="ck-grid ck-count-grid" role="grid" style={{ gridTemplateRows: `auto repeat(${cells.length / 7}, 1fr)` }}>
         {WEEKDAYS.map((d) => (
           <div key={d} className="ck-grid-head" role="columnheader">
             {compact ? d[0] : d}
           </div>
         ))}
-        {monthCells(month).map((date, i) => {
+        {cells.map((date, i) => {
           if (!date) return <div key={`x${i}`} className="ck-cell ck-cell-empty" />;
           const n = counts.get(date) ?? 0;
           return (
             <button
               key={date}
               type="button"
-              className={`ck-cell ck-count-cell${n ? ' ck-cell-game' : ''}${selectedDate === date ? ' ck-cell-selected' : ''}${today === date ? ' ck-cell-today' : ''}`}
+              className={`ck-cell ck-count-cell${n ? ' ck-cell-game' : ''}${sel.has(date) ? ' ck-cell-selected' : ''}${today === date ? ' ck-cell-today' : ''}`}
               disabled={!n}
               onClick={() => onSelectDate(date)}
               data-date={date}
-              aria-label={`${fmtDate(date, { month: 'long', day: 'numeric' })}: ${n} game${n === 1 ? '' : 's'}`}
+              aria-label={`${fmtDate(date, { month: 'long', day: 'numeric' })}: ${plural(n)}`}
             >
               <span className="ck-daynum">{Number(date.slice(8))}</span>
               {n > 0 && <span className="ck-count">{n}</span>}
@@ -461,59 +785,23 @@ export function MonthNavigator({ data, month, onMonthChange, selectedDate, onSel
   );
 }
 
-// ---------------------------------------------------------------- league: full month
+// ---------------------------------------------------------------- league: week view
 
-/**
- * Below this widget width a game line doesn't fit a 7-column cell, so League → Month falls back to the count
- * navigator. The cutoff is a 768 px window: 768 − 32 px page padding − up to 17 px scrollbar (the app reserves the
- * scrollbar's space with scrollbar-gutter, and measures its real content width) = 719, so 718.
- */
-export const FULL_MONTH_MIN_WIDTH = 718;
-/** Below this width the month grid uses 2 px gaps and cell padding (instead of 4 px). */
-const ROOMY_MONTH_WIDTH = 1000;
+export type WeekCount = 1 | 2;
 
-/**
- * Month game line geometry in px (at full size). Widths are fixed rather than measured at runtime: the text is the
- * bundled Inter font, so they are the same on every OS. `tri` fits the widest tricode (MEM, 26.95 px at 11 px
- * semibold). Line: logo · gap · AWAY · sep · logo · gap · HOME · pillGap · TV.
- */
-export const MONTH_LINE = { logo: 16, gap: 2, tri: 28, sep: 6, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7 } as const;
-export const MONTH_LINE_WIDTH = 2 * (MONTH_LINE.logo + MONTH_LINE.gap + MONTH_LINE.tri) + MONTH_LINE.sep + MONTH_LINE.pillGap + MONTH_LINE.pill;
-/** Space between game columns inside a day cell. */
-export const MONTH_COL_GAP = 10;
-
-/** Inner width of one day cell for a given widget width (matches the grid gap, cell padding and border in CSS). */
-export function monthCellInner(width: number): number {
-  const roomy = width >= ROOMY_MONTH_WIDTH;
-  const gridGap = roomy ? 4 : 2;
-  const pad = roomy ? 4 : 2;
-  return (width - 6 * gridGap) / 7 - 2 * pad - 2;
-}
-
-/** Game columns per day cell: as many full-size lines as fit, with MONTH_COL_GAP between them; at least 1. */
-export function monthColumns(width: number): number {
-  return Math.max(1, Math.floor((monthCellInner(width) + MONTH_COL_GAP) / (MONTH_LINE_WIDTH + MONTH_COL_GAP)));
-}
-
-/**
- * Lines keep their full size; only between the 768 px cutoff and ~860 px windows, where one line is wider than the
- * cell, they scale down to fit.
- */
-export const monthLineScale = (width: number) => Math.min(1, monthCellInner(width) / MONTH_LINE_WIDTH);
-
-export interface LeagueMonthViewProps {
+export interface LeagueWeekViewProps {
   data: CalendarData;
-  month: string;
-  onMonthChange: (month: string) => void;
-  selectedDate?: string;
-  /** Raised when a day with games is clicked. */
-  onSelectDate: (date: string) => void;
+  /** First day shown (a Sunday). */
+  start: string;
+  weeks: WeekCount;
   tvOnly: boolean;
   size: WidgetSize;
   /** Local calendar date to highlight as today. */
   today?: string;
   /** IANA zone for the time labels; default: the browser's local zone. */
   timeZone?: string;
+  /** Raised when a day header is clicked (the host opens that day in the list). */
+  onSelectDate: (date: string) => void;
 }
 
 function MonthTeam({ team, b2b }: { team: ScheduleGame['homeTeam']; b2b: boolean }) {
@@ -524,7 +812,7 @@ function MonthTeam({ team, b2b }: { team: ScheduleGame['homeTeam']; b2b: boolean
       <span className="ck-mtri" data-tricode={label}>
         <span className="ck-mtri-text">
           {label}
-          {b2b && <span className="ck-b2b-mark" data-tip="Back-to-back" aria-label="Back-to-back" role="img" tabIndex={0} />}
+          {b2b && <B2BDot tip="Back-to-back" />}
         </span>
       </span>
     </>
@@ -549,118 +837,61 @@ function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame 
   );
 }
 
-/** A day's games grouped by local tip-off label ("20:00", "00:30 (+1)", "TBD"), keeping tip-off order. */
-function timeGroups(games: ScheduleGame[], timeZone?: string): { label: string; games: ScheduleGame[] }[] {
-  const out: { label: string; games: ScheduleGame[] }[] = [];
-  for (const g of games) {
-    const label = tipoff(g, timeZone).label;
-    const last = out.at(-1);
-    if (last && last.label === label) last.games.push(g);
-    else out.push({ label, games: [g] });
-  }
-  return out;
-}
-
-type TimeGroup = ReturnType<typeof timeGroups>[number];
-/** A column's piece of a time group; `repeat` when the group started in the previous column (label shown again). */
-export interface ColumnGroup extends TimeGroup {
-  repeat: boolean;
-}
-
 /**
- * Flows a day's time groups into `cols` columns in newspaper order (down column 1, then column 2, …), choosing the
- * break points that make the tallest column as short as possible. Each column starts at a game, so a label never
- * ends a column. Splitting a group (its label repeats atop the next column) costs one game row, so a group is only
- * split when that balances the columns by more than a row. Heights are estimated from MONTH_LINE, not measured.
+ * League → Calendar: 7 equal day columns, one or two week rows, every game of each day at full line size
+ * (logos + tricodes, away left, home right; TV pill; B2B dot), grouped by local tip-off time. 1 week: one column
+ * of games per day; 2 weeks: the day flows into as many columns as fit (see flowDay). Rows are equal and fill the
+ * height they're given. A day header opens that day in the list.
  */
-export function flowDay(groups: TimeGroup[], cols: number): ColumnGroup[][] {
+export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZone, onSelectDate }: LeagueWeekViewProps) {
+  const cols = weeks === 1 ? 1 : monthColumns(size.width);
   const L = MONTH_LINE;
-  const labelH = L.labelFont * 1.25 + 2; // .ck-tlabel line-height + margin
-  const rowH = L.logo + L.rowGap;
-  const flat = groups.flatMap((grp, gi) => grp.games.map((g, i) => ({ g, gi, first: i === 0 })));
-  const n = flat.length;
-  // Column = games [a, b), as group pieces.
-  const column = (a: number, b: number) => {
-    const out: ColumnGroup[] = [];
-    for (let i = a; i < b; i++) {
-      const { g, gi, first } = flat[i]!;
-      if (out.at(-1)?.label === groups[gi]!.label) out.at(-1)!.games.push(g);
-      else out.push({ label: groups[gi]!.label, games: [g], repeat: !first });
-    }
-    return out;
-  };
-  const height = (c: ColumnGroup[]) => c.reduce((h, grp, i) => h + (i ? L.groupGap : 0) + labelH + grp.games.length * rowH - L.rowGap, 0);
-  const parts = (cuts: number[]) => [...cuts, n].map((e, i, ends) => column(i ? ends[i - 1]! : 0, e));
-  const k = Math.max(1, Math.min(cols, n));
-  let best: { cost: number; splits: number; cuts: number[] } | undefined;
-  // Try every set of up to k − 1 break points (n ≤ ~15 games, 2 columns at most sizes: a handful of cases).
-  const walk = (cuts: number[], from: number) => {
-    const p = parts(cuts);
-    const splits = p.filter((c) => c[0]!.repeat).length;
-    const cost = Math.max(...p.map(height)) + splits * rowH;
-    // on a tie: fewer split groups, then the later break (earlier columns the longer ones, as in a newspaper)
-    if (!best || cost < best.cost - 0.01 || (cost <= best.cost + 0.01 && splits <= best.splits)) best = { cost, splits, cuts };
-    if (cuts.length < k - 1) for (let c = from; c < n; c++) walk([...cuts, c], c + 1);
-  };
-  if (n) walk([], 1);
-  const out: ColumnGroup[][] = best ? parts(best.cuts) : [];
-  while (out.length < cols) out.push([]);
-  return out;
-}
-
-/**
- * Month calendar listing every game of each day, grouped by tip-off time, flowed as one list into as many columns
- * as fit (newspaper order, balanced; see flowDay). Lines: logos + tricodes (away left, home right), TV pill, B2B marks. Click a day → onSelectDate.
- */
-export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSelectDate, tvOnly, size, today, timeZone }: LeagueMonthViewProps) {
-  const cols = monthColumns(size.width);
-  const s = monthLineScale(size.width);
-  const L = MONTH_LINE;
-  const px = (n: number) => `${Math.round(n * s * 100) / 100}px`;
   const vars = {
-    '--ck-logo': px(L.logo),
-    '--ck-gap': px(L.gap),
-    '--ck-tri': px(L.tri),
-    '--ck-sep': px(L.sep),
-    '--ck-pill-gap': px(L.pillGap),
-    '--ck-pill': px(L.pill),
-    '--ck-font': px(L.font),
-    '--ck-label-font': px(L.labelFont),
-    '--ck-row-gap': px(L.rowGap),
-    '--ck-group-gap': px(L.groupGap),
+    '--ck-logo': `${L.logo}px`,
+    '--ck-gap': `${L.gap}px`,
+    '--ck-tri': `${L.tri}px`,
+    '--ck-sep': `${L.sep}px`,
+    '--ck-pill-gap': `${L.pillGap}px`,
+    '--ck-pill': `${L.pill}px`,
+    '--ck-font': `${L.font}px`,
+    '--ck-label-font': `${L.labelFont}px`,
+    '--ck-row-gap': `${L.rowGap}px`,
+    '--ck-group-gap': `${L.groupGap}px`,
     '--ck-col-gap': `${MONTH_COL_GAP}px`,
-    '--ck-line': px(MONTH_LINE_WIDTH),
+    '--ck-line': `${MONTH_LINE_WIDTH}px`,
   } as CSSProperties;
+  const dates = Array.from({ length: 7 * weeks }, (_, i) => addDays(start, i));
 
   return (
-    <section className={`ck-month-full${size.width < ROOMY_MONTH_WIDTH ? ' ck-month-tight' : ''}`} aria-label="League month" style={vars}>
-      <MonthHeader month={month} months={seasonMonths(data)} onMonthChange={onMonthChange} />
+    <section className={`ck-week-view${size.width < ROOMY_WIDTH ? ' ck-month-tight' : ''}`} aria-label="League week" data-weeks={weeks} style={vars}>
       <div className="ck-month-legend" data-testid="month-legend">
         Away · Home
       </div>
-      <div className="ck-grid" role="grid">
-        {WEEKDAYS.map((d) => (
-          <div key={d} className="ck-grid-head" role="columnheader">
-            {d}
-          </div>
-        ))}
-        {monthCells(month).map((date, i) => {
-          if (!date) return <div key={`x${i}`} className="ck-cell ck-cell-empty" />;
+      <div className="ck-grid ck-week-grid" role="grid" style={{ gridTemplateRows: `repeat(${weeks}, 1fr)` }}>
+        {dates.map((date) => {
           const all = data.byDate.get(date) ?? [];
           const games = tvOnly ? all.filter(hasNationalTv) : all;
-          const open = games.length ? () => onSelectDate(date) : undefined;
+          const first = date.endsWith('-01') || date === start;
           return (
             <div
               key={date}
               role="gridcell"
-              className={`ck-cell ck-month-cell${games.length ? ' ck-cell-game' : ''}${selectedDate === date ? ' ck-cell-selected' : ''}${today === date ? ' ck-cell-today' : ''}`}
+              className={`ck-cell ck-month-cell${games.length ? ' ck-cell-game' : ''}${today === date ? ' ck-cell-today' : ''}`}
               data-date={date}
-              tabIndex={open ? 0 : undefined}
-              aria-label={`${fmtDate(date, { month: 'long', day: 'numeric' })}: ${games.length} game${games.length === 1 ? '' : 's'}`}
-              onClick={open}
-              onKeyDown={open && ((e) => e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), open()))}
+              data-count={games.length}
             >
-              <span className="ck-daynum">{Number(date.slice(8))}</span>
+              <button
+                type="button"
+                className="ck-wday"
+                data-testid="day-header"
+                disabled={!games.length}
+                onClick={() => onSelectDate(date)}
+                aria-label={`${fmtDate(date, { weekday: 'long', month: 'long', day: 'numeric' })}: ${plural(games.length)}`}
+              >
+                <span className="ck-wday-name">{fmtDate(date, { weekday: 'short' })}</span>
+                <span className="ck-wday-num">{first ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
+                {games.length > 0 && <span className="ck-wday-count">{plural(games.length)}</span>}
+              </button>
               {games.length > 0 && (
                 <div className="ck-month-day" data-cols={cols} style={{ gridTemplateColumns: `repeat(${cols}, var(--ck-line))` }}>
                   {flowDay(timeGroups(games, timeZone), cols).map((col, ci) => (
@@ -689,6 +920,31 @@ export function LeagueMonthView({ data, month, onMonthChange, selectedDate, onSe
   );
 }
 
+/** Month popup of the week view: game counts per day; a click jumps to that day's week. */
+function WeekPicker({ data, start, weeks, tvOnly, size, today, onPick, onClose }: { data: CalendarData; start: string; weeks: WeekCount; tvOnly: boolean; size: WidgetSize; today: string; onPick: (date: string) => void; onClose: () => void }) {
+  const [month, setMonth] = useState(monthOf(addDays(start, 3)));
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.querySelector<HTMLElement>('.ck-cell-selected:not([disabled]), .ck-count-cell:not([disabled])')?.focus();
+    const outside = (e: Event) => !ref.current?.contains(e.target as Node) && !(e.target as Element).closest?.('[data-testid="period-title"]') && onClose();
+    document.addEventListener('mousedown', outside);
+    return () => document.removeEventListener('mousedown', outside);
+  }, []);
+  return (
+    <div ref={ref} className="ck-popup" role="dialog" aria-label="Jump to a week" data-testid="week-picker" onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), onClose())}>
+      <MonthNavigator
+        data={data}
+        month={month}
+        onMonthChange={setMonth}
+        selectedDates={Array.from({ length: 7 * weeks }, (_, i) => addDays(start, i))}
+        onSelectDate={onPick}
+        tvOnly={tvOnly}
+        size={{ width: Math.min(size.width, 360), height: 360 }}
+        today={today}
+      />
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------- CalendarView: the combined widget
 
@@ -700,9 +956,11 @@ export interface CalendarState {
   /** List or Calendar; kept when switching League ↔ Team. */
   layout: CalendarLayout;
   teamId: number;
-  /** League view: the day at the top of the list (the month view opens on its month). */
+  /** League views: the day at the top of the list; the week view shows this day's week. */
   date: string;
   tvOnly: boolean;
+  /** League → Calendar: 1 or 2 week rows. */
+  weeks: WeekCount;
 }
 
 export interface CalendarViewProps {
@@ -714,8 +972,12 @@ export interface CalendarViewProps {
   now?: number;
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
-  /** Told whenever the user changes mode, layout, team, day or the TV filter (e.g. to sync a URL). */
+  /** Told whenever the user changes mode, layout, team, day, weeks or the TV filter (e.g. to sync a URL). */
   onStateChange?: (state: CalendarState) => void;
+  /** Shown first in the top bar (e.g. "NBA schedule 2026-27"). */
+  title?: string;
+  /** Small muted note at the end of the top bar (e.g. the time zone); a tooltip icon on phones. */
+  note?: string;
 }
 
 const DEFAULT_TEAM = TEAMS[0]!.id;
@@ -732,19 +994,23 @@ function Segmented<T extends string>({ label, value, options, onChange }: { labe
   );
 }
 
-export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onStateChange }: CalendarViewProps) {
+export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onStateChange, title, note }: CalendarViewProps) {
   const now = useNow(fixedNow);
+  const compact = isCompact(size);
   const [state, setState] = useState<CalendarState>(() => ({
     mode: initial?.mode ?? 'league',
     layout: initial?.layout ?? 'list',
     teamId: initial?.teamId && TEAM_BY_ID.has(initial.teamId) ? initial.teamId : DEFAULT_TEAM,
     date: initial?.date && /^\d{4}-\d{2}-\d{2}$/.test(initial.date) ? initial.date : (defaultDay(data, now) ?? localDate(now, timeZone)),
     tvOnly: initial?.tvOnly ?? false,
+    weeks: initial?.weeks === 2 ? 2 : 1,
   }));
   const [leagueMonth, setLeagueMonth] = useState(() => monthOf(state.date));
   const [teamMonth, setTeamMonth] = useState(() => monthOf(teamDefaultDate(data, state.teamId, now) ?? state.date));
+  const [picking, setPicking] = useState(false);
   const stateRef = useRef(state);
   stateRef.current = state;
+  const tooltip = useTooltip();
 
   const update = useCallback(
     (patch: Partial<CalendarState>) => {
@@ -761,50 +1027,109 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   };
   const setLayout = (layout: CalendarLayout) => {
     if (layout === 'calendar') setLeagueMonth(monthOf(state.date));
+    setPicking(false);
     update({ layout });
   };
   const onSelectDate = useCallback((date: string) => update({ date }), [update]);
   const openDay = (date: string) => update({ date, layout: 'list' });
   const list = state.layout === 'list';
+  const team = state.mode === 'team';
   const today = localDate(now, timeZone);
+  const weekView = !team && !list && size.width >= WEEK_MIN_WIDTH;
+
+  // Top bar navigation for the view on show.
+  const days = useMemo(() => listDays(data, state.tvOnly), [data, state.tvOnly]);
+  let nav: PeriodNavProps | undefined;
+  if (team && !list) nav = monthNav(teamMonth, seasonMonths(data), setTeamMonth);
+  else if (!team && list) {
+    const cur = nearestDay(days, state.date);
+    const i = days.findIndex((d) => d.date === cur);
+    nav = {
+      title: listTitle(cur, compact),
+      unit: 'day',
+      testId: 'day-title',
+      onPrev: () => days[i - 1] && update({ date: days[i - 1]!.date }),
+      onNext: () => days[i + 1] && update({ date: days[i + 1]!.date }),
+      prevDisabled: i <= 0,
+      nextDisabled: i < 0 || i >= days.length - 1,
+    };
+  } else if (weekView) {
+    const start = weekOf(state.date)[0]!;
+    const span = 7 * state.weeks;
+    const unit = state.weeks === 1 ? 'week' : '2 weeks';
+    nav = {
+      title: fmtRange(start, addDays(start, span - 1)),
+      unit,
+      onPrev: () => update({ date: addDays(start, -span) }),
+      onNext: () => update({ date: addDays(start, span) }),
+      prevDisabled: start <= weekOf(data.dates[0] ?? start)[0]!,
+      nextDisabled: addDays(start, span) > (data.dates.at(-1) ?? start),
+      onTitleClick: () => setPicking((p) => !p),
+      titleExpanded: picking,
+    };
+  } else if (!team) nav = monthNav(leagueMonth, seasonMonths(data), setLeagueMonth);
 
   return (
-    <div className={`ck-root${isCompact(size) ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ''}`} style={{ maxWidth: size.width, height: list ? size.height : undefined }}>
-      <div className="ck-toolbar">
-        <div className="ck-switches">
-          <Segmented label="View" value={state.mode} options={[['league', 'League'], ['team', 'Team']]} onChange={(mode) => update({ mode })} />
-          <Segmented label="Layout" value={state.layout} options={[['list', 'List'], ['calendar', 'Calendar']]} onChange={setLayout} />
-        </div>
-        <div className="ck-league-tools">
-          {state.mode === 'team' && <TeamPicker teamId={state.teamId} onChange={pickTeam} />}
-          <label className="ck-check">
-            <input type="checkbox" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> TV games only
-          </label>
-        </div>
+    <div
+      className={`ck-root${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`}
+      style={{ maxWidth: size.width, height: list ? size.height : undefined, minHeight: list || compact ? undefined : size.height }}
+      {...tooltip.handlers}
+    >
+      <div className="ck-toolbar" data-testid="top-bar">
+        {title && <h1 className={`ck-title${compact ? ' ck-sr' : ''}`}>{title}</h1>}
+        <Segmented label="View" value={state.mode} options={[['league', 'League'], ['team', 'Team']]} onChange={(mode) => update({ mode })} />
+        <Segmented label="Layout" value={state.layout} options={[['list', 'List'], ['calendar', 'Calendar']]} onChange={setLayout} />
+        {team && <TeamPicker teamId={state.teamId} onChange={pickTeam} compact={compact} />}
+        {nav && (
+          <div className="ck-period-wrap">
+            <PeriodNav {...nav} />
+            {picking && weekView && (
+              <WeekPicker
+                data={data}
+                start={weekOf(state.date)[0]!}
+                weeks={state.weeks}
+                tvOnly={state.tvOnly}
+                size={size}
+                today={today}
+                onPick={(date) => {
+                  setPicking(false);
+                  update({ date: weekOf(date)[0]! });
+                }}
+                onClose={() => setPicking(false)}
+              />
+            )}
+          </div>
+        )}
+        {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
+        <label className="ck-check">
+          <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact ? 'TV only' : 'TV games only'}
+        </label>
+        {note &&
+          (compact ? (
+            <span className="ck-note ck-note-icon" data-tip={note} aria-label={note} role="img" tabIndex={0}>
+              i
+            </span>
+          ) : (
+            <span className="ck-note" data-testid="tz-note">
+              {note}
+            </span>
+          ))}
       </div>
-      {state.mode === 'team' ? (
+      {team && <TeamHeader teamId={state.teamId} compact={compact} />}
+      {team ? (
         list ? (
           <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
         ) : (
-          <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} />
+          <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} nav={false} />
         )
       ) : list ? (
-        <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
-      ) : size.width >= FULL_MONTH_MIN_WIDTH ? (
-        <LeagueMonthView
-          data={data}
-          month={leagueMonth}
-          onMonthChange={setLeagueMonth}
-          selectedDate={state.date}
-          onSelectDate={openDay}
-          tvOnly={state.tvOnly}
-          size={size}
-          today={today}
-          timeZone={timeZone}
-        />
+        <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} nav={false} />
+      ) : weekView ? (
+        <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} />
       ) : (
-        <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} />
+        <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
       )}
+      {tooltip.node}
     </div>
   );
 }

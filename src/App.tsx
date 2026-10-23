@@ -15,7 +15,7 @@ export function openGameInRotationkit(gameId: string, open: (url: string) => voi
 }
 
 /**
- * URL: ?view=league|team&layout=list|calendar&team=&date=&tv=1. Links from before the List | Calendar switch have
+ * URL: ?view=league|team&layout=list|calendar&team=&date=&weeks=2&tv=1 (weeks: League → Calendar rows). Links from before the List | Calendar switch have
  * no layout: ?view=team opened the team month grid (→ Calendar), ?view=league the day list (→ List).
  */
 export function readUrlState(search = window.location.search): Partial<CalendarState> {
@@ -29,6 +29,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     teamId: team?.id,
     date: p.get('date') ?? undefined,
     tvOnly: p.get('tv') === '1' ? true : undefined,
+    weeks: p.get('weeks') === '2' ? 2 : p.get('weeks') === '1' ? 1 : undefined,
   };
 }
 
@@ -38,6 +39,7 @@ function writeUrlState(s: CalendarState) {
   p.set('layout', s.layout);
   if (s.mode === 'team') p.set('team', TEAM_BY_ID.get(s.teamId)?.tricode ?? '');
   else p.set('date', s.date);
+  if (s.weeks === 2) p.set('weeks', '2');
   if (s.tvOnly) p.set('tv', '1');
   window.history.replaceState(null, '', `${window.location.pathname}?${p}`);
 }
@@ -95,13 +97,21 @@ export function App() {
 
   return (
     <div className="app" ref={appRef}>
-      <header className="app-header">
-        <h1 className="app-title">NBA schedule {data && <span className="app-tz">{data.seasonYear}</span>}</h1>
-        <span className="app-tz">Times in your time zone ({timeZone})</span>
-      </header>
       {error && <p className="app-status" role="alert">Couldn’t load the schedule: {error}</p>}
       {!data && !error && <p className="app-status">Loading schedule…</p>}
-      <div ref={widgetRef}>{data && <CalendarView data={data} size={size} initial={initial} onOpenGame={onOpenGame} onStateChange={writeUrlState} />}</div>
+      <div ref={widgetRef}>
+        {data && (
+          <CalendarView
+            data={data}
+            size={size}
+            initial={initial}
+            onOpenGame={onOpenGame}
+            onStateChange={writeUrlState}
+            title={`NBA schedule ${data.seasonYear}`}
+            note={`Times in your time zone (${timeZone})`}
+          />
+        )}
+      </div>
     </div>
   );
 }

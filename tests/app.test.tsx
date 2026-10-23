@@ -104,7 +104,17 @@ describe('App: URL state for the List | Calendar switch', () => {
     expect(screen.getByRole('region', { name: 'Heat games' })).toBeTruthy();
     cleanup();
     await open('?view=league&layout=calendar&date=2026-11-02');
-    expect(screen.getByRole('region', { name: /^(League month|Month navigator)$/ })).toBeTruthy(); // by width
+    expect(screen.getByRole('region', { name: /^(League week|Month navigator)$/ })).toBeTruthy(); // by width
+  });
+
+  it('?weeks=2 opens two week rows; links without it get one week; the toggle writes it', async () => {
+    const { readUrlState } = await import('../src/App');
+    expect(readUrlState('?view=league&layout=calendar&date=2026-11-15&weeks=2')).toMatchObject({ mode: 'league', layout: 'calendar', date: '2026-11-15', weeks: 2 });
+    expect(readUrlState('?view=league&layout=calendar&date=2026-11-15').weeks).toBeUndefined();
+    expect(readUrlState('?view=league&date=2026-11-15')).toMatchObject({ layout: undefined, weeks: undefined }); // → List
+    await open('?view=league&layout=calendar&date=2026-11-15&weeks=2');
+    fireEvent.click(screen.getByRole('tab', { name: 'List' }));
+    expect(window.location.search).toMatch(/weeks=2/); // kept for the next time the calendar opens
   });
 
   it('the layout and the TV filter are written to the URL and kept across League ↔ Team', async () => {

@@ -16,8 +16,8 @@ where-to-watch info, embedding in gauntlet.
 ## Status
 - [x] Step 0 — probe (below)
 - [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
-- [x] Views — `src/components/CalendarView.tsx`: `LeagueListView` (continuous, virtualized day list + week strip), `TeamListView`, `TeamMonthGrid`, `LeagueMonthView` (every game per day with logos; desktop/tablet), `MonthNavigator` (counts, click → day; narrow widths), `TeamPicker`, and `CalendarView` combining them behind League | Team and List | Calendar switches. App shell `src/App.tsx` (URL state `?view=&layout=&team=&date=&tv=`).
-- [x] Game card — `src/components/GameCard.tsx`: vs/@ (team view) or AWAY @ HOME, local tip-off with (+1), TBD, B2B per team, Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
+- [x] Views — `src/components/CalendarView.tsx`: `LeagueListView` (continuous, virtualized day list + week strip), `TeamListView`, `TeamMonthGrid`, `LeagueWeekView` (1 or 2 week rows, every game per day with logos; desktop widths), `MonthNavigator` (count grid, click → day; narrow widths and the week picker popup), `TeamPicker` (custom listbox with logos), `TeamHeader`, and `CalendarView` combining them behind a one-row top bar. Day-cell layout maths in `src/components/dayflow.ts` (pure). App shell `src/App.tsx` (URL state `?view=&layout=&team=&date=&weeks=&tv=`).
+- [x] Game card — `src/components/GameCard.tsx`: "BOS vs CHI" / "BOS @ DET" (team view, selected team first) or AWAY @ HOME, local tip-off with (+1), TBD, B2B (league: badge per team; team: 1/2 · 2/2 labels + opponent 2/2 dot), Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
 - [x] Tests — see "Tests" below
 - [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
@@ -81,7 +81,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 126 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 163 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -90,34 +90,58 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   +1 grouping and the default-day rule with a mocked clock.
 - `card.test.tsx` / `views.test.tsx` (jsdom): markers, TV badge/filter, TBD, B2B, rotationkit action contract,
   navigation.
-- `month.test.tsx` / `logos.test.ts`: full league month (15-game day, logo lines without "@", legend, TBD without
-  `<img>`, logo backing, TV filter, click → day, today highlight; time groups under two zones incl. (+1) and TBD;
-  column count; day flow: Nov 15 uses both columns and is balanced, newspaper order on every November day, no
-  label ends a column, a split group repeats its label, no split when not needed, 1 column unchanged; TV pill text/tooltip and no network names as text; B2B marks per team; count
-  navigator at 360/700 px), 30 logo files + feed mapping.
-- e2e month check also measures the layout and prints it (`[project] content …, cols …, cell inner …, line …,
-  2-col spare …`, then Nov 15 column games/heights): at 1920 px content ≥ 1700, 2 columns with ≥ 8 px spare; Nov 15
-  flows across both columns (one x per column, heights within one row, visual order = DOM order, a game at the
-  bottom of each column); 1 column at 1280; 11 px / 16 px lines at both; bundled font loaded; every line the same width; TV tooltip on hover.
+- `week.test.tsx` (replaces `month.test.tsx`): league week view — opens on the default day's week, 7 cells / 14 in
+  2-week mode, game count per week = data for **every week of the season** in both modes, 15-game day, lines
+  without "@" + legend, TBD without `<img>`, logo backing, today, equal rows; prev/next by 1 or 2 weeks and disabled
+  at the season's ends, cross-year title, month popup (counts, month arrows, jump, Escape), day header → League List,
+  TV filter (per day TV-only ⊆ all); time groups under two zones incl. (+1) and TBD; columns (1 week = 1 column,
+  2 weeks = as many as fit), day flow (balance, newspaper order, no label ends a column, repeated label, no
+  needless split); TV pill + floating tooltip on hover and focus; league B2B dot on the 2/2 team only, no team marks;
+  cutoff 859 and the count grid at 360/700/858 px. `logos.test.ts`: 30 logo files + feed mapping.
+- `team.test.tsx`: team header (48 px / 40 px logo, full name) in both team layouts; picker (logos on button and all
+  30 options, 6 conference · division groups, mouse, keyboard ↓/↑/←/→/Home/End/letters/Enter/Escape, focus back to
+  the button, phone tricode); selected team first + vs/@ + logos [team, opponent] on every BOS and LAL game, list and
+  calendar (all months); phone calendar keeps opponent-only cells; B2B pairs worked out independently in the test
+  for LAL, BOS, ORL, NYK (labels, night, code, plane iff the feed's arena cities differ, bracket attribute, no "B2B"
+  badge), all four codes present in the real schedule, synthetic all-four-codes + unknown-city case, tooltip text on
+  hover and focus, calendar bars (full bar placement, Sat → Sun halves on consecutive rows, cross-month half),
+  phone short labels; opponent 2/2 dot exactly on 2/2 (tooltip text), not on 1/2, both marks; equal rows (5- and
+  6-week months).
 - `lists.test.tsx` (jsdom): List | Calendar switch in League and Team, the 4 views, layout kept across League ↔ Team,
-  League → Calendar day click opens the list there, TV filter in all 4 views; league list opens on the default day,
-  consecutive game days with headers, bounded rendering, scroll → week strip/date, no snap-back when a render lands
-  between a scroll and its event, arrows/week strip; team list: every game in order, next game marked, row
-  date/time/(+1)/vs-@/logo, markers + TV names + B2B on exactly the right games (3 teams). `app.test.tsx`: old and
-  new `?view=` links, layout and TV written to the URL.
+  League → Calendar day-header click opens the list there, TV filter in all 4 views; league list opens on the
+  default day, consecutive game days with headers, bounded rendering, scroll → week strip/date, no snap-back when a
+  render lands between a scroll and its event, arrows/week strip; team list: every game in order, next game marked,
+  row date/time/(+1)/"LAL @ LAC"/both logos, markers + TV names + B2B nights on exactly the right games (3 teams).
+  `app.test.tsx`: old and new `?view=` links, `weeks=2`, layout and TV written to the URL.
+- `e2e/features.spec.ts` (fixed clock Nov 15, 2026; all 4 widths): top bar one row (≤ 40 px) at 1920 px in all
+  views incl. week view, ≤ 2 rows on phones, no sideways scroll; header (logo loaded, size, larger than any top-bar
+  text, visible) and picker (30 loaded logos, inside the viewport, mouse, keyboard only); team list + calendar
+  against the served snapshot: "ORL vs/@ OPP", two loaded logos per game, ORL at the same x on every row (phone
+  calendar: opponent only); uniform cells (team calendar Nov 2026 = 5 weeks and Jan 2027 = 6 weeks, week view 1/2
+  weeks, count grid), no page scroll at 1920 × 1080 and 1280 × 900, nothing cut off in a cell; week view: 7 equal
+  columns, counts vs snapshot, toggle, prev/next, popup jump, day header → list; **fit**: walks every week of the
+  season in 1- and 2-week mode at 1920 × 1080 (no page scroll, no line outside its cell, counts match), prints the
+  busiest week(s) and the tallest day; cutoff: week view at widget 859 px with 115 px lines and nothing clipped,
+  count grid 1 px below; B2B for ORL Nov 2026: bar geometry (inside night 1 → across the gap → inside night 2),
+  week-break halves with arrow triangles, 1/2 transparent vs 2/2 filled, code, plane iff city change, tooltip on
+  hover and focus inside the viewport, opponent dot (5 px) + tooltip, list bracket (2 px orange, the two halves meet
+  in the row gap), same labels; lists ≤ 960 px and centered with everything inside; TV filter: per rendered day
+  TV-only count ≤ all-games count and every shown game has a national broadcaster in the snapshot.
 - `e2e/lists.spec.ts` (fixed clock Nov 15, 2026 15:00 UTC; all 4 widths): switch + 4 views with layout checks
   (images loaded, logos backed, nothing clipped, no sideways scroll, list layouts fill the window without page
   scroll), reload keeps the state, old links; league list: opens at Nov 15 at the top, wheel scrolling (sticky
   header, week strip + title + URL follow, days in order, ≤ 12 days rendered), week-strip click and arrows, fast
-  jumps, no position jumps while scrolling up, rows no taller with logos than without; team list against the served
-  snapshot (every game, order, B2B by the calendar-day rule), opens at the next game, top reachable; TV filter in
-  all 4 views. Screenshots `<project>-<league|team>-<list|calendar>.png`.
-- `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, month jump, no console errors; league month on Nov
-  2026: 15 lines on Nov 2, every `<img>` loaded (`naturalWidth > 0`), no clipped line, no sideways scroll, no
-  request to cdn.nba.com; screenshots to
-  `e2e/screenshots/` (git-ignored; uploaded as a CI artifact). `npm run e2e:live -- <url>` runs it against a
-  deployed site.
-- Manual only: none needed for v1 beyond judging look and feel.
+  jumps, no position jumps while scrolling up, rows no taller with logos than without (team list: not on phones,
+  see Decisions; there date, time and matchup always share one line); team list against the served snapshot
+  (every game, order, B2B by the calendar-day rule), opens at the next game, top reachable; TV filter in all 4
+  views. Screenshots `<project>-<league|team>-<list|calendar>.png` and `<project>-f-*.png`.
+- `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, calendar → day, no console errors; week view: 15 lines
+  on Nov 2, two weeks around Nov 15 measured (`[project] content …, cols …, cell inner …, line …, 2-col spare …`):
+  2 columns with ≥ 8 px spare at 1920 px, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
+  loaded, nothing clipped, TV tooltip on hover, no request to cdn.nba.com; screenshots to `e2e/screenshots/`
+  (git-ignored; uploaded as a CI artifact). `npm run e2e:live -- <url>` runs all e2e against a deployed site.
+- New tests were run against the previous code first: 52 of the new/changed unit tests fail there (2026-10-23).
+- Manual only: none needed beyond judging look and feel.
 
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.
@@ -138,11 +162,12 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   optional `now`/`timeZone`; they raise `onOpenGame(gameId)` / `onStateChange` and never touch the URL or open
   links. Styles are in `calendar.css` imported by the components, colors as CSS variables.
 - **List | Calendar switch** (2026-10-23): a segmented control next to League | Team, both options always visible;
-  replaces the old "Month" toggle. League + List = continuous day list, League + Calendar = full month (count
-  navigator below 718 px), Team + List = team list, Team + Calendar = team month grid. The layout is kept when
+  replaces the old "Month" toggle. League + List = continuous day list, League + Calendar = week view (count
+  grid below 859 px; see below), Team + List = team list, Team + Calendar = team month grid. The layout is kept when
   switching League ↔ Team and stored as `layout=list|calendar`. Old links without `layout` map to what they
   showed: `?view=team` → Calendar, `?view=league` → List. "TV games only" is shown and applies in all four.
-  Clicking a day in League → Calendar opens League → List at that day. The URL always carries `tv=1` when on.
+  Clicking a day header in League → Calendar opens League → List at that day. The URL always carries `tv=1` when on
+  and `weeks=2` when the week view shows two weeks (kept across layouts; old links open one week).
 - **League list** (`LeagueListView`): one scrolling list of game days (days without games — or without TV games
   when filtered — are left out), each under a sticky header "Sun, Nov 15 · 9 games". The nav title and week strip
   show the day at the top of the list; week-strip days without games are disabled; clicking one scrolls it to the
@@ -154,17 +179,81 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   re-render can't undo it. Space after the last day lets every day reach the top. Events: `onSelectDate` (day at the
   top changed), `onOpenGame`.
 - **Team list** (`TeamListView`): every game of the team, one row: date "Sun 15/11", local tip-off ((+1)/TBD),
-  vs/@ + opponent logo + tricode, Cup/Play-In/Playoffs markers, national TV badge with names, B2B. All rows rendered
+  "BOS vs CHI" / "BOS @ DET" with both logos, Cup/Play-In/Playoffs markers, national TV badge with names, B2B labels. All rows rendered
   (~82, cheap); opens scrolled so the next game not over is at the top (accent border); earlier games are above
   (scroll up). Same team picker as Team → Calendar.
 - **List layouts fill the window**: the shell passes height = window below the widget's top (min 360 px); in List
-  layouts the widget is that tall and the list scrolls inside it (toolbar, nav and week strip stay put). Calendar
-  layouts grow with the page as before.
+  layouts the widget is that tall and the list scrolls inside it (top bar and week strip stay put). Calendar
+  layouts fill at least that height (equal rows share it) on desktop/tablet and grow past it only if the content
+  needs more; on phones they grow with the page.
 - **Logos in the lists**: `GameCard logos` — the month view's 16 px light disc before each tricode, "@" kept. Rows
   keep their size (35 / 36.5 px desktop, 27 / 28.5 px phone single-line rows); on phone the date is 12 px and gaps
-  4 px so a logo never pushes a row onto a second line (tested: no row height changes when logos are hidden).
+  4 px so a logo never pushes a row onto a second line (tested: no row height changes when logos are hidden) —
+  except phone **team** rows, see "Team perspective".
 - **Phone team grid**: cells show time, vs/@, opponent, markers; national TV shrinks to a dot; tapping a game shows
-  the full card (with TV names and the rotationkit action) below the grid.
+  the full card (selected team first, both logos, full B2B label, TV names, rotationkit action) below the grid.
+
+### Top bar, team header, picker, list width (2026-10-23)
+- **One-row top bar** (`CalendarView`): title (`title` prop; the shell passes "NBA schedule 2026-27"), League |
+  Team, List | Calendar, team picker (team views), period title with prev/next (League List: day; Team Calendar:
+  month; League Calendar: week(s), title opens the week picker; count grid: month; Team List: none), "1 week | 2
+  weeks" (week view), TV games only, time-zone note (`note` prop, 12 px muted; a tooltip "i" on phones). The app
+  shell has no header of its own any more. Measured at 1920 px: one row, 34–36 px, in all views. The period title
+  has a **fixed width** (16.5 em = 247.5 px; widest title "Wednesday, September 30, 2026" is 238 px): with a
+  min-width only, the title's width changed while scrolling the league list, the bar re-wrapped at 1280/768 px and
+  moved the list under it (caught by the "no position jumps" e2e check). Phones: two rows (switches + TV on row 1;
+  picker, period, note on row 2), fits a 360 px phone; the title is 10.5 em there.
+- **Team header** (`TeamHeader`, team views): 48 px logo disc (40 px on phones) + full name "Boston Celtics"
+  at 26 px bold (20 px phones), under the top bar — the largest text above the content. In Team List it sits in the
+  960 px list column.
+- **Team picker** (`TeamPicker`): button with the team's logo + full name (logo + tricode on phones); opens a
+  listbox (fixed position, clamped into the viewport) grouped East · Atlantic … West · Southwest — 3 × 2 divisions
+  on desktop, 2 columns (East | West) on phones — every option with its logo. Keyboard: Enter/Space/↓ open on the
+  current team, ↑/↓ move, ←/→ jump a division (a conference on phones), Home/End, a letter jumps to the next team
+  whose city or name starts with it, Enter picks, Escape/Tab close; focus returns to the button.
+- **List width**: League List and Team List content capped at **960 px** (`LIST_MAX_WIDTH`), centered; week strip,
+  day headers and the team header align to it. Calendars keep the full 1840 px.
+- **Tooltips**: one floating tooltip per widget for every `[data-tip]` (TV pill, B2B dots and labels, the phone
+  note) on hover and keyboard focus; fixed position and clamped into the viewport, so cells with overflow: hidden
+  can't clip it (the B2B tooltip is ~330 px, wider than a cell). Replaces the CSS `::after` tooltips. Closes on
+  scroll.
+
+### Team perspective and back-to-backs (team views, 2026-10-23)
+- **Selected team first**: "BOS vs CHI" at home, "BOS @ DET" away, both logos, in Team List rows and Team Calendar
+  cells; each side (team; vs/@ + opponent) wraps as one unit in narrow cells (tablet). Fixed-width tricode slots
+  keep the selected team at the same x on every list row. **Phone calendar** keeps the opponent-only cell ("vs
+  CHI", no logos): cells are ~40 px wide, both tricodes don't fit; the header names the team, and the tapped card
+  shows both. **Phone team list (measured deviation)**: date, time and "BOS vs CHI" with both logos always share
+  one line, but the second logo leaves no room on that line for tags, so a row with a B2B label or TV names carries
+  them on a second line. Rows without tags keep their height.
+- **B2B pairs** (`teamB2BPairs` in model.ts): consecutive calendar days of the team's games (all games, not the TV
+  filter). Both nights are marked: night 1 outlined "1/2 · XY", night 2 solid "2/2 · XY"; XY = home/away of night 1
+  then night 2 (HH/HA/AH/AA), same on both. Real schedule: HH 128, HA 78, AH 68, AA 152 pairs (all four occur), 51
+  cross a Sat → Sun week break. Replaces the "B2B" badge in team views; league views unchanged (badge in the list,
+  dot on the 2/2 team in the week view).
+  - **Plane**: shown when the feed's **arena city** (`arenaCity`, passed through by the shared module — no
+    rotationkit request needed) differs between the nights; omitted when either is empty. Cities are never guessed,
+    so the feed's own names decide: e.g. LAL (Los Angeles) → LAC (Intuit Dome, **Inglewood**) and NYK ↔ BKN
+    (New York / Brooklyn) count as travel; neutral-site games use their venue city (Paris, Mexico City, Austin…).
+  - **Calendar**: a 3 px orange bar at the bottom of both cells, one element spanning both grid columns so it
+    continues through the gap. Across a week break (or a month edge) each night gets a half ending in a 6 px arrow
+    toward the other. Bars are grid items over explicitly placed cells. If the TV filter hides one night, no bar
+    (labels only). Phone cells show "1/2" / "2/2" (+ plane) without the code (measured: "1/2 · HA" is ~40 px in a
+    39 px cell); the tooltip and the tapped card have the full label.
+  - **List**: a 2 px orange bracket on the left edge of both rows (night 1 from its middle down, night 2 from the top
+    to its middle, meeting in the row gap); same labels and plane.
+  - **Tooltip** (hover + focus): "Back-to-back: vs BKN (home) → @ LAL (away) · travels Boston → Los Angeles"; no
+    travel part in the same city.
+- **Opponent's 2nd night**: 5 px orange dot on the opponent's tricode (no bar, no label) when the opponent played
+  the previous calendar day; tooltip "CHI on 2nd night of a back-to-back · played @ MIA yesterday". Not on its
+  1/2. Both marks when both teams are on 2/2. Phone calendar cells too.
+
+### Uniform cells (2026-10-23)
+- Every day cell in a grid has the same size: columns `repeat(7, minmax(0, 1fr))`, rows 1fr. **Team Calendar**
+  rows `minmax(92px, 1fr)` (**minimum cell height 92 px** on desktop/tablet) filling the window below the header;
+  measured at 1920 × 1080: 259.4 × 179.4 px cells (5-week month), 259.4 × 148.8 px (6-week), no page scroll; also
+  none at 1280 × 900 (138.8 / 115.0 px). Phones: rows 1fr (all as tall as the busiest), page scrolls. Week view and
+  count grid: rows 1fr.
 - **Page width**: content up to **1840 px** (`.app` max-width 1872 px incl. 16 px padding; `MAX_CONTENT_WIDTH` in
   `App.tsx`) — ~40 px side margins at a 1920 px window — for every view. The shell passes the widget its *measured*
   content width (ResizeObserver on `.app`), not `window.innerWidth`, and `html { scrollbar-gutter: stable }` keeps
@@ -173,44 +262,43 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   `public/fonts/inter-latin-wght-normal.woff2`, preloaded in `index.html`, used app-wide. Reason: identical text
   widths on Windows, Linux and CI, which the month view's fixed column widths rely on (before it, Linux's wider
   default font clipped lines). Tabular digits for times. No third-party font request.
-- **League → Month** (`LeagueMonthView`): a month calendar listing **every** game of each day (no "+N more"); rows
-  grow to their busiest day; TBD teams show "TBD" with no image; the TV filter applies; clicking a day opens it in
-  the day view; today's cell is highlighted. Props: data, month, size, tvOnly, today, timeZone; events:
-  `onSelectDate`, `onMonthChange` (no `onOpenGame`: cells have no action). Logos come from `teamLogo()`.
+- **League → Calendar = week view** (`LeagueWeekView`, 2026-10-23; replaces the full league month): 7 equal day
+  columns, 1 or 2 week rows ("1 week | 2 weeks", default 1, `weeks=2` in the URL), every game of each day at the
+  game-line size below (no "+N more"), time groups, logos, TV pill, B2B dot. 1 week: one column of games per day;
+  2 weeks: the day flows into as many columns as fit (2 at 1920 px, 1 at 1280 px). Opens on the default day's week
+  (state `date`); prev/next move 1 or 2 weeks (disabled at the season's ends); the period title ("Nov 15 – 21,
+  2026") opens a month popup with counts per day (month arrows) — a day jumps to its week; each cell's day header
+  ("Sun 15 · 9 games") opens League → List at that day. Today's cell highlighted.
+  - **Fit at 1920 × 1080** (measured 2026-10-23, every week of the season walked in e2e): busiest week Dec 27 – Jan 2
+    (56 games), busiest 2 weeks Dec 27 – Jan 9 (110 games); the tallest day (Apr 4, 2027, one column) needs 455 px
+    in a 984 px cell; in 2-week mode the tallest day (Nov 2, 15 games, 2 columns) needs 249.5 px in a 490 px cell.
+    No page scroll, nothing clipped, nothing shrunk or hidden.
   - **Line**: `[logo] AWAY [logo] HOME [TV]` — away always left, home right, **no "@"** in this view; a legend
-    "Away · Home" sits under the month title ("@" stays everywhere else). 11 px Inter semibold tricodes, 16 px
-    logos. Geometry in `MONTH_LINE` (CalendarView.tsx): logo 16 · gap 2 · tricode 28 · away/home gap 6 · logo 16 ·
-    gap 2 · tricode 28 · gap 2 · TV 15 = **115 px**, fixed for every line, so columns line up across columns and
-    across cells. Tricode column 28 px fits the widest tricode (MEM 26.95 px).
-  - **Time groups**: each day's games grouped by local tip-off label (same as the day view: "20:00",
-    "00:00 (+1)", "TBD" last), small muted label above each group; no time on the lines.
+    "Away · Home" above the grid ("@" stays everywhere else). 11 px Inter semibold tricodes, 16 px logos. Geometry
+    in `MONTH_LINE` (`dayflow.ts`): logo 16 · gap 2 · tricode 28 · away/home gap 6 · logo 16 · gap 2 · tricode 28 ·
+    gap 2 · TV 15 = **115 px**, fixed for every line. Tricode column 28 px fits the widest tricode (MEM 26.95 px).
+  - **Time groups**: each day's games grouped by local tip-off label ("20:00", "00:00 (+1)", "TBD" last), small
+    muted label above each group; no time on the lines.
   - **TV pill**: literal "TV" in a 15 px green pill on national-TV games; network names only in its tooltip
     (hover/focus). The pill's column is reserved on every line.
   - **B2B mark**: 5 px orange dot over the top-right corner of the tricode of the team on the second night (same
     `isBackToBack` rule as elsewhere); takes no width; tooltip "Back-to-back".
-  - **Columns**: per day cell, `monthColumns(width)` = as many 115 px lines as fit the cell's inner width with a
-    10 px gap (cell inner width computed from the widget width, matching the CSS grid gap/padding/border — no DOM
-    measuring, so no flicker). **2 columns at a 1920 px window, 1 at 1280 px.** Measured with the bundled font
-    (e2e `desktop-xl`): cell inner 249.42 px, line 115.00 px, 2 × 115 + 10 = 240 → **9.42 px spare**, identical in
-    Chrome on Windows and on Linux CI (2026-10-23).
-  - **Day flow** (`flowDay`): a day's content (time labels + games, in tip-off order) is **one list** that fills
-    down column 1, then continues in column 2 (newspaper order) — not each time group on its own. Break points are
-    chosen so the tallest column is as short as possible (heights estimated from `MONTH_LINE`). Each column starts
-    with a game's group, so a time label never sits alone at the bottom of a column. Splitting a time group costs
-    one game row in that comparison, so a group is split only when that balances the columns by more than a row;
-    a split group repeats its label (same muted style, `data-repeat`) at the top of the next column. On ties,
-    fewer splits, then the longer column first. 1-column cells are one column in the same structure (look
-    unchanged). Example: Nov 15 (São Paulo time, 9 games in 8 groups) → 4 + 5 games, 143 / 162 px.
-  - **Game background dropped** (2026-10-23): day flow made columns visually distinct; measured it wouldn't fit
-    with ≥ 8 px spare. With 2 px horizontal padding the line is 119 px, 2 × 119 + 10 = 248 → 1.42 px spare
-    (Windows Chrome); in general 4 × padding + column gap ≤ 11.42 px, with the column gap above the 6 px away/home gap.
+  - **Columns** (2 weeks): `monthColumns(width)` = as many 115 px lines as fit the cell's inner width with a 10 px
+    gap (computed from the widget width, no DOM measuring). Measured at 1920 px: cell inner 249.42 px, 2 × 115 + 10 =
+    240 → 9.42 px spare, identical on Windows and Linux CI.
+  - **Day flow** (`flowDay`): a day's content (time labels + games, in tip-off order) is one list filling column 1,
+    then column 2 (newspaper order). Break points minimise the tallest column (heights estimated from
+    `MONTH_LINE`); each column starts with a game's group, so a label never ends a column; a group is split only
+    when that balances the columns by more than a row, and then repeats its label (`data-repeat`). On ties, fewer
+    splits, then the longer column first.
+  - **Game background dropped** (earlier): with 2 px padding the line is 119 px → only 1.42 px spare at 1920 px.
   - **Logo backing**: every logo sits on a 16 px light disc (`rgba(226,231,238,.92)`), logo drawn at 80 % inside
     it; SVG files unchanged. Fixes the dark logos (SAS, MEM, NOP, UTA; CHA, PHI).
-- **Narrow widths keep the count navigator** (`MonthNavigator`): the full month needs a measured content width
-  ≥ **718 px** (`FULL_MONTH_MIN_WIDTH`) = a **768 px window** (768 − 32 padding − up to 17 px scrollbar; the value
-  was 736 when the shell ignored the scrollbar). Phones and 640–767 px windows get the count navigator. Between
-  768 px and ~860 px windows, where one 115 px line is wider than the cell, lines scale down to fit
-  (`monthLineScale`, e.g. 9.1 px text / 13 px logos at 768); from ~860 px they are full size.
+- **Narrow widths: count grid** (`MonthNavigator`, month of counts per day, click → League List): below a widget
+  width of **859 px** (`WEEK_MIN_WIDTH`), where a full-size 115 px line no longer fits a 7-column cell
+  ((w − 12) / 7 − 6 ≥ 115). Measured (e2e `desktop`, headless Chromium): window **906 px** (859 + 32 padding + 15
+  px scrollbar gutter) → content 859 px, line 115.00 px, nothing clipped; 905 px → count grid. Tablets (768 px) and
+  phones get the count grid. The old month view's line scaling (768–860 px windows) is gone: lines are never shrunk.
 - **Snapshot size**: the raw feed is ~4 MB (≈ 200–300 KB gzipped over the wire). Committed daily only when it
   changes. Kept raw so no information is lost (scores later).
 

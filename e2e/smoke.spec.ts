@@ -11,6 +11,9 @@ function collectErrors(page: Page) {
   return errors;
 }
 
+/** League → Calendar is the week view where 7 columns fit a game line (desktop widths), else the count grid. */
+const weekView = (project: string) => project === 'desktop' || project === 'desktop-xl';
+
 const shot = (page: Page, name: string, project: string) => page.screenshot({ path: `e2e/screenshots/${project}-${name}.png`, fullPage: true });
 
 test('league view and team view render without console errors', async ({ page }, info) => {
@@ -26,13 +29,13 @@ test('league view and team view render without console errors', async ({ page },
   await expect(page.locator('[data-game-id]:not(:has([data-testid="tv-badge"]))')).toHaveCount(0);
   await page.getByLabel('TV games only').uncheck();
 
-  // League → Calendar (full month on desktop/tablet, count navigator on phone) → click a day → list at that day.
+  // League → Calendar (week view on desktop, count grid on tablet/phone) → click a day → list at that day.
   await page.getByRole('tab', { name: 'Calendar' }).click();
-  const full = info.project.name !== 'phone';
-  await expect(page.getByRole('region', { name: full ? 'League month' : 'Month navigator' })).toBeVisible();
+  const full = weekView(info.project.name);
+  await expect(page.getByRole('region', { name: full ? 'League week' : 'Month navigator' })).toBeVisible();
   await shot(page, 'league-month', info.project.name);
-  const day = page.locator(full ? '.ck-month-cell.ck-cell-game' : '.ck-count-cell:not([disabled])').last();
-  const date = await day.getAttribute('data-date');
+  const day = page.locator(full ? '[data-testid="day-header"]:not([disabled])' : '.ck-count-cell:not([disabled])').last();
+  const date = full ? await day.evaluate((b) => b.closest('[data-date]')!.getAttribute('data-date')) : await day.getAttribute('data-date');
   await day.click();
   await expect(page).toHaveURL(new RegExp(`date=${date}`));
   await expect(page.locator('[data-game-id]').first()).toBeVisible();
@@ -40,7 +43,8 @@ test('league view and team view render without console errors', async ({ page },
   // Team view (month grid).
   await page.getByRole('tab', { name: 'Team' }).click();
   await page.getByRole('tab', { name: 'Calendar' }).click();
-  await page.getByLabel('Team').selectOption({ label: 'Los Angeles Lakers' });
+  await page.getByTestId('team-picker').click();
+  await page.getByRole('option', { name: 'Los Angeles Lakers' }).click();
   await expect(page).toHaveURL(/team=LAL/);
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   await shot(page, 'team-month', info.project.name);
@@ -48,7 +52,7 @@ test('league view and team view render without console errors', async ({ page },
   expect(errors).toEqual([]);
 });
 
-test('league month: every game listed with local logos, no broken images, no sideways scroll', async ({ page }, info) => {
+test('league week view: every game listed with local logos, no broken images, no sideways scroll', async ({ page }, info) => {
   const errors = collectErrors(page);
   const cdn: string[] = [];
   page.on('request', (r) => r.url().includes('cdn.nba.com') && cdn.push(r.url()));
@@ -56,13 +60,16 @@ test('league month: every game listed with local logos, no broken images, no sid
   await page.getByRole('tab', { name: 'Calendar' }).click();
   const project = info.project.name;
 
-  if (project === 'phone') {
+  if (!weekView(project)) {
     await expect(page.getByRole('region', { name: 'Month navigator' })).toBeVisible();
     await expect(page.getByLabel('November 2: 15 games')).toBeVisible();
     await expect(page.locator('.ck-month-game')).toHaveCount(0);
   } else {
-    await expect(page.getByRole('region', { name: 'League month' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'League week' })).toBeVisible();
     await expect(page.locator('[data-date="2026-11-02"] .ck-month-game')).toHaveCount(15);
+    // two weeks around Nov 15 (9 games in many time groups): the day flow across columns
+    await page.goto('/?view=league&layout=calendar&date=2026-11-15&weeks=2');
+    await expect(page.locator('[data-date="2026-11-15"] .ck-month-game')).toHaveCount(9);
     await page.waitForFunction(() => [...document.images].every((i) => i.complete));
     expect(await page.evaluate(async () => (await document.fonts.ready, document.fonts.check('600 11px "Inter ck"')))).toBe(true);
     const r = await page.evaluate(() => {
@@ -73,7 +80,7 @@ test('league month: every game listed with local logos, no broken images, no sid
         return { left: b.left + parseFloat(cs.borderLeftWidth) + parseFloat(cs.paddingLeft), right: b.right - parseFloat(cs.borderRightWidth) - parseFloat(cs.paddingRight) };
       };
       const lines = [...document.querySelectorAll('.ck-month-game')];
-      const cell = document.querySelector('[data-date="2026-11-02"]')!;
+      const cell = document.querySelector('[data-date="2026-11-15"]')!;
       const ci = inner(cell);
       const colGap = parseFloat(getComputedStyle(cell.querySelector('.ck-month-day')!).columnGap);
       const lineW = box(lines[0]!).width;
@@ -93,7 +100,7 @@ test('league month: every game listed with local logos, no broken images, no sid
       // visual reading order: by column position, then top to bottom
       const visual = [...nov15.querySelectorAll('li')].sort((a, b) => box(a).left - box(b).left || box(a).top - box(b).top).map((li) => li.getAttribute('data-game-id'));
       const domOrder = [...nov15.querySelectorAll('li')].map((li) => li.getAttribute('data-game-id'));
-      const imgs = [...document.querySelectorAll('.ck-month-full img')];
+      const imgs = [...document.querySelectorAll('.ck-week-view img')];
       return {
         content: box(document.querySelector('.ck-root')!).width,
         cols: Number(cell.querySelector('.ck-month-day')!.getAttribute('data-cols')),
@@ -114,11 +121,11 @@ test('league month: every game listed with local logos, no broken images, no sid
         // nothing clipped: each line inside its cell's content box; each tricode inside its column
         clipped: lines.filter((l) => { const c = inner(l.closest('.ck-cell')!); const b = box(l); return b.left < c.left - 0.5 || b.right > c.right + 0.5; }).length,
         triOverflow: [...document.querySelectorAll('.ck-mtri')].filter((t) => box(t.firstElementChild!).width > box(t).width + 0.01).length,
-        visibleText: document.querySelector('.ck-month-full')!.textContent ?? '',
+        visibleText: document.querySelector('.ck-week-view')!.textContent ?? '',
       };
     });
     console.log(`[${project}] content ${r.content}px, cols ${r.cols}, cell inner ${r.cellInner.toFixed(2)}px, line ${r.lineW.toFixed(2)}px, col gap ${r.colGap}px, 2-col spare ${r.spare.toFixed(2)}px, font ${r.font}, logo ${r.logo}px`);
-    expect(r.images).toBeGreaterThan(300);
+    expect(r.images).toBeGreaterThan(150);
     expect(r.broken).toEqual([]);
     expect(r.unbacked).toBe(0);
     expect(r.clipped).toBe(0);
@@ -149,10 +156,10 @@ test('league month: every game listed with local logos, no broken images, no sid
       expect(r.visual).toEqual(r.domOrder);
     }
     if (project === 'desktop') expect(r.flow).toHaveLength(1);
-    // TV pill tooltip: network names on hover
-    const pill = page.locator('[data-date="2026-11-02"] .ck-tv-pill').first();
+    // TV pill tooltip: network names on hover (one floating tooltip, never clipped by the cell)
+    const pill = page.locator('.ck-week-view .ck-tv-pill').first();
     await pill.hover();
-    expect(await pill.evaluate((e) => getComputedStyle(e, '::after').content)).toBe(JSON.stringify(await pill.getAttribute('data-tip')));
+    await expect(page.getByTestId('tooltip')).toHaveText((await pill.getAttribute('data-tip'))!);
     await page.mouse.move(0, 0);
     await shot(page, 'league-month-nov', project);
   }
@@ -176,7 +183,7 @@ test('Rotations action on a finished day only when ROTATIONKIT_BASE_URL is set',
 test('deep link opens the team view for a team', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('/?view=team&team=BOS');
-  await expect(page.getByLabel('Team')).toHaveValue('1610612738');
+  await expect(page.getByTestId('team-picker')).toHaveAttribute('data-team-id', '1610612738');
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   expect(errors).toEqual([]);
 });

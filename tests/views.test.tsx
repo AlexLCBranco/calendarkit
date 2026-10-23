@@ -45,13 +45,13 @@ describe('CalendarView (league)', () => {
     expect((screen.getByLabelText('Previous day') as HTMLButtonElement).disabled).toBe(true); // season's first date
   });
 
-  it('league month (wide) jumps to the clicked day', () => {
-    render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" />);
+  it('league week view (wide) jumps to the clicked day header', () => {
+    render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" initial={{ date: '2026-10-28' }} />);
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
-    const nav = screen.getByRole('region', { name: 'League month' });
-    const cell = within(nav).getByLabelText(`October 28: ${realData.byDate.get('2026-10-28')!.length} games`);
-    fireEvent.click(cell);
-    expect(screen.queryByRole('region', { name: 'League month' })).toBeNull();
+    const nav = screen.getByRole('region', { name: 'League week' });
+    const header = within(nav).getByLabelText(`Wednesday, October 28: ${realData.byDate.get('2026-10-28')!.length} games`);
+    fireEvent.click(header);
+    expect(screen.queryByRole('region', { name: 'League week' })).toBeNull();
     expect(screen.getByTestId('day-title').textContent).toBe('Wednesday, October 28, 2026');
   });
 });
@@ -87,11 +87,11 @@ describe('views: TBD and +1', () => {
     expect(onOpenGame).toHaveBeenCalledWith(realData.byDate.get('2026-10-21')!.find((g) => g.homeTeam.teamId === TEAM.LAL)!.gameId);
   });
 
-  it('team view: one game per day cell, opponent and vs/@ from the team side', () => {
+  it('team view: one game per day cell, selected team first and vs/@ from the team side, B2B night labelled', () => {
     const el = render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'calendar', teamId: TEAM.LAL }} />);
     const cells = [...el.container.querySelectorAll('.ck-cell-game')];
     expect(cells.length).toBeGreaterThan(3);
     for (const c of cells) expect(c.querySelectorAll('[data-game-id]')).toHaveLength(1);
-    expect(el.container.querySelector('[data-date="2026-10-28"]')!.textContent).toMatch(/@\s*LAC.*B2B/);
+    expect(el.container.querySelector('[data-date="2026-10-28"]')!.textContent).toMatch(/LAL\s*@\s*LAC.*2\/2 · HA/);
   });
 });
