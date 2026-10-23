@@ -81,7 +81,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 163 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 179 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -102,7 +102,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   30 options, 6 conference · division groups, mouse, keyboard ↓/↑/←/→/Home/End/letters/Enter/Escape, focus back to
   the button, phone tricode); selected team first + vs/@ + logos [team, opponent] on every BOS and LAL game, list and
   calendar (all months); phone calendar keeps opponent-only cells; B2B pairs worked out independently in the test
-  for LAL, BOS, ORL, NYK (labels, night, code, plane iff the feed's arena cities differ, bracket attribute, no "B2B"
+  for LAL, BOS, ORL, NYK (labels, night, code, plane iff the arena cities' metros differ, bracket attribute, no "B2B"
   badge), all four codes present in the real schedule, synthetic all-four-codes + unknown-city case, tooltip text on
   hover and focus, calendar bars (full bar placement, Sat → Sun halves on consecutive rows, cross-month half),
   phone short labels; opponent 2/2 dot exactly on 2/2 (tooltip text), not on 1/2, both marks; equal rows (5- and
@@ -123,8 +123,8 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   season in 1- and 2-week mode at 1920 × 1080 (no page scroll, no line outside its cell, counts match), prints the
   busiest week(s) and the tallest day; cutoff: week view at widget 859 px with 115 px lines and nothing clipped,
   count grid 1 px below; B2B for ORL Nov 2026: bar geometry (inside night 1 → across the gap → inside night 2),
-  week-break halves with arrow triangles, 1/2 transparent vs 2/2 filled, code, plane iff city change, tooltip on
-  hover and focus inside the viewport, opponent dot (5 px) + tooltip, list bracket (2 px orange, the two halves meet
+  week-break halves with arrow triangles, 1/2 transparent vs 2/2 filled, code, plane iff metro change, tooltip on
+  hover and focus inside the viewport, opponent dot (5 px × the Team Calendar scale) + tooltip, list bracket (2 px orange, the two halves meet
   in the row gap), same labels; lists ≤ 960 px and centered with everything inside; TV filter: per rendered day
   TV-only count ≤ all-games count and every shown game has a national broadcaster in the snapshot.
 - `e2e/lists.spec.ts` (fixed clock Nov 15, 2026 15:00 UTC; all 4 widths): switch + 4 views with layout checks
@@ -140,7 +140,22 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   2 columns with ≥ 8 px spare at 1920 px, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
   loaded, nothing clipped, TV tooltip on hover, no request to cdn.nba.com; screenshots to `e2e/screenshots/`
   (git-ignored; uploaded as a CI artifact). `npm run e2e:live -- <url>` runs all e2e against a deployed site.
+- `metro.test.tsx`: table (Inglewood → LA, Brooklyn → NY, other cities unchanged); real feed: 30 home cities → 28
+  metros, only LAL/LAC and NYK/BKN shared, every table entry is a real arena city; synthetic LAL → @ LAC and NYK →
+  @ BKN pairs: no plane, no travel in the tooltip; BKN → @ LAC: plane + "travels Brooklyn → Inglewood"; LA →
+  Mexico City: plane; every crosstown pair in the real schedule: no travel.
+- `scale.test.tsx`: `weekScale` (1.5 at 1920 × 1080 with line and busiest day inside 80 %, max, min 1, the 859 px
+  cutoff → 1, 1280 px → 1.1, 0.05 steps), `scaleLine`; week view: 1 week scaled (every line variable = base × 1.5)
+  vs 2 weeks at base size, 2 columns unchanged; Team Calendar: scale > 1 on desktop, probe gone after render,
+  phone scale 1, TV names one span per network.
+- e2e **fit** (above) also checks: 1-week scale ≥ 1.4 and line wider than 2-week (115 px, 11 px, scale 1), no
+  tricode wider than its column. New e2e (desktop 1280 and desktop-xl 1920): **every team × every month** of the
+  Team Calendar — no cell clipped (height or width), no page scroll, B2B bars on the cells' bottom edge (0–6 px),
+  at 1920 px scale > 1 with logos 16 × scale; prints the fullest cell for 5- and 6-week months.
 - New tests were run against the previous code first: 52 of the new/changed unit tests fail there (2026-10-23).
+  Metro / scale work (2026-10-23): the 2 metro behaviour tests fail on the old code (the other 4 cover the table and
+  cases that already worked), `scale.test.tsx` fails as a whole (functions missing), and the 5 new/changed e2e
+  checks (team walk ×2, fit, B2B dot ×2) fail against an old build.
 - Manual only: none needed beyond judging look and feel.
 
 ## Decisions
@@ -231,10 +246,15 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   then night 2 (HH/HA/AH/AA), same on both. Real schedule: HH 128, HA 78, AH 68, AA 152 pairs (all four occur), 51
   cross a Sat → Sun week break. Replaces the "B2B" badge in team views; league views unchanged (badge in the list,
   dot on the 2/2 team in the week view).
-  - **Plane**: shown when the feed's **arena city** (`arenaCity`, passed through by the shared module — no
-    rotationkit request needed) differs between the nights; omitted when either is empty. Cities are never guessed,
-    so the feed's own names decide: e.g. LAL (Los Angeles) → LAC (Intuit Dome, **Inglewood**) and NYK ↔ BKN
-    (New York / Brooklyn) count as travel; neutral-site games use their venue city (Paris, Mexico City, Austin…).
+  - **Plane** (metro areas, 2026-10-23): shown when the **metro** of the feed's **arena city** (`arenaCity`, passed
+    through by the shared module) differs between the nights; omitted when either city is empty. Reason: the feed
+    names the arena's own city, and two arenas sit in a suburb/borough of a metro another team plays in, so
+    Lakers–Clippers and Knicks–Nets back-to-backs showed a plane. Fixed table `ARENA_METRO` in
+    `src/data/metro.ts`: **Inglewood → Los Angeles** (LAC, Intuit Dome), **Brooklyn → New York** (BKN, Barclays
+    Center). Checked against all 30 teams' home arena cities in the 2026-27 feed (30 cities → 28 metros; GSW is
+    "San Francisco", the only Bay Area team; no other shared metro). Any city not in the table is its own metro, so
+    neutral sites keep their city (Mexico City, Paris, Manchester, Austin). The tooltip names the real cities
+    ("travels Brooklyn → Inglewood") only when there is a plane. Tests write the table out independently.
   - **Calendar**: a 3 px orange bar at the bottom of both cells, one element spanning both grid columns so it
     continues through the gap. Across a week break (or a month edge) each night gets a half ending in a 6 px arrow
     toward the other. Bars are grid items over explicitly placed cells. If the TV filter hides one night, no bar
@@ -254,6 +274,22 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   measured at 1920 × 1080: 259.4 × 179.4 px cells (5-week month), 259.4 × 148.8 px (6-week), no page scroll; also
   none at 1280 × 900 (138.8 / 115.0 px). Phones: rows 1fr (all as tall as the busiest), page scrolls. Week view and
   count grid: rows 1fr.
+- **Team Calendar scale** (2026-10-23): on desktop/tablet the cell content (time, "BOS vs CHI" + logos, B2B label,
+  TV names, Cup markers, opponent dot) is scaled with CSS `zoom: var(--ck-team-scale)`; the B2B bar stays a grid
+  item at the cells' bottom edge, unscaled. The scale is measured, not guessed: a hidden **probe** cell (rendered
+  only while measuring, removed before paint) holds the fullest cell the season can have — the longest national TV
+  names ("Peacock · NBC Sports Network"), a Cup Final marker, a travelling "1/2 · AA ✈" label and the opponent
+  dot — and the scale is the largest (0.05 steps, ≤ 2) at which it fits ≤ 90 % of a **6-week** month's cell (the
+  smallest cells) with no sideways overflow. So one scale for every month and team at a given window size.
+  Measured at **1920 × 1080: 1.3** (12 → 15.6 px text, 16 → 20.8 px logos); fullest real cell 116 px of 137.8 px
+  (6-week, CHI Jan 2027, 259.4 × 148.8 px cells) and of 168.4 px (5-week, ATL Feb 2027, 259.4 × 179.4 px). It is
+  bound by height: at 1.35 the probe's tags take a third row. 1280 × 900 → 1 (fullest cell 96 of 104 px). Phone
+  cells unchanged (no scale). Not budgeted: the "Rotations ↗" button (hidden while `ROTATIONKIT_BASE_URL` is unset).
+- **TV names in calendar cells** (desktop/tablet): one pill per network, flowing with the other tags, so they wrap
+  between networks, never inside one. Fixes a clip found while measuring: at 1280 px "Peacock · NBC Sports Network"
+  (177 px nowrap) overflowed a 171 px cell sideways (LAL Nov 30, 2026; the old check only looked at height). A
+  single pill wrapping inside made CHI Jan 4, 2027 too tall for a 6-week cell (page scrolled 51 px). The separator
+  " · " stays in the text (hidden), so the badge text is unchanged. Phones keep the green dot.
 - **Page width**: content up to **1840 px** (`.app` max-width 1872 px incl. 16 px padding; `MAX_CONTENT_WIDTH` in
   `App.tsx`) — ~40 px side margins at a 1920 px window — for every view. The shell passes the widget its *measured*
   content width (ResizeObserver on `.app`), not `window.innerWidth`, and `html { scrollbar-gutter: stable }` keeps
@@ -270,11 +306,21 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   2026") opens a month popup with counts per day (month arrows) — a day jumps to its week; each cell's day header
   ("Sun 15 · 9 games") opens League → List at that day. Today's cell highlighted.
   - **Fit at 1920 × 1080** (measured 2026-10-23, every week of the season walked in e2e): busiest week Dec 27 – Jan 2
-    (56 games), busiest 2 weeks Dec 27 – Jan 9 (110 games); the tallest day (Apr 4, 2027, one column) needs 455 px
-    in a 984 px cell; in 2-week mode the tallest day (Nov 2, 15 games, 2 columns) needs 249.5 px in a 490 px cell.
-    No page scroll, nothing clipped, nothing shrunk or hidden.
+    (56 games), busiest 2 weeks Dec 27 – Jan 9 (110 games); at the 1× size the tallest day (Apr 4, 2027, one
+    column) needed 455 px of a 984 px cell, now **667.5 px at 1.5×** (316.5 px spare); in 2-week mode the tallest
+    day (Nov 2, 15 games, 2 columns) needs 249.5 px in a 490 px cell. No page scroll, nothing clipped, nothing
+    shrunk or hidden.
+  - **1-week scale** (`weekScale` in `dayflow.ts`, 2026-10-23): in 1-week mode the whole line (logos, tricodes,
+    time labels, TV pill, B2B dot, gaps — every `MONTH_LINE` length, `scaleLine(s)`) is scaled by one factor s:
+    the largest in 0.05 steps up to **1.5** (`WEEK_SCALE_MAX`) such that one line uses ≤ 80 % of the cell's inner
+    width and the season's busiest one-column day (`busiestDayHeight`, all games, in the viewer's zone) ≤ 80 % of
+    the cell height below the day header; never below 1. Cell width from `monthCellInner(width)`; cell height = the
+    widget height below the grid's top (measured once per size; independent of s, so no feedback loop). The day
+    header and legend keep their size. Measured: **1920 × 1080 → 1.5** (line 172.5 px in a 249.4 px cell = 69 %,
+    logos 24 px, tricodes 16.5 px); 1280 × 900 → 1.1 (bound by width: 162.7 px inner cell width); 2560 × 1440 → 1.5; the 859 px
+    cutoff → 1. 2-week mode unchanged (1×, 115 px, 2 columns at 1920 px).
   - **Line**: `[logo] AWAY [logo] HOME [TV]` — away always left, home right, **no "@"** in this view; a legend
-    "Away · Home" above the grid ("@" stays everywhere else). 11 px Inter semibold tricodes, 16 px logos. Geometry
+    "Away · Home" above the grid ("@" stays everywhere else). 11 px Inter semibold tricodes, 16 px logos (2-week mode; 1-week mode scales it, see "1-week scale"). Geometry
     in `MONTH_LINE` (`dayflow.ts`): logo 16 · gap 2 · tricode 28 · away/home gap 6 · logo 16 · gap 2 · tricode 28 ·
     gap 2 · TV 15 = **115 px**, fixed for every line. Tricode column 28 px fits the widest tricode (MEM 26.95 px).
   - **Time groups**: each day's games grouped by local tip-off label ("20:00", "00:00 (+1)", "TBD" last), small

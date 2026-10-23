@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Team views: header (large logo + full name), team picker with logos (keyboard), selected team first on every
-// game ("BOS vs CHI" / "BOS @ DET", both logos), the team's back-to-back pairs (1/2 · XY, 2/2 · XY, plane on a city
+// game ("BOS vs CHI" / "BOS @ DET", both logos), the team's back-to-back pairs (1/2 · XY, 2/2 · XY, plane on a metro
 // change, bar / bracket, tooltips), and the opponent's 2/2 dot.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -25,6 +25,9 @@ const team = (teamId: number, layout: 'list' | 'calendar', size = WIDE, onStateC
   render(<CalendarView data={data} size={size} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout, teamId }} onStateChange={onStateChange} />);
 const imgs = (el: Element) => [...el.querySelectorAll('img')].map((i) => i.getAttribute('src'));
 
+/** Metro of an arena city, written out here independently of src/data/metro.ts (see PROJECT.md). */
+const metro = (c: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' } as Record<string, string>)[c] ?? c;
+
 /** Back-to-back pairs worked out here, independently of the app: consecutive calendar days of the team's games. */
 function expectedPairs(d: CalendarData, teamId: number) {
   const games = d.games.filter((g) => g.homeTeam.teamId === teamId || g.awayTeam.teamId === teamId);
@@ -34,7 +37,7 @@ function expectedPairs(d: CalendarData, teamId: number) {
     const b = games[i]!;
     if (addDays(a.dateEt, 1) !== b.dateEt) continue;
     const ha = (g: ScheduleGame) => (g.homeTeam.teamId === teamId ? 'H' : 'A');
-    out.push({ a, b, code: ha(a) + ha(b), travels: !!a.arenaCity && !!b.arenaCity && a.arenaCity !== b.arenaCity });
+    out.push({ a, b, code: ha(a) + ha(b), travels: !!a.arenaCity && !!b.arenaCity && metro(a.arenaCity) !== metro(b.arenaCity) });
   }
   return out;
 }
@@ -228,7 +231,7 @@ describe('back-to-back pairs (team views)', () => {
 
   it('tooltip (hover + focus): "Back-to-back: vs X (home) → @ Y (away) · travels A → B"; no travel part in the same city', () => {
     const pairs = expectedPairs(data, TEAM.LAL);
-    const travel = pairs.find((p) => p.travels && p.code === 'HA')!;
+    const travel = pairs.find((p) => p.travels)!;
     const same = pairs.find((p) => !p.travels)!;
     const el = team(TEAM.LAL, 'list');
     const side = (g: ScheduleGame) => (g.homeTeam.teamId === TEAM.LAL ? `vs ${g.awayTeam.teamTricode} (home)` : `@ ${g.homeTeam.teamTricode} (away)`);

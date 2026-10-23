@@ -1,6 +1,7 @@
 // One game. Self-contained widget: inputs are the game, a few precomputed facts and a size; it never opens URLs.
 // "Open" actions are raised through onOpenGame(gameId) and the host decides what that means.
 
+import { Fragment } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { isOver, markers, nationalTv, perspective, teamLabel, tipoff, type B2BPair } from '../data/model';
 import { teamLogo } from '../data/teams';
@@ -153,7 +154,12 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
         {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}
         {tv.length > 0 && (
           <span className="ck-tag ck-tv" title="US national TV" data-testid="tv-badge">
-            {tv.join(' · ')}
+            {tv.map((n, i) => (
+              <Fragment key={n}>
+                {i > 0 && <span className="ck-tv-sep"> · </span>}
+                <span className="ck-tv-name">{n}</span>
+              </Fragment>
+            ))}
           </span>
         )}
       </span>

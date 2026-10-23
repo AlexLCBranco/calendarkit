@@ -27,11 +27,11 @@ import {
   type CalendarData,
 } from '../data/model';
 import { DIVISIONS, TEAMS, TEAM_BY_ID, teamLogo, type Team } from '../data/teams';
-import { flowDay, MONTH_COL_GAP, MONTH_LINE, MONTH_LINE_WIDTH, monthColumns, ROOMY_WIDTH, timeGroups, WEEK_MIN_WIDTH } from './dayflow';
+import { busiestDayHeight, flowDay, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, WEEK_MIN_WIDTH, weekScale } from './dayflow';
 import { B2BDot, GameCard, TeamLogo, type B2BNight } from './GameCard';
 import './calendar.css';
 
-export { flowDay, monthCellInner, monthColumns, MONTH_COL_GAP, MONTH_LINE, MONTH_LINE_WIDTH, WEEK_MIN_WIDTH, type ColumnGroup } from './dayflow';
+export { flowDay, monthCellInner, monthColumns, MONTH_COL_GAP, MONTH_LINE, MONTH_LINE_WIDTH, WEEK_MIN_WIDTH, WEEK_SCALE_MAX, weekScale, type ColumnGroup } from './dayflow';
 
 export interface WidgetSize {
   width: number;
@@ -46,6 +46,22 @@ const isCompact = (size: WidgetSize) => size.width < COMPACT_WIDTH;
 export const LIST_MAX_WIDTH = 960;
 /** Smallest team calendar row (px) on desktop/tablet; the grid fills the window above that. */
 export const TEAM_CELL_MIN_HEIGHT = 92;
+/** Team calendar (desktop/tablet): largest content scale, and the share of a cell's free height it may use. */
+export const TEAM_SCALE_MAX = 2;
+export const TEAM_SCALE_FILL = 0.9;
+
+/**
+ * The fullest cell the season can have, for sizing the team calendar: the game with the longest national TV names,
+ * as a Cup Final, on night 1 of a travelling back-to-back, with the opponent on its 2nd night.
+ */
+function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefined {
+  const tvText = (g: ScheduleGame) => nationalTv(g).join(' · ').length;
+  const g = data.games.reduce<ScheduleGame | undefined>((best, x) => (x.homeTeam.teamId && (!best || tvText(x) > tvText(best)) ? x : best), undefined);
+  if (!g) return undefined;
+  const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final' };
+  const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
+  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, size: 'compact' };
+}
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -409,10 +425,52 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
   });
   const place = (i: number): CSSProperties => ({ gridRow: Math.floor(i / 7) + 2, gridColumn: (i % 7) + 1 });
 
+  // Desktop/tablet: cell content scaled (CSS zoom) to use the cell. The scale is the largest (0.05 steps, up to
+  // TEAM_SCALE_MAX) at which the fullest possible cell (probeCard) fits a cell of a 6-week month — the smallest
+  // cells — so it doesn't change from month to month. The probe is rendered only while measuring, before paint.
+  const probe = useMemo(() => probeCard(data), [data]);
+  const [scale, setScale] = useState({ key: '', s: 1 });
+  const key = `${size.width}x${size.height}`;
+  const measuring = !compact && !!probe && scale.key !== key;
+  const grid = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const g = grid.current;
+    const cell = g?.querySelector<HTMLElement>('.ck-day-cell');
+    const card = g?.querySelector<HTMLElement>('.ck-team-probe > .ck-card');
+    if (!measuring || !g || !cell || !card) return;
+    const cs = getComputedStyle(cell);
+    const px = (v: string) => parseFloat(v) || 0;
+    const c = cell.getBoundingClientRect();
+    const gap = px(getComputedStyle(g).rowGap);
+    const h6 = Math.max(TEAM_CELL_MIN_HEIGHT, (weeks * (c.height + gap)) / 6 - gap);
+    const num = cell.querySelector('.ck-daynum')!.getBoundingClientRect();
+    const room = (h6 - (num.bottom - c.top) - px(cs.rowGap) - px(cs.paddingBottom) - px(cs.borderBottomWidth)) * TEAM_SCALE_FILL;
+    card.parentElement!.style.width = `${c.width}px`;
+    let s = TEAM_SCALE_MAX;
+    for (; s > 1; s = Math.round((s - 0.05) * 100) / 100) {
+      card.style.zoom = String(s);
+      if (card.getBoundingClientRect().height <= room && card.scrollWidth <= card.clientWidth) break;
+    }
+    setScale({ key, s: Math.max(1, s) });
+  });
+  const s = compact ? 1 : scale.s;
+
   return (
     <section className="ck-team-month" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} schedule`}>
       {nav && <PeriodNav {...monthNav(month, seasonMonths(data), onMonthChange)} />}
-      <div className="ck-grid ck-team-grid" role="grid" data-weeks={weeks} style={{ gridTemplateRows: `auto repeat(${weeks}, ${compact ? '1fr' : `minmax(${TEAM_CELL_MIN_HEIGHT}px, 1fr)`})` }}>
+      <div
+        ref={grid}
+        className="ck-grid ck-team-grid"
+        role="grid"
+        data-weeks={weeks}
+        data-scale={s}
+        style={{ gridTemplateRows: `auto repeat(${weeks}, ${compact ? '1fr' : `minmax(${TEAM_CELL_MIN_HEIGHT}px, 1fr)`})`, '--ck-team-scale': s } as CSSProperties}
+      >
+        {measuring && (
+          <div className="ck-cell ck-team-probe" aria-hidden="true">
+            <GameCard {...probe} timeZone={timeZone} />
+          </div>
+        )}
         {WEEKDAYS.map((d, i) => (
           <div key={d} className="ck-grid-head" role="columnheader" style={{ gridRow: 1, gridColumn: i + 1 }}>
             {compact ? d[0] : d}
@@ -845,7 +903,19 @@ function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame 
  */
 export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZone, onSelectDate }: LeagueWeekViewProps) {
   const cols = weeks === 1 ? 1 : monthColumns(size.width);
-  const L = MONTH_LINE;
+  // 1 week: lines scaled to the day cell (see weekScale). The cell's width is pure maths; its height is the widget
+  // height below the grid's top (measured; it doesn't depend on the scale, so no feedback loop).
+  const busiest = useMemo(() => busiestDayHeight(data.byDate, timeZone), [data, timeZone]);
+  const grid = useRef<HTMLDivElement>(null);
+  const [gridTop, setGridTop] = useState(0);
+  useLayoutEffect(() => {
+    const el = grid.current;
+    const root = el?.closest('.ck-root') ?? el?.parentElement;
+    if (el && root) setGridTop(el.getBoundingClientRect().top - root.getBoundingClientRect().top);
+  }, [size.width, size.height]);
+  const pad = size.width < ROOMY_WIDTH ? 2 : 4;
+  const scale = weeks === 1 ? weekScale(monthCellInner(size.width), size.height - gridTop - 2 * pad - 2, busiest) : 1;
+  const L = scaleLine(scale);
   const vars = {
     '--ck-logo': `${L.logo}px`,
     '--ck-gap': `${L.gap}px`,
@@ -855,19 +925,21 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
     '--ck-pill': `${L.pill}px`,
     '--ck-font': `${L.font}px`,
     '--ck-label-font': `${L.labelFont}px`,
+    '--ck-label-gap': `${L.labelGap}px`,
     '--ck-row-gap': `${L.rowGap}px`,
     '--ck-group-gap': `${L.groupGap}px`,
+    '--ck-dot': `${L.dot}px`,
     '--ck-col-gap': `${MONTH_COL_GAP}px`,
-    '--ck-line': `${MONTH_LINE_WIDTH}px`,
+    '--ck-line': `${lineWidth(L)}px`,
   } as CSSProperties;
   const dates = Array.from({ length: 7 * weeks }, (_, i) => addDays(start, i));
 
   return (
-    <section className={`ck-week-view${size.width < ROOMY_WIDTH ? ' ck-month-tight' : ''}`} aria-label="League week" data-weeks={weeks} style={vars}>
+    <section className={`ck-week-view${size.width < ROOMY_WIDTH ? ' ck-month-tight' : ''}`} aria-label="League week" data-weeks={weeks} data-scale={scale} style={vars}>
       <div className="ck-month-legend" data-testid="month-legend">
         Away · Home
       </div>
-      <div className="ck-grid ck-week-grid" role="grid" style={{ gridTemplateRows: `repeat(${weeks}, 1fr)` }}>
+      <div ref={grid} className="ck-grid ck-week-grid" role="grid" style={{ gridTemplateRows: `repeat(${weeks}, 1fr)` }}>
         {dates.map((date) => {
           const all = data.byDate.get(date) ?? [];
           const games = tvOnly ? all.filter(hasNationalTv) : all;

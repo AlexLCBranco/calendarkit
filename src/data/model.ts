@@ -3,6 +3,7 @@
 // the module already derives (gameType, dateEt, startTimeUtc, timeTbd, teamsTbd, Cup flags).
 
 import type { GameType, Schedule, ScheduleGame } from '../shared/nba-schedule/parse';
+import { metroOf } from './metro';
 
 /** Game types shown in v1. Preseason, All-Star and unknown types are dropped. */
 export const SHOWN_GAME_TYPES: ReadonlySet<GameType> = new Set<GameType>(['regular', 'cup-final', 'play-in', 'playoffs']);
@@ -227,7 +228,7 @@ export interface B2BPair {
   /** Arena cities from the feed (`arenaCity`); empty when the feed has none. */
   fromCity: string;
   toCity: string;
-  /** The team changes city between the nights. Only from the feed's arena cities; false if either is missing. */
+  /** The team changes metro area between the nights (arena cities via metroOf); false if either city is missing. */
   travels: boolean;
   /** "Back-to-back: vs BKN (home) → @ LAL (away) · travels Boston → Los Angeles" */
   tip: string;
@@ -245,7 +246,7 @@ export function teamB2BPairs(data: CalendarData, teamId: number): B2BPair[] {
     const h2 = second.homeTeam.teamId === teamId;
     const fromCity = String(first.arenaCity ?? '').trim();
     const toCity = String(second.arenaCity ?? '').trim();
-    const travels = !!fromCity && !!toCity && fromCity !== toCity;
+    const travels = !!fromCity && !!toCity && metroOf(fromCity) !== metroOf(toCity);
     const where = (home: boolean) => (home ? 'home' : 'away');
     const tip = `Back-to-back: ${sideLabel(first, teamId)} (${where(h1)}) → ${sideLabel(second, teamId)} (${where(h2)})${travels ? ` · travels ${fromCity} → ${toCity}` : ''}`;
     out.push({ teamId, first, second, code: `${h1 ? 'H' : 'A'}${h2 ? 'H' : 'A'}` as B2BCode, fromCity, toCity, travels, tip });

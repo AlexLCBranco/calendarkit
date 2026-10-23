@@ -595,7 +595,7 @@
   font-weight: 500;
   color: var(--ck-muted);
   font-variant-numeric: tabular-nums;
-  margin-bottom: 2px;
+  margin-bottom: var(--ck-label-gap, 2px);
 }
 .ck-tgames {
   list-style: none;
@@ -665,10 +665,10 @@
 /* B2B: small dot over the top-right corner of the tricode; takes no width. */
 .ck-b2b-mark {
   position: absolute;
-  top: -1px;
-  right: -3px;
-  width: 5px;
-  height: 5px;
+  top: calc(var(--ck-dot, 5px) * -0.2);
+  right: calc(var(--ck-dot, 5px) * -0.6);
+  width: var(--ck-dot, 5px);
+  height: var(--ck-dot, 5px);
   border-radius: 50%;
   background: var(--ck-b2b);
   box-shadow: 0 0 0 1px var(--ck-surface);
@@ -1044,4 +1044,37 @@
 }
 .ck-card-logos .ck-side > .ck-vsat {
   min-width: 1.3em;
+}
+
+/* Team calendar (desktop/tablet): cell content scaled to the cell (TeamMonthGrid sets --ck-team-scale from the
+   measured cell size); phone cells keep their size. The probe is the fullest possible cell, rendered only while
+   the scale is measured. */
+.ck-team-grid .ck-card-compact {
+  zoom: var(--ck-team-scale, 1);
+}
+.ck-team-probe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-height: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+/* TV names in a desktop/tablet calendar cell: one pill per network, flowing with the other tags, so they wrap
+   between networks ("Peacock · NBC Sports Network" is wider than a cell at a 1280 px window). Phones keep the dot. */
+.ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv) {
+  display: contents;
+}
+.ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv) .ck-tv-sep {
+  display: none;
+}
+.ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv) .ck-tv-name {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--ck-tv);
+  color: var(--ck-tv);
+  white-space: nowrap;
+  font-weight: 500;
 }

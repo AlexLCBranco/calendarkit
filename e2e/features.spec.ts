@@ -33,6 +33,8 @@ async function feed(page: Page): Promise<RawGame[]> {
     return (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
   });
 }
+/** Metro of an arena city, written out here independently of src/data/metro.ts (see PROJECT.md). */
+const metro = (c: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' } as Record<string, string>)[c] ?? c;
 const dateOf = (g: RawGame) => g.gameDateEst.slice(0, 10);
 const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const sunday = (d: string) => addDays(d, -new Date(`${d}T00:00:00Z`).getUTCDay());
@@ -204,6 +206,65 @@ test('uniform cells; Team Calendar fills the window without page scroll (5- and 
   }
 });
 
+test('team calendar: content scaled to the cell, nothing clipped in any cell — every team, every month', async ({ page }, info) => {
+  const p = info.project.name;
+  test.skip(p !== 'desktop-xl' && p !== 'desktop', 'desktop widths (phone cells keep their size)');
+  test.setTimeout(300_000);
+  await open(page, '?view=team&layout=calendar&team=ORL');
+  const teams = [...new Set((await feed(page)).map((g) => g.homeTeam.teamTricode).filter(Boolean))].sort();
+  expect(teams).toHaveLength(30);
+  const seen = new Map<number, { cell: string; used: number; room: number }>(); // weeks → fullest cell
+  for (const tri of teams) {
+    await open(page, `?view=team&layout=calendar&team=${tri}`);
+    // first month of the season
+    while (await page.getByLabel('Previous month').isEnabled()) await page.getByLabel('Previous month').click();
+    for (let guard = 0; guard < 14; guard++) {
+      const r = await page.locator('.ck-team-grid').evaluate((g) => {
+        const cells = [...g.querySelectorAll<HTMLElement>('.ck-day-cell')];
+        const card = g.querySelector('.ck-card');
+        const cs = (el: Element) => getComputedStyle(el);
+        return {
+          month: document.querySelector('[data-testid="period-title"]')!.textContent!,
+          weeks: Number((g as HTMLElement).dataset.weeks),
+          scale: Number((g as HTMLElement).dataset.scale),
+          logo: card?.querySelector('.ck-matchup .ck-logo-backing')?.getBoundingClientRect().width ?? 0,
+          cell: `${cells[0]!.getBoundingClientRect().width.toFixed(1)} × ${cells[0]!.getBoundingClientRect().height.toFixed(1)}`,
+          clipped: cells.filter((c) => c.scrollHeight > c.clientHeight + 1 || c.scrollWidth > c.clientWidth + 1).map((c) => c.dataset.date),
+          // fullest cell: card bottom vs the cell's content box bottom (above the B2B bar's padding)
+          fill: cells.map((c) => {
+            const k = c.querySelector('.ck-card');
+            const b = c.getBoundingClientRect();
+            const room = b.bottom - parseFloat(cs(c).paddingBottom) - parseFloat(cs(c).borderBottomWidth);
+            return k ? { used: k.getBoundingClientRect().bottom - b.top, room: room - b.top } : { used: 0, room: room - b.top };
+          }).sort((a, b) => b.used - a.used)[0]!,
+          // B2B bars stay on the cells' bottom edge, below the content
+          bars: [...g.querySelectorAll<HTMLElement>('[data-b2b-bar]')].map((bar) => {
+            const r = bar.getBoundingClientRect();
+            const cell = cells.map((c) => c.getBoundingClientRect()).find((c) => c.top <= r.top && c.bottom >= r.bottom);
+            return cell ? cell.bottom - r.bottom : -1;
+          }),
+          scroll: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+        };
+      });
+      const name = `${tri} ${r.month}`;
+      expect(r.clipped, name).toEqual([]);
+      expect(r.scroll, name).toBeLessThanOrEqual(0);
+      for (const gap of r.bars) expect(gap, `${name}: B2B bar at the bottom edge of its cells`).toBeGreaterThanOrEqual(0), expect(gap, name).toBeLessThanOrEqual(6);
+      if (p === 'desktop-xl') {
+        expect(r.scale, name).toBeGreaterThan(1);
+        if (r.logo) expect(r.logo, name).toBeCloseTo(16 * r.scale, 1);
+      } else expect(r.scale, name).toBeGreaterThanOrEqual(1);
+      const prev = seen.get(r.weeks);
+      if (!prev || r.fill.used > prev.used) seen.set(r.weeks, { cell: `${name}: cell ${r.cell} px, scale ${r.scale}`, ...r.fill });
+      const next = page.getByLabel('Next month');
+      if (await next.isDisabled()) break;
+      await next.click();
+      await expect(page.getByTestId('period-title')).not.toHaveText(r.month);
+    }
+  }
+  for (const [weeks, s] of seen) console.log(`[${p}] team calendar ${weeks}-week months: fullest cell ${s.cell}, content ${s.used.toFixed(1)} of ${s.room.toFixed(1)} px`);
+});
+
 test('league week view: 7 equal columns, counts match the data, toggle, prev/next, month popup, day header → list', async ({ page }, info) => {
   test.skip(!weekView(info.project.name), 'count grid below the width cutoff');
   const errors = collectErrors(page);
@@ -262,9 +323,15 @@ test('league week view fits 1920×1080 without page scroll: every week of the se
   const busiest = [...perWeek].sort((a, b) => b[1] - a[1])[0]!;
   const busiest2 = [...perWeek.keys()].map((w) => [w, perWeek.get(w)! + (perWeek.get(addDays(w, 7)) ?? 0)] as const).sort((a, b) => b[1] - a[1])[0]!;
   console.log(`[desktop-xl] busiest week ${busiest[0]} (${busiest[1]} games), busiest 2 weeks from ${busiest2[0]} (${busiest2[1]} games)`);
+  const lineWidths: Record<number, number> = {};
   for (const weeks of [1, 2]) {
     await open(page, `?view=league&layout=calendar&date=${first}&weeks=${weeks}`);
     let worst = { spare: Infinity, start: '', need: 0, cell: 0 };
+    const size = await page.evaluate(() => ({ scale: Number(document.querySelector<HTMLElement>('.ck-week-view')!.dataset.scale), line: document.querySelector('.ck-month-game')!.getBoundingClientRect().width, logo: document.querySelector('.ck-month-game .ck-logo-backing')!.getBoundingClientRect().width, font: getComputedStyle(document.querySelector('.ck-mtri')!).fontSize }));
+    console.log(`[desktop-xl] ${weeks} week(s): scale ${size.scale}, line ${size.line} px, logo ${size.logo} px, tricode ${size.font}`);
+    lineWidths[weeks] = size.line;
+    if (weeks === 1) expect(size.scale).toBeGreaterThanOrEqual(1.4); // about 1.5× (weekScale)
+    else expect([size.scale, size.line, size.font]).toEqual([1, 115, '11px']);
     for (let guard = 0; guard < 40; guard++) {
       const r = await page.evaluate(() => {
         const cells = [...document.querySelectorAll<HTMLElement>('.ck-week-view [role="gridcell"]')];
@@ -275,7 +342,10 @@ test('league week view fits 1920×1080 without page scroll: every week of the se
           return {
             need: Math.max(b.top, ...items.map((i) => i.bottom)) - b.top,
             spare: b.bottom - Math.max(b.top, ...items.map((i) => i.bottom)),
-            clipped: lines.filter((l) => l.left < b.left - 0.5 || l.right > b.right + 0.5 || l.bottom > b.bottom + 0.5).length,
+            clipped:
+              lines.filter((l) => l.left < b.left - 0.5 || l.right > b.right + 0.5 || l.bottom > b.bottom + 0.5).length +
+              // a tricode wider than its column would run into the next logo
+              [...c.querySelectorAll('.ck-mtri-text')].filter((t) => t.getBoundingClientRect().width > t.parentElement!.getBoundingClientRect().width + 0.5).length,
             h: b.height,
           };
         });
@@ -293,6 +363,7 @@ test('league week view fits 1920×1080 without page scroll: every week of the se
     console.log(`[desktop-xl] ${weeks} week(s): tallest day content ${worst.need.toFixed(1)} px in a ${worst.cell.toFixed(1)} px cell (week of ${worst.start}), ${worst.spare.toFixed(1)} px to spare`);
     expect(worst.spare).toBeGreaterThan(0);
   }
+  expect(lineWidths[1]).toBeGreaterThan(lineWidths[2]!); // 1-week lines larger than 2-week
 });
 
 test('week view width cutoff: full-size lines at the cutoff, count grid one pixel below', async ({ page }, info) => {
@@ -340,7 +411,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
     const a = orl[i]!;
     if (addDays(dateOf(a), 1) !== dateOf(b)) return [];
     const ha = (g: RawGame) => (g.homeTeam.teamId === ORL ? 'H' : 'A');
-    return [{ a, b, code: ha(a) + ha(b), travels: !!a.arenaCity && !!b.arenaCity && a.arenaCity !== b.arenaCity }];
+    return [{ a, b, code: ha(a) + ha(b), travels: !!a.arenaCity && !!b.arenaCity && metro(a.arenaCity) !== metro(b.arenaCity) }];
   });
   const nov = pairs.filter((x) => dateOf(x.a).startsWith('2026-11') && dateOf(x.b).startsWith('2026-11'));
   expect(nov.length).toBeGreaterThanOrEqual(3);
@@ -426,7 +497,9 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
   // opponent on its 2/2: orange dot on its tricode, tooltip
   const dot = page.locator('.ck-team-grid .ck-opp .ck-b2b-mark').first();
   await expect(dot).toBeVisible();
-  expect((await dot.boundingBox())!.width).toBe(5);
+  // 5 px, scaled with the rest of the cell content (Team Calendar scale)
+  const teamScale = Number(await page.locator('.ck-team-grid').getAttribute('data-scale'));
+  expect((await dot.boundingBox())!.width).toBeCloseTo(5 * teamScale, 1);
   await dot.scrollIntoViewIfNeeded(); // the tooltip closes on scroll: scroll first, then hover
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   await dot.hover();

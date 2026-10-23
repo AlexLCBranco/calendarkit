@@ -7,10 +7,14 @@ import { tipoff } from '../data/model';
 /**
  * Game line geometry in px. Widths are fixed rather than measured at runtime: the text is the bundled Inter font,
  * so they are the same on every OS. `tri` fits the widest tricode (MEM, 26.95 px at 11 px semibold).
- * Line: logo · gap · AWAY · sep · logo · gap · HOME · pillGap · TV.
+ * Line: logo · gap · AWAY · sep · logo · gap · HOME · pillGap · TV. `labelGap`: below a time label; `dot`: B2B dot.
  */
-export const MONTH_LINE = { logo: 16, gap: 2, tri: 28, sep: 6, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7 } as const;
-export const MONTH_LINE_WIDTH = 2 * (MONTH_LINE.logo + MONTH_LINE.gap + MONTH_LINE.tri) + MONTH_LINE.sep + MONTH_LINE.pillGap + MONTH_LINE.pill;
+export const MONTH_LINE = { logo: 16, gap: 2, tri: 28, sep: 6, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5 } as const;
+export type MonthLine = { [K in keyof typeof MONTH_LINE]: number };
+export const lineWidth = (L: MonthLine) => 2 * (L.logo + L.gap + L.tri) + L.sep + L.pillGap + L.pill;
+export const MONTH_LINE_WIDTH = lineWidth(MONTH_LINE);
+/** MONTH_LINE with every length (fonts included) times `s`. */
+export const scaleLine = (s: number): MonthLine => Object.fromEntries(Object.entries(MONTH_LINE).map(([k, v]) => [k, v * s])) as MonthLine;
 /** Space between game columns inside a day cell. */
 export const MONTH_COL_GAP = 10;
 /** Below this widget width the day grid uses 2 px gaps and cell padding (instead of 4 px). */
@@ -54,12 +58,11 @@ export interface ColumnGroup extends TimeGroup {
   repeat: boolean;
 }
 
-const LABEL_H = MONTH_LINE.labelFont * 1.25 + 2; // .ck-tlabel line-height + margin
 const ROW_H = MONTH_LINE.logo + MONTH_LINE.rowGap;
 
-/** Estimated height (px) of one column of time groups, from MONTH_LINE (what the CSS lays out). */
-export const columnHeight = (c: TimeGroup[]) =>
-  c.reduce((h, grp, i) => h + (i ? MONTH_LINE.groupGap : 0) + LABEL_H + grp.games.length * ROW_H - MONTH_LINE.rowGap, 0);
+/** Estimated height (px) of one column of time groups at line geometry `L` (what the CSS lays out). */
+export const columnHeight = (c: TimeGroup[], L: MonthLine = MONTH_LINE) =>
+  c.reduce((h, grp, i) => h + (i ? L.groupGap : 0) + L.labelFont * 1.25 + L.labelGap + grp.games.length * (L.logo + L.rowGap) - L.rowGap, 0);
 
 /**
  * Flows a day's time groups into `cols` columns in newspaper order (down column 1, then column 2, …), choosing the
@@ -87,7 +90,7 @@ export function flowDay(groups: TimeGroup[], cols: number): ColumnGroup[][] {
   const walk = (cuts: number[], from: number) => {
     const p = parts(cuts);
     const splits = p.filter((c) => c[0]!.repeat).length;
-    const cost = Math.max(...p.map(columnHeight)) + splits * ROW_H;
+    const cost = Math.max(...p.map((c) => columnHeight(c))) + splits * ROW_H;
     // on a tie: fewer split groups, then the later break (earlier columns the longer ones, as in a newspaper)
     if (!best || cost < best.cost - 0.01 || (cost <= best.cost + 0.01 && splits <= best.splits)) best = { cost, splits, cuts };
     if (cuts.length < k - 1) for (let c = from; c < n; c++) walk([...cuts, c], c + 1);
@@ -99,4 +102,31 @@ export function flowDay(groups: TimeGroup[], cols: number): ColumnGroup[][] {
 }
 
 /** Estimated height (px) of a day's flowed games: its tallest column. */
-export const flowHeight = (flow: TimeGroup[][]) => Math.max(0, ...flow.map(columnHeight));
+export const flowHeight = (flow: TimeGroup[][]) => Math.max(0, ...flow.map((c) => columnHeight(c)));
+
+// ---------------------------------------------------------------- 1-week mode: larger lines
+
+/** Largest game-line scale in 1-week mode (about 1.5×, see PROJECT.md). */
+export const WEEK_SCALE_MAX = 1.5;
+/** Share of a day cell's inner width, and of its height below the day header, that the scaled content may use. */
+export const WEEK_SCALE_FILL = 0.8;
+/** Day header (12 px text + padding) and the space above the games; not scaled (.ck-wday, .ck-month-day). */
+export const WEEK_HEAD_H = 24;
+
+/** The season's tallest day in one column at scale 1 (px): every game, grouped by tip-off time in `timeZone`. */
+export function busiestDayHeight(byDate: Map<string, ScheduleGame[]>, timeZone?: string): number {
+  let max = 0;
+  for (const games of byDate.values()) max = Math.max(max, columnHeight(timeGroups(games, timeZone)));
+  return max;
+}
+
+/**
+ * 1-week game-line scale for a day cell's inner size (px, inside padding and border): as large as possible up to
+ * WEEK_SCALE_MAX while one line uses at most WEEK_SCALE_FILL of the width and the season's busiest day at most
+ * WEEK_SCALE_FILL of the height below the header. Never below 1 (the 2-week size); 0.05 steps.
+ */
+export function weekScale(innerWidth: number, innerHeight: number, busiest: number): number {
+  const byWidth = (innerWidth * WEEK_SCALE_FILL) / MONTH_LINE_WIDTH;
+  const byHeight = busiest > 0 ? ((innerHeight - WEEK_HEAD_H) * WEEK_SCALE_FILL) / busiest : Infinity;
+  return Math.max(1, Math.min(WEEK_SCALE_MAX, Math.floor(Math.min(byWidth, byHeight) * 20 + 1e-9) / 20));
+}
