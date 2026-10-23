@@ -15,7 +15,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Status
 - [x] Step 0 — probe (below)
-- [ ] Data layer
+- [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
 - [ ] Views
 - [ ] Game card
 - [ ] Tests (unit + Playwright)
@@ -36,6 +36,7 @@ where-to-watch info, embedding in gauntlet.
   runs `scripts/update-schedule.ts`, which downloads the feed with `node.ts`, checks it parses, and commits the
   **raw feed unchanged** to `public/data/schedule.json`. The app fetches that file and parses it with `parse.ts`.
   No per-request proxy.
+- GitHub Actions runners reach the feed (dry run 2026-10-23: 1274 games downloaded, tests passed).
 
 ### 2. National broadcasters (`broadcasters.nationalBroadcasters`, 2026-27 feed)
 Values seen (`broadcasterDisplay`; all `broadcasterScope: "natl"`, `broadcasterMedia: "tv"`):
@@ -69,15 +70,23 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   and runs the module's tests unchanged.
 - **Which games**: whitelist by module `gameType`: `regular`, `cup-final`, `play-in`, `playoffs`. Everything else
   (preseason, all-star, unknown) is dropped.
+- **Game date** is always the module's `dateEt`; local time is only used to format tip-off. "+1" = local calendar
+  day of tip-off minus `dateEt`.
+- **"Over"** = tip-off + 3 h. A TBD-time game counts as over at 12:00 UTC the day after its date.
+- **Default league day**: earliest date with a game not over; after the season's last game, the last game date
+  (there is no "next upcoming" date then).
+- **Back-to-back** = the team also plays on the previous *calendar* day (ET game dates), not the previous league
+  game date (which would flag games after the All-Star break).
 - **Snapshot size**: the raw feed is ~4 MB (≈ 200–300 KB gzipped over the wire). Committed daily only when it
   changes. Kept raw so no information is lost (scores later).
 
 ## Requests for rotationkit (module gaps — not forked here)
-_(none yet)_
+- **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId
+  (`004 YY 00 R S G`, R = round) in `playoffRound()` in `src/data/model.ts`. Please add e.g. `playoffRound: 1–4 | null`
+  (and series/game number) to `deriveGame`; calendarkit will switch to it on the next copy.
 
 ## Open questions / items
 - **ROTATIONKIT_BASE_URL** is a placeholder until rotationkit has a production URL (it isn't merged to main).
 - Confirm CORS refusal from the first Vercel preview deploy.
-- Confirm cdn.nba.com answers GitHub's runners (first workflow run after push).
 - Repo growth from daily 4 MB snapshot commits (~a few hundred KB compressed per change). Fine for a season;
   revisit if it becomes a problem (e.g. Vercel Blob or a separate data branch).
