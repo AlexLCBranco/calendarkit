@@ -19,7 +19,9 @@ where-to-watch info, embedding in gauntlet.
 - [x] Views — `src/components/CalendarView.tsx`: `TeamMonthGrid`, `LeagueDayView` (week strip, prev/next day), `MonthNavigator` (counts, click → day), `TeamPicker`, and `CalendarView` combining them. App shell `src/App.tsx` (URL state `?view=&team=&date=&tv=`).
 - [x] Game card — `src/components/GameCard.tsx`: vs/@ (team view) or AWAY @ HOME, local tip-off with (+1), TBD, B2B per team, Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed.
 - [x] Tests — see "Tests" below
-- [ ] Deploy (Vercel import by Alex) — live URL: _not yet_
+- [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
+  2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
+  The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
 ## Probe (2026-10-23)
 
@@ -27,8 +29,8 @@ where-to-watch info, embedding in gauntlet.
 - Real browser (Claude desktop browser pane, page on `http://localhost:4181`): `fetch(scheduleLeagueV2.json)` →
   `TypeError: Failed to fetch`; console: *"blocked by CORS policy: No 'Access-Control-Allow-Origin' header"*.
   A `no-cors` fetch of the same URL succeeds (opaque), so the CDN answers but doesn't allow our origin.
-- The CDN's CORS headers name a single origin: `Access-Control-Allow-Origin: https://www.nba.com`. A
-  `*.vercel.app` origin will be refused the same way (to re-confirm on the first preview deploy).
+- The CDN's CORS headers name a single origin: `Access-Control-Allow-Origin: https://www.nba.com`.
+  Confirmed from the live site: `https://calendarkit-brown.vercel.app` is refused the same way (2026-10-23).
 - Headless Chromium (Playwright, `scripts/probe-cors.ts`) doesn't even get that far:
   `net::ERR_HTTP2_PROTOCOL_ERROR` (Akamai bot blocking). `curl` gets **403** even with browser-like headers;
   Node's `fetch` via the module's `node.ts` (browser-like headers) gets the full feed (4.0 MB, 1274 games).
@@ -110,6 +112,8 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - The scheduled snapshot ran at 15:36 UTC on day 1 instead of 11:00 (GitHub delays cron runs under load).
   Harmless for a schedule; the job now rebases before pushing in case it races a normal push.
 - **ROTATIONKIT_BASE_URL** is a placeholder until rotationkit has a production URL (it isn't merged to main).
-- Confirm CORS refusal from the first Vercel preview deploy.
+- Check that the next daily snapshot commit (by `github-actions[bot]`) triggers a Vercel deploy. If Vercel refuses
+  bot-authored commits, set repo variables `DATA_COMMIT_NAME` / `DATA_COMMIT_EMAIL`.
+- Repo is private; the standard for these projects is public (needs Alex's yes to change).
 - Repo growth from daily 4 MB snapshot commits (~a few hundred KB compressed per change). Fine for a season;
   revisit if it becomes a problem (e.g. Vercel Blob or a separate data branch).
