@@ -1,14 +1,15 @@
 {
   "win32": {
-    "load-league-list": 300,
-    "load-week-view": 473,
-    "load-team-calendar": 308,
-    "scroll-frame-p95": 61,
-    "scroll-frame-mean": 34,
-    "switch-league-calendar": 248,
-    "switch-team-calendar": 44,
-    "switch-team-list": 80,
-    "switch-league-list": 110
+    "load-league-list": 246,
+    "load-week-view": 253,
+    "load-team-calendar": 294,
+    "scroll-frame-p95": 16.8,
+    "scroll-frame-mean": 16.7,
+    "scroll-main-thread": 1942,
+    "switch-league-calendar": 54,
+    "switch-team-calendar": 50,
+    "switch-team-list": 81,
+    "switch-league-list": 60
   },
   "linux": {
     "load-league-list": 355,

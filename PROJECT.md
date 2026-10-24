@@ -90,7 +90,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 222 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 224 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -167,6 +167,9 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   step sets `committed=true` and the check runs only then (fails on the workflow before it).
 - `check-shared.test.ts`: blob id of stored bytes = git's (incl. the empty blob), identical trees pass with our
   SOURCE.md ignored, changed / missing / extra files reported. Checked by hand: a copy with one byte changed → exit 1.
+- `scroll-cost.test.tsx` (jsdom): tipoff / localDate / fmtDate over 300 games × 3 zones build ≤ 10 formatters (2 760
+  before) with unchanged results; a League List scroll that keeps the same days rendered formats no tip-off time or
+  day heading (75 before: every visible day re-rendered). Both fail on the code before the fix.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, calendar → day, no console errors; week view: 15 lines
   on Nov 2, two weeks around Nov 15 measured (`[project] content …, cols …, cell inner …, line …, 2-col spare …`):
   2 columns with ≥ 3 px spare at 1920 px, "AWAY@HOME" text on every line with the "@" clear of the tricode and logo, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
@@ -225,6 +228,23 @@ frame 10 ms, view switch 40 ms (identical runs vary by up to ±30 % — a pure r
 a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes scroll p95 to 289 ms.
 - **Load → first view** (navigation start → frame after the first game row is in the DOM; includes fetching and
   parsing the 4 MB snapshot): League List 300 ms, week view 473 ms, Team Calendar (BOS) 308 ms.
+- **League List scroll fix (2026-10-24)**. Measured first in **real headed Chrome 156 with the GPU** (Radeon RX 550,
+  D3D11; window maximized on the 1920 × 1080, 59 Hz screen → page 1904 × 985; `npm run measure-scroll`, same gesture as
+  the guard): **54.6 fps** without Playwright's fake clock (mean 18.3 ms, p95 33.4 ms, 7–10 % of frames > 25 ms, main
+  thread busy ~4.9 s of the ~5 s gesture); 36.9 fps with it. **Cause** (CPU profile of an unminified build): (1)
+  `tipoff`, `localDate` and `fmtDate` built a new `Intl.DateTimeFormat` on every call — 52 % of all CPU (`tipoff`
+  alone 1.8 s of 3.5 s; `dayHeading` 0.25 s); (2) every scroll event re-rendered every visible day and all its game
+  cards. Playwright's fake clock (`page.clock`) wraps `Intl.DateTimeFormat`, which made it look worse in tests
+  (36.9 fps). **Fix**: one shared formatter per locale + options (`dateFormat` in model.ts), and `memo` on the League
+  List's day section. **After: 59.9 fps** (mean 16.7 ms = one refresh, p95 16.8 ms, no frame > 25 ms; main thread
+  1.1–1.9 s), also with the fake clock (61.9). The formatter cache also sped up the week view: load 473 → 253 ms,
+  switch to League Calendar 248 → 54 ms. No visible change: computed style + box diff of 10 views × 4 widths, old vs
+  new build, 61 055 entries, 0 differences.
+- **Guard after the fix**: the scroll test runs without the fake clock (it measured the wrapper). Headless frames now
+  sit at the refresh floor (16.7 ms) and even the old code reaches ~17 ms headless without the clock, so
+  **main-thread time** during the gesture is guarded too (slack 500 ms; it was ~the whole gesture before the fix and
+  couldn't grow): the old code fails it (5 066 ms vs the 2 913 ms limit). New Windows baseline (mean of 3 runs): loads
+  246 / 253 / 294 ms, scroll mean 16.7 / p95 16.8 ms / main thread 1 942 ms, switches 54 / 50 / 81 / 60 ms.
 - **League List wheel scroll** Nov 1 → December (~13 000 px) with Chromium's own wheel gesture
   (`Input.synthesizeScrollGesture`, mouse, 2400 px/s, ticks at the display rate): **mean frame 34 ms, p95 61 ms**
   (Windows; idle frames are 16.7 ms). Not guarded, printed: worst frame (77–580 ms between identical runs), long-task
@@ -549,8 +569,10 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
 - **Flaky under load**: `features.spec.ts` "team header and team picker" (tablet) failed once in a full run on
   2026-10-24 (`toHaveText`), then passed 3/3 alone and in the next full run; seen after a change that touched no app
   code. Watch it.
-- **League List scrolling** runs at ~30 fps in headless Chromium (mean frame 34 ms): each scroll re-renders the
-  visible days. Memoizing the day sections would likely help; not done in round 2 (not asked).
+- **Today mid-scroll**: clicking Today within the same frames as a fast wheel burst (only a script can) lets Chrome's
+  wheel animation carry the list on after the jump (title and button follow wherever it ends). Seen in ~3 % of e2e
+  runs after the scroll fix, 0 % before (the old, slower renders let the wheel finish first); the e2e now waits for
+  the scroll to settle, as a person's click does.
 - The scheduled snapshot ran at 15:36 UTC on day 1 instead of 11:00 (GitHub delays cron runs under load).
   Harmless for a schedule; the job now rebases before pushing in case it races a normal push.
 - **ROTATIONKIT_BASE_URL** is a placeholder until rotationkit has a production URL (it isn't merged to main).

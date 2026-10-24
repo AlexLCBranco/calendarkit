@@ -4,7 +4,7 @@
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { addDays, defaultDay, isOver, localDate, monthOf, seasonMonths, teamGames, weekOf, type CalendarData } from '../data/model';
+import { addDays, dateFormat, defaultDay, isOver, localDate, monthOf, seasonMonths, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
 import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
@@ -293,7 +293,7 @@ function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: numbe
   const t = Date.parse(updatedAt);
   if (Number.isNaN(t)) return null;
   const stale = now - t > STALE_AFTER_MS;
-  const when = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
+  const when = dateFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
   const tip = stale ? 'Data is more than 36 hours old: the daily update may have failed.' : undefined;
   return (
     <span className={`ck-stamp${stale ? ' ck-stamp-stale' : ''}`} data-testid="data-updated" data-tip={tip} tabIndex={stale ? 0 : undefined}>

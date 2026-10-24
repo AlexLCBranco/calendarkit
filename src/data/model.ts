@@ -101,9 +101,21 @@ export const weekOf = (date: string) => Array.from({ length: 7 }, (_, i) => addD
 
 // ---------------------------------------------------------------- times (local time zone of the browser)
 
+const formatters = new Map<string, Intl.DateTimeFormat>();
+/**
+ * A shared Intl.DateTimeFormat per locale + options. Building one is costly: building them per call was half the CPU
+ * while scrolling the League List (profiled 2026-10-24, headed Chrome). Formatting with a shared one is cheap.
+ */
+export function dateFormat(locale: string, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = `${locale}|${JSON.stringify(opts)}`;
+  let f = formatters.get(key);
+  if (!f) formatters.set(key, (f = new Intl.DateTimeFormat(locale, opts)));
+  return f;
+}
+
 /** Calendar date of an instant in a time zone (undefined = the runtime's local zone). */
 export function localDate(ms: number, timeZone?: string): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(ms);
+  return dateFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(ms);
 }
 
 export interface Tipoff {
@@ -120,7 +132,7 @@ export interface Tipoff {
 export function tipoff(g: ScheduleGame, timeZone?: string): Tipoff {
   if (!g.startTimeUtc) return { tbd: true, time: 'TBD', dayOffset: 0, label: 'TBD' };
   const ms = Date.parse(g.startTimeUtc);
-  const time = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(ms);
+  const time = dateFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(ms);
   const dayOffset = daysBetween(g.dateEt, localDate(ms, timeZone));
   const label = dayOffset ? `${time} (${dayOffset > 0 ? '+' : ''}${dayOffset})` : time;
   return { tbd: false, time, dayOffset, label };

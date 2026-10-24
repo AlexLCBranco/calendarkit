@@ -1,6 +1,6 @@
 // League → List: the season as one continuous, virtualized list of game days, with a week strip.
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { hasNationalTv, localDate, weekOf, type CalendarData } from '../data/model';
 import { CopyButton } from './CopyButton';
@@ -218,7 +218,9 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
 const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'short', month: 'short', day: 'numeric' })} · ${plural(n)}`;
 
 /** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
-function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void }) {
+// memo: the list re-renders on every scroll event; a day whose props haven't changed (the same day object from
+// `days`, same clock) is skipped. Re-rendering every visible day's cards per scroll event cost frames (2026-10-24).
+const ListDaySection = memo(function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void }) {
   return (
     <section className="ck-lday" data-day={day.date} data-key={dataKey} aria-label={dayHeading(day.date, day.games.length)}>
       <h3 className="ck-lday-head">{dayHeading(day.date, day.games.length)}</h3>
@@ -230,7 +232,7 @@ function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame
       </div>
     </section>
   );
-}
+});
 
 /** League list for an image: every game day of the week of `date`, all rendered (no scrolling, no virtualizing). */
 export function LeagueListWeek({ data, date, tvOnly, size, now, timeZone }: { data: CalendarData; date: string; tvOnly: boolean; size: WidgetSize; now: number; timeZone?: string }) {

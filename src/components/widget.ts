@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { isBackToBack, teamB2BPairs, type CalendarData } from '../data/model';
+import { dateFormat, isBackToBack, teamB2BPairs, type CalendarData } from '../data/model';
 import type { Team } from '../data/teams';
 import type { B2BNight } from './GameCard';
 
@@ -21,7 +21,7 @@ export const LIST_MAX_WIDTH = 960;
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** Calendar-date formatting (the date is already an NBA game date; no time zone conversion). */
-export const fmtDate = (date: string, opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', { ...opts, timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
+export const fmtDate = (date: string, opts: Intl.DateTimeFormatOptions) => dateFormat('en-US', { ...opts, timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 export const fmtMonth = (month: string) => fmtDate(`${month}-01`, { month: 'long', year: 'numeric' });
 export const plural = (n: number) => `${n} game${n === 1 ? '' : 's'}`;
 

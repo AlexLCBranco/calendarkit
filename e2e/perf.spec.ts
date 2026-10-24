@@ -11,7 +11,7 @@ const NOW = new Date('2026-11-15T15:00:00Z');
 const RUNS = 5;
 const PERF_RATIO = 1.5;
 /** Absolute slack (ms) per metric: small numbers are noisy, so a ratio alone would flake. */
-const SLACK: Record<string, number> = { load: 150, scrollP95: 15, scrollMean: 10, switch: 40 };
+const SLACK: Record<string, number> = { load: 150, scrollP95: 15, scrollMean: 10, scrollMain: 500, switch: 40 };
 
 type Baseline = Record<string, Record<string, number>>;
 const baselines = JSON.parse(readFileSync('e2e/perf-baseline.json', 'utf8')) as Baseline;
@@ -64,7 +64,8 @@ test('load → first view rendered', async ({ browser }) => {
 
 test('wheel-scrolling the League List through a month: frame times, main-thread time, long tasks', async ({ page }) => {
   test.setTimeout(180_000);
-  await page.clock.setFixedTime(NOW);
+  // No fake clock here: Playwright's clock wraps Intl.DateTimeFormat, which made scrolling look slower than in a
+  // real browser (2026-10-24). The list opens on an explicit date, so it needs no clock.
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Performance.enable');
   const busy = async () => ((await cdp.send('Performance.getMetrics')).metrics.find((m) => m.name === 'TaskDuration')!.value * 1000);
@@ -123,9 +124,11 @@ test('wheel-scrolling the League List through a month: frame times, main-thread 
   }
   check('scroll-frame-p95', median(p95), 'scrollP95');
   check('scroll-frame-mean', median(mean), 'scrollMean');
-  // Printed, not guarded: the worst frame and the long-task total vary a lot between identical runs, and the
-  // main thread is busy for the whole gesture already (its total is capped by the gesture's duration).
-  for (const [k, v] of [['scroll-frame-max', max], ['scroll-long-tasks', long], ['scroll-main-thread', main]] as const) {
+  // Frames now sit at the display rate, so main-thread time is what shows extra work first (before the 2026-10-24
+  // fix it was ~the whole gesture and couldn't grow, so it wasn't guarded).
+  check('scroll-main-thread', median(main), 'scrollMain');
+  // Printed, not guarded: the worst frame and the long-task total vary a lot between identical runs.
+  for (const [k, v] of [['scroll-frame-max', max], ['scroll-long-tasks', long]] as const) {
     measured[k] = round(median(v));
     console.log(`[perf] ${k} ${round(median(v))} ms (not guarded)`);
   }

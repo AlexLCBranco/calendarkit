@@ -14,7 +14,8 @@
     "make-fixture": "tsx scripts/make-fixture.ts",
     "e2e:live": "tsx scripts/e2e-live.ts",
     "fetch-logos": "tsx scripts/fetch-logos.ts",
-    "check-shared": "tsx scripts/check-shared.ts"
+    "check-shared": "tsx scripts/check-shared.ts",
+    "measure-scroll": "tsx scripts/measure-scroll-headed.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

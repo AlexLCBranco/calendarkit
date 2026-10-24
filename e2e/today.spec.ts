@@ -37,9 +37,25 @@ test('League List: scrolls back to the default day, disabled there', async ({ pa
   for (let i = 0; i < 40; i++) await page.mouse.wheel(0, 200);
   await expect(page.getByTestId('day-title')).not.toHaveText('Sunday, November 15, 2026');
   await expect(today(page)).toBeEnabled();
+  // let the wheel's smooth-scroll animation finish (scroll position unchanged for 300 ms), as it has by the time a
+  // person reaches the button; clicking mid-animation, Chrome keeps animating the list after the jump
+  await page.getByTestId('league-list').evaluate(
+    (el) =>
+      new Promise<void>((res) => {
+        let last = el.scrollTop;
+        let still = performance.now();
+        const tick = () => {
+          if (el.scrollTop !== last) [last, still] = [el.scrollTop, performance.now()];
+          if (performance.now() - still > 300) res();
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }),
+  );
   const ms = await clickTime(page);
   await expect(page.getByTestId('day-title')).toHaveText('Sunday, November 15, 2026');
-  expect(Math.abs(await offsetInList(page, '[data-testid="league-list"]', '[data-day="2026-11-15"]'))).toBeLessThan(1);
+  // the title changes with the click; the list jumps in its effect a frame later: wait for it
+  await expect.poll(async () => Math.abs(await offsetInList(page, '[data-testid="league-list"]', '[data-day="2026-11-15"]').catch(() => 1e9))).toBeLessThan(1);
   await expect(today(page)).toBeDisabled();
   console.log(`[today] league list: click → next frame ${Math.round(ms)} ms`);
   expect(ms).toBeLessThan(250);
