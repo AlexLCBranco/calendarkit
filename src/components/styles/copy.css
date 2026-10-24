@@ -1,0 +1,101 @@
+/* Copy as image (CopyButton). Toolbar: always shown. Day cells and game cards: on hover / keyboard focus only,
+   in the top-right corner. Never in an image (data-capture-exclude). */
+.ck-copy {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ck-copy:hover,
+.ck-copy:focus-visible {
+  color: var(--ck-text);
+  border-color: var(--ck-muted);
+}
+.ck-copy::before {
+  content: '⧉';
+}
+.ck-copy[data-state='copied'] {
+  color: var(--ck-tv);
+}
+.ck-copy[data-state='copied']::before {
+  content: '✓';
+}
+.ck-copy[data-state='error'] {
+  color: var(--ck-playoffs);
+}
+.ck-copy[data-state='error']::before {
+  content: '!';
+  font-weight: 700;
+}
+.ck-compact .ck-toolbar > .ck-copy {
+  order: 1;
+  width: 28px;
+  height: 28px;
+}
+.ck-copy-hover {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 3;
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+}
+.ck-card:hover > .ck-copy-hover,
+.ck-card:focus-within > .ck-copy-hover,
+.ck-cell:hover > .ck-copy-hover,
+.ck-cell:focus-within > .ck-copy-hover,
+.ck-lday:hover > .ck-copy-hover,
+.ck-lday:focus-within > .ck-copy-hover,
+.ck-copy-hover[data-state='copied'],
+.ck-copy-hover[data-state='error'] {
+  opacity: 1;
+  pointer-events: auto;
+}
+.ck-card,
+.ck-day-cell,
+.ck-lday {
+  position: relative;
+}
+.ck-lday > .ck-copy-hover {
+  top: 6px;
+}
+
+/* Off-screen copy of the view while it's being copied (CaptureStage). */
+.ck-capture-stage {
+  position: fixed;
+  left: -100000px;
+  top: 0;
+  pointer-events: none;
+}
+.ck-capture {
+  padding: 12px;
+}
+.ck-capture-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-bottom: 12px;
+}
+.ck-capture-period {
+  font-size: 16px;
+  font-weight: 600;
+}
+.ck-capture-filter {
+  color: var(--ck-tv);
+  font-size: 13px;
+  font-weight: 600;
+}

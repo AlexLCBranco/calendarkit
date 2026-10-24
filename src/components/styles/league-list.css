@@ -1,0 +1,39 @@
+/* Week strip */
+.ck-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.ck-weekday {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 0;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+.ck-weekday:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ck-weekday-selected {
+  border-color: var(--ck-accent);
+  background: var(--ck-surface-2);
+}
+.ck-weekday-today .ck-weekday-num {
+  color: var(--ck-accent);
+}
+.ck-weekday-name,
+.ck-weekday-count {
+  font-size: 11px;
+  color: var(--ck-muted);
+}
+.ck-weekday-num {
+  font-weight: 600;
+}

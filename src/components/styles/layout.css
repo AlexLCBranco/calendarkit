@@ -1,0 +1,86 @@
+/* List layouts fill the widget's height; the list scrolls inside it (week strip and toolbar stay put). */
+.ck-root-fill {
+  display: flex;
+  flex-direction: column;
+}
+.ck-root-fill > .ck-toolbar {
+  flex: none;
+}
+.ck-league-list,
+.ck-team-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.ck-league-list > .ck-nav,
+.ck-league-list > .ck-week {
+  flex: none;
+}
+/* List content capped at LIST_MAX_WIDTH (960 px) and centered; week strip, day headers and team header align
+   to it. Calendars use the full width. */
+.ck-league-list,
+.ck-team-list,
+.ck-root-fill > .ck-team-header {
+  width: 100%;
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ck-root-fill > .ck-team-header {
+  flex: none;
+}
+/* Calendar layouts fill the widget's height (desktop/tablet): equal rows share it; the page scrolls only when
+   the content needs more. */
+.ck-root-grow {
+  display: flex;
+  flex-direction: column;
+}
+.ck-root-grow > .ck-toolbar,
+.ck-root-grow > .ck-team-header {
+  flex: none;
+}
+.ck-root-grow > section {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.ck-root-grow > section > .ck-grid {
+  flex: 1 0 auto;
+}
+.ck-league-list > .ck-week {
+  margin-bottom: 0;
+}
+.ck-llist {
+  position: relative; /* rows' offsetTop is relative to the list */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-anchor: none; /* the virtualizer keeps the top day in place itself */
+  overscroll-behavior: contain;
+}
+.ck-lday {
+  padding-bottom: 12px;
+}
+.ck-lday-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 10px 2px 6px;
+  background: var(--ck-bg);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ck-muted);
+  letter-spacing: 0.01em;
+}
+.ck-daylist {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ck-empty {
+  color: var(--ck-muted);
+  text-align: center;
+  padding: 24px 0;
+}

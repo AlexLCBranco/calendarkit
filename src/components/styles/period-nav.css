@@ -1,0 +1,91 @@
+/* Period navigation (prev · title · next) */
+.ck-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ck-toolbar .ck-nav {
+  margin-bottom: 0;
+}
+.ck-period-wrap {
+  position: relative;
+}
+.ck-nav-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+}
+/* Fixed width: the widest title ("Wednesday, September 30, 2026", 238 px) fits, so the arrows stay put and the
+   bar never re-wraps (which would move the list under it) as the title changes while scrolling. */
+.ck-toolbar .ck-nav-title {
+  width: 16.5em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-compact .ck-toolbar .ck-nav-title {
+  width: 10.5em; /* "Wed, Sep 30, 2026": 140 px at 14 px */
+  font-size: 14px;
+}
+.ck-title-button {
+  background: transparent;
+  color: var(--ck-text);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ck-title-button:hover,
+.ck-title-button[aria-expanded='true'] {
+  border-color: var(--ck-border);
+  background: var(--ck-surface);
+}
+.ck-caret {
+  margin-left: 6px;
+  color: var(--ck-muted);
+  font-size: 11px;
+}
+.ck-arrow {
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  flex: none;
+}
+.ck-compact .ck-arrow {
+  width: 32px;
+  height: 32px;
+}
+.ck-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* Week picker popup (month of counts) under the period title */
+.ck-popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: 340px;
+  padding: 10px;
+  background: var(--ck-bg);
+  border: 1px solid var(--ck-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.ck-popup .ck-count-cell {
+  min-height: 40px;
+}

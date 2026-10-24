@@ -1,0 +1,164 @@
+/* Game card */
+.ck-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  background: var(--ck-surface-2);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.ck-date {
+  color: var(--ck-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 5.4em;
+}
+.ck-card-next {
+  border-color: var(--ck-accent);
+}
+/* Logos in list rows: the month view's 16 px disc, sized to the row (no taller than the text line). */
+.ck-card-logos {
+  --ck-logo: 16px;
+}
+.ck-card-logos .ck-matchup {
+  gap: 5px;
+}
+/* phone rows: tighter date/time columns so the logos never push a row onto a second line */
+.ck-card-compact.ck-card-logos {
+  column-gap: 4px;
+}
+.ck-card-compact.ck-card-logos .ck-date {
+  font-size: 12px;
+  min-width: 5.4em;
+}
+.ck-card-compact.ck-card-logos .ck-time {
+  min-width: 5em;
+}
+.ck-card-compact.ck-card-logos .ck-matchup {
+  gap: 4px;
+}
+/* team rows: "vs" and "@" take the same width so the opponent logos line up */
+.ck-card-logos .ck-vsat:first-child {
+  min-width: 1.3em;
+}
+.ck-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  min-width: 5.5em;
+}
+.ck-tbd {
+  color: var(--ck-muted);
+}
+.ck-dayoff {
+  font-weight: 400;
+  color: var(--ck-muted);
+  font-size: 0.85em;
+}
+.ck-matchup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.ck-vsat {
+  color: var(--ck-muted);
+  font-weight: 400;
+}
+.ck-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.ck-tag {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--ck-border);
+  color: var(--ck-muted);
+  white-space: nowrap;
+  font-weight: 500;
+}
+.ck-cup,
+.ck-cup-final {
+  color: var(--ck-cup);
+  border-color: var(--ck-cup);
+}
+.ck-cup-final {
+  background: var(--ck-cup);
+  color: #1a1400;
+}
+.ck-play-in {
+  color: var(--ck-playin);
+  border-color: var(--ck-playin);
+}
+.ck-playoffs {
+  color: var(--ck-playoffs);
+  border-color: var(--ck-playoffs);
+}
+.ck-tv {
+  color: var(--ck-tv);
+  border-color: var(--ck-tv);
+}
+.ck-b2b {
+  color: var(--ck-b2b);
+  border-color: var(--ck-b2b);
+}
+.ck-open {
+  margin-left: auto;
+  background: transparent;
+  color: var(--ck-accent);
+  border: 1px solid var(--ck-accent);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* Compact card: stacked, tiny (team month cells and phone lists) */
+.ck-card-compact {
+  gap: 2px 6px;
+  padding: 4px 6px;
+}
+.ck-cell .ck-card-compact {
+  flex-direction: column;
+  align-items: flex-start;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+}
+.ck-cell .ck-card-compact .ck-time {
+  min-width: 0;
+  font-weight: 500;
+  font-size: 11px;
+}
+.ck-cell .ck-card-compact .ck-open {
+  margin-left: 0;
+  font-size: 11px;
+  padding: 0 6px;
+}
+.ck-compact .ck-cell .ck-card-compact .ck-tags .ck-tv {
+  /* TV names don't fit a phone cell: a dot marks a national TV game; the detail card below shows the names. */
+  font-size: 0;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  background: var(--ck-tv);
+}
+.ck-compact .ck-cell .ck-card-compact .ck-tag {
+  font-size: 9px;
+  padding: 0 3px;
+}
+.ck-compact .ck-cell .ck-card-compact .ck-dayoff {
+  display: block;
+}
+.ck-cell .ck-card-compact .ck-matchup {
+  flex-wrap: wrap;
+  gap: 2px 4px;
+}
+.ck-cell {
+  overflow: hidden;
+}

@@ -1,0 +1,20 @@
+/* Team header: large logo + full name (team views) */
+.ck-team-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 12px;
+}
+.ck-team-name {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.ck-compact .ck-team-header {
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ck-compact .ck-team-name {
+  font-size: 20px;
+}

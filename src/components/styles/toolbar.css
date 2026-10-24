@@ -1,0 +1,96 @@
+/* Top bar: title, League | Team, List | Calendar, team picker, period navigation, weeks, TV filter, note — one row
+   on desktop; wraps (two rows on phones), never wider than the widget. */
+.ck-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  min-width: 0;
+}
+.ck-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 4px 0 0;
+  white-space: nowrap;
+}
+.ck-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.ck-tabs {
+  display: inline-flex;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ck-tab {
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  border: 0;
+  padding: 7px 14px;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ck-tab-selected {
+  background: var(--ck-accent);
+  color: #06121f;
+  font-weight: 600;
+}
+.ck-check {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--ck-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ck-note {
+  margin-left: auto;
+  color: var(--ck-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ck-note-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--ck-muted);
+  border-radius: 50%;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 700;
+  cursor: help;
+}
+.ck-compact .ck-toolbar {
+  gap: 8px;
+}
+.ck-compact .ck-tab {
+  padding: 6px 8px;
+  font-size: 13px;
+}
+/* phones: row 1 = switches + TV, row 2 = team picker + period + note (fits a 360 px phone) */
+.ck-compact .ck-toolbar > .ck-check {
+  order: 1;
+}
+.ck-compact .ck-toolbar > .ck-picker,
+.ck-compact .ck-toolbar > .ck-period-wrap {
+  order: 2;
+}
+.ck-compact .ck-toolbar > .ck-note {
+  order: 3;
+}
+.ck-compact .ck-picker-button {
+  padding: 5px 8px;
+  gap: 6px;
+}
+.ck-compact .ck-check {
+  font-size: 13px;
+  gap: 4px;
+}

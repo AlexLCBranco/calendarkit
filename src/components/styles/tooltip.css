@@ -1,0 +1,20 @@
+/* Tooltip (TV pill, B2B marks, note): one floating element, fixed position, never clipped by a cell. */
+.ck-tooltip {
+  position: fixed;
+  z-index: 40;
+  left: 0;
+  top: 0;
+  max-width: min(420px, calc(100vw - 16px));
+  background: #05070a;
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  pointer-events: none;
+}
+[data-tip] {
+  cursor: help;
+}

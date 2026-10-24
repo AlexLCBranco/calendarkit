@@ -1,0 +1,203 @@
+.ck-detail {
+  margin-top: 12px;
+}
+.ck-detail-date {
+  color: var(--ck-muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+/* Team views: selected team first, then vs/@ and the opponent; tricodes in fixed-width slots so the selected
+   team's tricode sits in the same place on every row. */
+.ck-card-logos .ck-self,
+.ck-card-logos .ck-opp {
+  display: inline-block;
+  min-width: 2.3em;
+}
+.ck-opp,
+.ck-team {
+  position: relative; /* the opponent's 2/2 dot */
+}
+.ck-matchup .ck-b2b-mark {
+  top: -2px;
+  right: -4px;
+}
+.ck-team-grid .ck-card-compact .ck-matchup {
+  --ck-logo: 16px;
+}
+
+/* Selected team's back-to-back: "1/2 · HA" outlined on night 1, "2/2 · HA" solid on night 2, plane on a city
+   change; a thin orange bar links the two cells (calendar), a bracket the two rows (list). */
+.ck-b2b-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--ck-b2b);
+  color: var(--ck-b2b);
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ck-b2b-n2 {
+  background: var(--ck-b2b);
+  color: #1f1206;
+}
+.ck-plane {
+  display: block;
+  flex: none;
+}
+.ck-compact .ck-cell .ck-b2b-label {
+  font-size: 9px;
+  padding: 0 3px;
+  gap: 1px;
+}
+.ck-compact .ck-cell .ck-plane {
+  width: 8px;
+  height: 8px;
+}
+.ck-team-grid {
+  position: relative;
+}
+.ck-team-grid .ck-day-cell {
+  padding-bottom: 10px; /* room for the bar */
+}
+.ck-b2b-bar {
+  align-self: end;
+  position: relative;
+  z-index: 1;
+  height: 3px;
+  margin: 0 12px 4px;
+  background: var(--ck-b2b);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.ck-b2b-bar-start {
+  margin-right: 0;
+  border-radius: 2px 0 0 2px;
+}
+.ck-b2b-bar-end {
+  margin-left: 0;
+  border-radius: 0 2px 2px 0;
+}
+/* week break / other month: the half ends in an arrow toward the other night */
+.ck-b2b-bar-start::after,
+.ck-b2b-bar-end::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  border: 4.5px solid transparent;
+}
+.ck-b2b-bar-start::after {
+  right: -6px;
+  border-left: 6px solid var(--ck-b2b);
+  border-right-width: 0;
+}
+.ck-b2b-bar-end::before {
+  left: -6px;
+  border-right: 6px solid var(--ck-b2b);
+  border-left-width: 0;
+}
+.ck-b2b-bar-start {
+  margin-right: 6px;
+}
+.ck-b2b-bar-end {
+  margin-left: 6px;
+}
+.ck-compact .ck-b2b-bar {
+  margin: 0 4px 3px;
+}
+.ck-compact .ck-team-grid .ck-day-cell {
+  padding-bottom: 8px;
+}
+.ck-compact .ck-b2b-bar-start {
+  margin-right: 6px;
+}
+.ck-compact .ck-b2b-bar-end {
+  margin-left: 6px;
+}
+/* team list: bracket on the left edge of both rows, joined across the 6 px row gap */
+.ck-team-rows {
+  padding-left: 10px;
+}
+.ck-team-rows .ck-card {
+  position: relative;
+}
+/* 8 px between date, time, matchup, tags and the season line (10 elsewhere): keeps the widest tablet row
+   (B2B + "Peacock · NBC Sports Network" + G/record/streak) on one line at 768 px */
+.ck-team-rows .ck-card-regular {
+  column-gap: 8px;
+}
+.ck-team-rows .ck-card[data-b2b]::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  width: 6px;
+  border-left: 2px solid var(--ck-b2b);
+  pointer-events: none;
+}
+.ck-team-rows .ck-card[data-b2b='1']::before {
+  top: 50%;
+  bottom: -4px;
+  border-top: 2px solid var(--ck-b2b);
+  border-top-left-radius: 3px;
+}
+.ck-team-rows .ck-card[data-b2b='2']::before {
+  top: -4px;
+  bottom: 50%;
+  border-bottom: 2px solid var(--ck-b2b);
+  border-bottom-left-radius: 3px;
+}
+.ck-team-rows .ck-card[data-b2b='2 1']::before,
+.ck-team-rows .ck-card[data-b2b='1 2']::before {
+  top: -4px;
+  bottom: -4px;
+}
+
+
+/* Team views: each side (selected team; vs/@ + opponent) wraps as one unit in narrow cells. */
+.ck-side {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  white-space: nowrap;
+}
+.ck-card-logos .ck-side > .ck-vsat {
+  min-width: 1.3em;
+}
+
+/* Team calendar (desktop/tablet): cell content scaled to the cell (TeamMonthGrid sets --ck-team-scale from the
+   measured cell size); phone cells keep their size. The probe is the fullest possible cell, rendered only while
+   the scale is measured. */
+.ck-team-grid .ck-card-compact {
+  zoom: var(--ck-team-scale, 1);
+}
+.ck-team-probe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-height: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+/* TV names in a desktop/tablet calendar cell: one pill per network, flowing with the other tags, so they wrap
+   between networks ("Peacock · NBC Sports Network" is wider than a cell at a 1280 px window). Phones keep the dot. */
+.ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv) {
+  display: contents;
+}
+.ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv) .ck-tv-sep {
+  display: none;
+}
+.ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv) .ck-tv-name {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--ck-tv);
+  color: var(--ck-tv);
+  white-space: nowrap;
+  font-weight: 500;
+}

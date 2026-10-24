@@ -17,7 +17,7 @@ where-to-watch info, embedding in gauntlet.
 ## Status
 - [x] Step 0 — probe (below)
 - [x] Data layer — `src/data/model.ts` (pure derivations), `src/data/load.ts` (fetch snapshot once, parse with `parse.ts`), `src/data/teams.ts`
-- [x] Views — `src/components/CalendarView.tsx`: `LeagueListView` (continuous, virtualized day list + week strip), `TeamListView`, `TeamMonthGrid`, `LeagueWeekView` (1 or 2 week rows, every game per day with logos; desktop widths), `MonthNavigator` (count grid, click → day; narrow widths and the week picker popup), `TeamPicker` (custom listbox with logos), `TeamHeader`, and `CalendarView` combining them behind a one-row top bar. Day-cell layout maths in `src/components/dayflow.ts` (pure). App shell `src/App.tsx` (URL state `?view=&layout=&team=&date=&weeks=&tv=`).
+- [x] Views — one file per component in `src/components/` (split 2026-10-23; `CalendarView.tsx` re-exports them all, so hosts and tests import from it): `LeagueListView` (continuous, virtualized day list + week strip), `TeamListView`, `TeamMonthGrid`, `LeagueWeekView` (1 or 2 week rows, every game per day with logos; desktop widths), `MonthNavigator` (count grid, click → day; narrow widths and the week picker popup), `TeamPicker` (custom listbox with logos), `TeamHeader`, and `CalendarView` combining them behind a one-row top bar. Shared pieces: `widget.ts` (size, date formatting, clock, B2B lookups), `PeriodNav.tsx`, `Segmented.tsx`, `Tooltip.tsx`, `WeekPicker.tsx`, `CaptureStage.tsx`. Styles: `calendar.css` is only an ordered list of `@import`s of `styles/*.css` (one per component; the order is the cascade order). Day-cell layout maths in `src/components/dayflow.ts` (pure). App shell `src/App.tsx` (URL state `?view=&layout=&team=&date=&weeks=&tv=`).
 - [x] Game card — `src/components/GameCard.tsx`: "BOS vs CHI" / "BOS @ DET" (team view, selected team first) or AWAY @ HOME, local tip-off with (+1), TBD, B2B (league: badge per team; team: 1/2 · 2/2 labels + opponent 2/2 dot), Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
 - [x] Tests — see "Tests" below
 - [x] Copy as image (2026-10-23) — `src/components/copyAsImage.ts` + `CopyButton.tsx`, ported from Boardkit; see "Copy as image" in Decisions
@@ -203,6 +203,8 @@ a 1 ms busy-wait per game card fails the scroll and switch checks.
 - Baseline = mean of three measuring runs on the unchanged code before the split (loads 277–319 ms / 401–498 /
   259–315; p95 50–73; long tasks 254–798; switches 212–276 / 35–48 / 65–87 / 77–125).
 
+- **Split (step 1)**: checked as a pure reorganization by dumping every element's computed style (incl. ::before/::after) and box in 10 views × 4 widths from the old and new builds: 60 863 entries, 0 differences (only the enumeration order of custom properties changed). Screenshots differ by a few hundred channel values, the same as two runs of one build (raster noise). Perf after the split: loads 304 / 461 / 283 ms, scroll p95 56 ms, switches 238 / 62 / 80 / 98 ms.
+
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.
 - **Shared module** `src/shared/nba-schedule/` copied unchanged from rotationkit (see its `SOURCE.md`; the
@@ -220,7 +222,7 @@ a 1 ms busy-wait per game card fails the scroll and switch checks.
   game date (which would flag games after the All-Star break).
 - **Widget API**: components take `data` (`CalendarData`) + `size` ({width, height}; compact below 640 px) and
   optional `now`/`timeZone`; they raise `onOpenGame(gameId)` / `onStateChange` and never touch the URL or open
-  links. Styles are in `calendar.css` imported by the components, colors as CSS variables.
+  links. Styles are in `calendar.css` (→ `styles/*.css`) imported by the components, colors as CSS variables.
 - **List | Calendar switch** (2026-10-23): a segmented control next to League | Team, both options always visible;
   replaces the old "Month" toggle. League + List = continuous day list, League + Calendar = week view (count
   grid below 887 px; see below), Team + List = team list, Team + Calendar = team month grid. The layout is kept when
