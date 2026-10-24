@@ -244,7 +244,9 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   sit at the refresh floor (16.7 ms) and even the old code reaches ~17 ms headless without the clock, so
   **main-thread time** during the gesture is guarded too (slack 500 ms; it was ~the whole gesture before the fix and
   couldn't grow): the old code fails it (5 066 ms vs the 2 913 ms limit). New Windows baseline (mean of 3 runs): loads
-  246 / 253 / 294 ms, scroll mean 16.7 / p95 16.8 ms / main thread 1 942 ms, switches 54 / 50 / 81 / 60 ms.
+  246 / 253 / 294 ms, scroll mean 16.7 / p95 16.8 ms / main thread 1 942 ms, switches 54 / 50 / 81 / 60 ms. Linux
+  (CI, slower of two runs): loads 364 / 363 / 307, scroll 16.7 / 16.8, main thread 916 → baseline 1 100 (+20 % for
+  runner variance), switches 32 / 32 / 50 / 35 ms.
 - **League List wheel scroll** Nov 1 → December (~13 000 px) with Chromium's own wheel gesture
   (`Input.synthesizeScrollGesture`, mouse, 2400 px/s, ticks at the display rate): **mean frame 34 ms, p95 61 ms**
   (Windows; idle frames are 16.7 ms). Not guarded, printed: worst frame (77–580 ms between identical runs), long-task

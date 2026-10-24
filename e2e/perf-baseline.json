@@ -12,14 +12,15 @@
     "switch-league-list": 60
   },
   "linux": {
-    "load-league-list": 355,
-    "load-week-view": 490,
-    "load-team-calendar": 322,
-    "scroll-frame-p95": 59,
-    "scroll-frame-mean": 34,
-    "switch-league-calendar": 190,
-    "switch-team-calendar": 35,
-    "switch-team-list": 72,
-    "switch-league-list": 86
+    "load-league-list": 364,
+    "load-week-view": 363,
+    "load-team-calendar": 307,
+    "scroll-frame-p95": 16.8,
+    "scroll-frame-mean": 16.7,
+    "scroll-main-thread": 1100,
+    "switch-league-calendar": 32,
+    "switch-team-calendar": 32,
+    "switch-team-list": 50,
+    "switch-league-list": 35
   }
 }

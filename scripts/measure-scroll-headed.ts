@@ -1,5 +1,5 @@
-// Measures League List wheel scrolling in real, headed Google Chrome with the GPU (not headless), fullscreen so the
-// page is the screen's size (1920 × 1080 here): same gesture and numbers as e2e/perf.spec.ts. Needs the app served
+// Measures League List wheel scrolling in real, headed Google Chrome with the GPU (not headless), in a maximized
+// window (1904 × 985 page on a 1920 × 1080 screen): same gesture and numbers as e2e/perf.spec.ts. Needs the app served
 // on :4174 (`npm run build && npm run preview`). Usage: npm run measure-scroll [-- runs]; NO_CLOCK=1 = no fake clock (a
 // real visitor; Playwright's fake clock wraps Intl.DateTimeFormat and slows formatting).
 // Not part of the test suite: it opens a window on the desktop.
