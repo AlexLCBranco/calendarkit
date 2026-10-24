@@ -202,7 +202,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 ## Performance (guard: `e2e/perf.spec.ts`, 2026-10-23)
 Measured at 1920 × 1080 in headless Chromium against the production build (`vite preview`), Playwright project
 **perf**, which runs after every other project (so nothing runs alongside). Medians of 5 runs; the scroll test has an
-extra uncounted warm-up run. Baselines per OS in `e2e/perf-baseline.json` (Windows PC; Linux = GitHub CI, from the CI run of the guard commit). A metric fails
+extra uncounted warm-up run. Baselines per OS in `e2e/perf-baseline.json` (Windows PC; Linux = GitHub CI: the slower of the first CI runs — runners vary up to ~1.7× between runs; scroll from the native-gesture runs: mean 19–23, p95 30–41 ms). A metric fails
 when it exceeds **max(baseline × 1.5, baseline + slack)**; slack: load 150 ms, scroll frame p95 15 ms, scroll mean
 frame 10 ms, view switch 40 ms (identical runs vary by up to ±30 % — a pure ratio flaked on the small numbers). Checked:
 a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes scroll p95 to 289 ms.

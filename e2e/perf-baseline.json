@@ -14,6 +14,8 @@
     "load-league-list": 355,
     "load-week-view": 490,
     "load-team-calendar": 322,
+    "scroll-frame-p95": 41,
+    "scroll-frame-mean": 23,
     "switch-league-calendar": 190,
     "switch-team-calendar": 35,
     "switch-team-list": 72,
