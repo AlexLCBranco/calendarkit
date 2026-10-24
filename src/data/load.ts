@@ -10,7 +10,9 @@ export function loadCalendarData(url = SCHEDULE_DATA_URL, fetchImpl: typeof fetc
   cached ??= (async () => {
     const res = await fetchImpl(url);
     if (!res.ok) throw new Error(`schedule: HTTP ${res.status}`);
-    return buildCalendarData(parseSchedule(await res.json()));
+    const raw = await res.json();
+    const time = raw?.meta?.time;
+    return { ...buildCalendarData(parseSchedule(raw)), updatedAt: typeof time === 'string' ? time : undefined };
   })();
   cached.catch(() => (cached = undefined)); // allow a retry after a failure
   return cached;

@@ -65,12 +65,17 @@ export interface CalendarViewProps {
   title?: string;
   /** Small muted note at the end of the top bar (e.g. the time zone); a tooltip icon on phones. */
   note?: string;
+  /** When the data was generated (ISO): "Data updated …" under the note, orange once older than STALE_AFTER_MS. */
+  updatedAt?: string;
 }
+
+/** Older than this, the "Data updated" stamp turns orange: the daily update (~11:00 UTC) may have failed. */
+export const STALE_AFTER_MS = 36 * 3_600_000;
 
 const DEFAULT_TEAM = TEAMS[0]!.id;
 
 
-export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onStateChange, title, note }: CalendarViewProps) {
+export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onStateChange, title, note, updatedAt }: CalendarViewProps) {
   const now = useNow(fixedNow);
   const compact = isCompact(size);
   const [state, setState] = useState<CalendarState>(() => ({
@@ -225,8 +230,11 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
               i
             </span>
           ) : (
-            <span className="ck-note" data-testid="tz-note">
-              {note}
+            <span className="ck-notes">
+              <span className="ck-note" data-testid="tz-note">
+                {note}
+              </span>
+              {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
             </span>
           ))}
         <CopyButton label="Copy view as image" copy={copyView} testId="copy-view" />
@@ -278,4 +286,18 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
 function teamDefaultDate(data: CalendarData, teamId: number, now: number): string | undefined {
   const games = teamGames(data, teamId);
   return (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.dateEt;
+}
+
+/** "Data updated Oct 23, 08:29" in the viewer's zone; orange with a tooltip once the data is older than 36 h. */
+function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: number; timeZone?: string }) {
+  const t = Date.parse(updatedAt);
+  if (Number.isNaN(t)) return null;
+  const stale = now - t > STALE_AFTER_MS;
+  const when = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
+  const tip = stale ? 'Data is more than 36 hours old: the daily update may have failed.' : undefined;
+  return (
+    <span className={`ck-stamp${stale ? ' ck-stamp-stale' : ''}`} data-testid="data-updated" data-tip={tip} tabIndex={stale ? 0 : undefined}>
+      Data updated {when}
+    </span>
+  );
 }

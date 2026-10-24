@@ -20,6 +20,8 @@ export interface CalendarData {
   byDate: Map<string, ScheduleGame[]>;
   /** teamId → game dates the team plays on. */
   teamDates: Map<number, Set<string>>;
+  /** When the feed was generated (its own `meta.time`, ISO); set by the loader. */
+  updatedAt?: string;
 }
 
 export function isShown(g: ScheduleGame): boolean {

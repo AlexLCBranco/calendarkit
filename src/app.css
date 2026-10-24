@@ -25,3 +25,19 @@ body {
   text-align: center;
   font-size: 14px;
 }
+.app-status p {
+  margin: 0 0 12px;
+}
+.app-retry {
+  background: #171a21;
+  color: #e6e8ec;
+  border: 1px solid #2a2f3a;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.app-retry:hover {
+  border-color: #4ea1ff;
+}

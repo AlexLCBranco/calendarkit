@@ -83,7 +83,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 210 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 215 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -150,6 +150,11 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   League List day, BOS's October calendar + a day, and the BOS Team List: score count = 2 × final games. 5 of the
   new unit tests fail on the code before it (the other 3 check phones stay unchanged); 2 team-calendar matchup tests
   and the old "scores only in the Team List" test were updated.
+- `freshness.test.tsx` (jsdom) + `e2e/freshness.spec.ts` (desktop widths): stamp text in three zones, under the note,
+  muted while fresh, orange + tooltip past 36 h (and not at 36 h − 1 min), none without a time or on phones; the
+  loader keeps `meta.time`; the stamp from the served snapshot through the real shell (text worked out in the
+  test); Try again after a 503 on the first request (unit: mocked fetch; e2e: routed request). 4 of the 5 unit tests
+  fail on the code before it (the 5th checks phones have none).
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, calendar → day, no console errors; week view: 15 lines
   on Nov 2, two weeks around Nov 15 measured (`[project] content …, cols …, cell inner …, line …, 2-col spare …`):
   2 columns with ≥ 3 px spare at 1920 px, "AWAY@HOME" text on every line with the "@" clear of the tricode and logo, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
@@ -223,6 +228,7 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
 - **Split (step 1)**: checked as a pure reorganization by dumping every element's computed style (incl. ::before/::after) and box in 10 views × 4 widths from the old and new builds: 60 863 entries, 0 differences (only the enumeration order of custom properties changed). Screenshots differ by a few hundred channel values, the same as two runs of one build (raster noise). Perf after the split: loads 304 / 461 / 283 ms, scroll p95 56 ms (wheel-step method), switches 238 / 62 / 80 / 98 ms.
 - **After step 2 (Today)**: loads 326 / 390 / 264 ms, scroll mean 34.7 / p95 67 ms, switches 238 / 48 / 81 / 93 ms.
 - **After step 3 (scores)**: loads 264 / 402 / 304 ms, scroll mean 32.8 / p95 57 ms, switches 230 / 41 / 85 / 94 ms.
+- **After step 4 (freshness)**: loads 245 / 387 / 274 ms, scroll mean 28.7 / p95 51 ms, switches 227 / 36 / 63 / 85 ms.
 
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.
@@ -328,6 +334,17 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   click → next frame 49–68 ms in the League List (e2e). **Left out on phones** (desktop only; the phone top bar is
   full). Top bar: still one row at 1920 px (≥ 290 px spare in every view); at 1280 px the league views already took
   two rows before it; the Team List still fits one row (28 px spare).
+
+### Data freshness (2026-10-23)
+- **"Data updated Oct 23, 08:29"** (`DataStamp` in `CalendarView.tsx`, prop `updatedAt`): the feed's own
+  `meta.time` (kept by `load.ts` as `CalendarData.updatedAt`; the shared module drops `meta`), in the viewer's
+  zone, 24-hour like the tip-off times. 11 px muted, **stacked under the time-zone note** (right-aligned) rather than
+  beside it: the stack fits the 36 px bar, so the top bar keeps its width and stays one row at 1920 px (and the Team
+  List at 1280 px, which had 28 px to spare). Desktop/tablet only; phones keep the "i" note.
+- **Older than 36 h** (`STALE_AFTER_MS`, against the live clock): orange (`--ck-b2b`) with the tooltip "Data is
+  more than 36 hours old: the daily update may have failed." (focusable).
+- **Load error**: the message now has a **Try again** button (`App.tsx`); the loader already forgets a failed load,
+  so the retry fetches again.
 
 ### Final scores everywhere (2026-10-23)
 - Games with status **final** in the snapshot show their score in every view; games that are over but not final in

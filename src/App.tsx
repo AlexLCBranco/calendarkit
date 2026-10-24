@@ -91,13 +91,22 @@ export function App() {
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
   const onOpenGame = isRotationkitConfigured() ? (id: string) => openGameInRotationkit(id) : undefined;
 
-  useEffect(() => {
+  const load = () => {
+    setError(undefined);
     loadCalendarData().then(setData, (e: Error) => setError(e.message));
-  }, []);
+  };
+  useEffect(load, []);
 
   return (
     <div className="app" ref={appRef}>
-      {error && <p className="app-status" role="alert">Couldn’t load the schedule: {error}</p>}
+      {error && (
+        <div className="app-status">
+          <p role="alert">Couldn’t load the schedule: {error}</p>
+          <button type="button" className="app-retry" onClick={load}>
+            Try again
+          </button>
+        </div>
+      )}
       {!data && !error && <p className="app-status">Loading schedule…</p>}
       <div ref={widgetRef}>
         {data && (
@@ -109,6 +118,7 @@ export function App() {
             onStateChange={writeUrlState}
             title={`NBA schedule ${data.seasonYear}`}
             note={`Times in your time zone (${timeZone})`}
+            updatedAt={data.updatedAt}
           />
         )}
       </div>
