@@ -8,3 +8,7 @@ Copied **unchanged** from rotationkit — do not edit files here; request change
 - Path: `src/shared/nba-schedule/`
 
 This note lives in its own file so the copied files stay byte-identical to the source.
+
+**Drift check:** `npm run check-shared` compares this folder (HEAD) byte for byte (git blob ids) with rotationkit's
+default branch via `gh` (or `-- --ref <branch>`, or `-- --local <dir>` for a checkout such as ~/rotationkit-src).
+2026-10-24: identical to `main` (`933fa0b`) and to the branch above (`5eb9bf7`).

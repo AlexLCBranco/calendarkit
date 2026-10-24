@@ -21,6 +21,8 @@ where-to-watch info, embedding in gauntlet.
 - [x] Game card — `src/components/GameCard.tsx`: "BOS vs CHI" / "BOS @ DET" (team view, selected team first) or AWAY @ HOME, local tip-off with (+1), TBD, B2B (league: badge per team; team: 1/2 · 2/2 labels + opponent 2/2 dot), Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
 - [x] Tests — see "Tests" below
 - [x] Copy as image (2026-10-23) — `src/components/copyAsImage.ts` + `CopyButton.tsx`, ported from Boardkit; see "Copy as image" in Decisions
+- [x] Round 2 (2026-10-23/24): perf guard, file split, Today button, final scores everywhere, data freshness +
+  Try again, daily deploy check, shared-module drift check (`npm run check-shared`). See the sections below.
 - [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
@@ -88,7 +90,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 218 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 221 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -163,6 +165,8 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - `verify-deploy.test.ts`: passes when the live time matches (after an old deploy and a 404), fresh query and no-cache
   each try, 30 s apart; fails after 20 tries (10 min) of the old snapshot or network errors; the workflow's commit
   step sets `committed=true` and the check runs only then (fails on the workflow before it).
+- `check-shared.test.ts`: blob id of stored bytes = git's (incl. the empty blob), identical trees pass with our
+  SOURCE.md ignored, changed / missing / extra files reported. Checked by hand: a copy with one byte changed → exit 1.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, calendar → day, no console errors; week view: 15 lines
   on Nov 2, two weeks around Nov 15 measured (`[project] content …, cols …, cell inner …, line …, 2-col spare …`):
   2 columns with ≥ 3 px spare at 1920 px, "AWAY@HOME" text on every line with the "@" clear of the tricode and logo, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
@@ -237,11 +241,20 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
 - **After step 2 (Today)**: loads 326 / 390 / 264 ms, scroll mean 34.7 / p95 67 ms, switches 238 / 48 / 81 / 93 ms.
 - **After step 3 (scores)**: loads 264 / 402 / 304 ms, scroll mean 32.8 / p95 57 ms, switches 230 / 41 / 85 / 94 ms.
 - **After step 4 (freshness)**: loads 245 / 387 / 274 ms, scroll mean 28.7 / p95 51 ms, switches 227 / 36 / 63 / 85 ms.
+- **After steps 5–6** (no app code changed): loads 236 / 447 / 272 ms, scroll mean 29.4 / p95 54 ms, switches 213 / 64 /
+  66 / 100 ms. All within the limits; every number is in the run-to-run spread of the baseline.
 
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.
 - **Shared module** `src/shared/nba-schedule/` copied unchanged from rotationkit (see its `SOURCE.md`; the
   header note is a separate file so the copied files stay byte-identical). Its own tests run here.
+  **Drift check** (2026-10-23): `npm run check-shared` (`scripts/check-shared.ts`) compares git blob ids — ours at HEAD
+  (`git ls-tree`) with rotationkit's default branch through `gh api …/contents` (`--ref` for another branch;
+  `--local <dir>` or, without gh access, ~/rotationkit-src via `git hash-object`, which applies git's CRLF → LF so a
+  Windows checkout compares correctly). Exit 1 lists each changed / missing / extra file. **Local only, not CI**: the
+  repo's `GITHUB_TOKEN` can't read the private rotationkit repo; CI would need a new secret (a read-only token),
+  which needs Alex's OK. Result 2026-10-24: identical (7 files) to rotationkit `main` 933fa0b and to the SOURCE.md
+  branch (5eb9bf7) — rotationkit's main now has the folder too.
 - **Vitest 5** (rotationkit uses 3): vitest 3 has open audit advisories (tinypool RCE, @vitest/mocker); 5 is clean
   and runs the module's tests unchanged.
 - **Which games**: whitelist by module `gameType`: `regular`, `cup-final`, `play-in`, `playoffs`. Everything else
@@ -528,6 +541,11 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   (and series/game number) to `deriveGame`; calendarkit will switch to it on the next copy.
 
 ## Open questions / items
+- **Flaky under load**: `features.spec.ts` "team header and team picker" (tablet) failed once in a full run on
+  2026-10-24 (`toHaveText`), then passed 3/3 alone and in the next full run; seen after a change that touched no app
+  code. Watch it.
+- **League List scrolling** runs at ~30 fps in headless Chromium (mean frame 34 ms): each scroll re-renders the
+  visible days. Memoizing the day sections would likely help; not done in round 2 (not asked).
 - The scheduled snapshot ran at 15:36 UTC on day 1 instead of 11:00 (GitHub delays cron runs under load).
   Harmless for a schedule; the job now rebases before pushing in case it races a normal push.
 - **ROTATIONKIT_BASE_URL** is a placeholder until rotationkit has a production URL (it isn't merged to main).
