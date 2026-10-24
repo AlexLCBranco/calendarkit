@@ -5,6 +5,7 @@ import { Fragment } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { finalScore, isOver, markers, nationalTv, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine } from '../data/model';
 import { teamLogo } from '../data/teams';
+import { CopyButton } from './CopyButton';
 import './calendar.css';
 
 /** The selected team's side of a back-to-back, as shown on one of its two nights. */
@@ -42,6 +43,8 @@ export interface GameCardProps {
   next?: boolean;
   /** Team list: regular-season game number and record going in (right side), and the final score by the names. */
   season?: SeasonLine;
+  /** Copy-as-image button on hover (lists, phone detail card). */
+  copyable?: boolean;
 }
 
 /** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
@@ -87,7 +90,7 @@ export function B2BLabel({ night, short = false }: { night: B2BNight; short?: bo
 /** Orange dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, copyable }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -154,6 +157,8 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
       data-b2b={bracket}
       aria-label={dateLabel ? `${dateLabel}, ${label}` : label}
     >
+      {/* first, so the season block stays the last part; positioned in the corner */}
+      {copyable && <CopyButton hover label="Copy game as image" of=".ck-card" testId="copy-game" />}
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
       <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
         {tip.time}

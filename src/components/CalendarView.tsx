@@ -3,7 +3,8 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type SyntheticEvent } from 'react';
+import { createPortal } from 'react-dom';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import {
   addDays,
@@ -28,6 +29,8 @@ import {
   type CalendarData,
 } from '../data/model';
 import { DIVISIONS, TEAMS, TEAM_BY_ID, teamLogo, type Team } from '../data/teams';
+import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
+import { CopyButton } from './CopyButton';
 import { busiestDayHeight, flowDay, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, WEEK_MIN_WIDTH, weekScale } from './dayflow';
 import { B2BDot, GameCard, TeamLogo, type B2BNight } from './GameCard';
 import './calendar.css';
@@ -486,6 +489,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               <span className="ck-daynum">{Number(date.slice(8))}</span>
               {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} shortB2B={compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
+              {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
             </div>
           );
         })}
@@ -503,7 +507,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
       {compact && selectedGame && (
         <div className="ck-detail">
           <div className="ck-detail-date">{fmtDate(selectedGame.dateEt, { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-          <GameCard {...cardProps(selectedGame)} teamFirst logos onOpenGame={onOpenGame} />
+          <GameCard {...cardProps(selectedGame)} teamFirst logos onOpenGame={onOpenGame} copyable />
         </div>
       )}
     </section>
@@ -711,14 +715,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
         {days.length === 0 && <p className="ck-empty">No games.</p>}
         <div style={{ height: tops[start] }} aria-hidden="true" />
         {days.slice(start, end).map((d) => (
-          <section key={d.date} className="ck-lday" data-day={d.date} data-key={hKey(d)} aria-label={dayHeading(d.date, d.games.length)}>
-            <h3 className="ck-lday-head">{dayHeading(d.date, d.games.length)}</h3>
-            <div className="ck-daylist">
-              {d.games.map((g) => (
-                <GameCard key={g.gameId} game={g} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos />
-              ))}
-            </div>
-          </section>
+          <ListDaySection key={d.date} day={d} dataKey={hKey(d)} data={data} compact={compact} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
         ))}
         <div style={{ height: total - tops[end]! + tail }} aria-hidden="true" />
       </div>
@@ -727,6 +724,37 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
 }
 
 const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'short', month: 'short', day: 'numeric' })} · ${plural(n)}`;
+
+/** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
+function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void }) {
+  return (
+    <section className="ck-lday" data-day={day.date} data-key={dataKey} aria-label={dayHeading(day.date, day.games.length)}>
+      <h3 className="ck-lday-head">{dayHeading(day.date, day.games.length)}</h3>
+      <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
+      <div className="ck-daylist">
+        {day.games.map((g) => (
+          <GameCard key={g.gameId} game={g} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos copyable />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/** League list for an image: every game day of the week of `date`, all rendered (no scrolling, no virtualizing). */
+function LeagueListWeek({ data, date, tvOnly, size, now, timeZone }: { data: CalendarData; date: string; tvOnly: boolean; size: WidgetSize; now: number; timeZone?: string }) {
+  const week = new Set(weekOf(date));
+  const days = listDays(data, tvOnly).filter((d) => week.has(d.date));
+  return (
+    <section className="ck-league-list" aria-label="League schedule">
+      <div className="ck-llist">
+        {days.length === 0 && <p className="ck-empty">No games.</p>}
+        {days.map((d) => (
+          <ListDaySection key={d.date} day={d} data={data} compact={isCompact(size)} now={now} timeZone={timeZone} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 // ---------------------------------------------------------------- team: list
 
@@ -782,6 +810,7 @@ export function TeamListView({ data, teamId, tvOnly, size, now, timeZone, onOpen
               dateLabel={rowDate(g.dateEt)}
               next={g.gameId === next}
               season={season.get(g.gameId)}
+              copyable
             />
           ))}
         </div>
@@ -966,6 +995,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
                 <span className="ck-wday-num">{first ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
                 {games.length > 0 && <span className="ck-wday-count">{plural(games.length)}</span>}
               </button>
+              {games.length > 0 && <CopyButton hover label="Copy day as image" of=".ck-month-cell" testId="copy-day" />}
               {games.length > 0 && (
                 <div className="ck-month-day" data-cols={cols} style={{ gridTemplateColumns: `repeat(${cols}, var(--ck-line))` }}>
                   {flowDay(timeGroups(games, timeZone), cols).map((col, ci) => (
@@ -1143,6 +1173,22 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     };
   } else if (!team) nav = monthNav(leagueMonth, seasonMonths(data), setLeagueMonth);
 
+  // "Copy view as image": render the view off-screen (CaptureStage), copy it, remove it.
+  const [capture, setCapture] = useState<(node: HTMLElement) => void>();
+  // The button records the size copied (CSS px) and the pixel ratio used: data-captured="1840x1010@4".
+  const copyView = (button: HTMLButtonElement) =>
+    new Promise<HTMLCanvasElement>((resolve, reject) =>
+      setCapture(() => (node: HTMLElement) => {
+        button.dataset.captured = `${node.offsetWidth}x${node.offsetHeight}@${capturePixelRatio(node.scrollWidth, node.scrollHeight, COPY_PIXEL_RATIO)}`;
+        copyElement(node, 1)
+          .then(resolve, reject)
+          .finally(() => setCapture(undefined));
+      }),
+    );
+  const listWeek = weekOf(nearestDay(days, state.date));
+  const capturePeriod = team && list ? undefined : !team && list ? fmtRange(listWeek[0]!, listWeek[6]!) : nav?.title;
+  const fullHeight = { width: size.width, height: 1e6 };
+
   return (
     <div
       className={`ck-root${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`}
@@ -1188,6 +1234,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
               {note}
             </span>
           ))}
+        <CopyButton label="Copy view as image" copy={copyView} testId="copy-view" />
       </div>
       {team && <TeamHeader teamId={state.teamId} compact={compact} />}
       {team ? (
@@ -1204,7 +1251,66 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
       )}
       {tooltip.node}
+      {capture && (
+        <CaptureStage onReady={capture} width={(list ? Math.min(size.width, LIST_MAX_WIDTH) : size.width) + 2 * CAPTURE_PAD} className={`${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`} minHeight={list || compact ? undefined : size.height}>
+          <div className="ck-capture-head">
+            {title && <span className="ck-title">{title}</span>}
+            {capturePeriod && <span className="ck-capture-period">{capturePeriod}</span>}
+            {state.tvOnly && <span className="ck-capture-filter">TV games only</span>}
+            {note && <span className="ck-note">{note}</span>}
+          </div>
+          {team && <TeamHeader teamId={state.teamId} compact={compact} />}
+          {team ? (
+            list ? (
+              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} size={fullHeight} now={now} timeZone={timeZone} />
+            ) : (
+              <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} />
+            )
+          ) : list ? (
+            <LeagueListWeek data={data} date={state.date} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} />
+          ) : weekView ? (
+            <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} />
+          ) : (
+            <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
+          )}
+        </CaptureStage>
+      )}
     </div>
+  );
+}
+
+/**
+ * Off-screen copy of the current view for "Copy view as image": the whole view, not only the part a list has
+ * scrolled to (team list: every game; league list: the week of the day at the top), under a caption with the
+ * title, period, filter and time zone instead of the controls. Rendered only while copying; `onReady` gets the
+ * node once fonts and logos are decoded.
+ */
+/** Padding around the view in a whole-view image (.ck-capture); the stage is this much wider so the view keeps its width. */
+const CAPTURE_PAD = 12;
+
+function CaptureStage({ onReady, width, minHeight, className, children }: { onReady: (node: HTMLElement) => void; width: number; minHeight?: number; className: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const started = useRef(false);
+  useEffect(() => {
+    if (started.current) return; // StrictMode runs effects twice in development
+    started.current = true;
+    const node = ref.current!;
+    const frame = () => new Promise((r) => requestAnimationFrame(r));
+    (async () => {
+      await frame();
+      await frame(); // layout effects (Team Calendar scale) have settled
+      await document.fonts?.ready;
+      await Promise.all([...node.querySelectorAll('img')].map((img) => img.decode().catch(() => undefined)));
+      onReady(node);
+    })();
+  }, []);
+  return createPortal(
+    <div className="ck-capture-stage" aria-hidden="true">
+      <div ref={ref} className={`ck-root ck-capture${className}`} style={{ width, minHeight }}>
+        {children}
+      </div>
+    </div>,
+    document.body,
   );
 }
 

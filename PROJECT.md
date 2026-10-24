@@ -20,6 +20,7 @@ where-to-watch info, embedding in gauntlet.
 - [x] Views — `src/components/CalendarView.tsx`: `LeagueListView` (continuous, virtualized day list + week strip), `TeamListView`, `TeamMonthGrid`, `LeagueWeekView` (1 or 2 week rows, every game per day with logos; desktop widths), `MonthNavigator` (count grid, click → day; narrow widths and the week picker popup), `TeamPicker` (custom listbox with logos), `TeamHeader`, and `CalendarView` combining them behind a one-row top bar. Day-cell layout maths in `src/components/dayflow.ts` (pure). App shell `src/App.tsx` (URL state `?view=&layout=&team=&date=&weeks=&tv=`).
 - [x] Game card — `src/components/GameCard.tsx`: "BOS vs CHI" / "BOS @ DET" (team view, selected team first) or AWAY @ HOME, local tip-off with (+1), TBD, B2B (league: badge per team; team: 1/2 · 2/2 labels + opponent 2/2 dot), Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
 - [x] Tests — see "Tests" below
+- [x] Copy as image (2026-10-23) — `src/components/copyAsImage.ts` + `CopyButton.tsx`, ported from Boardkit; see "Copy as image" in Decisions
 - [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
@@ -82,7 +83,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 187 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 194 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -168,7 +169,22 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   "@" on every week-view line (2026-10-23): 7 new/changed unit tests fail on the code before it. The week test that
   walks every week of the season in jsdom takes 4–6 s, so it now has a 30 s timeout (it hit Vitest's 5 s default
   on a busy machine — the one unexplained failure in the previous change).
-- Manual only: none needed beyond judging look and feel.
+- `copy.test.tsx` (jsdom): pixel-ratio cap (4, lowered so the largest side is 16000 px), the capture filter
+  (`data-capture-exclude`), wrap slack (wrapping flex rows widened inside the node, not the node, then undone),
+  CopyButton (no text, excluded, ✓ → idle after 1.5 s, ! + console.error on failure, click not passed to the cell).
+- `e2e/copy.spec.ts` (desktop-xl only, fixed clock Nov 15, 2026): clicks the real buttons, reads the PNG back from
+  the clipboard (clipboard permission granted) and checks it: size = copied element × the ratio used, opaque corners
+  in the dark background, not blank, and **every** logo area holds logo pixels (not only its light disc), every
+  tricode / "@" area holds text, every B2B label/dot is orange, every TV badge/pill green. Exports: league week view
+  (1 and 2 weeks), Team Calendar (LAL Nov 2026), full Team List (every ORL row, taller than the window), League List
+  (whole week, logo count = the feed's games), a week-view day, a Team Calendar day with B2B, a League List day, a
+  League List game with TV, a Team List game with B2B label + opponent dot. Negative checks: logo files that draw
+  nothing → the logo check flags both logos; logo files missing → the copy fails with ! and a console error (no
+  half-made image). PNGs go to `test-output/copy-images/` (git-ignored). The League List export fails with the wrap
+  slack set to 0 (checked 2026-10-23).
+- Manual only: judging look and feel, and pasting copies into the gauntlet whiteboard / Excalidraw and scaling them
+  up (the clipboard read-back covers what the app puts on the clipboard; how another app scales a pasted image
+  can't be scripted from here).
 
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.
@@ -382,6 +398,33 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   phones get the count grid. The old month view's line scaling (768–860 px windows) is gone: lines are never shrunk.
 - **Snapshot size**: the raw feed is ~4 MB (≈ 200–300 KB gzipped over the wire). Committed daily only when it
   changes. Kept raw so no information is lost (scores later).
+
+### Copy as image (2026-10-23)
+- **Port of Boardkit's** `copyAsImage.ts`: html-to-image `toCanvas`, pixelRatio **4**, capped so the largest side
+  is ≤ 16000 px (`min(4, 16000 / largest side)`), elements with `data-capture-exclude="true"` (every copy button)
+  filtered out, `canvas.toBlob` → PNG → `navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])`.
+  Buttons show ⧉, ✓ on success, ! on error (logged with console.error), back after 1.5 s. The glyphs are CSS
+  content, so the buttons add no text to cards and cells.
+- **What can be copied**: the whole view (toolbar button, every view), a day (hover button: week-view day cell,
+  Team Calendar day cell with a game, League List day), a game (hover button on every game card: League List, Team
+  List, phone detail card). Not on week-view game lines (a hover button there would cover the TV pill and its
+  tooltip; copy the day instead), and not on the card inside a Team Calendar cell (cell = one game; the day button
+  copies it with its date).
+- **Whole view = rendered off-screen** (`CaptureStage`: a portal at left −100000 px, only while copying) at the
+  widget's width, with a caption (title, period, "TV games only" when on, time-zone note) instead of the controls,
+  plus the team header in team views. So it's the full view, not what a list has scrolled to: Team List = every
+  game; League List = the week of the day at the top (the whole season would be ~50 000 px tall and drop far below
+  4×). Rendered at zoom 1, like Boardkit's board copy.
+- **Differences from Boardkit**: (1) every copy is drawn over the app background (`--ck-bg`, #0f1115); Boardkit
+  keeps transparent gaps when a board has no background. (2) The whole view is a fresh off-screen render, not the
+  live node, because the lists scroll inside fixed-height boxes. (3) **Wrap slack**: html-to-image gives each clone
+  its element's computed width rounded to a few decimals, so a wrapping flex row that exactly fits can wrap in the
+  image (found by the e2e: "Prime Video" dropped below the TOR @ DET Cup row and was clipped). Wrapping flex rows
+  inside the copied node get +0.1 px while it's cloned, then their width is restored.
+- **Logos** were already local (`public/logos/*.svg`, same origin), so html-to-image embeds them; no CORS issue.
+  Verified pixel by pixel in every export test. A missing logo file makes the copy fail (!) instead of copying a
+  blank logo.
+- Team Calendar B2B bars span two cells, so a single-day copy shows the cell's B2B label but not the bar.
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId
