@@ -9,9 +9,12 @@ import { tipoff } from '../data/model';
  * so they are the same on every OS. `tri` fits the widest tricode (MEM, 26.95 px at 11 px semibold).
  * Line: logo · gap · AWAY · sep (the "@", `atFont` px: 8.69 px wide at 9 px) · logo · gap · HOME · pillGap · TV.
  * AWAY is right-aligned in its column, so every line reads "AWAY @ HOME" with the "@" in one column.
- * `labelGap`: below a time label; `dot`: B2B dot.
+ * `labelGap`: below a time label; `dot`: B2B dot. `scoreFont`: a final game's score, which takes its team's logo slot
+ * (largest 0.1 px step where 3 tabular digits, SCORE3_EM wide, fit `logo`: 8.2 px → 15.91 px; 8.3 px → 16.10 px).
  */
-export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5 } as const;
+export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2 } as const;
+/** Width of the widest 3-digit score in em: tabular digits, bundled Inter, weight 500–700 (measured: 15.52 px at 8 px). */
+export const SCORE3_EM = 1.94;
 export type MonthLine = { [K in keyof typeof MONTH_LINE]: number };
 export const lineWidth = (L: MonthLine) => 2 * (L.logo + L.gap + L.tri) + L.sep + L.pillGap + L.pill;
 export const MONTH_LINE_WIDTH = lineWidth(MONTH_LINE);
@@ -108,6 +111,13 @@ export const flowHeight = (flow: TimeGroup[][]) => Math.max(0, ...flow.map((c) =
 
 // ---------------------------------------------------------------- 1-week mode: larger lines
 
+/**
+ * Line width (scale 1) if a final game kept both logos and added each score after its tricode at the tricode's size
+ * (11 px): the option checked for 1-week mode. It only allows 1.2 at 1920 × 1080 (< 1.3), so 1-week mode puts the
+ * score in the logo slot like 2-week mode instead (PROJECT.md "Scores in the week view").
+ */
+export const LINE_WITH_SCORES = MONTH_LINE_WIDTH + 2 * (MONTH_LINE.gap + SCORE3_EM * MONTH_LINE.font);
+
 /** Largest game-line scale in 1-week mode (about 1.5×, see PROJECT.md). */
 export const WEEK_SCALE_MAX = 1.5;
 /** Share of a day cell's inner width, and of its height below the day header, that the scaled content may use. */
@@ -127,8 +137,8 @@ export function busiestDayHeight(byDate: Map<string, ScheduleGame[]>, timeZone?:
  * WEEK_SCALE_MAX while one line uses at most WEEK_SCALE_FILL of the width and the season's busiest day at most
  * WEEK_SCALE_FILL of the height below the header. Never below 1 (the 2-week size); 0.05 steps.
  */
-export function weekScale(innerWidth: number, innerHeight: number, busiest: number): number {
-  const byWidth = (innerWidth * WEEK_SCALE_FILL) / MONTH_LINE_WIDTH;
+export function weekScale(innerWidth: number, innerHeight: number, busiest: number, lineW = MONTH_LINE_WIDTH): number {
+  const byWidth = (innerWidth * WEEK_SCALE_FILL) / lineW;
   const byHeight = busiest > 0 ? ((innerHeight - WEEK_HEAD_H) * WEEK_SCALE_FILL) / busiest : Infinity;
   return Math.max(1, Math.min(WEEK_SCALE_MAX, Math.floor(Math.min(byWidth, byHeight) * 20 + 1e-9) / 20));
 }

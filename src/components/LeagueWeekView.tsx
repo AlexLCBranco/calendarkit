@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { addDays, hasNationalTv, isBackToBack, nationalTv, teamLabel, type CalendarData } from '../data/model';
+import { addDays, finalScore, hasNationalTv, isBackToBack, nationalTv, teamLabel, type CalendarData } from '../data/model';
 import { CopyButton } from './CopyButton';
 import { busiestDayHeight, flowDay, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, weekScale } from './dayflow';
 import { B2BDot, TeamLogo } from './GameCard';
@@ -25,12 +25,13 @@ export interface LeagueWeekViewProps {
   onSelectDate: (date: string) => void;
 }
 
-function MonthTeam({ team, b2b }: { team: ScheduleGame['homeTeam']; b2b: boolean }) {
+/** One side of a game line: logo (or, once the game is final, its score in the logo's slot) + tricode. */
+function MonthTeam({ team, b2b, score }: { team: ScheduleGame['homeTeam']; b2b: boolean; score?: { n: number; win: boolean } }) {
   const label = teamLabel(team);
   return (
     <>
-      <TeamLogo team={team} />
-      <span className="ck-mtri" data-tricode={label}>
+      {score ? <span className={`ck-mscore${score.win ? ' ck-score-win' : ''}`}>{score.n}</span> : <TeamLogo team={team} />}
+      <span className={`ck-mtri${score ? (score.win ? ' ck-win' : ' ck-loss') : ''}`} data-tricode={label}>
         <span className="ck-mtri-text">
           {label}
           {b2b && <B2BDot tip="Back-to-back" />}
@@ -43,13 +44,19 @@ function MonthTeam({ team, b2b }: { team: ScheduleGame['homeTeam']; b2b: boolean
 function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame }) {
   const tv = nationalTv(game);
   const b2b = (id: number) => isBackToBack(data, id, game.dateEt);
+  // final: the scores take the logos' slots and the TV pill is dropped (its column stays, so the "@" stays put)
+  const fin = game.status === 'final' ? finalScore(game, game.awayTeam.teamId) : undefined;
   return (
-    <li className="ck-month-game" data-game-id={game.gameId} aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}>
-      <MonthTeam team={game.awayTeam} b2b={b2b(game.awayTeam.teamId)} />
+    <li
+      className={`ck-month-game${fin ? ' ck-month-final' : ''}`}
+      data-game-id={game.gameId}
+      aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
+    >
+      <MonthTeam team={game.awayTeam} b2b={b2b(game.awayTeam.teamId)} score={fin && { n: fin.score, win: fin.win }} />
       <span className="ck-at">@</span>
-      <MonthTeam team={game.homeTeam} b2b={b2b(game.homeTeam.teamId)} />
+      <MonthTeam team={game.homeTeam} b2b={b2b(game.homeTeam.teamId)} score={fin && { n: fin.oppScore, win: !fin.win }} />
       <span className="ck-tv-slot">
-        {tv.length > 0 && (
+        {!fin && tv.length > 0 && (
           <span className="ck-tv-pill" data-tip={tv.join(', ')} aria-label={`National TV: ${tv.join(', ')}`} tabIndex={0}>
             TV
           </span>
@@ -94,6 +101,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
     '--ck-row-gap': `${L.rowGap}px`,
     '--ck-group-gap': `${L.groupGap}px`,
     '--ck-dot': `${L.dot}px`,
+    '--ck-score-font': `${L.scoreFont}px`,
     '--ck-col-gap': `${MONTH_COL_GAP}px`,
     '--ck-line': `${lineWidth(L)}px`,
   } as CSSProperties;

@@ -170,7 +170,9 @@ describe('selected team first, both logos', () => {
           const cell = el.container.querySelector(`[data-date="${g.dateEt}"]`)!;
           const home = g.homeTeam.teamId === teamId;
           const opp = home ? g.awayTeam : g.homeTeam;
-          expect(cell.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`${tri} ${home ? 'vs' : '@'} ${opp.teamTricode}`);
+          const self = home ? g.homeTeam : g.awayTeam;
+          const [sc, o] = g.status === 'final' ? [` ${self.score}`, ` ${opp.score}`] : ['', '']; // final scores (scores.test.tsx)
+          expect(cell.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`${tri}${sc} ${home ? 'vs' : '@'} ${opp.teamTricode}${o}`);
           expect(imgs(cell)).toEqual([`/logos/${tri}.svg`, `/logos/${opp.teamTricode}.svg`]);
           n++;
         }

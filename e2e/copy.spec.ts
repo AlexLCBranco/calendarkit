@@ -17,7 +17,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'run
 test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
 
 /** Area of an element inside the copied root, in CSS px, and what the image must show there. */
-type Region = { kind: 'logo' | 'text' | 'b2b' | 'tv'; x: number; y: number; w: number; h: number; what: string };
+type Region = { kind: 'logo' | 'text' | 'score' | 'b2b' | 'tv'; x: number; y: number; w: number; h: number; what: string };
 type Target = { width: number; height: number; regions: Region[]; ratio: number };
 
 /** Every area to check inside `root` (runs in the page). Exported as a string so it works for the stage too. */
@@ -32,6 +32,7 @@ const MEASURE = `(root) => {
   });
   add('logo', '.ck-logo-backing img');
   add('text', '.ck-team, .ck-mtri-text, .ck-vsat, .ck-at');
+  add('score', '.ck-score, .ck-mscore');
   add('b2b', '.ck-b2b-label, .ck-b2b-mark');
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
   return { width: root.offsetWidth, height: root.offsetHeight, regions: out };
@@ -149,12 +150,12 @@ async function analyze(page: Page, png: string, target: Target): Promise<Report>
             const p = px(x, y);
             total++;
             if (r.kind === 'logo' && dist(p, DISC) > 40) hit++;
-            else if (r.kind === 'text' && dist(p, base) > 60) hit++;
+            else if ((r.kind === 'text' || r.kind === 'score') && dist(p, base) > 60) hit++;
             // hues, not exact colours: past games are drawn at 60 % opacity
             else if (r.kind === 'b2b' && p[0]! > p[1]! + 25 && p[1]! > p[2]! + 20) hit++; // orange
             else if (r.kind === 'tv' && p[1]! > p[0]! + 40 && p[1]! > p[2]! + 15) hit++; // green
           }
-        const need = r.kind === 'logo' ? 0.08 : r.kind === 'text' ? 0.02 : 0.05;
+        const need = r.kind === 'logo' ? 0.08 : r.kind === 'text' || r.kind === 'score' ? 0.02 : 0.05;
         if (!total || hit / total < need) failures.push(`${r.kind} "${r.what}" at ${r.x.toFixed(0)},${r.y.toFixed(0)}: ${((hit / Math.max(total, 1)) * 100).toFixed(1)}% < ${need * 100}%`);
       }
       return { width, height, corners, inkShare: ink / n, colors: colors.size, failures, counts };
@@ -238,6 +239,46 @@ test('a single game: league list card, team list card with B2B and TV', async ({
   await open(page, '?view=team&layout=list&team=ORL');
   const row = page.locator('.ck-team-rows > .ck-card:has(.ck-b2b-label):has(.ck-b2b-mark)').first();
   await check(page, 'game-team-list', await copyPart(page, row, 'copy-game'), ['logo', 'text', 'b2b']);
+});
+
+test('final scores are in the images: week view (1 and 2 weeks), league list day, team calendar, team list', async ({ page }) => {
+  await open(page, '?view=league&layout=calendar&date=2026-10-20');
+  // the snapshot's final games: Oct 20–22, 2026 (week of Oct 18)
+  const finals = await page.evaluate(async () => {
+    const feed = await (await fetch('/data/schedule.json')).json();
+    return feed.leagueSchedule.gameDates
+      .flatMap((d: { games: { gameId: string; gameStatus: number; gameDateEst: string }[] }) => d.games)
+      .filter((g: { gameId: string; gameStatus: number }) => /^00[2456]/.test(g.gameId) && g.gameStatus === 3)
+      .map((g: { gameId: string; gameDateEst: string }) => g.gameDateEst.slice(0, 10)) as string[];
+  });
+  expect(finals.length).toBeGreaterThan(10);
+  const scores = (v: { target: Target }) => v.target.regions.filter((r) => r.kind === 'score').length;
+  const inWeek = finals.filter((d) => d >= '2026-10-18' && d <= '2026-10-24').length;
+
+  let v = await copyView(page);
+  expect(scores(v)).toBe(2 * inWeek);
+  await check(page, 'scores-league-week', v, ['logo', 'text', 'score']);
+  await page.getByRole('tab', { name: '2 weeks' }).click();
+  v = await copyView(page);
+  expect(scores(v)).toBe(2 * finals.filter((d) => d >= '2026-10-18' && d <= '2026-10-31').length);
+  await check(page, 'scores-league-2weeks', v, ['logo', 'text', 'score']);
+
+  await open(page, '?view=league&layout=list&date=2026-10-21');
+  const day = page.locator('.ck-lday[data-day="2026-10-21"]');
+  v = await copyPart(page, day, 'copy-day');
+  expect(scores(v)).toBe(2 * finals.filter((d) => d === '2026-10-21').length);
+  await check(page, 'scores-league-list-day', v, ['logo', 'text', 'score']);
+
+  await open(page, '?view=team&layout=calendar&team=BOS');
+  await page.getByLabel('Previous month').click();
+  v = await copyView(page);
+  expect(scores(v)).toBeGreaterThan(0);
+  await check(page, 'scores-team-calendar', v, ['logo', 'text', 'score']);
+  const cell = page.locator('.ck-day-cell:has(.ck-score)').first();
+  await check(page, 'scores-team-calendar-day', await copyPart(page, cell, 'copy-day'), ['logo', 'text', 'score']);
+
+  await page.getByRole('tab', { name: 'List', exact: true }).click();
+  await check(page, 'scores-team-list', await copyView(page), ['logo', 'text', 'score']);
 });
 
 test('blank logos are caught: the pixel check flags them; a logo that cannot be fetched fails the copy with !', async ({ page }) => {

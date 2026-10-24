@@ -168,3 +168,18 @@
 .ck-month-tight .ck-grid {
   gap: 2px;
 }
+
+/* Final game: the score sits in its team's logo slot (8.2 px tabular: "188" is 15.9 of 16 px), right-aligned
+   against the tricode; no TV pill (the column stays reserved). */
+.ck-mscore {
+  font-size: var(--ck-score-font);
+  line-height: var(--ck-logo);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ck-muted);
+  text-align: right;
+}
+.ck-mscore.ck-score-win {
+  color: var(--ck-text);
+  font-weight: 700;
+}

@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { CalendarView, LeagueWeekView, TeamMonthGrid, TEAM_SCALE_MAX } from '../src/components/CalendarView';
-import { busiestDayHeight, columnHeight, MONTH_LINE, MONTH_LINE_WIDTH, monthCellInner, scaleLine, timeGroups, WEEK_HEAD_H, WEEK_SCALE_FILL, WEEK_SCALE_MAX, weekScale, lineWidth } from '../src/components/dayflow';
+import { LINE_WITH_SCORES, SCORE3_EM, busiestDayHeight, columnHeight, MONTH_LINE, MONTH_LINE_WIDTH, monthCellInner, scaleLine, timeGroups, WEEK_HEAD_H, WEEK_SCALE_FILL, WEEK_SCALE_MAX, weekScale, lineWidth } from '../src/components/dayflow';
 import { data } from './feed';
 
 afterEach(cleanup);
@@ -98,5 +98,19 @@ describe('team calendar sizes', () => {
     const el = render(<TeamMonthGrid data={data} teamId={1610612747} month="2026-11" onMonthChange={() => {}} size={XL} now={NOW} timeZone="UTC" />);
     const tv = [...el.container.querySelectorAll('.ck-tv')].find((t) => t.textContent === 'Peacock · NBC Sports Network')!;
     expect([...tv.querySelectorAll('.ck-tv-name')].map((n) => n.textContent)).toEqual(['Peacock', 'NBC Sports Network']);
+  });
+});
+
+describe('week view scores (final games)', () => {
+  it('the score font is the largest 0.1 px step whose 3 digits fit the 16 px logo slot', () => {
+    expect(MONTH_LINE.scoreFont * SCORE3_EM).toBeLessThanOrEqual(MONTH_LINE.logo);
+    expect((MONTH_LINE.scoreFont + 0.1) * SCORE3_EM).toBeGreaterThan(MONTH_LINE.logo);
+  });
+
+  it('1 week with logos + 11 px scores would drop below 1.3 at 1920 × 1080, so 1 week uses the logo slot too', () => {
+    const inner = monthCellInner(1840);
+    expect(LINE_WITH_SCORES).toBeCloseTo(119 + 2 * (1 + 21.34), 0);
+    expect(weekScale(inner, 10_000, 1, LINE_WITH_SCORES)).toBeLessThan(1.3);
+    expect(weekScale(inner, 10_000, 1)).toBe(1.5); // the line the slot layout keeps
   });
 });

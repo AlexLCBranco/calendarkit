@@ -23,9 +23,10 @@ function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefin
   const tvText = (g: ScheduleGame) => nationalTv(g).join(' · ').length;
   const g = data.games.reduce<ScheduleGame | undefined>((best, x) => (x.homeTeam.teamId && (!best || tvText(x) > tvText(best)) ? x : best), undefined);
   if (!g) return undefined;
-  const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final' };
+  // final with 3-digit scores (tabular digits: any 3 are as wide), so a cell with a score fits too
+  const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
   const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
-  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, size: 'compact' };
+  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, size: 'compact' };
 }
 
 export interface TeamMonthGridProps {
@@ -142,7 +143,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
           return (
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               <span className="ck-daynum">{Number(date.slice(8))}</span>
-              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} shortB2B={compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
+              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
               {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
             </div>
           );

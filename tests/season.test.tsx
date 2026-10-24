@@ -116,11 +116,11 @@ describe('team list row', () => {
     for (const x of bos.filter((x) => x.status !== 'final')) expect(row(el, x.gameId).querySelector('.ck-score'), x.dateEt).toBeNull();
   });
 
-  it('only the team list has it: league list and team calendar show no season line or score', () => {
+  it('only the team list has the season line (league list and team calendar: scores only, see scores.test.tsx)', () => {
     const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'calendar', teamId: TEAM.BOS }} />).container;
-    expect(el.querySelector('[data-testid="season"], .ck-score')).toBeNull();
+    expect(el.querySelector('[data-testid="season"]')).toBeNull();
     cleanup();
     const league = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ date: '2026-10-20' }} />).container;
-    expect(league.querySelector('[data-testid="season"], .ck-score')).toBeNull();
+    expect(league.querySelector('[data-testid="season"]')).toBeNull();
   });
 });

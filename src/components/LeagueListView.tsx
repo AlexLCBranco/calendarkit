@@ -225,7 +225,7 @@ function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos copyable />
+          <GameCard key={g.gameId} game={g} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} copyable />
         ))}
       </div>
     </section>

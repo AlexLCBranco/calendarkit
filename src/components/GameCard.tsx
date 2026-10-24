@@ -43,6 +43,8 @@ export interface GameCardProps {
   next?: boolean;
   /** Team list: regular-season game number and record going in (right side), and the final score by the names. */
   season?: SeasonLine;
+  /** Final score beside each tricode once the game is final (always on with `season`). */
+  scores?: boolean;
   /** Copy-as-image button on hover (lists, phone detail card). */
   copyable?: boolean;
 }
@@ -90,7 +92,7 @@ export function B2BLabel({ night, short = false }: { night: B2BNight; short?: bo
 /** Orange dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, copyable }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -99,7 +101,9 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
   const canOpen = !!onOpenGame && isOver(game, now);
   const away = teamLabel(game.awayTeam);
   const home = teamLabel(game.homeTeam);
-  const result = season && teamId ? finalScore(game, teamId) : undefined;
+  // final score from the shown side: the selected team (team views) or the away team (league views)
+  const result = scores ? finalScore(game, teamId ?? game.awayTeam.teamId) : undefined;
+  const loss = (first: boolean) => (result && result.win !== first ? ' ck-loss' : '');
   // the space keeps textContent readable ("BOS 113"); inline-flex drops it, the margin spaces the score
   const score = (n: number, win: boolean) => (
     <>
@@ -114,14 +118,14 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
         <>
           <span className="ck-side">
             {logos && <TeamLogo team={side.team} />}
-            <span className="ck-team ck-self">{teamLabel(side.team)}</span>
+            <span className={`ck-team ck-self${loss(true)}`}>{teamLabel(side.team)}</span>
             {result && score(result.score, result.win)}
           </span>{' '}
         </>
       )}
       <span className="ck-side">
         <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}
-        <span className="ck-team ck-opp">
+        <span className={`ck-team ck-opp${loss(false)}`}>
           {teamLabel(side.opponent)}
           {opponentB2B && <B2BDot tip={opponentB2B} />}
         </span>
@@ -131,11 +135,13 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
   ) : (
     <span className="ck-matchup">
       {logos && <TeamLogo team={game.awayTeam} />}
-      <span className="ck-team">{away}</span>
+      <span className={`ck-team${loss(true)}`}>{away}</span>
+      {result && score(result.score, result.win)}
       {b2bIds.has(game.awayTeam.teamId) && <span className="ck-tag ck-b2b" title={`${away} back-to-back`}>B2B</span>}
       <span className="ck-vsat"> @ </span>
       {logos && <TeamLogo team={game.homeTeam} />}
-      <span className="ck-team">{home}</span>
+      <span className={`ck-team${loss(false)}`}>{home}</span>
+      {result && score(result.oppScore, !result.win)}
       {b2bIds.has(game.homeTeam.teamId) && <span className="ck-tag ck-b2b" title={`${home} back-to-back`}>B2B</span>}
     </span>
   );
@@ -146,7 +152,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
     : '';
   const label = side
     ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}` : ''}${seasonText ? `, ${seasonText}` : ''}`
-    : `${away} at ${home}, ${tip.label}`;
+    : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}` : ''}`;
   const bracket = side && b2b.length ? b2b.map((n) => n.night).join(' ') : undefined;
 
   return (

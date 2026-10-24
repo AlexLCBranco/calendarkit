@@ -5,13 +5,13 @@ own repo (github.com/AlexLCBranco/calendarkit) and own Vercel project.
 
 ## Goals (v1)
 - League and Team views of the NBA schedule, each as a List or a Calendar (month).
-- **Schedule first**: no live status. Final scores and records only in the Team List (Alex, 2026-10-23; see
-  "Team list season line"), from the daily snapshot. Full game objects are kept in the data layer, so scores
-  elsewhere need only UI changes; live scores would also need a fresher refresh strategy.
+- **Schedule first**: no live status. Final scores in every view (desktop/tablet; see "Final scores everywhere"),
+  records and streaks only in the Team List, all from the daily snapshot. Live scores would need a fresher refresh
+  strategy.
 - Components are widget-first so they can later be dropped into **gauntlet** (whiteboard with live widgets).
 - Links into **rotationkit** for games that are over.
 
-Out of scope for v1: scores outside the Team List, live status, New Event, event categories, calendar settings, other leagues,
+Out of scope for v1: live status, New Event, event categories, calendar settings, other leagues,
 where-to-watch info, embedding in gauntlet.
 
 ## Status
@@ -83,7 +83,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 200 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 210 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -141,6 +141,15 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   after moving away, back to the default day / its week (1 and 2 weeks) / current month (and clamped after the season)
   / next game at the top (real wheel scrolling), right after the › arrow, absent on phones, top bar height unchanged
   when it toggles, ≤ 40 px at 1920. The 6 unit tests fail on the code before it.
+- `scores.test.tsx` (jsdom, fixture) + `e2e/scores.spec.ts` (desktop, desktop-xl, served snapshot): every final game
+  shows the right score in the League List, every team's Team Calendar, the week view in 1 and 2 weeks (score in the
+  logo slot, no logo/TV pill on final lines, TV slot kept, upcoming lines with logos + TV pill as before) and the Team
+  List; winner/loser classes and weights; phones unchanged; scores fit their slot; "@" column straight; 2 columns at
+  1920. `scale.test.tsx`: score font = largest step that fits; 1-week "logos + scores" < 1.3. `e2e/copy.spec.ts`:
+  a `score` region kind (must hold text pixels) and a test copying the week of Oct 18 (1 and 2 weeks), the Oct 21
+  League List day, BOS's October calendar + a day, and the BOS Team List: score count = 2 × final games. 5 of the
+  new unit tests fail on the code before it (the other 3 check phones stay unchanged); 2 team-calendar matchup tests
+  and the old "scores only in the Team List" test were updated.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, calendar → day, no console errors; week view: 15 lines
   on Nov 2, two weeks around Nov 15 measured (`[project] content …, cols …, cell inner …, line …, 2-col spare …`):
   2 columns with ≥ 3 px spare at 1920 px, "AWAY@HOME" text on every line with the "@" clear of the tricode and logo, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
@@ -213,6 +222,7 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
 
 - **Split (step 1)**: checked as a pure reorganization by dumping every element's computed style (incl. ::before/::after) and box in 10 views × 4 widths from the old and new builds: 60 863 entries, 0 differences (only the enumeration order of custom properties changed). Screenshots differ by a few hundred channel values, the same as two runs of one build (raster noise). Perf after the split: loads 304 / 461 / 283 ms, scroll p95 56 ms (wheel-step method), switches 238 / 62 / 80 / 98 ms.
 - **After step 2 (Today)**: loads 326 / 390 / 264 ms, scroll mean 34.7 / p95 67 ms, switches 238 / 48 / 81 / 93 ms.
+- **After step 3 (scores)**: loads 264 / 402 / 304 ms, scroll mean 32.8 / p95 57 ms, switches 230 / 41 / 85 / 94 ms.
 
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.
@@ -318,6 +328,29 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   click → next frame 49–68 ms in the League List (e2e). **Left out on phones** (desktop only; the phone top bar is
   full). Top bar: still one row at 1920 px (≥ 290 px spare in every view); at 1280 px the league views already took
   two rows before it; the Team List still fits one row (28 px spare).
+
+### Final scores everywhere (2026-10-23)
+- Games with status **final** in the snapshot show their score in every view; games that are over but not final in
+  the snapshot look as before. Same look everywhere: winner's score and tricode bright and bold (700), loser's muted
+  (score 500 muted; tricode muted). The Team List's loser tricode is now muted too (it had only the score muted) so
+  all views read the same. **Desktop/tablet only** for the League List and Team Calendar (`GameCard scores`); phone
+  rows and cells are unchanged (the Team List keeps its scores on phones, as before).
+- **League List**: "BOS 113 @ DET 121" (score after each tricode, before a B2B badge); aria-label adds "final BOS 113,
+  DET 121".
+- **Team Calendar**: "BOS 113 @ DET 121" in the cell; the tip-off time stays (only phone *list* rows drop it). The
+  scale probe is now a final game with 3-digit scores (188–186). **Scale at 1920 × 1080: 1.3 before, 1.3 after**
+  (1280 × 900: 1 → 1). Every final cell of every team is checked unclipped in e2e.
+- **Week view, 2 weeks**: on final lines the score **replaces the logo in its 16 px slot** ("113 BOS @ 121 DET"),
+  right-aligned against the tricode, and the TV pill is dropped (its column stays, so the "@" column stays straight;
+  e2e checks one x per day column). Score font: the largest 0.1 px step that fits — 3 tabular digits measure 1.94 em
+  in the bundled Inter at weight 500–700 (15.52 px at 8 px; 8.5 px → 16.50 px is too wide), so **8.2 px** (15.91 px;
+  measured in Chromium 15.95 of 16.00 px). Tricodes and upcoming lines unchanged (119 px line, 2 columns at 1920 px).
+  Winner tricode bold: widest bold tricode MEM 27.19 px < its 28 px column.
+- **Week view, 1 week**: the option "logos + scores" was checked against the rule: with each score after its tricode
+  at the tricode's 11 px (21.34 px) + 1 px gap, the line is 163.7 px at scale 1, and the 80 % width rule (199.5 px of a
+  249.42 px cell) allows only **1.2 < 1.3**. So 1-week mode uses the **logo-slot layout** too, at scale 1.5 (score
+  12.3 px, 23.92 of a 24 px slot); the scale stays 1.5 at 1920 × 1080 (1.05 at 1280 × 900).
+- Copy as image includes the scores (same components); checked pixel by pixel.
 
 ### Team perspective and back-to-backs (team views, 2026-10-23)
 - **Selected team first**: "BOS vs CHI" at home, "BOS @ DET" away, both logos, in Team List rows and Team Calendar
