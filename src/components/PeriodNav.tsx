@@ -14,9 +14,12 @@ export interface PeriodNavProps {
   /** Title is a button (e.g. opens the week picker). */
   onTitleClick?: () => void;
   titleExpanded?: boolean;
+  /** "Today" button after the next arrow (back to today's games); disabled when already there. */
+  onToday?: () => void;
+  todayDisabled?: boolean;
 }
 
-export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisabled, testId = 'period-title', onTitleClick, titleExpanded }: PeriodNavProps) {
+export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisabled, testId = 'period-title', onTitleClick, titleExpanded, onToday, todayDisabled }: PeriodNavProps) {
   return (
     <div className="ck-nav ck-period">
       <button type="button" className="ck-arrow" aria-label={`Previous ${unit}`} disabled={prevDisabled} onClick={onPrev}>
@@ -37,7 +40,17 @@ export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisab
       <button type="button" className="ck-arrow" aria-label={`Next ${unit}`} disabled={nextDisabled} onClick={onNext}>
         ›
       </button>
+      {onToday && <TodayButton onClick={onToday} disabled={!!todayDisabled} />}
     </div>
+  );
+}
+
+/** Back to today's games (each view decides where that is). */
+export function TodayButton({ onClick, disabled }: { onClick: () => void; disabled: boolean }) {
+  return (
+    <button type="button" className="ck-today" data-testid="today" disabled={disabled} onClick={onClick} title={disabled ? "Showing today's games" : "Back to today's games"}>
+      Today
+    </button>
   );
 }
 

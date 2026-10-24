@@ -83,7 +83,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 194 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 200 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -137,6 +137,10 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   see Decisions; there date, time and matchup always share one line); team list against the served snapshot
   (every game, order, B2B by the calendar-day rule), opens at the next game, top reachable; TV filter in all 4
   views. Screenshots `<project>-<league|team>-<list|calendar>.png` and `<project>-f-*.png`.
+- `today.test.tsx` (jsdom) + `e2e/today.spec.ts` (desktop, desktop-xl): Today in all four views — disabled on load, enabled
+  after moving away, back to the default day / its week (1 and 2 weeks) / current month (and clamped after the season)
+  / next game at the top (real wheel scrolling), right after the › arrow, absent on phones, top bar height unchanged
+  when it toggles, ≤ 40 px at 1920. The 6 unit tests fail on the code before it.
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, calendar → day, no console errors; week view: 15 lines
   on Nov 2, two weeks around Nov 15 measured (`[project] content …, cols …, cell inner …, line …, 2-col spare …`):
   2 columns with ≥ 3 px spare at 1920 px, "AWAY@HOME" text on every line with the "@" clear of the tricode and logo, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
@@ -207,7 +211,8 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
 - Baseline = mean of three measuring runs on the unchanged code before the split (loads 277–319 ms / 401–498 /
   259–315; scroll mean 32–38, p95 58–66; switches 212–276 / 35–48 / 65–87 / 77–125).
 
-- **Split (step 1)**: checked as a pure reorganization by dumping every element's computed style (incl. ::before/::after) and box in 10 views × 4 widths from the old and new builds: 60 863 entries, 0 differences (only the enumeration order of custom properties changed). Screenshots differ by a few hundred channel values, the same as two runs of one build (raster noise). Perf after the split: loads 304 / 461 / 283 ms, scroll p95 56 ms, switches 238 / 62 / 80 / 98 ms.
+- **Split (step 1)**: checked as a pure reorganization by dumping every element's computed style (incl. ::before/::after) and box in 10 views × 4 widths from the old and new builds: 60 863 entries, 0 differences (only the enumeration order of custom properties changed). Screenshots differ by a few hundred channel values, the same as two runs of one build (raster noise). Perf after the split: loads 304 / 461 / 283 ms, scroll p95 56 ms (wheel-step method), switches 238 / 62 / 80 / 98 ms.
+- **After step 2 (Today)**: loads 326 / 390 / 264 ms, scroll mean 34.7 / p95 67 ms, switches 238 / 48 / 81 / 93 ms.
 
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.
@@ -303,6 +308,16 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   note) on hover and keyboard focus; fixed position and clamped into the viewport, so cells with overflow: hidden
   can't clip it (the B2B tooltip is ~330 px, wider than a cell). Replaces the CSS `::after` tooltips. Closes on
   scroll.
+
+- **Today button** (2026-10-23, `TodayButton` in `PeriodNav.tsx`): right after the › arrow, 36 px like the
+  arrows, disabled (35 %) when already there. League List → the default day (same rule as on load, then the list's
+  nearest day when filtered), disabled while that day is at the top; League Calendar → the week of the default day
+  (1 and 2 weeks; count grid → its month); Team Calendar → the current month (clamped into the season's months);
+  Team List (no arrows there; the button stands alone in the top bar) → scrolls the next game not over back to the
+  top (`TeamListView` `handle.toNext`, `onAtNext` re-enables it once scrolled away). Jumps, never smooth-scrolls:
+  click → next frame 49–68 ms in the League List (e2e). **Left out on phones** (desktop only; the phone top bar is
+  full). Top bar: still one row at 1920 px (≥ 290 px spare in every view); at 1280 px the league views already took
+  two rows before it; the Team List still fits one row (28 px spare).
 
 ### Team perspective and back-to-backs (team views, 2026-10-23)
 - **Selected team first**: "BOS vs CHI" at home, "BOS @ DET" away, both logos, in Team List rows and Team Calendar

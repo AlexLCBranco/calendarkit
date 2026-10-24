@@ -13,10 +13,10 @@ import { WEEK_MIN_WIDTH } from './dayflow';
 import { LeagueListView, LeagueListWeek, listDays, listTitle, nearestDay } from './LeagueListView';
 import { LeagueWeekView, type WeekCount } from './LeagueWeekView';
 import { MonthNavigator } from './MonthNavigator';
-import { monthNav, PeriodNav, type PeriodNavProps } from './PeriodNav';
+import { monthNav, PeriodNav, TodayButton, type PeriodNavProps } from './PeriodNav';
 import { Segmented } from './Segmented';
 import { TeamHeader } from './TeamHeader';
-import { TeamListView } from './TeamListView';
+import { TeamListView, type TeamListHandle } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
 import { TeamPicker } from './TeamPicker';
 import { useTooltip } from './Tooltip';
@@ -30,7 +30,7 @@ export { LeagueListView, type LeagueListViewProps } from './LeagueListView';
 export { LeagueWeekView, type LeagueWeekViewProps, type WeekCount } from './LeagueWeekView';
 export { MonthNavigator, type MonthNavigatorProps } from './MonthNavigator';
 export { TeamHeader } from './TeamHeader';
-export { TeamListView, type TeamListViewProps } from './TeamListView';
+export { TeamListView, type TeamListHandle, type TeamListViewProps } from './TeamListView';
 export { TEAM_CELL_MIN_HEIGHT, TEAM_SCALE_FILL, TEAM_SCALE_MAX, TeamMonthGrid, type TeamMonthGridProps } from './TeamMonthGrid';
 export { TeamPicker } from './TeamPicker';
 export { COMPACT_WIDTH, fmtRange, LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
@@ -112,6 +112,8 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const team = state.mode === 'team';
   const today = localDate(now, timeZone);
   const weekView = !team && !list && size.width >= WEEK_MIN_WIDTH;
+  const teamList = useRef<TeamListHandle>(null);
+  const [teamAtNext, setTeamAtNext] = useState(true);
 
   // Top bar navigation for the view on show.
   const days = useMemo(() => listDays(data, state.tvOnly), [data, state.tvOnly]);
@@ -144,6 +146,22 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       titleExpanded: picking,
     };
   } else if (!team) nav = monthNav(leagueMonth, seasonMonths(data), setLeagueMonth);
+
+  // "Today" (desktop/tablet; phones have no room in the top bar): back to today's games in each view. League:
+  // the default day (same rule as on load); Team Calendar: the current month; Team List: the next game.
+  const def = defaultDay(data, now) ?? today;
+  if (nav && !compact) {
+    if (team) {
+      const months = seasonMonths(data);
+      const cur = monthOf(today);
+      const m = months.length && cur < months[0]! ? months[0]! : months.length && cur > months.at(-1)! ? months.at(-1)! : cur;
+      nav = { ...nav, onToday: () => setTeamMonth(m), todayDisabled: teamMonth === m };
+    } else if (list) {
+      const day = nearestDay(days, def);
+      nav = { ...nav, onToday: () => update({ date: day }), todayDisabled: nearestDay(days, state.date) === day };
+    } else if (weekView) nav = { ...nav, onToday: () => update({ date: def }), todayDisabled: weekOf(state.date)[0] === weekOf(def)[0] };
+    else nav = { ...nav, onToday: () => setLeagueMonth(monthOf(def)), todayDisabled: leagueMonth === monthOf(def) };
+  }
 
   // "Copy view as image": render the view off-screen (CaptureStage), copy it, remove it.
   const [capture, setCapture] = useState<(node: HTMLElement) => void>();
@@ -192,6 +210,11 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
             )}
           </div>
         )}
+        {team && list && !compact && (
+          <div className="ck-nav ck-period">
+            <TodayButton onClick={() => teamList.current?.toNext()} disabled={teamAtNext} />
+          </div>
+        )}
         {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
         <label className="ck-check">
           <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact ? 'TV only' : 'TV games only'}
@@ -211,7 +234,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       {team && <TeamHeader teamId={state.teamId} compact={compact} />}
       {team ? (
         list ? (
-          <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
+          <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} handle={teamList} onAtNext={setTeamAtNext} />
         ) : (
           <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} nav={false} />
         )

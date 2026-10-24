@@ -89,3 +89,25 @@
 .ck-popup .ck-count-cell {
   min-height: 40px;
 }
+
+/* "Today": back to today's games, right after the next arrow; same height as the arrows */
+.ck-today {
+  flex: none;
+  height: 36px;
+  padding: 0 12px;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ck-today:hover:not(:disabled) {
+  border-color: var(--ck-accent);
+}
+.ck-today:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
