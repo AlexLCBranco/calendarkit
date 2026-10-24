@@ -1,8 +1,8 @@
-// Team → Calendar: one team's month, a game per day cell, back-to-back bars; content scaled to the cell.
+// Team → Calendar: one team's month (or 1 or 2 weeks), a game per day cell, back-to-back bars; content scaled to the cell.
 
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { hasNationalTv, isOver, monthCells, nationalTv, opponentSecondNight, seasonMonths, teamGames, type B2BPair, type CalendarData } from '../data/model';
+import { addDays, hasNationalTv, isOver, monthCells, nationalTv, opponentSecondNight, seasonMonths, teamGames, type B2BPair, type CalendarData } from '../data/model';
 import { teamThreeInFour, type ThreeInFour } from '../data/scheduleTags';
 import { TEAM_BY_ID } from '../data/teams';
 import { CopyButton } from './CopyButton';
@@ -19,6 +19,8 @@ export const TEAM_SCALE_MAX = 2;
  * chip (a cell with B2B + chip + "Peacock" + "NBC Sports Network" takes 3 tag rows of a 115 px 6-week cell).
  */
 export const TEAM_SCALE_MIN = 0.8;
+/** Week views (1 or 2 week rows): bigger cells, so a larger cap; the probe still decides (see PROJECT.md). */
+export const TEAM_WEEK_SCALE_MAX = 3;
 export const TEAM_SCALE_FILL = 0.9;
 
 /**
@@ -50,18 +52,22 @@ export interface TeamMonthGridProps {
   tvOnly?: boolean;
   /** Own month header (default); off when the host shows the navigation (CalendarView's top bar). */
   nav?: boolean;
+  /** Week views: show `weeks` week rows from `start` (a Sunday) instead of `month`. */
+  weeks?: 1 | 2;
+  start?: string;
 }
 
 type Bar = { kind: 'full' | 'start' | 'end'; i: number; pair: B2BPair };
 
-export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, tvOnly = false, nav = true }: TeamMonthGridProps) {
+export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, tvOnly = false, nav = true, weeks: weekRows, start }: TeamMonthGridProps) {
   const compact = isCompact(size);
   const byDate = useMemo(() => new Map(teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)).map((g) => [g.dateEt, g])), [data, teamId, tvOnly]);
   const b2b = useTeamB2B(data, teamId);
   const tif = teamThreeInFour(data, teamId);
   const [selected, setSelected] = useState<string | undefined>();
   const selectedGame = selected ? byDate.get(selected) : undefined;
-  const cells = monthCells(month);
+  const weekView = !!weekRows && !!start;
+  const cells = useMemo(() => (weekView ? Array.from({ length: 7 * weekRows }, (_, i) => addDays(start, i)) : monthCells(month)), [weekView, weekRows, start, month]);
   const weeks = cells.length / 7;
   const visible = (g: ScheduleGame) => !tvOnly || hasNationalTv(g);
 
@@ -81,7 +87,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
       }
     }
     return out;
-  }, [month, b2b, tvOnly]);
+  }, [cells, b2b, tvOnly]);
 
   const cardProps = (g: ScheduleGame) => ({
     game: g,
@@ -96,10 +102,11 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
 
   // Desktop/tablet: cell content scaled (CSS zoom) to use the cell. The scale is the largest (0.05 steps, from
   // TEAM_SCALE_MAX down to TEAM_SCALE_MIN) at which the fullest possible cell (probeCard) fits a cell of a 6-week month — the smallest
-  // cells — so it doesn't change from month to month. The probe is rendered only while measuring, before paint.
+  // cells — so it doesn't change from month to month. Week views: the shown cells (all the same size), up to
+  // TEAM_WEEK_SCALE_MAX. The probe is rendered only while measuring, before paint.
   const probe = useMemo(() => probeCard(data), [data]);
   const [scale, setScale] = useState({ key: '', s: 1 });
-  const key = `${size.width}x${size.height}`;
+  const key = `${size.width}x${size.height}${weekView ? `w${weekRows}` : ''}`;
   const measuring = !compact && !!probe && scale.key !== key;
   const grid = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -111,11 +118,11 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
     const px = (v: string) => parseFloat(v) || 0;
     const c = cell.getBoundingClientRect();
     const gap = px(getComputedStyle(g).rowGap);
-    const h6 = Math.max(TEAM_CELL_MIN_HEIGHT, (weeks * (c.height + gap)) / 6 - gap);
+    const h6 = weekView ? c.height : Math.max(TEAM_CELL_MIN_HEIGHT, (weeks * (c.height + gap)) / 6 - gap);
     const num = cell.querySelector('.ck-daynum')!.getBoundingClientRect();
     const room = (h6 - (num.bottom - c.top) - px(cs.rowGap) - px(cs.paddingBottom) - px(cs.borderBottomWidth)) * TEAM_SCALE_FILL;
     card.parentElement!.style.width = `${c.width}px`;
-    let s = TEAM_SCALE_MAX;
+    let s = weekView ? TEAM_WEEK_SCALE_MAX : TEAM_SCALE_MAX;
     for (; s > TEAM_SCALE_MIN; s = Math.round((s - 0.05) * 100) / 100) {
       card.style.zoom = String(s);
       if (card.getBoundingClientRect().height <= room && card.scrollWidth <= card.clientWidth) break;
@@ -125,7 +132,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
   const s = compact ? 1 : scale.s;
 
   return (
-    <section className="ck-team-month" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} schedule`}>
+    <section className="ck-team-month" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} schedule`} data-span={weekView ? `${weekRows}w` : 'month'}>
       {nav && <PeriodNav {...monthNav(month, seasonMonths(data), onMonthChange)} />}
       <div
         ref={grid}
@@ -152,7 +159,8 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
           const cls = `ck-cell ck-day-cell${g ? ' ck-cell-game' : ''}${g && isOver(g, now) ? ' ck-cell-past' : ''}${selected === date ? ' ck-cell-selected' : ''}`;
           return (
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
-              <span className="ck-daynum">{Number(date.slice(8))}</span>
+              {/* week views can cross a month: the 1st says which */}
+              <span className="ck-daynum">{weekView && date.endsWith('-01') ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
               {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
               {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
             </div>

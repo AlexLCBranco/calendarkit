@@ -37,6 +37,8 @@ export { COMPACT_WIDTH, fmtRange, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, t
 
 export type CalendarMode = 'team' | 'league';
 export type CalendarLayout = 'list' | 'calendar';
+/** Team → Calendar: a month grid (default) or 1 or 2 week rows. */
+export type TeamSpan = 'month' | 1 | 2;
 
 export interface CalendarState {
   mode: CalendarMode;
@@ -50,6 +52,8 @@ export interface CalendarState {
   showRest: boolean;
   /** League → Calendar: 1 or 2 week rows. */
   weeks: WeekCount;
+  /** Team → Calendar: month, 1 week or 2 weeks; kept across teams and List ↔ Calendar. */
+  teamSpan: TeamSpan;
 }
 
 export interface CalendarViewProps {
@@ -88,9 +92,12 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     tvOnly: initial?.tvOnly ?? false,
     showRest: initial?.showRest ?? false,
     weeks: initial?.weeks === 2 ? 2 : 1,
+    teamSpan: initial?.teamSpan === 1 || initial?.teamSpan === 2 ? initial.teamSpan : 'month',
   }));
   const [leagueMonth, setLeagueMonth] = useState(() => monthOf(state.date));
   const [teamMonth, setTeamMonth] = useState(() => monthOf(teamDefaultDate(data, state.teamId, now) ?? state.date));
+  // Team week views: the first shown day (a Sunday)
+  const [teamWeek, setTeamWeek] = useState(() => weekOf(teamDefaultDate(data, state.teamId, now) ?? state.date)[0]!);
   const [picking, setPicking] = useState(false);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -107,7 +114,9 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   );
   const pickTeam = (teamId: number) => {
     update({ teamId });
-    setTeamMonth(monthOf(teamDefaultDate(data, teamId, now) ?? state.date));
+    const d = teamDefaultDate(data, teamId, now) ?? state.date;
+    setTeamMonth(monthOf(d));
+    setTeamWeek(weekOf(d)[0]!);
   };
   const setLayout = (layout: CalendarLayout) => {
     if (layout === 'calendar') setLeagueMonth(monthOf(state.date));
@@ -120,13 +129,32 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const team = state.mode === 'team';
   const today = localDate(now, timeZone);
   const weekView = !team && !list && size.width >= WEEK_MIN_WIDTH;
+  // Team → Calendar week views (desktop/tablet; phones keep the month)
+  const teamWeeks = team && !list && !compact && state.teamSpan !== 'month' ? state.teamSpan : undefined;
+  // Month → week: the week of today if today is in the shown month, else the month's first week. Week → month: the
+  // month of the first shown day. 1 ↔ 2 weeks keeps the first day.
+  const setTeamSpan = (teamSpan: TeamSpan) => {
+    if (teamSpan !== 'month' && state.teamSpan === 'month') setTeamWeek(weekOf(monthOf(today) === teamMonth ? today : `${teamMonth}-01`)[0]!);
+    if (teamSpan === 'month' && state.teamSpan !== 'month') setTeamMonth(monthOf(teamWeek));
+    update({ teamSpan });
+  };
   const teamList = useRef<TeamListHandle>(null);
   const [teamAtNext, setTeamAtNext] = useState(true);
 
   // Top bar navigation for the view on show.
   const days = useMemo(() => listDays(data, state.tvOnly), [data, state.tvOnly]);
   let nav: PeriodNavProps | undefined;
-  if (team && !list) nav = monthNav(teamMonth, seasonMonths(data), setTeamMonth);
+  if (teamWeeks) {
+    const span = 7 * teamWeeks;
+    nav = {
+      title: fmtRange(teamWeek, addDays(teamWeek, span - 1)),
+      unit: teamWeeks === 1 ? 'week' : '2 weeks',
+      onPrev: () => setTeamWeek(addDays(teamWeek, -span)),
+      onNext: () => setTeamWeek(addDays(teamWeek, span)),
+      prevDisabled: teamWeek <= weekOf(data.dates[0] ?? teamWeek)[0]!,
+      nextDisabled: addDays(teamWeek, span) > (data.dates.at(-1) ?? teamWeek),
+    };
+  } else if (team && !list) nav = monthNav(teamMonth, seasonMonths(data), setTeamMonth);
   else if (!team && list) {
     const cur = nearestDay(days, state.date);
     const i = days.findIndex((d) => d.date === cur);
@@ -159,7 +187,12 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   // the default day (same rule as on load); Team Calendar: the current month; Team List: the next game.
   const def = defaultDay(data, now) ?? today;
   if (nav && !compact) {
-    if (team) {
+    if (teamWeeks) {
+      const first = weekOf(data.dates[0] ?? today)[0]!;
+      const last = weekOf(data.dates.at(-1) ?? today)[0]!;
+      const w = weekOf(today)[0]! < first ? first : weekOf(today)[0]! > last ? last : weekOf(today)[0]!;
+      nav = { ...nav, onToday: () => setTeamWeek(w), todayDisabled: teamWeek === w };
+    } else if (team) {
       const months = seasonMonths(data);
       const cur = monthOf(today);
       const m = months.length && cur < months[0]! ? months[0]! : months.length && cur > months.at(-1)! ? months.at(-1)! : cur;
@@ -224,6 +257,14 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           </div>
         )}
         {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
+        {team && !list && !compact && (
+          <Segmented
+            label="Span"
+            value={String(state.teamSpan) as '1' | '2' | 'month'}
+            options={[['1', '1 week'], ['2', '2 weeks'], ['month', 'Month']]}
+            onChange={(v) => setTeamSpan(v === 'month' ? 'month' : v === '2' ? 2 : 1)}
+          />
+        )}
         {team && list && !compact && (
           <label className="ck-check">
             <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Show rest days
@@ -252,7 +293,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         list ? (
           <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} handle={teamList} onAtNext={setTeamAtNext} />
         ) : (
-          <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} nav={false} />
+          <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
         )
       ) : list ? (
         <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} nav={false} />
@@ -275,7 +316,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
             list ? (
               <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} />
             ) : (
-              <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} />
+              <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
             )
           ) : list ? (
             <LeagueListWeek data={data} date={state.date} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} />

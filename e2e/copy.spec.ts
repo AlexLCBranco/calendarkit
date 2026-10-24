@@ -221,6 +221,20 @@ test('whole view: team calendar and the full team list', async ({ page }) => {
   expect(rr.height / withRest.target.ratio, 'taller with the rest rows').toBeGreaterThan(r.height / view.target.ratio);
 });
 
+test('whole view and a day: team calendar in 1 and 2 weeks', async ({ page }) => {
+  for (const span of ['1w', '2w']) {
+    await open(page, `?view=team&layout=calendar&team=LAL&span=${span}`);
+    await expect(page.locator('.ck-team-month')).toHaveAttribute('data-span', span);
+    const view = await copyView(page);
+    // every game card of the shown weeks is in the image: 2 logos each, + the team header's
+    const cards = await page.locator('.ck-team-grid .ck-card').count();
+    expect(cards).toBeGreaterThan(span === '1w' ? 1 : 4);
+    expect(view.target.regions.filter((r) => r.kind === 'logo').length).toBe(2 * cards + 1);
+    await check(page, `view-team-calendar-${span}`, view, ['logo', 'text']);
+    await check(page, `day-team-calendar-${span}`, await copyPart(page, page.locator('.ck-team-grid .ck-day-cell:has(.ck-card)').first(), 'copy-day'), ['logo', 'text']);
+  }
+});
+
 test('whole view: league list copies the whole week', async ({ page }) => {
   await open(page, '?view=league&layout=list&date=2026-11-15');
   const view = await copyView(page);

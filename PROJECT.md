@@ -606,6 +606,22 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     every set, rest rows, TV filter, narrow widths, calendar chip for every LAL month, probe), `e2e/fatigue.spec.ts`
     (all 30 teams at 1280/1920: fixed x, left-aligned, one line, nothing clipped; tooltips hover + focus), copy e2e
     (`tif` regions must be purple; opponent 2/2 orange).
+- **Team Calendar 1 week | 2 weeks | Month** (feature C): segmented control "1 week | 2 weeks | Month" (Team →
+  Calendar, desktop/tablet; phones keep the month) — state `teamSpan`, URL `span=1w|2w` (none = Month, so old links
+  open Month), kept across teams and List ↔ Calendar. `TeamMonthGrid` takes `weeks` + `start` (a Sunday) and renders
+  1 or 2 Sun–Sat rows with the same cells (empty cells = rest days; the 1st of a month reads "Nov 1"), same B2B bar
+  rules (full bar inside a row, Sat → Sun halves on consecutive rows, a half with an arrow toward a night outside the
+  shown weeks). Month → weeks: the week of today if today is in the shown month, else the week of the month's 1st;
+  weeks → Month: the month of the first shown day; 1 ↔ 2 weeks keeps the first day; prev/next ±1/2 weeks, disabled
+  at the season's ends; Today → the current week (clamped to the season); picking a team → the week of its next game
+  (as Month does with its month). Title like the league week view ("Oct 25 – 31, 2026").
+  - **Scale** (same probe, measured on the shown cells; cap `TEAM_WEEK_SCALE_MAX` = 3): **1920 × 1080: 1 week 2.0, 2
+    weeks 2.0** (cells 259 × 913 / 259 × 455 px; bound by width: "Peacock · NBC Sports Network" pills and "BOS 188 @
+    DET 186" can't grow past the 259 px cell); **1280 × 900: 1.3 and 1.3** (173 × 583 / 173 × 290 px). No page
+    scroll, nothing clipped (e2e walks every week of BOS, LAL, ORL in both modes at both sizes).
+  - Tests: `tests/teamweeks.test.tsx` (control, URL, phones, start-week rule, prev/next/ends, Today, Month ↔ weeks,
+    every game in its cell for every week of BOS and LAL in both modes, B2B full/Sat→Sun/edge halves, TV filter),
+    `e2e/teamweeks.spec.ts`, copy e2e (`view-team-calendar-1w/2w.png`, `day-team-calendar-1w/2w.png`).
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId
