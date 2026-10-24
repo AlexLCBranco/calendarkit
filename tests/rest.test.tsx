@@ -2,7 +2,7 @@
 // Team List "Show rest days": one quiet row per day without a game of the team, between its first and last game.
 // Expected rest days are worked out here from the feed's own game dates with Date arithmetic (not model.ts helpers).
 
-import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { CalendarView } from '../src/components/CalendarView';
 import { hasNationalTv, teamGames, teamRestDays } from '../src/data/model';
@@ -122,9 +122,9 @@ describe('Team List rest rows', () => {
   it('whole-view copy renders the rest rows too', async () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS, showRest: true }} />);
     // the capture stage mounts while copying; jsdom can't rasterize, so check what it renders and stop the copy
-    // there (jsdom has no img.decode: an image that never decodes keeps the copy waiting until unmount)
+    // there: jsdom has no img.decode, so the stub never resolves and the copy waits (it outlives the test; this jsdom
+    // is this file's alone)
     Object.defineProperty(HTMLImageElement.prototype, 'decode', { value: () => new Promise(() => {}), configurable: true });
-    onTestFinished(() => void delete (HTMLImageElement.prototype as { decode?: unknown }).decode);
     fireEvent.click(screen.getByTestId('copy-view'));
     const stage = await waitFor(() => document.querySelector<HTMLElement>('.ck-capture')!);
     expect([...stage.querySelectorAll('[data-rest]')].map((e) => e.getAttribute('data-rest'))).toEqual(expectedRest(TEAM.BOS));

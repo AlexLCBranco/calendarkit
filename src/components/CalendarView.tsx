@@ -21,7 +21,7 @@ import { TeamMonthGrid } from './TeamMonthGrid';
 import { TeamPicker } from './TeamPicker';
 import { useTooltip } from './Tooltip';
 import { WeekPicker } from './WeekPicker';
-import { fmtRange, isCompact, LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
+import { fmtRange, isCompact, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
 import './calendar.css';
 
 // The widgets live in their own files; re-exported here so hosts and tests keep one entry point.
@@ -31,9 +31,9 @@ export { LeagueWeekView, type LeagueWeekViewProps, type WeekCount } from './Leag
 export { MonthNavigator, type MonthNavigatorProps } from './MonthNavigator';
 export { TeamHeader } from './TeamHeader';
 export { TeamListView, type TeamListHandle, type TeamListViewProps } from './TeamListView';
-export { TEAM_CELL_MIN_HEIGHT, TEAM_SCALE_FILL, TEAM_SCALE_MAX, TeamMonthGrid, type TeamMonthGridProps } from './TeamMonthGrid';
+export { TEAM_CELL_MIN_HEIGHT, TEAM_SCALE_FILL, TEAM_SCALE_MAX, TEAM_SCALE_MIN, TeamMonthGrid, type TeamMonthGridProps } from './TeamMonthGrid';
 export { TeamPicker } from './TeamPicker';
-export { COMPACT_WIDTH, fmtRange, LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
+export { COMPACT_WIDTH, fmtRange, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
 
 export type CalendarMode = 'team' | 'league';
 export type CalendarLayout = 'list' | 'calendar';
@@ -263,7 +263,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       )}
       {tooltip.node}
       {capture && (
-        <CaptureStage onReady={capture} width={(list ? Math.min(size.width, LIST_MAX_WIDTH) : size.width) + 2 * CAPTURE_PAD} className={`${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`} minHeight={list || compact ? undefined : size.height}>
+        <CaptureStage onReady={capture} width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : size.width) + 2 * CAPTURE_PAD} className={`${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`} minHeight={list || compact ? undefined : size.height}>
           <div className="ck-capture-head">
             {title && <span className="ck-title">{title}</span>}
             {capturePeriod && <span className="ck-capture-period">{capturePeriod}</span>}

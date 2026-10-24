@@ -1,0 +1,118 @@
+// Schedule-fatigue columns in the Team List (desktop 1280 and 1920): every row of all 30 teams — the selected team's
+// tricode at one x, both columns' labels left-aligned in their columns, the tag area at one x, one line, nothing
+// clipped, no sideways scroll; tooltips on hover and focus. Prints the widest content per column.
+
+import { expect, test, type Page } from '@playwright/test';
+
+const NOW = new Date('2026-11-15T15:00:00Z');
+
+test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop' && info.project.name !== 'desktop-xl', 'desktop widths only'));
+
+async function open(page: Page, search: string) {
+  await page.clock.setFixedTime(NOW);
+  await page.goto(`/${search}`);
+  await expect(page.getByTestId('team-list').locator('article').first()).toBeAttached();
+}
+
+const TRICODES = ['ATL', 'BKN', 'BOS', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW', 'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK', 'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS'];
+
+test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing clipped', async ({ page }, info) => {
+  test.setTimeout(240_000);
+  const xs = { self: new Set<number>(), oppCol: new Set<number>(), tags: new Set<number>(), teamCol: new Set<number>() };
+  const bad: string[] = [];
+  let rows = 0;
+  let widest = { team: 0, opp: 0 };
+  for (const tri of TRICODES) {
+    await open(page, `?view=team&layout=list&team=${tri}&rest=1`);
+    await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+    const r = await page.evaluate(() => {
+      const round = (n: number) => Math.round(n * 10) / 10;
+      const root = document.querySelector('.ck-root')!.getBoundingClientRect();
+      const out = { rows: 0, self: [] as number[], oppCol: [] as number[], tags: [] as number[], teamCol: [] as number[], bad: [] as string[], widestTeam: 0, widestOpp: 0, restCols: 0 };
+      for (const c of document.querySelectorAll<HTMLElement>('.ck-team-rows > .ck-card')) {
+        out.rows++;
+        const name = c.getAttribute('aria-label')!.slice(0, 40);
+        const box = (s: string) => c.querySelector(s)!.getBoundingClientRect();
+        const team = c.querySelector<HTMLElement>('[data-testid="fatigue-team"]');
+        const opp = c.querySelector<HTMLElement>('[data-testid="fatigue-opp"]');
+        if (!team || !opp) {
+          out.bad.push(`${name}: no fatigue columns`);
+          continue;
+        }
+        out.self.push(round(box('.ck-self').left));
+        out.tags.push(round(box('.ck-tags').left));
+        out.oppCol.push(round(opp.getBoundingClientRect().left));
+        out.teamCol.push(round(team.getBoundingClientRect().left));
+        // labels left-aligned: the first one starts at the column's left; together they fit the column
+        for (const col of [team, opp]) {
+          const cb = col.getBoundingClientRect();
+          const kids = [...col.children].map((k) => k.getBoundingClientRect());
+          if (kids.length && Math.abs(kids[0]!.left - cb.left) > 0.5) out.bad.push(`${name}: label not left-aligned`);
+          if (kids.length && kids.at(-1)!.right > cb.right + 0.5) out.bad.push(`${name}: column overflows by ${kids.at(-1)!.right - cb.right}`);
+          if (new Set(kids.map((k) => Math.round(k.top))).size > 1) out.bad.push(`${name}: column wraps`);
+          const used = kids.length ? kids.at(-1)!.right - kids[0]!.left : 0;
+          if (col === team) out.widestTeam = Math.max(out.widestTeam, used);
+          else out.widestOpp = Math.max(out.widestOpp, used);
+        }
+        // one line: every part's middle on the same line, tags on one line; nothing outside the row or the widget
+        const parts = [...c.children].filter((k) => getComputedStyle(k).position !== 'absolute' && k.getBoundingClientRect().width > 0).map((k) => k.getBoundingClientRect());
+        if (new Set(parts.map((p) => Math.round(p.top + p.height / 2))).size > 1) out.bad.push(`${name}: wraps`);
+        if (new Set([...c.querySelectorAll('.ck-tags > *')].map((k) => Math.round(k.getBoundingClientRect().top))).size > 1) out.bad.push(`${name}: tags wrap`);
+        const cb = c.getBoundingClientRect();
+        if (c.scrollWidth > c.clientWidth || cb.right > root.right + 0.5 || parts.some((p) => p.right > cb.right + 0.5)) out.bad.push(`${name}: clipped`);
+      }
+      out.restCols = document.querySelectorAll('.ck-rest-row .ck-fat').length;
+      return out;
+    });
+    rows += r.rows;
+    r.self.forEach((x) => xs.self.add(x));
+    r.oppCol.forEach((x) => xs.oppCol.add(x));
+    r.tags.forEach((x) => xs.tags.add(x));
+    r.teamCol.forEach((x) => xs.teamCol.add(x));
+    bad.push(...r.bad.map((b) => `${tri} ${b}`));
+    expect(r.restCols, `${tri} rest rows have no columns`).toBe(0);
+    widest = { team: Math.max(widest.team, r.widestTeam), opp: Math.max(widest.opp, r.widestOpp) };
+  }
+  const sideways = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  const widths = await page.evaluate(() => ({
+    team: document.querySelector('.ck-fat-team')!.getBoundingClientRect().width,
+    opp: document.querySelector('.ck-fat-opp')!.getBoundingClientRect().width,
+    list: document.querySelector('.ck-team-list')!.getBoundingClientRect().width,
+  }));
+  console.log(
+    `[fatigue] ${info.project.name}: ${rows} rows, list ${widths.list} px, team column ${widths.team} px (widest ${widest.team.toFixed(1)}), opponent column ${widths.opp} px (widest ${widest.opp.toFixed(1)}), x: self ${[...xs.self]}, tags ${[...xs.tags]}`,
+  );
+  expect(rows).toBeGreaterThanOrEqual(2400);
+  expect(bad).toEqual([]);
+  expect([...xs.self]).toHaveLength(1);
+  expect([...xs.teamCol]).toHaveLength(1);
+  expect([...xs.oppCol]).toHaveLength(1);
+  expect([...xs.tags]).toHaveLength(1);
+  expect(sideways).toBeLessThanOrEqual(0);
+});
+
+test('fatigue tooltips on hover and focus: 3-in-4 sets line by line, opponent 2/2', async ({ page }) => {
+  await open(page, '?view=team&layout=list&team=BOS');
+  const tip = page.getByTestId('tooltip');
+  const chip = page.getByTestId('tif').first();
+  await chip.scrollIntoViewIfNeeded();
+  await chip.hover();
+  const text = (await chip.getAttribute('data-tip'))!;
+  await expect(tip).toHaveText(text.replace(/\n/g, ' ')); // toHaveText collapses whitespace
+  // header + one line per set, each on its own line
+  const lines = await tip.evaluate((t) => Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight)));
+  expect(lines).toBe(text.split('\n').length);
+  const box = await tip.boundingBox();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.mouse.move(5, 5);
+  await expect(tip).toHaveCount(0);
+  const opp = page.locator('.ck-b2b-opp').first();
+  await opp.scrollIntoViewIfNeeded();
+  await opp.focus();
+  await expect(tip).toHaveText(/^[A-Z]{3} on 2nd night of a back-to-back · played (vs|@) [A-Z]{3} yesterday$/);
+  const oc = page.getByTestId('tif-opp').first();
+  await oc.scrollIntoViewIfNeeded();
+  await oc.focus();
+  await expect(tip).toHaveText(/^[A-Z]{3}: 3 games in 4 days — (set|\d sets):/);
+});

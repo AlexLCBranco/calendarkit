@@ -3,9 +3,10 @@
 import { useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import { hasNationalTv, isOver, opponentSecondNight, teamGames, teamRestDays, teamSeason, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
+import { teamThreeInFour } from '../data/scheduleTags';
 import { TEAM_BY_ID } from '../data/teams';
 import { GameCard } from './GameCard';
-import { fmtDate, isCompact, useTeamB2B, type WidgetSize } from './widget';
+import { fmtDate, isCompact, TEAM_LIST_MAX_WIDTH, useTeamB2B, type WidgetSize } from './widget';
 
 export interface TeamListViewProps {
   data: CalendarData;
@@ -27,6 +28,9 @@ export interface TeamListHandle {
   toNext: () => void;
 }
 
+/** Team list rows get the fatigue columns where the whole TEAM_LIST_MAX_WIDTH column fits (desktop). */
+export const FATIGUE_COLUMNS_MIN_WIDTH = TEAM_LIST_MAX_WIDTH;
+
 /** "Sun 15/11" */
 export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })} ${date.slice(8)}/${date.slice(5, 7)}`;
 
@@ -41,6 +45,8 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, size, now
   const rows = useMemo(() => (showRest ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, data, teamId]);
   const b2b = useTeamB2B(data, teamId);
   const season = useMemo(() => teamSeason(data, teamId), [data, teamId]);
+  const tif = teamThreeInFour(data, teamId);
+  const cols = !compact && size.width >= FATIGUE_COLUMNS_MIN_WIDTH;
   const next = (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.gameId;
   const scroller = useRef<HTMLDivElement>(null);
   // scroll offset that puts the next game at the top (as far as the list can scroll)
@@ -77,6 +83,9 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, size, now
                 teamFirst
                 b2b={b2b.byGame.get(g.gameId)}
                 opponentB2B={opponentSecondNight(data, g, teamId)}
+                tif={cols ? tif.get(g.gameId) : undefined}
+                opponentTif={cols ? opponentTif(data, g, teamId) : undefined}
+                fatigueColumns={cols}
                 now={now}
                 timeZone={timeZone}
                 size={compact ? 'compact' : 'regular'}
@@ -104,4 +113,10 @@ function withRest(games: ScheduleGame[], rest: string[]): (ScheduleGame | string
     out.push(g);
   }
   return out.concat(rest.slice(r));
+}
+
+/** The opponent's 3-in-4 for this game, over the opponent's own schedule. */
+function opponentTif(data: CalendarData, g: ScheduleGame, teamId: number) {
+  const opp = g.homeTeam.teamId === teamId ? g.awayTeam.teamId : g.homeTeam.teamId;
+  return opp ? teamThreeInFour(data, opp).get(g.gameId) : undefined;
 }

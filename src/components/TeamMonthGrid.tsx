@@ -3,6 +3,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { hasNationalTv, isOver, monthCells, nationalTv, opponentSecondNight, seasonMonths, teamGames, type B2BPair, type CalendarData } from '../data/model';
+import { teamThreeInFour, type ThreeInFour } from '../data/scheduleTags';
 import { TEAM_BY_ID } from '../data/teams';
 import { CopyButton } from './CopyButton';
 import { GameCard } from './GameCard';
@@ -13,6 +14,11 @@ import { fmtDate, isCompact, useTeamB2B, WEEKDAYS, type WidgetSize } from './wid
 export const TEAM_CELL_MIN_HEIGHT = 92;
 /** Team calendar (desktop/tablet): largest content scale, and the share of a cell's free height it may use. */
 export const TEAM_SCALE_MAX = 2;
+/**
+ * Smallest scale (desktop/tablet). Below 1 only where even 1 doesn't fit the fullest cell: 1280 × 900 since the 3-in-4
+ * chip (a cell with B2B + chip + "Peacock" + "NBC Sports Network" takes 3 tag rows of a 115 px 6-week cell).
+ */
+export const TEAM_SCALE_MIN = 0.8;
 export const TEAM_SCALE_FILL = 0.9;
 
 /**
@@ -26,7 +32,9 @@ function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefin
   // final with 3-digit scores (tabular digits: any 3 are as wide), so a cell with a score fits too
   const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
   const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
-  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, size: 'compact' };
+  // and the 3rd game of a 3-in-4 ("3-in-4 · 3rd": the widest chip text)
+  const tif: ThreeInFour = { position: 3, sets: [] };
+  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, size: 'compact' };
 }
 
 export interface TeamMonthGridProps {
@@ -50,6 +58,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
   const compact = isCompact(size);
   const byDate = useMemo(() => new Map(teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)).map((g) => [g.dateEt, g])), [data, teamId, tvOnly]);
   const b2b = useTeamB2B(data, teamId);
+  const tif = teamThreeInFour(data, teamId);
   const [selected, setSelected] = useState<string | undefined>();
   const selectedGame = selected ? byDate.get(selected) : undefined;
   const cells = monthCells(month);
@@ -78,14 +87,15 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
     game: g,
     teamId,
     b2b: b2b.byGame.get(g.gameId),
+    tif: compact ? undefined : tif.get(g.gameId),
     opponentB2B: opponentSecondNight(data, g, teamId),
     now,
     timeZone,
   });
   const place = (i: number): CSSProperties => ({ gridRow: Math.floor(i / 7) + 2, gridColumn: (i % 7) + 1 });
 
-  // Desktop/tablet: cell content scaled (CSS zoom) to use the cell. The scale is the largest (0.05 steps, up to
-  // TEAM_SCALE_MAX) at which the fullest possible cell (probeCard) fits a cell of a 6-week month — the smallest
+  // Desktop/tablet: cell content scaled (CSS zoom) to use the cell. The scale is the largest (0.05 steps, from
+  // TEAM_SCALE_MAX down to TEAM_SCALE_MIN) at which the fullest possible cell (probeCard) fits a cell of a 6-week month — the smallest
   // cells — so it doesn't change from month to month. The probe is rendered only while measuring, before paint.
   const probe = useMemo(() => probeCard(data), [data]);
   const [scale, setScale] = useState({ key: '', s: 1 });
@@ -106,11 +116,11 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
     const room = (h6 - (num.bottom - c.top) - px(cs.rowGap) - px(cs.paddingBottom) - px(cs.borderBottomWidth)) * TEAM_SCALE_FILL;
     card.parentElement!.style.width = `${c.width}px`;
     let s = TEAM_SCALE_MAX;
-    for (; s > 1; s = Math.round((s - 0.05) * 100) / 100) {
+    for (; s > TEAM_SCALE_MIN; s = Math.round((s - 0.05) * 100) / 100) {
       card.style.zoom = String(s);
       if (card.getBoundingClientRect().height <= room && card.scrollWidth <= card.clientWidth) break;
     }
-    setScale({ key, s: Math.max(1, s) });
+    setScale({ key, s: Math.max(TEAM_SCALE_MIN, s) });
   });
   const s = compact ? 1 : scale.s;
 

@@ -4,6 +4,7 @@
 import { Fragment } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { finalScore, isOver, markers, nationalTv, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine } from '../data/model';
+import { threeInFourLabel, threeInFourTip, type ThreeInFour } from '../data/scheduleTags';
 import { teamLogo } from '../data/teams';
 import { CopyButton } from './CopyButton';
 import './calendar.css';
@@ -28,6 +29,15 @@ export interface GameCardProps {
   shortB2B?: boolean;
   /** Team view: tooltip when the opponent is on the 2nd night of a back-to-back (orange dot on its tricode). */
   opponentB2B?: string;
+  /** Team view: the selected team's 3-in-4 position and sets for this game ("3-in-4 · 2nd" chip). */
+  tif?: ThreeInFour;
+  /** Team view: the opponent's 3-in-4 over its own schedule (lighter chip; only shown with `fatigueColumns`). */
+  opponentTif?: ThreeInFour;
+  /**
+   * Team list (desktop): schedule fatigue in two fixed-width columns — the team's B2B label + 3-in-4 chip between the
+   * time and the team, the opponent's "2/2" + 3-in-4 chip right after the opponent — instead of among the tags.
+   */
+  fatigueColumns?: boolean;
   /** Current time (ms). Decides whether the game is over (rotationkit action). */
   now: number;
   /** IANA zone for tip-off; default: the browser's local zone. */
@@ -89,10 +99,29 @@ export function B2BLabel({ night, short = false }: { night: B2BNight; short?: bo
   );
 }
 
+/** "3-in-4 · 2nd" (purple; the 3rd game stronger); tooltip lists every set. `opp`: the opponent's, lighter. */
+export function TifChip({ tif, team, opp = false }: { tif: ThreeInFour; team?: string; opp?: boolean }) {
+  const tip = threeInFourTip(tif, opp ? team : undefined);
+  return (
+    <span
+      className={`ck-tif ck-tif-pos-${tif.position}${opp ? ' ck-tif-opp' : ''}`}
+      data-testid={opp ? 'tif-opp' : 'tif'}
+      data-position={tif.position}
+      data-sets={tif.sets.length}
+      data-tip={tip}
+      aria-label={tip}
+      role="img"
+      tabIndex={0}
+    >
+      {threeInFourLabel(tif)}
+    </span>
+  );
+}
+
 /** Orange dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, opponentTif, fatigueColumns = false, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -154,10 +183,13 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
     ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}` : ''}${seasonText ? `, ${seasonText}` : ''}`
     : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}` : ''}`;
   const bracket = side && b2b.length ? b2b.map((n) => n.night).join(' ') : undefined;
+  const cols = fatigueColumns && !!side;
+  const b2bLabels = side && b2b.map((n) => <B2BLabel key={n.night} night={n} short={shortB2B} />);
+  const tifChip = side && tif && <TifChip tif={tif} />;
 
   return (
     <article
-      className={`ck-card ck-card-${size}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}${result ? ' ck-card-final' : ''}`}
+      className={`ck-card ck-card-${size}${cols ? ' ck-card-cols' : ''}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}${result ? ' ck-card-final' : ''}`}
       data-game-id={game.gameId}
       data-next={next || undefined}
       data-b2b={bracket}
@@ -170,9 +202,26 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
         {tip.time}
         {tip.dayOffset !== 0 && <span className="ck-dayoff" title="Local calendar day after the NBA game date">{` (${tip.dayOffset > 0 ? '+' : ''}${tip.dayOffset})`}</span>}
       </span>
+      {cols && (
+        <span className="ck-fat ck-fat-team" data-testid="fatigue-team">
+          {b2bLabels}
+          {tifChip}
+        </span>
+      )}
       {matchup}
+      {cols && (
+        <span className="ck-fat ck-fat-opp" data-testid="fatigue-opp">
+          {opponentB2B && (
+            <span className="ck-b2b-opp" data-tip={opponentB2B} aria-label={opponentB2B} role="img" tabIndex={0}>
+              2/2
+            </span>
+          )}
+          {opponentTif && <TifChip tif={opponentTif} team={teamLabel(side.opponent)} opp />}
+        </span>
+      )}
       <span className="ck-tags">
-        {side && b2b.map((n) => <B2BLabel key={n.night} night={n} short={shortB2B} />)}
+        {!cols && b2bLabels}
+        {!cols && tifChip}
         {marks.map((m) => (
           <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
             {size === 'compact' ? m.short : m.long}

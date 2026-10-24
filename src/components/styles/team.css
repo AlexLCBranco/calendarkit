@@ -222,3 +222,60 @@
   font-style: italic;
   letter-spacing: 0.02em;
 }
+
+/* 3-in-4 chip (ported from rotationkit .chip-tag.tif): purple, the 3rd game of a set stronger. */
+.ck-tif {
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #2a2140;
+  color: #c4b5fd;
+  border: 1px solid #4c3d75;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.ck-tif-pos-3 {
+  background: #3a2160;
+  color: #e9d5ff;
+  border-color: #7c4dcc;
+}
+/* Team list (desktop): fixed-width fatigue columns, so the selected team (after the first) and the tags (after the
+   second) start at the same x on every row. Widths fit the widest real content ("2/2 · AA ✈" + "3-in-4 · 3rd";
+   "2/2" + "3-in-4 · 3rd" at 10 px: 152.7 / 101.4 px), measured over all 30 teams (e2e). */
+.ck-fat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.ck-fat-team {
+  width: 156px;
+}
+.ck-fat-opp {
+  width: 104px;
+}
+/* the opponent's marks: lighter than the team's own (outlined, 10 px, no fill) */
+.ck-b2b-opp,
+.ck-tif-opp {
+  font-size: 10px;
+  padding: 0 5px;
+  font-weight: 500;
+}
+.ck-b2b-opp {
+  line-height: 1.5;
+  border-radius: 999px;
+  border: 1px solid rgba(224, 138, 60, 0.6);
+  color: var(--ck-b2b);
+  white-space: nowrap;
+}
+.ck-tif-opp,
+.ck-tif-opp.ck-tif-pos-3 {
+  background: transparent;
+}
+/* the matchup in a fixed slot (widest real: "GSW 108 vs MEM 111", 211.0 px), so the opponent column and the tags
+   start at the same x whether or not the game has a score */
+.ck-card-cols .ck-matchup {
+  width: 214px;
+  flex: none;
+}

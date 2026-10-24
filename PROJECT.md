@@ -571,6 +571,41 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   Whole-list copy includes the rows. Top bar: the Team List at 1280 px now takes two rows (it had 28 px spare; the
   checkbox is 127 px), like the league views there; one row at 1920 px. Tests: `tests/rest.test.tsx`,
   `e2e/rest.spec.ts`, copy e2e (`view-team-list-rest.png`), URL in `app.test.tsx`.
+- **Schedule fatigue** (feature D): `src/data/scheduleTags.ts` ports rotationkit's 3-in-4 (`scheduleTags.ts` at 5a531d5,
+  chip/tooltip from `ScheduleChips.tsx` at 1401d85; origin noted in the file): a set = 3 consecutive team games whose
+  first and last ET dates are ≤ 3 days apart; position 1st/2nd/3rd, a game in overlapping sets shows its highest and
+  keeps all sets; unplayed games count; all the team's games, never the TV filter; cached per data set + team.
+  **Whitelist check**: calendarkit's shown types (regular, cup-final, play-in, playoffs = ID prefixes 002/006/005/004)
+  are exactly rotationkit's "everything but preseason 001 and All-Star 003" (tested on the fixture). Chip "3-in-4 ·
+  2nd" in rotationkit's purple (#2a2140 / #c4b5fd / #4c3d75; 3rd #3a2160 / #e9d5ff / #7c4dcc); tooltip "3 games in 4
+  days — set:" / "N sets:" then one line per set ("Oct 21, Oct 22, Oct 24 (3rd game)"; tooltips now honour line
+  breaks, `white-space: pre-line`).
+  - **Team List columns** (desktop: widget ≥ 1080 px; tablet and phone rows unchanged, B2B among the tags, no chips):
+    after the time, a 156 px column with the team's B2B label (same label/tooltip) + 3-in-4 chip; after the matchup, a
+    104 px column with the opponent's "2/2" (10 px, outlined, lighter orange; tooltip = the dot's) + the opponent's own
+    3-in-4 chip (transparent, 10 px; tooltip prefixed "CHI: "). The B2B label left the tag area; the opponent dot and
+    the left bracket stay. Rest rows have neither column.
+  - **Fit — measured before changing anything** (every row of all 30 teams, 1920 px, Inter): widest team column 152.7
+    px ("2/2 · AA ✈" + "3-in-4 · 3rd"), opponent 101.4 px, matchup 211.0 px ("GSW 108 vs MEM 111"), tags 239.7 px (DEN
+    vs DAL Nov 24: "NBA Cup · West Group A" + "NBC · Peacock"), season line 110.6 px. In the 960 px column, 24 of 2 400
+    rows wrapped (widest needed 981.5 of 935 px), and with scores the tag area moved by up to 76 px between rows. So,
+    instead of shrinking any text: the matchup sits in a fixed 214 px slot (so the opponent column and tags start at
+    one x with or without a score), and the **Team List column is 1080 px** (`TEAM_LIST_MAX_WIDTH`; League List stays
+    960): a row needs 1055 px. Result at 1280 and 1920: 2 400 rows, 0 wrapped, 0 clipped, team tricode / opponent
+    column / tags each at a single x, ≥ 16 px spare on the fullest row.
+  - **Team Calendar**: the team's chip right after the B2B label in every cell (desktop/tablet; phones none). The probe
+    now also holds "3-in-4 · 3rd": **scale at 1920 × 1080: 1.3 → 1.15** (the chip pushes the probe's tags onto one more
+    row at 1.3); **1280 × 900: 1 → 0.8**. At 1280 even scale 1 no longer fit: CHI Jan 4, 2027 ("1/2 · AH" + "3-in-4 ·
+    2nd" + "Peacock" + "NBC Sports Network") took 3 tag rows of a 115 px 6-week cell, the rows grew and the page
+    scrolled 102 px (caught by the every-team × every-month e2e). The scale floor was 1 ("never below 1"); it is now
+    `TEAM_SCALE_MIN` = 0.8, so the same probe rule decides at small windows too (text 12 → 9.6 px at 1280 × 900;
+    fullest real cell then 81.5 of 101.5 px). Alternative if 0.8 reads too small: a shorter chip text in cells
+    (e.g. "3in4·2nd", full text in the tooltip). Not in the league views.
+  - Tests: `tests/scheduleTags.test.ts` (rotationkit's cases + all 30 teams vs an independent count),
+    `tests/fatigue.test.tsx` (LAL/BOS/NYK every row: both columns' labels, no B2B in tags, dot kept, tooltips list
+    every set, rest rows, TV filter, narrow widths, calendar chip for every LAL month, probe), `e2e/fatigue.spec.ts`
+    (all 30 teams at 1280/1920: fixed x, left-aligned, one line, nothing clipped; tooltips hover + focus), copy e2e
+    (`tif` regions must be purple; opponent 2/2 orange).
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

@@ -13,6 +13,7 @@
   font-size: 12px;
   font-weight: 500;
   line-height: 1.45;
+  white-space: pre-line; /* multi-line tips (3-in-4 sets) */
   pointer-events: none;
 }
 [data-tip] {

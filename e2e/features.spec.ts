@@ -256,7 +256,7 @@ test('team calendar: content scaled to the cell, nothing clipped in any cell —
       if (p === 'desktop-xl') {
         expect(r.scale, name).toBeGreaterThan(1);
         if (r.logo) expect(r.logo, name).toBeCloseTo(16 * r.scale, 1);
-      } else expect(r.scale, name).toBeGreaterThanOrEqual(1);
+      } else expect(r.scale, name).toBeGreaterThanOrEqual(0.8); // TEAM_SCALE_MIN: 1280 × 900 since the 3-in-4 chip
       const prev = seen.get(r.weeks);
       if (!prev || r.fill.used > prev.used) seen.set(r.weeks, { cell: `${name}: cell ${r.cell} px, scale ${r.scale}`, ...r.fill });
       const next = page.getByLabel('Next month');
@@ -537,7 +537,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
   expect(errors).toEqual([]);
 });
 
-test('lists capped at ~960 px and centered; calendars full width', async ({ page }, info) => {
+test('lists capped at ~960 px (Team List 1000 px) and centered; calendars full width', async ({ page }, info) => {
   const p = info.project.name;
   for (const [search, sel] of [['?view=league&layout=list', '.ck-league-list'], ['?view=team&layout=list&team=ORL', '.ck-team-list']] as const) {
     await open(page, search);
@@ -548,8 +548,9 @@ test('lists capped at ~960 px and centered; calendars full width', async ({ page
       return { root: root.width, w: list.width, leftGap: list.left - root.left, rightGap: root.right - list.right, outside: inner.filter((b) => b.width && (b.left < list.left - 0.5 || b.right > list.right + 0.5)).length };
     }, sel);
     console.log(`[${p}] ${sel}: ${r.w.toFixed(0)} px of ${r.root.toFixed(0)} px`);
-    expect(r.w).toBeLessThanOrEqual(960);
-    if (r.root > 960) expect(r.w).toBe(960);
+    const cap = sel === '.ck-team-list' && r.root >= 1080 ? 1080 : 960; // the Team List is 1080 px where its fatigue columns show
+    expect(r.w).toBeLessThanOrEqual(cap);
+    if (r.root > cap) expect(r.w).toBe(cap);
     expect(Math.abs(r.leftGap - r.rightGap)).toBeLessThanOrEqual(1);
     expect(r.outside).toBe(0);
     if (p === 'desktop-xl') await shot(page, sel === '.ck-league-list' ? 'league-list' : 'team-list-top', p);

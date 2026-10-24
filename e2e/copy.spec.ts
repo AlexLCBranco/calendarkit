@@ -17,7 +17,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'run
 test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
 
 /** Area of an element inside the copied root, in CSS px, and what the image must show there. */
-type Region = { kind: 'logo' | 'text' | 'score' | 'b2b' | 'tv' | 'rest'; x: number; y: number; w: number; h: number; what: string };
+type Region = { kind: 'logo' | 'text' | 'score' | 'b2b' | 'tv' | 'rest' | 'tif'; x: number; y: number; w: number; h: number; what: string };
 type Target = { width: number; height: number; regions: Region[]; ratio: number };
 
 /** Every area to check inside `root` (runs in the page). Exported as a string so it works for the stage too. */
@@ -33,7 +33,8 @@ const MEASURE = `(root) => {
   add('logo', '.ck-logo-backing img');
   add('text', '.ck-team, .ck-mtri-text, .ck-vsat, .ck-at');
   add('score', '.ck-score, .ck-mscore');
-  add('b2b', '.ck-b2b-label, .ck-b2b-mark');
+  add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp');
+  add('tif', '.ck-tif');
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
   add('rest', '.ck-rest-row .ck-date, .ck-rest');
   return { width: root.offsetWidth, height: root.offsetHeight, regions: out };
@@ -153,6 +154,7 @@ async function analyze(page: Page, png: string, target: Target): Promise<Report>
             if (r.kind === 'logo' && dist(p, DISC) > 40) hit++;
             else if ((r.kind === 'text' || r.kind === 'score') && dist(p, base) > 60) hit++;
             else if (r.kind === 'rest' && dist(p, base) > 40) hit++; // muted date + "Rest"
+            else if (r.kind === 'tif' && p[2]! > p[1]! + 20 && p[2]! > p[0]! + 8) hit++; // purple (blue well above green and red)
             // hues, not exact colours: past games are drawn at 60 % opacity
             else if (r.kind === 'b2b' && p[0]! > p[1]! + 25 && p[1]! > p[2]! + 20) hit++; // orange
             else if (r.kind === 'tv' && p[1]! > p[0]! + 40 && p[1]! > p[2]! + 15) hit++; // green
@@ -202,7 +204,10 @@ test('whole view: team calendar and the full team list', async ({ page }) => {
   const view = await copyView(page);
   // every game, not just the rows scrolled into view: 2 logos per row, + the team header's
   expect(view.target.regions.filter((r) => r.kind === 'logo').length).toBe(2 * shown + 1);
-  const r = await check(page, 'view-team-list', view, ['logo', 'text', 'b2b', 'tv']);
+  const r = await check(page, 'view-team-list', view, ['logo', 'text', 'b2b', 'tv', 'tif']);
+  // both fatigue columns are in the image: the team's and the opponent's chips and the opponent's 2/2
+  expect(view.target.regions.filter((x) => x.kind === 'tif').length).toBe(await page.locator('.ck-team-rows .ck-tif').count());
+  expect(view.target.regions.filter((x) => x.kind === 'b2b').length).toBe(await page.locator('.ck-team-rows :is(.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp)').count());
   expect(r.height / view.target.ratio, 'taller than the window').toBeGreaterThan(1080);
 
   // "Show rest days": the rest rows are in the image too, every one of them drawn

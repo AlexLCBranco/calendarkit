@@ -27,6 +27,11 @@
   margin-left: auto;
   margin-right: auto;
 }
+/* Team List: TEAM_LIST_MAX_WIDTH (1080 px), so a row with the fatigue columns fits on one line */
+.ck-team-list,
+.ck-root-fill > .ck-team-header {
+  max-width: 1080px;
+}
 .ck-root-fill > .ck-team-header {
   flex: none;
 }
