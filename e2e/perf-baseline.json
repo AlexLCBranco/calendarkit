@@ -3,12 +3,20 @@
     "load-league-list": 300,
     "load-week-view": 473,
     "load-team-calendar": 308,
-    "scroll-frame-p95": 65,
-    "scroll-long-tasks": 620,
+    "scroll-frame-p95": 61,
+    "scroll-frame-mean": 34,
     "switch-league-calendar": 248,
     "switch-team-calendar": 44,
     "switch-team-list": 80,
     "switch-league-list": 110
   },
-  "linux": {}
+  "linux": {
+    "load-league-list": 355,
+    "load-week-view": 490,
+    "load-team-calendar": 322,
+    "switch-league-calendar": 190,
+    "switch-team-calendar": 35,
+    "switch-team-list": 72,
+    "switch-league-list": 86
+  }
 }

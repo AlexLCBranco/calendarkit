@@ -189,19 +189,23 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 ## Performance (guard: `e2e/perf.spec.ts`, 2026-10-23)
 Measured at 1920 × 1080 in headless Chromium against the production build (`vite preview`), Playwright project
 **perf**, which runs after every other project (so nothing runs alongside). Medians of 5 runs; the scroll test has an
-extra uncounted warm-up run. Baselines per OS in `e2e/perf-baseline.json` (Windows PC; Linux = CI). A metric fails
-when it exceeds **max(baseline × 1.5, baseline + slack)**; slack: load 150 ms, scroll p95 20 ms, scroll long tasks
-300 ms, view switch 40 ms (identical runs vary by up to ±30 % — a pure ratio flaked on the small numbers). Checked:
-a 1 ms busy-wait per game card fails the scroll and switch checks.
+extra uncounted warm-up run. Baselines per OS in `e2e/perf-baseline.json` (Windows PC; Linux = GitHub CI, from the CI run of the guard commit). A metric fails
+when it exceeds **max(baseline × 1.5, baseline + slack)**; slack: load 150 ms, scroll frame p95 15 ms, scroll mean
+frame 10 ms, view switch 40 ms (identical runs vary by up to ±30 % — a pure ratio flaked on the small numbers). Checked:
+a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes scroll p95 to 289 ms.
 - **Load → first view** (navigation start → frame after the first game row is in the DOM; includes fetching and
   parsing the 4 MB snapshot): League List 300 ms, week view 473 ms, Team Calendar (BOS) 308 ms.
-- **League List wheel scroll** Nov 1 → December (120 px wheel steps, ~170 frames): frame p95 65 ms, long tasks
-  620 ms in total; worst single frame 100–400 ms (printed, not guarded: too noisy). Idle frames are 16.7 ms, so the
-  ~50–65 ms scroll frames are real work (each scroll re-renders the visible days) — a candidate for a later speed-up.
+- **League List wheel scroll** Nov 1 → December (~13 000 px) with Chromium's own wheel gesture
+  (`Input.synthesizeScrollGesture`, mouse, 2400 px/s, ticks at the display rate): **mean frame 34 ms, p95 61 ms**
+  (Windows; idle frames are 16.7 ms). Not guarded, printed: worst frame (77–580 ms between identical runs), long-task
+  total (0–100 ms), main-thread time (≈ the gesture's whole duration, so it can't grow). So scrolling the list runs
+  at ~30 fps in headless Chromium today: each scroll event re-renders every visible day — a candidate for a later
+  speed-up. (First version stepped `page.mouse.wheel` + 16 ms waits: Playwright waits for each wheel event, so the
+  frames just followed the ~45 ms step period; replaced.)
 - **View switch** (click → next frame): League List → Calendar (week) 248 ms, → Team Calendar 44 ms, → Team List
   80 ms, → League List 110 ms.
 - Baseline = mean of three measuring runs on the unchanged code before the split (loads 277–319 ms / 401–498 /
-  259–315; p95 50–73; long tasks 254–798; switches 212–276 / 35–48 / 65–87 / 77–125).
+  259–315; scroll mean 32–38, p95 58–66; switches 212–276 / 35–48 / 65–87 / 77–125).
 
 - **Split (step 1)**: checked as a pure reorganization by dumping every element's computed style (incl. ::before/::after) and box in 10 views × 4 widths from the old and new builds: 60 863 entries, 0 differences (only the enumeration order of custom properties changed). Screenshots differ by a few hundred channel values, the same as two runs of one build (raster noise). Perf after the split: loads 304 / 461 / 283 ms, scroll p95 56 ms, switches 238 / 62 / 80 / 98 ms.
 

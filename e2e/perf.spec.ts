@@ -11,7 +11,7 @@ const NOW = new Date('2026-11-15T15:00:00Z');
 const RUNS = 5;
 const PERF_RATIO = 1.5;
 /** Absolute slack (ms) per metric: small numbers are noisy, so a ratio alone would flake. */
-const SLACK: Record<string, number> = { load: 150, scrollP95: 20, scrollLong: 300, switch: 40 };
+const SLACK: Record<string, number> = { load: 150, scrollP95: 15, scrollMean: 10, switch: 40 };
 
 type Baseline = Record<string, Record<string, number>>;
 const baselines = JSON.parse(readFileSync('e2e/perf-baseline.json', 'utf8')) as Baseline;
@@ -27,7 +27,7 @@ function check(name: string, value: number, slackKey: string) {
   const base = baseline[name];
   const limit = base === undefined ? Infinity : Math.max(base * PERF_RATIO, base + SLACK[slackKey]!);
   console.log(`[perf] ${name} ${round(value)} ms (baseline ${base ?? '–'}, limit ${round(limit)})`);
-  expect(value, `${name}: ${round(value)} ms, baseline ${base} ms`).toBeLessThanOrEqual(limit);
+  expect.soft(value, `${name}: ${round(value)} ms, baseline ${base} ms`).toBeLessThanOrEqual(limit);
 }
 
 /** Time from navigation start to the frame after the first game row is in the DOM. */
@@ -62,18 +62,24 @@ test('load → first view rendered', async ({ browser }) => {
   }
 });
 
-test('wheel-scrolling the League List through a month: frame times and long tasks', async ({ page }) => {
+test('wheel-scrolling the League List through a month: frame times, main-thread time, long tasks', async ({ page }) => {
   test.setTimeout(180_000);
   await page.clock.setFixedTime(NOW);
-  await page.goto('/?view=league&layout=list&date=2026-11-01');
-  await expect(page.getByTestId('day-title')).toContainText('November 1');
-  await page.waitForFunction(() => [...document.images].every((i) => i.complete));
-  const list = page.getByTestId('league-list');
-  const box = (await list.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Performance.enable');
+  const busy = async () => ((await cdp.send('Performance.getMetrics')).metrics.find((m) => m.name === 'TaskDuration')!.value * 1000);
+  const start = async () => {
+    await page.goto('/?view=league&layout=list&date=2026-11-01');
+    await expect(page.getByTestId('day-title')).toContainText('November 1');
+    await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+  };
+  await start();
+  const box = (await page.getByTestId('league-list').boundingBox())!;
 
   const p95: number[] = [];
+  const mean: number[] = [];
   const max: number[] = [];
+  const main: number[] = [];
   const long: number[] = [];
   // run 0 warms up (JIT, first measuring of day heights, image decoding) and is not counted
   for (let run = 0; run <= RUNS; run++) {
@@ -90,36 +96,39 @@ test('wheel-scrolling the League List through a month: frame times and long task
       };
       requestAnimationFrame(tick);
     });
-    // a month of game days: wheel down until the list reaches December
-    for (let i = 0; i < 400; i++) {
-      await page.mouse.wheel(0, 120);
-      await page.waitForTimeout(16);
-      if (i % 10 === 9 && /December/.test((await page.getByTestId('day-title').textContent()) ?? '')) break;
+    const busy0 = await busy();
+    // Chromium's own wheel gesture (mouse wheel ticks at the display's frame rate, 2400 px/s), in 4000 px pieces
+    // until the list reaches December: a month of game days
+    for (let i = 0; i < 10 && !/December/.test((await page.getByTestId('day-title').textContent()) ?? ''); i++) {
+      await cdp.send('Input.synthesizeScrollGesture', { x: box.x + box.width / 2, y: box.y + box.height / 2, yDistance: -4000, speed: 2400, gestureSourceType: 'mouse', preventFling: true });
     }
     await expect(page.getByTestId('day-title')).toContainText('December');
+    const busy1 = await busy();
     const r = await page.evaluate(async () => {
       await new Promise((res) => setTimeout(res, 100)); // let the last long task be reported
       const w = window as unknown as { __ck: { frames: number[]; long: number; on: boolean } };
       w.__ck.on = false;
       const f = w.__ck.frames.slice(1).sort((a, b) => a - b);
-      return { p95: f[Math.floor(f.length * 0.95)]!, max: f.at(-1)!, long: w.__ck.long, n: f.length };
+      return { p95: f[Math.floor(f.length * 0.95)]!, mean: f.reduce((a, b) => a + b, 0) / f.length, max: f.at(-1)!, long: w.__ck.long, n: f.length };
     });
-    console.log(`[perf] scroll run ${run || 'warm-up'}: ${r.n} frames, p95 ${round(r.p95)} ms, max ${round(r.max)} ms, long tasks ${round(r.long)} ms`);
+    console.log(`[perf] scroll run ${run || 'warm-up'}: ${r.n} frames, mean ${round(r.mean)} ms, p95 ${round(r.p95)} ms, max ${round(r.max)} ms, main thread ${round(busy1 - busy0)} ms, long tasks ${round(r.long)} ms`);
     if (run) {
       p95.push(r.p95);
+      mean.push(r.mean);
       max.push(r.max);
+      main.push(busy1 - busy0);
       long.push(r.long);
     }
-    // back to the start for the next run
-    await page.evaluate(() => (location.search = '?view=league&layout=list&date=2026-11-01'));
-    await expect(page.getByTestId('day-title')).toContainText('November 1');
-    await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+    await start(); // back to Nov 1 for the next run
   }
   check('scroll-frame-p95', median(p95), 'scrollP95');
-  // the single worst frame varies 100–400 ms between identical runs: printed, not guarded
-  console.log(`[perf] scroll-frame-max ${round(median(max))} ms (not guarded)`);
-  measured['scroll-frame-max'] = round(median(max));
-  check('scroll-long-tasks', median(long), 'scrollLong');
+  check('scroll-frame-mean', median(mean), 'scrollMean');
+  // Printed, not guarded: the worst frame and the long-task total vary a lot between identical runs, and the
+  // main thread is busy for the whole gesture already (its total is capped by the gesture's duration).
+  for (const [k, v] of [['scroll-frame-max', max], ['scroll-long-tasks', long], ['scroll-main-thread', main]] as const) {
+    measured[k] = round(median(v));
+    console.log(`[perf] ${k} ${round(median(v))} ms (not guarded)`);
+  }
 });
 
 test('switching views: click → next frame', async ({ page }) => {
