@@ -83,7 +83,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 194 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 194 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -185,6 +185,23 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 - Manual only: judging look and feel, and pasting copies into the gauntlet whiteboard / Excalidraw and scaling them
   up (the clipboard read-back covers what the app puts on the clipboard; how another app scales a pasted image
   can't be scripted from here).
+
+## Performance (guard: `e2e/perf.spec.ts`, 2026-10-23)
+Measured at 1920 × 1080 in headless Chromium against the production build (`vite preview`), Playwright project
+**perf**, which runs after every other project (so nothing runs alongside). Medians of 5 runs; the scroll test has an
+extra uncounted warm-up run. Baselines per OS in `e2e/perf-baseline.json` (Windows PC; Linux = CI). A metric fails
+when it exceeds **max(baseline × 1.5, baseline + slack)**; slack: load 150 ms, scroll p95 20 ms, scroll long tasks
+300 ms, view switch 40 ms (identical runs vary by up to ±30 % — a pure ratio flaked on the small numbers). Checked:
+a 1 ms busy-wait per game card fails the scroll and switch checks.
+- **Load → first view** (navigation start → frame after the first game row is in the DOM; includes fetching and
+  parsing the 4 MB snapshot): League List 300 ms, week view 473 ms, Team Calendar (BOS) 308 ms.
+- **League List wheel scroll** Nov 1 → December (120 px wheel steps, ~170 frames): frame p95 65 ms, long tasks
+  620 ms in total; worst single frame 100–400 ms (printed, not guarded: too noisy). Idle frames are 16.7 ms, so the
+  ~50–65 ms scroll frames are real work (each scroll re-renders the visible days) — a candidate for a later speed-up.
+- **View switch** (click → next frame): League List → Calendar (week) 248 ms, → Team Calendar 44 ms, → Team List
+  80 ms, → League List 110 ms.
+- Baseline = mean of three measuring runs on the unchanged code before the split (loads 277–319 ms / 401–498 /
+  259–315; p95 50–73; long tasks 254–798; switches 212–276 / 35–48 / 65–87 / 77–125).
 
 ## Decisions
 - **Stack**: Vite + React + TypeScript, Vitest, Playwright — same as rotationkit.

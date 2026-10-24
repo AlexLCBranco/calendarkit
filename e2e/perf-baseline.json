@@ -1,0 +1,14 @@
+{
+  "win32": {
+    "load-league-list": 300,
+    "load-week-view": 473,
+    "load-team-calendar": 308,
+    "scroll-frame-p95": 65,
+    "scroll-long-tasks": 620,
+    "switch-league-calendar": 248,
+    "switch-team-calendar": 44,
+    "switch-team-list": 80,
+    "switch-league-list": 110
+  },
+  "linux": {}
+}
