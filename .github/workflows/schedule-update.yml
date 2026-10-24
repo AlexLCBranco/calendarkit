@@ -1,7 +1,8 @@
 # Daily schedule snapshot: download cdn.nba.com's schedule feed, run the tests, and commit
 # public/data/schedule.json to main if it changed (Vercel then redeploys production).
 # The browser can't fetch the feed itself (CORS), so this file is the app's data source.
-# Any failing step fails the run and nothing is committed; GitHub emails the repo owner.
+# Any failing step fails the run and nothing is committed; GitHub emails the repo owner. After a commit, the job
+# waits until the live site serves the new snapshot (up to ~10 min) and fails if it doesn't (Vercel didn't deploy).
 name: Daily schedule update
 
 on:
@@ -26,7 +27,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -38,6 +39,7 @@ jobs:
         run: npx tsx scripts/update-schedule.ts
       - run: npm test
       - name: Commit snapshot
+        id: commit
         if: github.event_name != 'push'
         env:
           GIT_AUTHOR_NAME: ${{ vars.DATA_COMMIT_NAME || 'github-actions[bot]' }}
@@ -52,4 +54,9 @@ jobs:
             git commit -m "data: schedule snapshot $(date -u +%Y-%m-%d)"
             git pull --rebase
             git push
+            echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
+      # No new snapshot today: nothing to check.
+      - name: Verify the live site serves the committed snapshot
+        if: steps.commit.outputs.committed == 'true'
+        run: npx tsx scripts/verify-deploy.ts

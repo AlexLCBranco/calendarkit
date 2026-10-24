@@ -41,6 +41,11 @@ where-to-watch info, embedding in gauntlet.
   **raw feed unchanged** to `public/data/schedule.json`. The app fetches that file and parses it with `parse.ts`.
   No per-request proxy.
 - GitHub Actions runners reach the feed (dry run 2026-10-23: 1274 games downloaded, tests passed).
+- **Deploy check** (2026-10-23): after committing a snapshot the job runs `scripts/verify-deploy.ts`: it polls
+  `https://calendarkit-brown.vercel.app/data/schedule.json?verify=<unique>` (no-cache; the unique query skips the
+  CDN's 5-minute cache) every 30 s, 20 times (~10 min), until the live `meta.time` equals the committed file's, and
+  fails the run otherwise (GitHub emails the owner). Skipped when no snapshot was committed (unchanged feed, or the
+  push-triggered dry run). Job timeout 15 → 25 min.
 
 ### 2. National broadcasters (`broadcasters.nationalBroadcasters`, 2026-27 feed)
 Values seen (`broadcasterDisplay`; all `broadcasterScope: "natl"`, `broadcasterMedia: "tv"`):
@@ -83,7 +88,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 215 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 218 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -155,6 +160,9 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   loader keeps `meta.time`; the stamp from the served snapshot through the real shell (text worked out in the
   test); Try again after a 503 on the first request (unit: mocked fetch; e2e: routed request). 4 of the 5 unit tests
   fail on the code before it (the 5th checks phones have none).
+- `verify-deploy.test.ts`: passes when the live time matches (after an old deploy and a 404), fresh query and no-cache
+  each try, 30 s apart; fails after 20 tries (10 min) of the old snapshot or network errors; the workflow's commit
+  step sets `committed=true` and the check runs only then (fails on the workflow before it).
 - `e2e/smoke.spec.ts`: loads, league + team view, TV toggle, calendar → day, no console errors; week view: 15 lines
   on Nov 2, two weeks around Nov 15 measured (`[project] content …, cols …, cell inner …, line …, 2-col spare …`):
   2 columns with ≥ 3 px spare at 1920 px, "AWAY@HOME" text on every line with the "@" clear of the tricode and logo, Nov 15 flows across both columns, 11 px / 16 px lines, every `<img>`
@@ -527,8 +535,13 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   `isRotationkitConfigured()` in `src/config.ts` is the single check, and the shell then passes no `onOpenGame`.
   **To turn it on, set `ROTATIONKIT_BASE_URL` in `src/config.ts` to the real URL — that is the only step.** The
   tests follow the config (the e2e expects the action iff it is configured), so no test edits are needed.
-- Check that the next daily snapshot commit (by `github-actions[bot]`) triggers a Vercel deploy. If Vercel refuses
-  bot-authored commits, set repo variables `DATA_COMMIT_NAME` / `DATA_COMMIT_EMAIL`.
+- **Was 911b638 (the 2026-10-23 bot commit, 15:36 UTC) deployed?** Not by itself: GitHub shows no Vercel status on
+  it, and Vercel's first status is on 671e3e4 (15:59 UTC) — the Vercel project didn't exist yet. Its snapshot is live
+  (live `meta.time` 2026-10-23T11:29:41.2941Z = the commit's, checked 2026-10-24) because later pushes redeployed it.
+  So whether Vercel deploys a **bot-authored** commit is still unproven; the next daily run checks it automatically
+  (deploy check above). If it fails: Vercel's Hobby plan blocks deployments of private-repo commits whose author isn't
+  the account owner — set repo variables `DATA_COMMIT_NAME` / `DATA_COMMIT_EMAIL` to Alex's identity (or make the
+  repo public).
 - Repo is private; the standard for these projects is public (needs Alex's yes to change).
 - Repo growth from daily 4 MB snapshot commits (~a few hundred KB compressed per change). Fine for a season;
   revisit if it becomes a problem (e.g. Vercel Blob or a separate data branch).
