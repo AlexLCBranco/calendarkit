@@ -114,3 +114,20 @@ describe('week view scores (final games)', () => {
     expect(weekScale(inner, 10_000, 1)).toBe(1.5); // the line the slot layout keeps
   });
 });
+
+describe('score font per slot (fits with exact and with whole-pixel digit widths, as Linux renders them)', () => {
+  // Linux CI measured: 8.2 px → 15.00, 8.61 px → 18.00, 12.3 px → 24.00 (each digit rounded to whole px)
+  // rounded with a 0.1 px margin (round(w + 0.1)): 8.5 px digits are 5.497 px, too close to rounding up
+  const fits = (f: number, slot: number) => SCORE3_EM * f <= slot + 1e-9 && 3 * Math.round((SCORE3_EM / 3) * f + 0.1) <= slot + 1e-9;
+  it('2 weeks (16 px slot): 8.2 px; 1280 px 1 week (scale 1.05, 16.8 px slot): 8.3 px; 1920 px 1 week (24 px): 12.3 px', async () => {
+    const { scoreFontFor } = await import('../src/components/dayflow');
+    expect(scoreFontFor(16)).toBe(8.2);
+    expect(scoreFontFor(16 * 1.05)).toBe(8.3);
+    expect(scoreFontFor(24)).toBe(12.3);
+    for (const slot of [16, 16.8, 17.6, 18.4, 20, 22, 24]) {
+      const f = scoreFontFor(slot);
+      expect(fits(f, slot), `${slot}`).toBe(true);
+      expect(fits(Math.round((f + 0.1) * 10) / 10, slot), `${slot}: largest`).toBe(false);
+    }
+  });
+});

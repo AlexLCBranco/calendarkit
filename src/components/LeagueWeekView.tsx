@@ -4,7 +4,7 @@ import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from '
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { addDays, finalScore, hasNationalTv, isBackToBack, nationalTv, teamLabel, type CalendarData } from '../data/model';
 import { CopyButton } from './CopyButton';
-import { busiestDayHeight, flowDay, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, weekScale } from './dayflow';
+import { busiestDayHeight, flowDay, scoreFontFor, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, weekScale } from './dayflow';
 import { B2BDot, TeamLogo } from './GameCard';
 import { fmtDate, plural, type WidgetSize } from './widget';
 
@@ -101,7 +101,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
     '--ck-row-gap': `${L.rowGap}px`,
     '--ck-group-gap': `${L.groupGap}px`,
     '--ck-dot': `${L.dot}px`,
-    '--ck-score-font': `${L.scoreFont}px`,
+    '--ck-score-font': `${scoreFontFor(L.logo)}px`, // not L.scoreFont: see scoreFontFor
     '--ck-col-gap': `${MONTH_COL_GAP}px`,
     '--ck-line': `${lineWidth(L)}px`,
   } as CSSProperties;

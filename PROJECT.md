@@ -90,7 +90,7 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   circular backing in the month view (see Decisions).
 
 ## Tests
-`npm test` (Vitest, 221 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
+`npm test` (Vitest, 222 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
 - Module tests (`src/shared/nba-schedule/*.test.ts`) run unchanged.
 - `tests/fixtures/feed-2026-10-23.json`: full real feed saved on 2026-10-23 (fixed, unlike the daily snapshot).
   `tests/synthetic.ts` builds targeted games through the module's `deriveGame`.
@@ -388,6 +388,11 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   at the tricode's 11 px (21.34 px) + 1 px gap, the line is 163.7 px at scale 1, and the 80 % width rule (199.5 px of a
   249.42 px cell) allows only **1.2 < 1.3**. So 1-week mode uses the **logo-slot layout** too, at scale 1.5 (score
   12.3 px, 23.92 of a 24 px slot); the scale stays 1.5 at 1920 × 1080 (1.05 at 1280 × 900).
+- **Score font per slot** (`scoreFontFor`, fix 2026-10-24): CI (Linux) failed the "score fits its slot" e2e at 1280 px:
+  Linux Chromium rounds each digit's width to whole pixels (measured 8.2 px → 15.00 px, 8.61 px → **18.00 px**,
+  12.3 px → 24.00 px), so the plain scaled font (8.2 × 1.05 = 8.61 px) overflowed the 16.8 px slot by 1.2 px there
+  (Windows: 16.72 px, fit). The font is now the largest 0.1 px step that fits both exactly and with digits rounded
+  (0.1 px margin): 16 px → 8.2, 16.8 px → 8.3, 24 px → 12.3.
 - Copy as image includes the scores (same components); checked pixel by pixel.
 
 ### Team perspective and back-to-backs (team views, 2026-10-23)

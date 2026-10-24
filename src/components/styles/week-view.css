@@ -169,7 +169,7 @@
   gap: 2px;
 }
 
-/* Final game: the score sits in its team's logo slot (8.2 px tabular: "188" is 15.9 of 16 px), right-aligned
+/* Final game: the score sits in its team's logo slot (scoreFontFor: 8.2 px → "188" is 15.9 of 16 px), right-aligned
    against the tricode; no TV pill (the column stays reserved). */
 .ck-mscore {
   font-size: var(--ck-score-font);

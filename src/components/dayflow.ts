@@ -15,6 +15,19 @@ import { tipoff } from '../data/model';
 export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2 } as const;
 /** Width of the widest 3-digit score in em: tabular digits, bundled Inter, weight 500–700 (measured: 15.52 px at 8 px). */
 export const SCORE3_EM = 1.94;
+
+/**
+ * Largest score font (0.1 px steps) whose 3 digits fit a logo slot of `slot` px both as measured (fractional widths:
+ * Windows, Mac) and with each digit's width rounded to whole pixels (Linux Chromium: 8.2 px → 15 px, 8.61 px → 18 px,
+ * 12.3 px → 24 px), with 0.1 px of margin before a digit rounds up. 16 px → 8.2, 16.8 px (1-week scale 1.05) → 8.3,
+ * 24 px (scale 1.5) → 12.3. Not simply scoreFont × scale: 8.61 px overflowed the 16.8 px slot by 1.2 px on Linux.
+ */
+export function scoreFontFor(slot: number): number {
+  const digit = SCORE3_EM / 3;
+  let f = Math.floor((slot / SCORE3_EM) * 10 + 1e-9) / 10;
+  while (f > 1 && 3 * Math.round(digit * f + 0.1) > slot + 1e-9) f = Math.round((f - 0.1) * 10) / 10;
+  return f;
+}
 export type MonthLine = { [K in keyof typeof MONTH_LINE]: number };
 export const lineWidth = (L: MonthLine) => 2 * (L.logo + L.gap + L.tri) + L.sep + L.pillGap + L.pill;
 export const MONTH_LINE_WIDTH = lineWidth(MONTH_LINE);
