@@ -167,6 +167,19 @@ export function isBackToBack(data: CalendarData, teamId: number, date: string): 
   return !!teamId && !!data.teamDates.get(teamId)?.has(addDays(date, -1));
 }
 
+/**
+ * A team's rest days: every calendar day between its first and last game with no game of the team (ET game dates,
+ * same rule as back-to-backs). Always from all its games, never a filter (a filter would invent rest days).
+ */
+export function teamRestDays(data: CalendarData, teamId: number): string[] {
+  const dates = data.teamDates.get(teamId);
+  if (!dates?.size) return [];
+  const sorted = [...dates].sort();
+  const out: string[] = [];
+  for (let d = sorted[0]!; d < sorted.at(-1)!; d = addDays(d, 1)) if (!dates.has(d)) out.push(d);
+  return out;
+}
+
 /** US national TV broadcaster names (feed field broadcasters.nationalBroadcasters), de-duplicated, feed order. */
 export function nationalTv(g: ScheduleGame): string[] {
   const names = (g.broadcasters?.nationalBroadcasters ?? []).map((b) => String(b.broadcasterDisplay ?? '').trim()).filter(Boolean);

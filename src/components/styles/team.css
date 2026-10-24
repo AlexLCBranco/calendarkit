@@ -201,3 +201,24 @@
   white-space: nowrap;
   font-weight: 500;
 }
+
+/* Team list rest days ("Show rest days"): one quiet row per day without a game, about half a game row tall
+   (17 px vs 35 px), the date in the game rows' column and format. */
+.ck-rest-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 17px;
+  padding: 0 11px; /* the card's 1 px border + 10 px padding: dates line up */
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--ck-muted);
+}
+.ck-rest-row .ck-date {
+  min-width: 6.3em; /* = 5.4em of the 14 px row date, so "Rest" starts where the game rows' time does */
+  opacity: 0.85;
+}
+.ck-rest {
+  font-style: italic;
+  letter-spacing: 0.02em;
+}

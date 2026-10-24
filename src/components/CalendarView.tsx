@@ -46,6 +46,8 @@ export interface CalendarState {
   /** League views: the day at the top of the list; the week view shows this day's week. */
   date: string;
   tvOnly: boolean;
+  /** Team → List: a quiet row for each day without a game. */
+  showRest: boolean;
   /** League → Calendar: 1 or 2 week rows. */
   weeks: WeekCount;
 }
@@ -84,6 +86,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     teamId: initial?.teamId && TEAM_BY_ID.has(initial.teamId) ? initial.teamId : DEFAULT_TEAM,
     date: initial?.date && /^\d{4}-\d{2}-\d{2}$/.test(initial.date) ? initial.date : (defaultDay(data, now) ?? localDate(now, timeZone)),
     tvOnly: initial?.tvOnly ?? false,
+    showRest: initial?.showRest ?? false,
     weeks: initial?.weeks === 2 ? 2 : 1,
   }));
   const [leagueMonth, setLeagueMonth] = useState(() => monthOf(state.date));
@@ -221,6 +224,11 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           </div>
         )}
         {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
+        {team && list && !compact && (
+          <label className="ck-check">
+            <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Show rest days
+          </label>
+        )}
         <label className="ck-check">
           <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact ? 'TV only' : 'TV games only'}
         </label>
@@ -242,7 +250,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       {team && <TeamHeader teamId={state.teamId} compact={compact} />}
       {team ? (
         list ? (
-          <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} handle={teamList} onAtNext={setTeamAtNext} />
+          <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} handle={teamList} onAtNext={setTeamAtNext} />
         ) : (
           <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} nav={false} />
         )
@@ -265,7 +273,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           {team && <TeamHeader teamId={state.teamId} compact={compact} />}
           {team ? (
             list ? (
-              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} size={fullHeight} now={now} timeZone={timeZone} />
+              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} />
             ) : (
               <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} />
             )

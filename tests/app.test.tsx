@@ -129,4 +129,23 @@ describe('App: URL state for the List | Calendar switch', () => {
     expect(window.location.search).toMatch(/view=team&layout=list/);
     expect(window.location.search).toMatch(/tv=1/);
   });
+
+  it('rest=1 round-trips: read, written by the toggle, kept across team changes; old links stay off', async () => {
+    const { readUrlState } = await import('../src/App');
+    expect(readUrlState('?view=team&layout=list&team=BOS&rest=1').showRest).toBe(true);
+    expect(readUrlState('?view=team&layout=list&team=BOS').showRest).toBeUndefined();
+    // desktop width (jsdom has no layout: the shell would measure 0 px and use the phone layout, which has no toggle)
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1200);
+    await open('?view=team&layout=list&team=BOS');
+    expect((screen.getByLabelText('Show rest days') as HTMLInputElement).checked).toBe(false);
+    fireEvent.click(screen.getByLabelText('Show rest days'));
+    expect(window.location.search).toMatch(/rest=1/);
+    fireEvent.click(screen.getByTestId('team-picker'));
+    fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
+    expect(window.location.search).toMatch(/team=MIA.*rest=1/);
+    cleanup();
+    await open('?view=team&layout=list&team=MIA&rest=1');
+    expect((screen.getByLabelText('Show rest days') as HTMLInputElement).checked).toBe(true);
+    expect(document.querySelectorAll('[data-rest]').length).toBeGreaterThan(60);
+  });
 });

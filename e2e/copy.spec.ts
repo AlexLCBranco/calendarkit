@@ -17,7 +17,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'run
 test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
 
 /** Area of an element inside the copied root, in CSS px, and what the image must show there. */
-type Region = { kind: 'logo' | 'text' | 'score' | 'b2b' | 'tv'; x: number; y: number; w: number; h: number; what: string };
+type Region = { kind: 'logo' | 'text' | 'score' | 'b2b' | 'tv' | 'rest'; x: number; y: number; w: number; h: number; what: string };
 type Target = { width: number; height: number; regions: Region[]; ratio: number };
 
 /** Every area to check inside `root` (runs in the page). Exported as a string so it works for the stage too. */
@@ -35,6 +35,7 @@ const MEASURE = `(root) => {
   add('score', '.ck-score, .ck-mscore');
   add('b2b', '.ck-b2b-label, .ck-b2b-mark');
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
+  add('rest', '.ck-rest-row .ck-date, .ck-rest');
   return { width: root.offsetWidth, height: root.offsetHeight, regions: out };
 }`;
 
@@ -151,11 +152,12 @@ async function analyze(page: Page, png: string, target: Target): Promise<Report>
             total++;
             if (r.kind === 'logo' && dist(p, DISC) > 40) hit++;
             else if ((r.kind === 'text' || r.kind === 'score') && dist(p, base) > 60) hit++;
+            else if (r.kind === 'rest' && dist(p, base) > 40) hit++; // muted date + "Rest"
             // hues, not exact colours: past games are drawn at 60 % opacity
             else if (r.kind === 'b2b' && p[0]! > p[1]! + 25 && p[1]! > p[2]! + 20) hit++; // orange
             else if (r.kind === 'tv' && p[1]! > p[0]! + 40 && p[1]! > p[2]! + 15) hit++; // green
           }
-        const need = r.kind === 'logo' ? 0.08 : r.kind === 'text' || r.kind === 'score' ? 0.02 : 0.05;
+        const need = r.kind === 'logo' ? 0.08 : r.kind === 'text' || r.kind === 'score' || r.kind === 'rest' ? 0.02 : 0.05;
         if (!total || hit / total < need) failures.push(`${r.kind} "${r.what}" at ${r.x.toFixed(0)},${r.y.toFixed(0)}: ${((hit / Math.max(total, 1)) * 100).toFixed(1)}% < ${need * 100}%`);
       }
       return { width, height, corners, inkShare: ink / n, colors: colors.size, failures, counts };
@@ -202,6 +204,16 @@ test('whole view: team calendar and the full team list', async ({ page }) => {
   expect(view.target.regions.filter((r) => r.kind === 'logo').length).toBe(2 * shown + 1);
   const r = await check(page, 'view-team-list', view, ['logo', 'text', 'b2b', 'tv']);
   expect(r.height / view.target.ratio, 'taller than the window').toBeGreaterThan(1080);
+
+  // "Show rest days": the rest rows are in the image too, every one of them drawn
+  await page.getByLabel('Show rest days').check();
+  const rest = await page.locator('.ck-team-rows > .ck-rest-row').count();
+  expect(rest).toBeGreaterThan(60);
+  const withRest = await copyView(page);
+  expect(withRest.target.regions.filter((x) => x.kind === 'rest').length).toBe(2 * rest); // date + "Rest"
+  expect(withRest.target.regions.filter((x) => x.kind === 'logo').length).toBe(2 * shown + 1);
+  const rr = await check(page, 'view-team-list-rest', withRest, ['logo', 'text', 'b2b', 'tv', 'rest']);
+  expect(rr.height / withRest.target.ratio, 'taller with the rest rows').toBeGreaterThan(r.height / view.target.ratio);
 });
 
 test('whole view: league list copies the whole week', async ({ page }) => {

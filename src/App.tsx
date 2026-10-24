@@ -15,7 +15,7 @@ export function openGameInRotationkit(gameId: string, open: (url: string) => voi
 }
 
 /**
- * URL: ?view=league|team&layout=list|calendar&team=&date=&weeks=2&tv=1 (weeks: League → Calendar rows). Links from before the List | Calendar switch have
+ * URL: ?view=league|team&layout=list|calendar&team=&date=&weeks=2&tv=1&rest=1 (weeks: League → Calendar rows; rest: Team List rest days). Links from before the List | Calendar switch have
  * no layout: ?view=team opened the team month grid (→ Calendar), ?view=league the day list (→ List).
  */
 export function readUrlState(search = window.location.search): Partial<CalendarState> {
@@ -29,6 +29,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     teamId: team?.id,
     date: p.get('date') ?? undefined,
     tvOnly: p.get('tv') === '1' ? true : undefined,
+    showRest: p.get('rest') === '1' ? true : undefined,
     weeks: p.get('weeks') === '2' ? 2 : p.get('weeks') === '1' ? 1 : undefined,
   };
 }
@@ -41,6 +42,7 @@ function writeUrlState(s: CalendarState) {
   else p.set('date', s.date);
   if (s.weeks === 2) p.set('weeks', '2');
   if (s.tvOnly) p.set('tv', '1');
+  if (s.showRest) p.set('rest', '1');
   window.history.replaceState(null, '', `${window.location.pathname}?${p}`);
 }
 

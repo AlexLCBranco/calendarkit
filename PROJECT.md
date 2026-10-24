@@ -562,6 +562,16 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   blank logo.
 - Team Calendar B2B bars span two cells, so a single-day copy shows the cell's B2B label but not the bar.
 
+### Round 3 (2026-10-24)
+- **Show rest days** (Team List, feature B): checkbox "Show rest days" in the top bar (Team List, desktop/tablet
+  only; off by default; `rest=1` in the URL, kept across team changes). On: one row per calendar day without a game
+  of the team between its first and last game (`teamRestDays` in model.ts: ET game dates, all games — never the TV
+  filter, so a day with a non-TV game is neither a row nor rest when filtered). Row: the game rows' date column and
+  format + muted italic "Rest", 17 px tall (game rows 35–36.5 px). Toggling re-opens the list at the next game.
+  Whole-list copy includes the rows. Top bar: the Team List at 1280 px now takes two rows (it had 28 px spare; the
+  checkbox is 127 px), like the league views there; one row at 1920 px. Tests: `tests/rest.test.tsx`,
+  `e2e/rest.spec.ts`, copy e2e (`view-team-list-rest.png`), URL in `app.test.tsx`.
+
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId
   (`004 YY 00 R S G`, R = round) in `playoffRound()` in `src/data/model.ts`. Please add e.g. `playoffRound: 1–4 | null`
