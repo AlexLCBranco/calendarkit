@@ -22,9 +22,10 @@ const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.len
 const round = (x: number) => Math.round(x * 10) / 10;
 const measured: Record<string, number> = {};
 
-function check(name: string, value: number, slackKey: string) {
+/** `baseName`: the baseline to compare with (a variant of a gesture is held to the plain gesture's baseline). */
+function check(name: string, value: number, slackKey: string, baseName = name) {
   measured[name] = round(value);
-  const base = baseline[name];
+  const base = baseline[baseName];
   const limit = base === undefined ? Infinity : Math.max(base * PERF_RATIO, base + SLACK[slackKey]!);
   console.log(`[perf] ${name} ${round(value)} ms (baseline ${base ?? '–'}, limit ${round(limit)})`);
   expect.soft(value, `${name}: ${round(value)} ms, baseline ${base} ms`).toBeLessThanOrEqual(limit);
@@ -62,26 +63,14 @@ test('load → first view rendered', async ({ browser }) => {
   }
 });
 
-test('wheel-scrolling the League List through a month: frame times, main-thread time, long tasks', async ({ page }) => {
-  test.setTimeout(180_000);
-  // No fake clock here: Playwright's clock wraps Intl.DateTimeFormat, which made scrolling look slower than in a
-  // real browser (2026-10-24). The list opens on an explicit date, so it needs no clock.
+/** Frames (rAF), main-thread time (CDP TaskDuration) and long tasks while `gesture` runs; `reset` before each run. */
+type ScrollRun = { p95: number; mean: number; max: number; main: number; long: number; n: number };
+async function scrollRuns(page: Page, label: string, reset: () => Promise<void>, gesture: () => Promise<void>): Promise<ScrollRun[]> {
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Performance.enable');
   const busy = async () => ((await cdp.send('Performance.getMetrics')).metrics.find((m) => m.name === 'TaskDuration')!.value * 1000);
-  const start = async () => {
-    await page.goto('/?view=league&layout=list&date=2026-11-01');
-    await expect(page.getByTestId('day-title')).toContainText('November 1');
-    await page.waitForFunction(() => [...document.images].every((i) => i.complete));
-  };
-  await start();
-  const box = (await page.getByTestId('league-list').boundingBox())!;
-
-  const p95: number[] = [];
-  const mean: number[] = [];
-  const max: number[] = [];
-  const main: number[] = [];
-  const long: number[] = [];
+  const runs: ScrollRun[] = [];
+  await reset();
   // run 0 warms up (JIT, first measuring of day heights, image decoding) and is not counted
   for (let run = 0; run <= RUNS; run++) {
     await page.evaluate(() => {
@@ -98,12 +87,7 @@ test('wheel-scrolling the League List through a month: frame times, main-thread 
       requestAnimationFrame(tick);
     });
     const busy0 = await busy();
-    // Chromium's own wheel gesture (mouse wheel ticks at the display's frame rate, 2400 px/s), in 4000 px pieces
-    // until the list reaches December: a month of game days
-    for (let i = 0; i < 10 && !/December/.test((await page.getByTestId('day-title').textContent()) ?? ''); i++) {
-      await cdp.send('Input.synthesizeScrollGesture', { x: box.x + box.width / 2, y: box.y + box.height / 2, yDistance: -4000, speed: 2400, gestureSourceType: 'mouse', preventFling: true });
-    }
-    await expect(page.getByTestId('day-title')).toContainText('December');
+    await gesture();
     const busy1 = await busy();
     const r = await page.evaluate(async () => {
       await new Promise((res) => setTimeout(res, 100)); // let the last long task be reported
@@ -112,26 +96,69 @@ test('wheel-scrolling the League List through a month: frame times, main-thread 
       const f = w.__ck.frames.slice(1).sort((a, b) => a - b);
       return { p95: f[Math.floor(f.length * 0.95)]!, mean: f.reduce((a, b) => a + b, 0) / f.length, max: f.at(-1)!, long: w.__ck.long, n: f.length };
     });
-    console.log(`[perf] scroll run ${run || 'warm-up'}: ${r.n} frames, mean ${round(r.mean)} ms, p95 ${round(r.p95)} ms, max ${round(r.max)} ms, main thread ${round(busy1 - busy0)} ms, long tasks ${round(r.long)} ms`);
-    if (run) {
-      p95.push(r.p95);
-      mean.push(r.mean);
-      max.push(r.max);
-      main.push(busy1 - busy0);
-      long.push(r.long);
-    }
-    await start(); // back to Nov 1 for the next run
+    console.log(`[perf] ${label} run ${run || 'warm-up'}: ${r.n} frames, mean ${round(r.mean)} ms, p95 ${round(r.p95)} ms, max ${round(r.max)} ms, main thread ${round(busy1 - busy0)} ms, long tasks ${round(r.long)} ms`);
+    if (run) runs.push({ ...r, main: busy1 - busy0 });
+    await reset();
   }
-  check('scroll-frame-p95', median(p95), 'scrollP95');
-  check('scroll-frame-mean', median(mean), 'scrollMean');
+  return runs;
+}
+
+/** Checks the guarded scroll metrics (`<prefix>-frame-p95`, `-frame-mean`, `-main-thread`) and prints the rest. */
+function checkScroll(prefix: string, runs: ScrollRun[], baseName = prefix) {
+  const m = (k: keyof ScrollRun) => median(runs.map((r) => r[k]));
+  check(`${prefix}-frame-p95`, m('p95'), 'scrollP95', `${baseName}-frame-p95`);
+  check(`${prefix}-frame-mean`, m('mean'), 'scrollMean', `${baseName}-frame-mean`);
   // Frames now sit at the display rate, so main-thread time is what shows extra work first (before the 2026-10-24
   // fix it was ~the whole gesture and couldn't grow, so it wasn't guarded).
-  check('scroll-main-thread', median(main), 'scrollMain');
+  check(`${prefix}-main-thread`, m('main'), 'scrollMain', `${baseName}-main-thread`);
   // Printed, not guarded: the worst frame and the long-task total vary a lot between identical runs.
-  for (const [k, v] of [['scroll-frame-max', max], ['scroll-long-tasks', long]] as const) {
-    measured[k] = round(median(v));
-    console.log(`[perf] ${k} ${round(median(v))} ms (not guarded)`);
+  for (const [k, v] of [[`${prefix}-frame-max`, m('max')], [`${prefix}-long-tasks`, m('long')]] as const) {
+    measured[k] = round(v);
+    console.log(`[perf] ${k} ${round(v)} ms (not guarded)`);
   }
+}
+
+/** Chromium's own wheel gesture (mouse wheel ticks at the display's frame rate, 2400 px/s) over `el`. */
+async function wheel(page: Page, testId: string, yDistance: number) {
+  const cdp = await page.context().newCDPSession(page);
+  const box = (await page.getByTestId(testId).boundingBox())!;
+  await cdp.send('Input.synthesizeScrollGesture', { x: box.x + box.width / 2, y: box.y + box.height / 2, yDistance, speed: 2400, gestureSourceType: 'mouse', preventFling: true });
+  await cdp.detach();
+}
+
+/** League List from Nov 1 (explicit date: no clock needed) to December, a month of game days, in 4000 px pieces. */
+async function leagueListToDecember(page: Page) {
+  for (let i = 0; i < 10 && !/December/.test((await page.getByTestId('day-title').textContent()) ?? ''); i++) await wheel(page, 'league-list', -4000);
+  await expect(page.getByTestId('day-title')).toContainText('December');
+}
+async function openLeagueList(page: Page, search = '') {
+  await page.goto(`/?view=league&layout=list&date=2026-11-01${search}`);
+  await expect(page.getByTestId('day-title')).toContainText('November 1');
+  await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+}
+
+test('wheel-scrolling the League List through a month: frame times, main-thread time, long tasks', async ({ page }) => {
+  test.setTimeout(180_000);
+  // No fake clock here: Playwright's clock wraps Intl.DateTimeFormat, which made scrolling look slower than in a
+  // real browser (2026-10-24). The list opens on an explicit date, so it needs no clock.
+  checkScroll('scroll', await scrollRuns(page, 'scroll', () => openLeagueList(page), () => leagueListToDecember(page)));
+});
+
+// Team List (2026-10-28, round 4): LAL's whole season (~82 rows), wheel down from the first game to the last and back
+// up. Its own baseline (measured on the code before round 4's Team List week strip).
+test('wheel-scrolling the Team List through the season', async ({ page }) => {
+  test.setTimeout(180_000);
+  const top = async () => {
+    await page.goto('/?view=team&layout=list&team=LAL');
+    await page.waitForFunction(() => [...document.images].every((i) => i.complete) && !!document.querySelector('[data-testid="team-list"] [data-game-id]'));
+    await page.getByTestId('team-list').evaluate((el) => (el.scrollTop = 0));
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  };
+  const gesture = async () => {
+    await wheel(page, 'team-list', -2400);
+    await wheel(page, 'team-list', 2400);
+  };
+  checkScroll('team-scroll', await scrollRuns(page, 'team-scroll', top, gesture));
 });
 
 test('switching views: click → next frame', async ({ page }) => {
@@ -146,7 +173,9 @@ test('switching views: click → next frame', async ({ page }) => {
     ['switch-league-list', 'View', 'League'],
   ];
   const times = new Map<string, number[]>();
-  for (let run = 0; run < RUNS; run++) {
+  // round 0 warms up (first render of each view's code paths) and is not counted: the switch timings flaked on unchanged
+  // code with a cold first round (2026-10-28: League Calendar 117 ms, Team Calendar 105 ms; 38–84 / 63–72 ms warm)
+  for (let run = 0; run <= RUNS; run++) {
     for (const [name, group, tab] of steps) {
       const t = await page.evaluate(
         ([group, tab]) =>
@@ -158,7 +187,7 @@ test('switching views: click → next frame', async ({ page }) => {
           }),
         [group, tab],
       );
-      times.set(name, [...(times.get(name) ?? []), t]);
+      if (run) times.set(name, [...(times.get(name) ?? []), t]);
       await page.waitForTimeout(100);
     }
   }

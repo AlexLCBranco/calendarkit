@@ -9,7 +9,10 @@
     "switch-league-calendar": 54,
     "switch-team-calendar": 50,
     "switch-team-list": 81,
-    "switch-league-list": 60
+    "switch-league-list": 60,
+    "team-scroll-frame-p95": 16.8,
+    "team-scroll-frame-mean": 16.7,
+    "team-scroll-main-thread": 660
   },
   "linux": {
     "load-league-list": 364,
