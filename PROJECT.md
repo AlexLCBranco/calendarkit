@@ -666,6 +666,13 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   (whole view, day and selection copies). Fix: calendar cards never wrap into a second column (`flex-wrap: nowrap`);
   no on-screen change (the e2e cell walks pass unchanged). The 1280 whole-view copy test fails without the fix.
 
+### Site version (2026-10-28)
+- The top bar shows **"v<commit>"** after "Data updated …" (tooltip: "Site version: commit 0f8f254, built Oct 28, 20:02";
+  phones: in the "i" tooltip), and the build serves **`/version.json`** (`{"version","builtAt"}`, `Cache-Control: no-cache`).
+  The commit comes from `VERCEL_GIT_COMMIT_SHA` / `GITHUB_SHA`, else git (`+` = built with uncommitted changes); set
+  in `vite.config.ts`, read via `src/build-info.ts`. Use: after a push, the live site is current once its version
+  equals the pushed commit. Tests: `tests/version.test.tsx`, `e2e/version.spec.ts` (served version = git HEAD).
+
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId
   (`004 YY 00 R S G`, R = round) in `playoffRound()` in `src/data/model.ts`. Please add e.g. `playoffRound: 1–4 | null`

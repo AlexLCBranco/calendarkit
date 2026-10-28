@@ -26,7 +26,9 @@ test('stamp in the viewer\'s zone, muted while fresh; orange with a tooltip afte
   // under the time-zone note, right-aligned with it
   const [n, s] = [await page.getByTestId('tz-note').boundingBox(), await stamp.boundingBox()];
   expect(s!.y).toBeGreaterThan(n!.y);
-  expect(Math.abs(s!.x + s!.width - (n!.x + n!.width))).toBeLessThan(1);
+  // its line (stamp + site version) right-aligned with the note
+  const line = (await page.locator('.ck-stamp-row').boundingBox())!;
+  expect(Math.abs(line.x + line.width - (n!.x + n!.width))).toBeLessThan(1);
   const bar = (await page.getByTestId('top-bar').boundingBox())!;
   if (info.project.name === 'desktop-xl') expect(bar.height).toBeLessThanOrEqual(40);
   expect(s!.y + s!.height).toBeLessThanOrEqual(bar.y + bar.height + 0.5);

@@ -68,6 +68,11 @@
 .ck-notes > .ck-note {
   margin-left: 0;
 }
+.ck-stamp-row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
 .ck-stamp {
   color: var(--ck-muted);
   font-size: 11px;

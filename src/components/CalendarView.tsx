@@ -76,6 +76,8 @@ export interface CalendarViewProps {
   note?: string;
   /** When the data was generated (ISO): "Data updated …" under the note, orange once older than STALE_AFTER_MS. */
   updatedAt?: string;
+  /** The site's build: commit ("0f8f254") and build time (ISO), shown after the data stamp as "v0f8f254". */
+  version?: { version: string; builtAt: string };
 }
 
 /** Older than this, the "Data updated" stamp turns orange: the daily update (~11:00 UTC) may have failed. */
@@ -84,7 +86,7 @@ export const STALE_AFTER_MS = 36 * 3_600_000;
 const DEFAULT_TEAM = TEAMS[0]!.id;
 
 
-export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onStateChange, title, note, updatedAt }: CalendarViewProps) {
+export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onStateChange, title, note, updatedAt, version }: CalendarViewProps) {
   const now = useNow(fixedNow);
   const compact = isCompact(size);
   const [state, setState] = useState<CalendarState>(() => ({
@@ -310,7 +312,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         </label>
         {note &&
           (compact ? (
-            <span className="ck-note ck-note-icon" data-tip={note} aria-label={note} role="img" tabIndex={0}>
+            <span className="ck-note ck-note-icon" data-tip={version ? `${note} · site version ${version.version}` : note} aria-label={note} role="img" tabIndex={0}>
               i
             </span>
           ) : (
@@ -318,7 +320,10 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
               <span className="ck-note" data-testid="tz-note">
                 {note}
               </span>
-              {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
+              <span className="ck-stamp-row">
+                {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
+                {version && <SiteVersion {...version} timeZone={timeZone} />}
+              </span>
             </span>
           ))}
         <CopyButton label="Copy view as image" copy={copyView} testId="copy-view" />
@@ -401,6 +406,17 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
 function teamDefaultDate(data: CalendarData, teamId: number, now: number): string | undefined {
   const games = teamGames(data, teamId);
   return (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.dateEt;
+}
+
+/** "v0f8f254": the commit this site was built from (compare with the latest push); tooltip with the build time. */
+function SiteVersion({ version, builtAt, timeZone }: { version: string; builtAt: string; timeZone?: string }) {
+  const t = Date.parse(builtAt);
+  const when = Number.isNaN(t) ? '' : `, built ${dateFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t)}`;
+  return (
+    <span className="ck-stamp ck-version" data-testid="site-version" data-tip={`Site version: commit ${version}${when}`} tabIndex={0}>
+      v{version}
+    </span>
+  );
 }
 
 /** "Data updated Oct 23, 08:29" in the viewer's zone; orange with a tooltip once the data is older than 36 h. */
