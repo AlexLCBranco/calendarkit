@@ -668,6 +668,29 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   (whole view, day and selection copies). Fix: calendar cards never wrap into a second column (`flex-wrap: nowrap`);
   no on-screen change (the e2e cell walks pass unchanged). The 1280 whole-view copy test fails without the fix.
 
+### Round 4 (2026-10-28)
+- **Perf checks added first** (`e2e/perf.spec.ts`, before any round-4 change): **Team List wheel scroll** (LAL, 2400 px
+  down and back up with Chromium's wheel gesture; frame mean / p95 and main-thread time, same limits as the League
+  List scroll). Windows baseline from the unchanged code: mean 16.7, p95 16.8, main thread 575–744 ms → 660. The view
+  switch test now has one uncounted warm-up round: on unchanged code its first full run failed twice (League Calendar
+  117 ms, Team Calendar 105 ms vs 38–84 / 63–72 ms when warm). No baseline was raised.
+- **Overtime marker** (item 1): `overtime(g)` in model.ts reads "OT" / "2OT" / "3OT" from a final game's status text
+  ("Final/OT"; 7 games in the snapshot of Oct 28, all others "Final"). A small muted marker (0.75 em, 600) after the
+  last score in the League List, Team List and Team Calendar; aria-labels end "(OT)". **Week view**: in the TV column,
+  which final lines leave empty, at the TV pill's text size — "2OT" 14.9 of 15 px, "3OT" 15.0 (letter-spacing −0.03 em) —
+  so the line keeps its 119 px. Copies use the same components.
+  - **Measured first** (1920 px): League List widest row 487 of 960 px → fits. Team Calendar: the probe now ends "3OT";
+    scale unchanged (1920 × 1080: month 1.15, weeks 2.0 / 2.0; 1280 × 900: 0.8, 1.3 / 1.3). **Team List**: the matchup
+    slot was 214 px, the widest possible matchup 211.5 px, + " OT" 235.8 px, + " 2OT" 242.5 px, and the fullest row had
+    ~15 px spare → no room. Alex chose to widen: **Team List column 1080 → 1110 px, slot 214 → 244 px** (worst case
+    written into a real row in e2e: "MEM 188 vs MEM 188 3OT" 237.8 of 244 px). Still fits at 1280 (1248 px content).
+  - Perf: the Team List scroll's main-thread time looked higher after the widening (852–887 vs ~660 ms, 4 runs each),
+    but an interleaved A/B on one build (CSS width override, 5 rounds) showed noise only: medians 1080 → 659–707 ms,
+    1092 → 679, 1100 → 783, 1110 → 696, 1120 → 543, 1152 → 663. Not a regression.
+  - Tests: `tests/overtime.test.tsx` (4 of 5 fail before; the 5th checks the snapshot's status texts), e2e
+    `scores.spec.ts` "overtime marker" (League List / Team List one line, worst case in the slot, week-view TV column)
+    + the Team Calendar text check now expects the marker; `features.spec.ts` cap 1110. All fail on the old build.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

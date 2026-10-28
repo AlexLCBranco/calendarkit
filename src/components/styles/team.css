@@ -273,9 +273,9 @@
 .ck-tif-opp.ck-tif-pos-3 {
   background: transparent;
 }
-/* the matchup in a fixed slot (widest real: "GSW 108 vs MEM 111", 211.0 px), so the opponent column and the tags
-   start at the same x whether or not the game has a score */
+/* the matchup in a fixed slot (widest possible: "MEM 188 vs MEM 188 2OT", 242.5 px), so the opponent column and the
+   tags start at the same x whether or not the game has a score */
 .ck-card-cols .ck-matchup {
-  width: 214px;
+  width: 244px;
   flex: none;
 }

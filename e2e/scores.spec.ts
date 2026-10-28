@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 type Side = { teamId: number; teamTricode: string; score: number };
-type Final = { gameId: string; date: string; home: Side; away: Side };
+type Final = { gameId: string; date: string; home: Side; away: Side; ot?: string };
 
 test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
 
@@ -22,11 +22,11 @@ async function open(page: Page, search: string) {
 const finals = (page: Page): Promise<Final[]> =>
   page.evaluate(async () => {
     const raw = await (await fetch('/data/schedule.json')).json();
-    type G = { gameId: string; gameStatus: number; gameDateEst: string; homeTeam: Side; awayTeam: Side };
+    type G = { gameId: string; gameStatus: number; gameStatusText: string; gameDateEst: string; homeTeam: Side; awayTeam: Side };
     return (raw.leagueSchedule.gameDates as { games: G[] }[])
       .flatMap((d) => d.games)
       .filter((g) => /^00[2456]/.test(g.gameId) && g.gameStatus === 3)
-      .map((g) => ({ gameId: g.gameId, date: g.gameDateEst.slice(0, 10), home: g.homeTeam, away: g.awayTeam }));
+      .map((g) => ({ gameId: g.gameId, date: g.gameDateEst.slice(0, 10), home: g.homeTeam, away: g.awayTeam, ot: /^Final\/(\d*OT)$/.exec(g.gameStatusText.trim())?.[1] }));
   });
 const norm = (s: string | null) => (s ?? '').replace(/\s+/g, ' ').trim();
 
@@ -101,11 +101,64 @@ test('Team Calendar: every team with a final game, every final cell; scale print
       const home = g.home.teamTricode === tri;
       const [me, opp] = home ? [g.home, g.away] : [g.away, g.home];
       const cell = page.locator(`.ck-day-cell[data-date="${g.date}"]`);
-      expect(norm(await cell.locator('.ck-matchup').textContent())).toBe(`${tri} ${me.score} ${home ? 'vs' : '@'} ${opp.teamTricode} ${opp.score}`);
+      expect(norm(await cell.locator('.ck-matchup').textContent())).toBe(`${tri} ${me.score} ${home ? 'vs' : '@'} ${opp.teamTricode} ${opp.score}${g.ot ? ` ${g.ot}` : ''}`);
       // nothing clipped in the cell
       expect(await cell.evaluate((c) => c.scrollHeight <= c.clientHeight + 1 && c.scrollWidth <= c.clientWidth + 1)).toBe(true);
       n++;
     }
   }
   expect(n).toBe(2 * all.length);
+});
+
+// Overtime (round 4, item 1): "OT" / "2OT" after the final score, in the snapshot's own "Final/OT" games. The marker
+// must not change any width budget: League List and Team List rows stay one line, the Team List matchup (worst case
+// written in: widest tricodes, 3-digit scores, "3OT") stays inside its fixed slot, week-view lines keep their width.
+test('overtime marker: League List, Team List (worst case in its slot), week view', async ({ page }, info) => {
+  await open(page, '?view=league&layout=list');
+  const ots = (await finals(page)).filter((g) => g.ot);
+  expect(ots.length, 'the snapshot has overtime games').toBeGreaterThan(0);
+  const oneLine = (sel: string) =>
+    page.locator(sel).evaluate((a) => {
+      const kids = [...a.children].filter((c) => getComputedStyle(c).position !== 'absolute' && c.getBoundingClientRect().height > 0);
+      const tops = new Set(kids.map((k) => Math.round(k.getBoundingClientRect().top + k.getBoundingClientRect().height / 2)));
+      return tops.size === 1 || Math.max(...tops) - Math.min(...tops) < 4;
+    });
+  for (const g of ots) {
+    await open(page, `?view=league&layout=list&date=${g.date}`);
+    const card = page.locator(`.ck-card[data-game-id="${g.gameId}"]`);
+    expect(norm(await card.locator('.ck-matchup').evaluate((m) => [...m.querySelectorAll('.ck-team, .ck-score, .ck-vsat, .ck-ot')].map((e) => e.textContent).join(' ')))).toBe(`${g.away.teamTricode} ${g.away.score} @ ${g.home.teamTricode} ${g.home.score} ${g.ot}`);
+    expect(await card.getAttribute('aria-label')).toContain(`(${g.ot})`);
+    expect(await oneLine(`.ck-card[data-game-id="${g.gameId}"]`), `${g.gameId} League List one line`).toBe(true);
+    for (const tri of [g.away.teamTricode, g.home.teamTricode]) {
+      await open(page, `?view=team&layout=list&team=${tri}`);
+      const row = page.locator(`[data-testid="team-list"] .ck-card[data-game-id="${g.gameId}"]`);
+      expect(await row.locator('.ck-ot').textContent()).toBe(g.ot);
+      expect(await oneLine(`[data-testid="team-list"] .ck-card[data-game-id="${g.gameId}"]`), `${g.gameId} Team List one line`).toBe(true);
+    }
+  }
+  // worst case in the Team List's fixed matchup slot: write the widest tricodes, 3-digit scores and "3OT" into a row
+  await open(page, `?view=team&layout=list&team=${ots[0]!.home.teamTricode}`);
+  const r = await page.locator(`[data-testid="team-list"] .ck-card[data-game-id="${ots[0]!.gameId}"] .ck-matchup`).evaluate((m) => {
+    m.querySelectorAll('.ck-team').forEach((t) => (t.firstChild!.textContent = 'MEM'));
+    m.querySelectorAll('.ck-score').forEach((t) => (t.textContent = '188'));
+    m.querySelector('.ck-ot')!.textContent = '3OT';
+    const kids = [...m.querySelectorAll('.ck-side')];
+    return { slot: m.getBoundingClientRect().width, content: kids.at(-1)!.getBoundingClientRect().right - kids[0]!.getBoundingClientRect().left, overflow: m.scrollWidth - m.clientWidth };
+  });
+  console.log(`[scores] ${info.project.name} Team List worst-case matchup with OT: ${r.content.toFixed(2)} of ${r.slot} px`);
+  expect(r.content).toBeLessThanOrEqual(r.slot);
+  // week view: in the TV column of the final line, inside the line
+  const g = ots[0]!;
+  for (const weeks of [1, 2]) {
+    await open(page, `?view=league&layout=calendar&date=${g.date}&weeks=${weeks}`);
+    const w = await page.locator(`.ck-month-game[data-game-id="${g.gameId}"]`).evaluate((line) => {
+      const o = line.querySelector('.ck-tv-slot .ck-ot')!;
+      const range = document.createRange();
+      range.selectNodeContents(o);
+      return { text: o.textContent, ot: range.getBoundingClientRect().right, slot: o.parentElement!.getBoundingClientRect().right, overflow: line.scrollWidth - line.clientWidth };
+    });
+    expect(w.text).toBe(g.ot);
+    expect(w.ot).toBeLessThanOrEqual(w.slot + 0.01);
+    expect(w.overflow).toBe(0);
+  }
 });

@@ -31,8 +31,8 @@ function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefin
   const tvText = (g: ScheduleGame) => nationalTv(g).join(' · ').length;
   const g = data.games.reduce<ScheduleGame | undefined>((best, x) => (x.homeTeam.teamId && (!best || tvText(x) > tvText(best)) ? x : best), undefined);
   if (!g) return undefined;
-  // final with 3-digit scores (tabular digits: any 3 are as wide), so a cell with a score fits too
-  const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
+  // final with 3-digit scores (tabular digits: any 3 are as wide) in triple overtime, so a cell with a score fits too
+  const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', statusText: 'Final/3OT', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
   const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
   // and the 3rd game of a 3-in-4 ("3-in-4 · 3rd": the widest chip text)
   const tif: ThreeInFour = { position: 3, sets: [] };

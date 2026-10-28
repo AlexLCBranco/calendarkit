@@ -3,7 +3,7 @@
 
 import { Fragment } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { finalScore, isOver, markers, nationalTv, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine } from '../data/model';
+import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine } from '../data/model';
 import { threeInFourLabel, threeInFourTip, type ThreeInFour } from '../data/scheduleTags';
 import { teamLogo } from '../data/teams';
 import { CopyButton } from './CopyButton';
@@ -135,6 +135,13 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
   const home = teamLabel(game.homeTeam);
   // final score from the shown side: the selected team (team views) or the away team (league views)
   const result = scores ? finalScore(game, teamId ?? game.awayTeam.teamId) : undefined;
+  const ot = result && overtime(game);
+  const otMark = ot && (
+    <>
+      {' '}
+      <span className="ck-ot" title="Overtime">{ot}</span>
+    </>
+  );
   const loss = (first: boolean) => (result && result.win !== first ? ' ck-loss' : '');
   // the space keeps textContent readable ("BOS 113"); inline-flex drops it, the margin spaces the score
   const score = (n: number, win: boolean) => (
@@ -162,6 +169,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
           {opponentB2B && <B2BDot tip={opponentB2B} />}
         </span>
         {result && score(result.oppScore, !result.win)}
+        {otMark}
       </span>
     </span>
   ) : (
@@ -174,6 +182,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
       {logos && <TeamLogo team={game.homeTeam} />}
       <span className={`ck-team${loss(false)}`}>{home}</span>
       {result && score(result.oppScore, !result.win)}
+      {otMark}
       {b2bIds.has(game.homeTeam.teamId) && <span className="ck-tag ck-b2b" title={`${home} back-to-back`}>B2B</span>}
     </span>
   );
@@ -183,8 +192,8 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
     ? `Game ${season.game}${season.record ? `, record ${season.record.wins}-${season.record.losses} going in` : ''}${streak ? `, on a ${streak.n}-game ${streak.kind === 'W' ? 'winning' : 'losing'} streak` : ''}`
     : '';
   const label = side
-    ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}` : ''}${seasonText ? `, ${seasonText}` : ''}`
-    : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}` : ''}`;
+    ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${seasonText ? `, ${seasonText}` : ''}`
+    : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}`;
   const nights = bracketNights ?? b2b.map((n) => n.night);
   const bracket = side && nights.length ? nights.join(' ') : undefined;
   const cols = fatigueColumns && !!side;

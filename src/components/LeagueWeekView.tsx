@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { addDays, finalScore, hasNationalTv, isBackToBack, nationalTv, teamLabel, type CalendarData } from '../data/model';
+import { addDays, finalScore, hasNationalTv, isBackToBack, nationalTv, overtime, teamLabel, type CalendarData } from '../data/model';
 import { CopyButton } from './CopyButton';
 import { busiestDayHeight, flowDay, scoreFontFor, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, weekScale } from './dayflow';
 import { B2BDot, TeamLogo } from './GameCard';
@@ -46,16 +46,23 @@ export function MonthGameLine({ data, game }: { data: CalendarData; game: Schedu
   const b2b = (id: number) => isBackToBack(data, id, game.dateEt);
   // final: the scores take the logos' slots and the TV pill is dropped (its column stays, so the "@" stays put)
   const fin = game.status === 'final' ? finalScore(game, game.awayTeam.teamId) : undefined;
+  // overtime: in the final line's empty TV slot, so the line keeps its width
+  const ot = fin && overtime(game);
   return (
     <li
       className={`ck-month-game${fin ? ' ck-month-final' : ''}`}
       data-game-id={game.gameId}
-      aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
+      aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}${ot ? ` (${ot})` : ''}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
     >
       <MonthTeam team={game.awayTeam} b2b={b2b(game.awayTeam.teamId)} score={fin && { n: fin.score, win: fin.win }} />
       <span className="ck-at">@</span>
       <MonthTeam team={game.homeTeam} b2b={b2b(game.homeTeam.teamId)} score={fin && { n: fin.oppScore, win: !fin.win }} />
       <span className="ck-tv-slot">
+        {ot && (
+          <span className="ck-ot" title="Overtime">
+            {ot}
+          </span>
+        )}
         {!fin && tv.length > 0 && (
           <span className="ck-tv-pill" data-tip={tv.join(', ')} aria-label={`National TV: ${tv.join(', ')}`} tabIndex={0}>
             TV

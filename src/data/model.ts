@@ -322,6 +322,12 @@ export function finalScore(g: ScheduleGame, teamId: number): { score: number; op
   return { score, oppScore, win: score > oppScore };
 }
 
+/** "OT", "2OT", "3OT" for a final game decided in overtime (status text "Final/OT", "Final/2OT", …); else undefined. */
+export function overtime(g: ScheduleGame): string | undefined {
+  if (g.status !== 'final') return undefined;
+  return /^Final\/(\d*OT)$/i.exec(g.statusText)?.[1]?.toUpperCase();
+}
+
 export interface SeasonLine {
   /** Regular-season game number (1–82); undefined for the Cup Final, play-in and playoff games. */
   game?: number;

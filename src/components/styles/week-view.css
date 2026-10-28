@@ -183,3 +183,12 @@
   color: var(--ck-text);
   font-weight: 700;
 }
+/* Overtime on a final line: in the TV column, which final lines leave empty, at the TV pill's text size; so the
+   line keeps its width ("2OT" fits the 15 px column). */
+.ck-tv-slot .ck-ot {
+  display: block;
+  font-size: calc(var(--ck-font) * 0.68);
+  line-height: var(--ck-logo);
+  text-align: center;
+  letter-spacing: -0.03em;
+}

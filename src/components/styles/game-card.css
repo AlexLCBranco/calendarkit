@@ -166,3 +166,10 @@
 .ck-cell {
   overflow: hidden;
 }
+/* Overtime: a small muted "OT" / "2OT" after the final score */
+.ck-ot {
+  font-size: 0.75em;
+  font-weight: 600;
+  color: var(--ck-muted);
+  white-space: nowrap;
+}

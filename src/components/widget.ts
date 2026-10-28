@@ -21,9 +21,10 @@ export const LIST_MAX_WIDTH = 960;
  * Team List column cap: wider than the League List so a row with the fatigue columns stays on one line with every
  * part at a fixed x. Measured 2026-10-24 over every row of all 30 teams at 1920 px: widest tags 239.7 px (DEN vs DAL
  * Nov 24: Cup group label + "NBC · Peacock"), widest matchup 211.0 px ("GSW 108 vs MEM 111"), season line 110.6 px;
- * with the fixed columns and 7 gaps of 8 px a row needs 1055 px (+ the 10 px bracket gutter): 1080 leaves ~15 px.
+ * with the fixed columns and 7 gaps of 8 px a row needs 1055 px (+ the 10 px bracket gutter): 1080 left ~15 px.
+ * 2026-10-28: 1110, so the matchup slot fits an overtime marker ("MEM 188 vs MEM 188 2OT", 242.5 px; slot 214 → 244).
  */
-export const TEAM_LIST_MAX_WIDTH = 1080;
+export const TEAM_LIST_MAX_WIDTH = 1110;
 
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
