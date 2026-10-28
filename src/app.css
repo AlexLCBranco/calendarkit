@@ -41,3 +41,18 @@ body {
 .app-retry:hover {
   border-color: #4ea1ff;
 }
+/* site version, bottom-right corner of the window (SiteVersion.tsx) */
+.app-version {
+  position: fixed;
+  right: 6px;
+  bottom: 1px; /* inside the page's 16 px bottom padding: never over a list row or calendar cell */
+  z-index: 20;
+  padding: 0 5px;
+  line-height: 13px;
+  border-radius: 4px;
+  background: rgba(15, 17, 21, 0.85);
+  color: #8b93a3;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}

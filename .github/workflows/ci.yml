@@ -12,11 +12,15 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2 # check-version compares HEAD with its parent
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run check-version
+        if: github.event_name == 'push'
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium

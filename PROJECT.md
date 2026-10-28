@@ -667,11 +667,18 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   no on-screen change (the e2e cell walks pass unchanged). The 1280 whole-view copy test fails without the fix.
 
 ### Site version (2026-10-28)
-- The top bar shows **"v<commit>"** after "Data updated …" (tooltip: "Site version: commit 0f8f254, built Oct 28, 20:02";
-  phones: in the "i" tooltip), and the build serves **`/version.json`** (`{"version","builtAt"}`, `Cache-Control: no-cache`).
-  The commit comes from `VERCEL_GIT_COMMIT_SHA` / `GITHUB_SHA`, else git (`+` = built with uncommitted changes); set
-  in `vite.config.ts`, read via `src/build-info.ts`. Use: after a push, the live site is current once its version
-  equals the pushed commit. Tests: `tests/version.test.tsx`, `e2e/version.spec.ts` (served version = git HEAD).
+- **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
+  every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip
+  "Version 1.3.0 · commit c93db81, built Oct 28, 2026, 21:00". Part of the app shell (`src/SiteVersion.tsx`), not the
+  widgets, so never in a copied image. `/version.json` = `{"version","commit","builtAt"}`, served `no-cache`. The commit
+  comes from `VERCEL_GIT_COMMIT_SHA` / `GITHUB_SHA`, else git (`+` = built with uncommitted changes); `vite.config.ts`,
+  read via `src/build-info.ts`. (First shipped as "v<commit>" after the data stamp; Alex asked for the corner and
+  numbered versions.)
+- **Numbering**: patch for fixes, minor for features, major for big changes. Start: **1.3.0** = v1 + round 2 + round 3.
+  **Enforced in CI**: `npm run check-version` (`scripts/check-version.ts`, first CI step on pushes) fails when the last
+  commit changes the app (anything but `public/data/`, tests, e2e, scripts, CI, docs) without raising the version; the
+  daily data commits pass. Tests: `tests/version.test.tsx`, `e2e/version.spec.ts` (corner, fixed when scrolling, covers
+  nothing, = package.json and git HEAD; against the live site: no-cache).
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

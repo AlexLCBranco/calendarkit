@@ -29,7 +29,7 @@ describe('"Data updated" stamp', () => {
     expect(stamp().textContent).toBe('Data updated Oct 23, 08:29');
     expect(stamp().classList).not.toContain('ck-stamp-stale');
     expect(stamp().getAttribute('data-tip')).toBeNull();
-    expect(stamp().closest('.ck-notes')).toBe(screen.getByTestId('tz-note').parentElement); // on the line under the note (with the site version)
+    expect(stamp().parentElement).toBe(screen.getByTestId('tz-note').parentElement);
     cleanup();
     view(T + H, 'America/New_York');
     expect(stamp().textContent).toBe('Data updated Oct 23, 07:29');

@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 're
 import { CalendarView, type CalendarState } from './components/CalendarView';
 import { isRotationkitConfigured } from './config';
 import { BUILD_INFO } from './build-info';
+import { SiteVersion } from './SiteVersion';
 import { loadCalendarData } from './data/load';
 import type { CalendarData } from './data/model';
 import { TEAMS, TEAM_BY_ID } from './data/teams';
@@ -125,10 +126,10 @@ export function App() {
             title={`NBA schedule ${data.seasonYear}`}
             note={`Times in your time zone (${timeZone})`}
             updatedAt={data.updatedAt}
-            version={BUILD_INFO}
           />
         )}
       </div>
+      <SiteVersion {...BUILD_INFO} />
     </div>
   );
 }

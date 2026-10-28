@@ -1,36 +1,41 @@
 // @vitest-environment jsdom
-// Site version in the top bar: "v<commit>" after the data stamp, tooltip with the build time; phones in the "i" tip.
+// Site version: "v1.3.0" in the bottom-right corner, commit + build time in its tooltip; package.json is the source.
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { BUILD_INFO } from '../src/build-info';
-import { CalendarView } from '../src/components/CalendarView';
-import { data } from './feed';
-
-afterEach(cleanup);
-const NOW = Date.parse('2026-10-23T15:00:00Z');
-const V = { version: '0f8f254', builtAt: '2026-10-28T20:02:00Z' };
+import { SiteVersion } from '../src/SiteVersion';
+import { changesNeedBump, isBumped } from '../scripts/check-version';
 
 describe('site version', () => {
-  it('desktop: "v0f8f254" beside the data stamp, build time in the tooltip (hover and focus)', () => {
-    render(<CalendarView data={data} size={{ width: 1200, height: 800 }} now={NOW} timeZone="UTC" note="tz" updatedAt="2026-10-23T08:29:00Z" version={V} />);
+  it('"v1.3.0", tooltip with the commit and build time', () => {
+    render(<SiteVersion version="1.3.0" commit="c93db81" builtAt="2026-10-28T21:00:00Z" />);
     const v = screen.getByTestId('site-version');
-    expect(v.textContent).toBe('v0f8f254');
-    expect(v.parentElement).toBe(screen.getByTestId('data-updated').parentElement); // same line
-    fireEvent.focus(v);
-    expect(screen.getByTestId('tooltip').textContent).toBe('Site version: commit 0f8f254, built Oct 28, 20:02');
+    expect(v.textContent).toBe('v1.3.0');
+    expect(v.title).toMatch(/^Version 1\.3\.0 · commit c93db81, built Oct 28, 2026, \d\d:\d\d$/);
   });
 
-  it('phones: in the "i" tooltip; without a version prop: nothing', () => {
-    render(<CalendarView data={data} size={{ width: 390, height: 800 }} now={NOW} timeZone="UTC" note="tz" version={V} />);
-    expect(screen.getByRole('img', { name: 'tz' }).getAttribute('data-tip')).toBe('tz · site version 0f8f254');
-    cleanup();
-    render(<CalendarView data={data} size={{ width: 1200, height: 800 }} now={NOW} timeZone="UTC" note="tz" />);
-    expect(screen.queryByTestId('site-version')).toBeNull();
+  it('the build takes the version from package.json (MAJOR.MINOR.PATCH) and the commit from git', () => {
+    expect(BUILD_INFO.version).toBe(JSON.parse(readFileSync('package.json', 'utf8')).version);
+    expect(BUILD_INFO.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(BUILD_INFO.commit).toMatch(/^[0-9a-f]{7}\+?$/);
   });
+});
 
-  it('the build fills BUILD_INFO with a commit (7 hex, "+" for uncommitted changes) and an ISO time', () => {
-    expect(BUILD_INFO.version).toMatch(/^[0-9a-f]{7}\+?$/);
-    expect(Number.isNaN(Date.parse(BUILD_INFO.builtAt))).toBe(false);
+describe('check-version (CI)', () => {
+  it('app changes need a bump; data snapshots, tests, docs and CI files don\'t', () => {
+    expect(changesNeedBump(['src/App.tsx'])).toBe(true);
+    expect(changesNeedBump(['public/logos/BOS.svg', 'README.md'])).toBe(true);
+    expect(changesNeedBump(['index.html'])).toBe(true);
+    expect(changesNeedBump(['public/data/schedule.json'])).toBe(false);
+    expect(changesNeedBump(['tests/x.test.ts', 'e2e/y.spec.ts', 'PROJECT.md', '.github/workflows/ci.yml', 'scripts/z.ts'])).toBe(false);
+  });
+  it('a bump = a higher MAJOR.MINOR.PATCH', () => {
+    expect(isBumped('1.3.0', '1.3.1')).toBe(true);
+    expect(isBumped('1.3.9', '1.4.0')).toBe(true);
+    expect(isBumped('1.9.9', '2.0.0')).toBe(true);
+    expect(isBumped('1.3.0', '1.3.0')).toBe(false);
+    expect(isBumped('1.4.0', '1.3.9')).toBe(false);
   });
 });
