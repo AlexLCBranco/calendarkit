@@ -196,11 +196,14 @@ test('whole view: league week view (1 and 2 weeks)', async ({ page }) => {
   await check(page, 'view-league-2weeks', await copyView(page), ['logo', 'text', 'b2b', 'tv']);
 });
 
-test('whole view: team calendar and the full team list', async ({ page }) => {
+test('whole view: team calendar and the full team list', async ({ page }, info) => {
   test.setTimeout(240_000); // three large copies
   await open(page, '?view=team&layout=calendar&team=LAL');
   await expect(page.locator('.ck-team-grid')).toBeVisible();
   await check(page, 'view-team-calendar', await copyView(page), ['logo', 'text', 'b2b', 'tv']);
+  // The full Team List image is the same at 1280 and 1920 (the list column is 1080 px at both) and is a ~4400 × 14000 px
+  // canvas: made once, at 1920. Two at once on CI's 2 workers stalled the runner (2026-10-28); alone, 1280 copies in ~10 s.
+  if (info.project.name !== 'desktop-xl') return;
 
   await page.getByRole('tab', { name: 'List', exact: true }).click();
   const shown = await page.locator('.ck-team-rows > .ck-card').count();
