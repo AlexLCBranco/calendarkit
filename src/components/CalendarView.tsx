@@ -3,7 +3,7 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { addDays, dateFormat, defaultDay, isOver, localDate, monthOf, seasonMonths, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
@@ -15,6 +15,9 @@ import { LeagueWeekView, type WeekCount } from './LeagueWeekView';
 import { MonthNavigator } from './MonthNavigator';
 import { monthNav, PeriodNav, TodayButton, type PeriodNavProps } from './PeriodNav';
 import { Segmented } from './Segmented';
+import { createSelectionStore, useMarqueeSelection } from './selection';
+import { SelectionBar, SelectionStyle } from './SelectionBar';
+import { SelectionCapture, type SelectionKind } from './SelectionCapture';
 import { TeamHeader } from './TeamHeader';
 import { TeamListView, type TeamListHandle } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
@@ -220,9 +223,41 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const capturePeriod = team && list ? undefined : !team && list ? fmtRange(listWeek[0]!, listWeek[6]!) : nav?.title;
   const fullHeight = { width: size.width, height: 1e6 };
 
+  // Marquee selection of games (desktop/tablet, mouse): only to copy several games as one image. The selected ids live
+  // in a store, so selecting re-renders only the highlight <style> and the bar, never the views.
+  const [selection] = useState(createSelectionStore);
+  const marquee = useRef<HTMLDivElement>(null);
+  const onMarquee = useMarqueeSelection(selection, marquee);
+  const selKind: SelectionKind | undefined = compact ? undefined : team ? (list ? 'team-list' : 'team-calendar') : list ? 'league-list' : weekView ? 'league-week' : undefined;
+  // a new view, team, period, span or toggle clears it (scrolling the League List doesn't)
+  const viewKey = [state.mode, state.layout, state.teamId, state.tvOnly, state.showRest, state.weeks, state.teamSpan, teamMonth, teamWeek, leagueMonth, weekView ? weekOf(state.date)[0] : '', compact].join('|');
+  useEffect(() => selection.clear(), [viewKey, selection]);
+  const root = useRef<HTMLDivElement>(null);
+  const [selCapture, setSelCapture] = useState<{ ids: ReadonlySet<string>; cellWidth?: number; teamScale?: number; weekStyle?: string; onReady: (node: HTMLElement) => void }>();
+  const copySelection = (button: HTMLButtonElement) => {
+    const el = root.current!;
+    const cell = el.querySelector('.ck-team-grid .ck-day-cell, .ck-week-grid .ck-month-cell');
+    return new Promise<HTMLCanvasElement>((resolve, reject) =>
+      setSelCapture({
+        ids: selection.get(),
+        cellWidth: cell ? cell.getBoundingClientRect().width : undefined,
+        teamScale: Number(el.querySelector<HTMLElement>('.ck-team-grid')?.dataset.scale ?? 1),
+        weekStyle: el.querySelector('.ck-week-view')?.getAttribute('style') ?? undefined,
+        onReady: (node) => {
+          button.dataset.captured = `${node.offsetWidth}x${node.offsetHeight}@${capturePixelRatio(node.scrollWidth, node.scrollHeight, COPY_PIXEL_RATIO)}`;
+          copyElement(node, 1)
+            .then(resolve, reject)
+            .finally(() => setSelCapture(undefined));
+        },
+      }),
+    );
+  };
+
   return (
     <div
-      className={`ck-root${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`}
+      ref={root}
+      className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`}
+      onPointerDown={selKind ? onMarquee : undefined}
       style={{ maxWidth: size.width, height: list ? size.height : undefined, minHeight: list || compact ? undefined : size.height }}
       {...tooltip.handlers}
     >
@@ -303,6 +338,37 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
       )}
       {tooltip.node}
+      <div ref={marquee} className="ck-marquee" aria-hidden="true" data-testid="marquee" />
+      <SelectionStyle store={selection} scope=".ck-select-area" />
+      {selKind && <SelectionBar store={selection} copy={copySelection} />}
+      {selCapture && selKind && (
+        <CaptureStage
+          onReady={selCapture.onReady}
+          width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : Math.max(selCapture.cellWidth ?? 0, 360)) + 2 * CAPTURE_PAD}
+          className={list ? ' ck-root-fill' : ' ck-root-grow'}
+        >
+          <div className="ck-capture-head">
+            {title && <span className="ck-title">{title}</span>}
+            {!list && nav?.title && <span className="ck-capture-period">{nav.title}</span>}
+            {state.tvOnly && <span className="ck-capture-filter">TV games only</span>}
+            {note && <span className="ck-note">{note}</span>}
+          </div>
+          {team && <TeamHeader teamId={state.teamId} compact={compact} />}
+          <SelectionCapture
+            kind={selKind}
+            data={data}
+            ids={selCapture.ids}
+            teamId={state.teamId}
+            tvOnly={state.tvOnly}
+            size={size}
+            now={now}
+            timeZone={timeZone}
+            cellWidth={selCapture.cellWidth}
+            teamScale={selCapture.teamScale}
+            weekStyle={selCapture.weekStyle}
+          />
+        </CaptureStage>
+      )}
       {capture && (
         <CaptureStage onReady={capture} width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : size.width) + 2 * CAPTURE_PAD} className={`${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`} minHeight={list || compact ? undefined : size.height}>
           <div className="ck-capture-head">

@@ -349,3 +349,147 @@ test('buttons: ✓ then back after 1.5 s; never in the image; the hover buttons 
   await clickCopy(page, button);
   await expect(button).toHaveAttribute('data-state', 'idle', { timeout: 2500 });
 });
+
+// ---------------------------------------------------------------- marquee selection images
+
+/** A real drag over the on-screen games `from`..`to` of `sel` (clear of a list's auto-scroll zones). */
+async function selectRange(page: Page, sel: string, from: number, to: number) {
+  const [p, q] = await page.evaluate(
+    ([sel, from, to]) => {
+      const shown = [...document.querySelectorAll(sel)].filter((e) => {
+        const r = e.getBoundingClientRect();
+        const c = e.closest('[data-select-scroller]')?.getBoundingClientRect();
+        return r.width > 0 && r.top >= 0 && r.bottom <= innerHeight && (!c || (r.top >= c.top + 60 && r.bottom <= c.bottom - 60));
+      });
+      return [shown[from]!.getBoundingClientRect().toJSON(), shown[to]!.getBoundingClientRect().toJSON()] as DOMRect[];
+    },
+    [sel, from, to] as const,
+  );
+  const a = { x: Math.min(p!.left, q!.left) + 3, y: p!.top + 2 };
+  const b = { x: Math.max(p!.right, q!.right) - 3, y: q!.bottom - 2 };
+  await page.mouse.move(a.x, a.y);
+  await page.mouse.down();
+  await page.mouse.move(b.x, b.y, { steps: 10 });
+  await page.mouse.up();
+  // the selected games in on-screen order, with their text as drawn
+  return page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>('.ck-select-area [data-game-id]')]
+      .filter((e) => getComputedStyle(e).outlineStyle === 'solid')
+      .map((e) => ({ id: e.dataset.gameId!, text: e.textContent!, b2b: e.dataset.b2b ?? null, date: e.closest<HTMLElement>('[data-date]')?.dataset.date ?? e.closest<HTMLElement>('[data-day]')?.dataset.day ?? '' })),
+  );
+}
+
+type Shot = Omit<Target, 'ratio'> & { items: { id: string; text: string; b2b: string | null; outline: string }[]; heads: string[]; rest: number; chrome: number };
+
+/** Copies the selection (bar button, or Ctrl+C) and measures what was rendered for it. */
+async function copySelectionImage(page: Page, how: 'button' | 'keys' = 'button') {
+  await page.evaluate((src) => {
+    const measure = (0, eval)(src);
+    const w = window as unknown as { __ckStage?: unknown };
+    w.__ckStage = undefined;
+    const obs = new MutationObserver(() => {
+      const root = document.querySelector<HTMLElement>('.ck-capture');
+      if (root && !w.__ckStage) {
+        Promise.all([...root.querySelectorAll('img')].map((i) => i.decode().catch(() => undefined))).then(() => {
+          if (!root.isConnected) return;
+          w.__ckStage = {
+            ...measure(root),
+            items: [...root.querySelectorAll<HTMLElement>('[data-game-id]')].map((e) => ({ id: e.dataset.gameId!, text: e.textContent!, b2b: e.dataset.b2b ?? null, outline: getComputedStyle(e).outlineStyle })),
+            heads: [...root.querySelectorAll('.ck-lday-head, .ck-sel-dayhead')].map((h) => h.textContent),
+            rest: root.querySelectorAll('.ck-rest-row').length,
+            chrome: root.querySelectorAll('.ck-selbar, [data-testid="marquee"], .ck-copy:not([data-capture-exclude="true"])').length, // copy buttons are left out of every image
+          };
+        });
+        obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  }, MEASURE);
+  const button = page.getByTestId('copy-selection');
+  let png: string;
+  if (how === 'button') png = await clickCopy(page, button);
+  else {
+    await expect(button).toHaveAttribute('data-state', 'idle', { timeout: 5000 });
+    await page.evaluate(() => navigator.clipboard.writeText(''));
+    await page.keyboard.press('Control+c');
+    await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 20_000 });
+    png = await page.evaluate(async () => {
+      const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;
+      const bytes = new Uint8Array(await (await item.getType('image/png')).arrayBuffer());
+      let s = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(s);
+    });
+  }
+  const stage = (await page.evaluate(() => (window as unknown as { __ckStage: unknown }).__ckStage)) as Shot;
+  expect(stage, 'stage measured').toBeTruthy();
+  const [size, ratio] = (await button.getAttribute('data-captured'))!.split('@');
+  expect(size).toBe(`${stage.width}x${stage.height}`);
+  await expect(page.locator('.ck-capture')).toHaveCount(0);
+  return { png, target: { ...stage, ratio: Number(ratio) }, stage };
+}
+
+test('selection images: only the selected games, in on-screen order, as drawn in the view', async ({ page }) => {
+  test.setTimeout(180_000);
+  const cases: { name: string; search: string; sel: string; from: number; to: number; heads: boolean }[] = [
+    { name: 'team-list', search: '?view=team&layout=list&team=ORL&rest=1', sel: '.ck-team-rows > .ck-card', from: 0, to: 4, heads: false },
+    { name: 'league-list', search: '?view=league&layout=list&date=2026-11-15', sel: '.ck-lday .ck-card', from: 1, to: 5, heads: true },
+    { name: 'team-calendar-month', search: '?view=team&layout=calendar&team=LAL', sel: '.ck-team-grid .ck-day-cell .ck-card', from: 2, to: 5, heads: true },
+    { name: 'team-calendar-1w', search: '?view=team&layout=calendar&team=LAL&span=1w', sel: '.ck-team-grid .ck-day-cell .ck-card', from: 0, to: 2, heads: true },
+    { name: 'team-calendar-2w', search: '?view=team&layout=calendar&team=LAL&span=2w', sel: '.ck-team-grid .ck-day-cell .ck-card', from: 1, to: 4, heads: true },
+    { name: 'league-week-1w', search: '?view=league&layout=calendar&date=2026-11-15', sel: '.ck-week-grid .ck-month-game', from: 2, to: 7, heads: true },
+    { name: 'league-week-2w', search: '?view=league&layout=calendar&date=2026-11-15&weeks=2', sel: '.ck-week-grid .ck-month-game', from: 4, to: 12, heads: true },
+  ];
+  for (const [i, k] of cases.entries()) {
+    await open(page, k.search);
+    await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+    const picked = await selectRange(page, k.sel, k.from, k.to);
+    expect(picked.length, k.name).toBeGreaterThanOrEqual(2);
+    const shot = await copySelectionImage(page, i % 2 ? 'keys' : 'button');
+    // only the selected games, same order, drawn the same (text incl. scores, markers, TV names, fatigue chips)
+    expect(shot.stage.items.map((x) => x.id), k.name).toEqual(picked.map((x) => x.id));
+    expect(shot.stage.items.map((x) => x.text), k.name).toEqual(picked.map((x) => x.text));
+    // no highlight, bar, copy buttons or rest rows in the image
+    expect(shot.stage.items.filter((x) => x.outline === 'solid'), k.name).toEqual([]);
+    expect(shot.stage.chrome, k.name).toBe(0);
+    expect(shot.stage.rest, k.name).toBe(0);
+    // day headers: one per day with selected games (calendars and the League List), none in the Team List
+    const days = [...new Set(picked.map((x) => x.date))];
+    expect(shot.stage.heads.length, `${k.name} headers`).toBe(k.heads ? days.length : 0);
+    // 2 logos per game (final lines of the week view show scores in the logo slots), + the team header in team views
+    const logos = shot.target.regions.filter((r) => r.kind === 'logo').length;
+    const lineScores = shot.target.regions.filter((r) => r.kind === 'score').length;
+    if (k.name.startsWith('league-week')) expect(logos + lineScores, k.name).toBe(2 * picked.length);
+    else expect(logos, k.name).toBe(2 * picked.length + (k.search.includes('view=team') ? 1 : 0));
+    console.log(`[copy] selection-${k.name}: ${picked.length} games, ${days.length} day(s)`);
+    await check(page, `selection-${k.name}`, shot, ['logo', 'text']);
+    await page.keyboard.press('Escape');
+  }
+});
+
+test('selection image of the Team List: the B2B bracket only when both nights are selected', async ({ page }) => {
+  await open(page, '?view=team&layout=list&team=ORL');
+  await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+  // on-screen rows (clear of the auto-scroll zones), with their bracket
+  const rows = await page.evaluate(() => {
+    const c = document.querySelector('[data-testid="team-list"]')!.getBoundingClientRect();
+    return [...document.querySelectorAll<HTMLElement>('.ck-team-rows > .ck-card')]
+      .filter((r) => r.getBoundingClientRect().top >= c.top + 60 && r.getBoundingClientRect().bottom <= c.bottom - 60)
+      .map((r) => r.dataset.b2b ?? '');
+  });
+  const pair = rows.findIndex((b, j) => b === '1' && rows[j + 1] === '2');
+  expect(pair, 'a back-to-back on screen').toBeGreaterThanOrEqual(0);
+  // from the pair's night 1 to the next night 1 (its night 2 left out), else 2 rows past the pair
+  const half = rows.findIndex((b, j) => j > pair + 1 && b === '1');
+  const picked = await selectRange(page, '.ck-team-rows > .ck-card', pair, half >= 0 ? half : Math.min(rows.length - 1, pair + 3));
+  const shot = await copySelectionImage(page);
+  const got = new Map(shot.stage.items.map((x) => [x.id, x.b2b]));
+  for (const [j, x] of picked.entries()) {
+    const partner = x.b2b === '1' ? picked[j + 1] : x.b2b === '2' ? picked[j - 1] : undefined;
+    const keep = !!partner && (x.b2b === '1' ? partner.b2b === '2' : partner.b2b === '1');
+    expect(got.get(x.id), `${x.id} (${x.b2b})`).toBe(keep ? x.b2b : null);
+  }
+  if (half >= 0) expect(got.get(picked.at(-1)!.id), 'cut pair: no bracket').toBeNull();
+  expect([...got.values()].filter(Boolean)).toEqual(['1', '2']);
+  await check(page, 'selection-team-list-b2b', shot, ['logo', 'text', 'b2b']);
+});

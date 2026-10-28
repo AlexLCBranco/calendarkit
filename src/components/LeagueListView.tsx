@@ -203,7 +203,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
           );
         })}
       </div>
-      <div className="ck-llist" ref={scroller} onScroll={onScroll} data-testid="league-list">
+      <div className="ck-llist" ref={scroller} onScroll={onScroll} data-testid="league-list" data-select-scroller>
         {days.length === 0 && <p className="ck-empty">No games.</p>}
         <div style={{ height: tops[start] }} aria-hidden="true" />
         {days.slice(start, end).map((d) => (
@@ -220,7 +220,7 @@ const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'sho
 /** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
 // memo: the list re-renders on every scroll event; a day whose props haven't changed (the same day object from
 // `days`, same clock) is skipped. Re-rendering every visible day's cards per scroll event cost frames (2026-10-24).
-const ListDaySection = memo(function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void }) {
+export const ListDaySection = memo(function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void }) {
   return (
     <section className="ck-lday" data-day={day.date} data-key={dataKey} aria-label={dayHeading(day.date, day.games.length)}>
       <h3 className="ck-lday-head">{dayHeading(day.date, day.games.length)}</h3>

@@ -1,0 +1,72 @@
+/* Marquee selection (selection.ts): the box while dragging, the selected games' highlight (generated per selection
+   by SelectionStyle, accent outline + tint), the floating bar, and the selection image's day cells. */
+.ck-marquee {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 30;
+  display: none;
+  border: 1px solid var(--ck-accent);
+  background: rgba(78, 161, 255, 0.12);
+  border-radius: 2px;
+  pointer-events: none;
+  will-change: transform, width, height;
+}
+.ck-month-game {
+  border-radius: 3px; /* the highlight's outline follows it */
+}
+/* logos are part of the games a marquee can start on: no native image drag */
+.ck-select-area img {
+  -webkit-user-drag: none;
+}
+.ck-selbar {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  z-index: 35;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 6px 14px;
+  background: var(--ck-surface-2);
+  border: 1px solid var(--ck-accent);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+.ck-selbar-count {
+  font-weight: 600;
+}
+.ck-selbar-clear {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.ck-selbar-clear:hover,
+.ck-selbar-clear:focus-visible {
+  color: var(--ck-text);
+  border-color: var(--ck-muted);
+}
+/* selection image of a calendar view: the selected days stacked, each as its cell */
+.ck-sel-days {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+.ck-sel-days > .ck-sel-day {
+  min-height: 0;
+}
+.ck-sel-dayhead {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ck-text);
+  padding: 2px 0 4px;
+}

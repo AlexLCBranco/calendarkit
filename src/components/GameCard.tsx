@@ -38,6 +38,9 @@ export interface GameCardProps {
    * time and the team, the opponent's "2/2" + 3-in-4 chip right after the opponent — instead of among the tags.
    */
   fatigueColumns?: boolean;
+  /** Team list: the nights whose left-edge bracket is drawn (default: every night in `b2b`); a selection image draws
+   *  it only when both nights are in the image. */
+  bracketNights?: (1 | 2)[];
   /** Current time (ms). Decides whether the game is over (rotationkit action). */
   now: number;
   /** IANA zone for tip-off; default: the browser's local zone. */
@@ -121,7 +124,7 @@ export function TifChip({ tif, team, opp = false }: { tif: ThreeInFour; team?: s
 /** Orange dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, opponentTif, fatigueColumns = false, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -182,7 +185,8 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
   const label = side
     ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}` : ''}${seasonText ? `, ${seasonText}` : ''}`
     : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}` : ''}`;
-  const bracket = side && b2b.length ? b2b.map((n) => n.night).join(' ') : undefined;
+  const nights = bracketNights ?? b2b.map((n) => n.night);
+  const bracket = side && nights.length ? nights.join(' ') : undefined;
   const cols = fatigueColumns && !!side;
   const b2bLabels = side && b2b.map((n) => <B2BLabel key={n.night} night={n} short={shortB2B} />);
   const tifChip = side && tif && <TifChip tif={tif} />;

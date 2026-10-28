@@ -21,6 +21,8 @@ where-to-watch info, embedding in gauntlet.
 - [x] Game card — `src/components/GameCard.tsx`: "BOS vs CHI" / "BOS @ DET" (team view, selected team first) or AWAY @ HOME, local tip-off with (+1), TBD, B2B (league: badge per team; team: 1/2 · 2/2 labels + opponent 2/2 dot), Cup / Cup Final / Play-In / Playoffs-round markers, national TV badge, "Rotations ↗" action (raises `onOpenGame`) once tip-off + 3 h has passed — only when the host passes `onOpenGame`; the app shell does so only once `ROTATIONKIT_BASE_URL` is set (hidden for now, see Open questions).
 - [x] Tests — see "Tests" below
 - [x] Copy as image (2026-10-23) — `src/components/copyAsImage.ts` + `CopyButton.tsx`, ported from Boardkit; see "Copy as image" in Decisions
+- [x] Round 3 (2026-10-24): rest days, schedule fatigue (B2B + 3-in-4), Team Calendar week views, marquee select — see
+  "Round 3" in Decisions.
 - [x] Round 2 (2026-10-23/24): perf guard, file split, Today button, final scores everywhere, data freshness +
   Try again, daily deploy check, shared-module drift check (`npm run check-shared`). See the sections below.
 - [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
@@ -622,6 +624,39 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   - Tests: `tests/teamweeks.test.tsx` (control, URL, phones, start-week rule, prev/next/ends, Today, Month ↔ weeks,
     every game in its cell for every week of BOS and LAL in both modes, B2B full/Sat→Sun/edge halves, TV filter),
     `e2e/teamweeks.spec.ts`, copy e2e (`view-team-calendar-1w/2w.png`, `day-team-calendar-1w/2w.png`).
+- **Marquee select** (feature A): ported from Boardkit (`useMarqueeSelection.ts`, `SelectionBar.tsx`) into
+  `src/components/selection.ts` (store + hook), `SelectionBar.tsx` (bar + highlight) and `SelectionCapture.tsx` (the
+  image). Desktop/tablet, mouse only (touch keeps scrolling), in every view with games (Team List, League List, Team
+  Calendar in month / 1 week / 2 weeks, league week view in 1 / 2 weeks). Items are games only (`[data-game-id]`:
+  list rows, week-view lines, the game in a team calendar cell) — never days or rest rows. A drag past 4 px starts
+  anywhere in the content (rows included) except controls (buttons, links, inputs, tabs, the picker, the top bar);
+  a plain click clears, Shift adds, Escape and ✕ clear, Ctrl+C copies. Changing view, team, month/week, span or a
+  toggle clears (scrolling the League List doesn't).
+  - **Smoothness**: the box is drawn by writing its style; one update per animation frame (auto-scroll, hit-test reads,
+    then box writes); the selected ids live in a small store (`useSyncExternalStore`) that ignores unchanged sets, so
+    selecting re-renders only a generated `<style>` (accent outline + tint per selected id) and the bar — never a view
+    or card. Measured (perf project, 1920 × 1080, headless): box across the busiest 2 weeks of the week view (91 games
+    selected) mean frame 16.3 ms, p95 22 ms, **0 ms long tasks**; Team List drag with auto-scroll (63 rows) mean 16.1
+    ms, p95 21 ms, 0 ms long tasks. Guarded: p95 ≤ 34 ms, long tasks ≤ 100 ms.
+  - **Auto-scroll**: within 48 px of a scrolling list's top/bottom the list scrolls (up to 28 px per frame). The box's
+    start stays on the content it was pressed on: it follows the pressed element (the League List's virtualizer moves
+    scrollTop by itself to keep its top day in place, so scrollTop alone drifted — found by e2e), and the scroll offset
+    once that element is unmounted. Rows scrolled past keep their last measured rect, so they stay selected. Wheel
+    scrolling mid-drag re-runs the hit-test. Found by e2e: a press on a logo started Chromium's native image drag and
+    cancelled the box — logos are now `-webkit-user-drag: none` and `dragstart` is blocked during a gesture.
+  - **Image**: same renderer as every copy (html-to-image, ratio 4 with the 16 000 px cap, dark opaque background,
+    copy buttons excluded, wrap slack), off-screen via `CaptureStage`, caption line (title, period for calendars, TV
+    filter, time zone) + the team header in team views. Lists: the selected rows stacked (League List under each
+    game's day header; Team List rows carry their date, no headers; the B2B bracket only when both nights are selected,
+    `GameCard bracketNights`). Calendars: each day with selected games as its cell (same card / same week-view lines at
+    the on-screen scale, time groups), header "Fri 23 Oct · 2 games", days stacked in order, no empty cells; 360 px
+    wide minimum for the caption. No highlight, bar or hover buttons in the image.
+  - Tests: `tests/selection.test.tsx` (store notifications and re-renders, hit-testing incl. scroller clipping,
+    remembered rows, probe and rest rows excluded, threshold, Shift, click, controls, touch, clearing in CalendarView),
+    `e2e/selection.spec.ts` (1280 + 1920: every view, exact set vs rects, Shift, click/Escape/✕, auto-scroll beyond
+    the first screen + wheel mid-drag, every clearing change, Copy and Ctrl+C), copy e2e (images read back for all 7
+    view/span combinations: only the selected ids in order, same text, day headers, logo counts, size × ratio, dark
+    corners, logo pixels; Team List bracket rule; PNGs `test-output/copy-images/selection-*.png`), perf (above).
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

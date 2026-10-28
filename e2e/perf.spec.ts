@@ -165,6 +165,46 @@ test('switching views: click → next frame', async ({ page }) => {
   for (const [name] of steps) check(name, median(times.get(name)!), 'switch');
 });
 
+// Marquee select (2026-10-24): a box dragged across the busiest 2 weeks of the league week view (110 game lines) and
+// down the Team List with auto-scroll. Frame times from requestAnimationFrame and long tasks during the gesture.
+// Not against a baseline (new): must stay smooth — p95 frame within two refreshes, no long task over 100 ms in total.
+test('marquee drag across busy views: frame times and long tasks', async ({ page }) => {
+  await page.clock.setFixedTime(NOW);
+  const gesture = async (search: string, from: [number, number], to: [number, number], hold = 0) => {
+    await page.goto(`/${search}`);
+    await page.waitForFunction(() => [...document.images].every((i) => i.complete) && !!document.querySelector('[data-game-id]'));
+    await page.evaluate(() => {
+      const w = window as unknown as { __ck: { frames: number[]; long: number; stop: boolean } };
+      w.__ck = { frames: [], long: 0, stop: false };
+      new PerformanceObserver((l) => l.getEntries().forEach((e) => (w.__ck.long += e.duration))).observe({ type: 'longtask' });
+      let last = performance.now();
+      const tick = (t: number) => {
+        w.__ck.frames.push(t - last);
+        last = t;
+        if (!w.__ck.stop) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    await page.mouse.move(from[0], from[1]);
+    await page.mouse.down();
+    await page.mouse.move(to[0], to[1], { steps: 60 });
+    if (hold) await page.waitForTimeout(hold);
+    await page.mouse.up();
+    const r = await page.evaluate(() => {
+      const w = window as unknown as { __ck: { frames: number[]; long: number; stop: boolean } };
+      w.__ck.stop = true;
+      const f = w.__ck.frames.slice(1).sort((a, b) => a - b);
+      return { n: f.length, mean: f.reduce((a, b) => a + b, 0) / f.length, p95: f[Math.floor(f.length * 0.95)]!, max: f.at(-1)!, long: w.__ck.long, selected: document.querySelector('[data-testid="selection-count"]')?.textContent };
+    });
+    console.log(`[perf] marquee ${search}: ${r.n} frames, mean ${round(r.mean)} ms, p95 ${round(r.p95)} ms, max ${round(r.max)} ms, long tasks ${round(r.long)} ms, ${r.selected}`);
+    expect(r.selected).toMatch(/^\d+ games selected$/);
+    expect.soft(r.p95, 'p95 frame within two refreshes').toBeLessThanOrEqual(34);
+    expect.soft(r.long, 'long tasks during the drag').toBeLessThanOrEqual(100);
+  };
+  await gesture('?view=league&layout=calendar&date=2026-12-27&weeks=2', [60, 150], [1860, 1040]);
+  await gesture('?view=team&layout=list&team=LAL', [900, 300], [905, 1060], 1500);
+});
+
 test.afterAll(() => {
   if (!process.env.PERF_RECORD || !Object.keys(measured).length) return;
   mkdirSync('test-output', { recursive: true });

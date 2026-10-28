@@ -14,6 +14,8 @@ export interface TeamListViewProps {
   tvOnly: boolean;
   /** One quiet "Rest" row per day without a game, between the team's first and last game. */
   showRest?: boolean;
+  /** Selection image: only these games (no rest rows); a B2B bracket only where both nights are in. */
+  only?: ReadonlySet<string>;
   size: WidgetSize;
   now: number;
   timeZone?: string;
@@ -38,11 +40,11 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
  * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
  */
-export function TeamListView({ data, teamId, tvOnly, showRest = false, size, now, timeZone, onOpenGame, handle, onAtNext }: TeamListViewProps) {
+export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, handle, onAtNext }: TeamListViewProps) {
   const compact = isCompact(size);
-  const games = useMemo(() => teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)), [data, teamId, tvOnly]);
+  const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
-  const rows = useMemo(() => (showRest ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, data, teamId]);
+  const rows = useMemo(() => (showRest && !only ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, data, teamId]);
   const b2b = useTeamB2B(data, teamId);
   const season = useMemo(() => teamSeason(data, teamId), [data, teamId]);
   const tif = teamThreeInFour(data, teamId);
@@ -66,7 +68,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, size, now
 
   return (
     <section className="ck-team-list" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} games`} style={{ maxHeight: size.height }}>
-      <div className="ck-llist" ref={scroller} data-testid="team-list" onScroll={onAtNext && report}>
+      <div className="ck-llist" ref={scroller} data-testid="team-list" onScroll={onAtNext && report} data-select-scroller>
         {games.length === 0 && <p className="ck-empty">No games.</p>}
         <div className="ck-daylist ck-team-rows">
           {rows.map((g) =>
@@ -82,6 +84,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, size, now
                 teamId={teamId}
                 teamFirst
                 b2b={b2b.byGame.get(g.gameId)}
+                bracketNights={only && b2b.byGame.get(g.gameId)?.filter((n) => only.has((n.night === 1 ? n.pair.second : n.pair.first).gameId)).map((n) => n.night)}
                 opponentB2B={opponentSecondNight(data, g, teamId)}
                 tif={cols ? tif.get(g.gameId) : undefined}
                 opponentTif={cols ? opponentTif(data, g, teamId) : undefined}

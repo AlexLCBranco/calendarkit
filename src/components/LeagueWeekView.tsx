@@ -41,7 +41,7 @@ function MonthTeam({ team, b2b, score }: { team: ScheduleGame['homeTeam']; b2b: 
   );
 }
 
-function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame }) {
+export function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame }) {
   const tv = nationalTv(game);
   const b2b = (id: number) => isBackToBack(data, id, game.dateEt);
   // final: the scores take the logos' slots and the TV pill is dropped (its column stays, so the "@" stays put)
