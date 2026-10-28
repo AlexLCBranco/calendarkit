@@ -657,6 +657,14 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     the first screen + wheel mid-drag, every clearing change, Copy and Ctrl+C), copy e2e (images read back for all 7
     view/span combinations: only the selected ids in order, same text, day headers, logo counts, size × ratio, dark
     corners, logo pixels; Team List bracket rule; PNGs `test-output/copy-images/selection-*.png`), perf (above).
+- **Fixes after the round-3 push (2026-10-28)**: (1) CI on the marquee commit failed 4 older tests that assumed the
+  early-season data (League List matchup text without the per-team "B2B" badge; the week of Oct 18 having unplayed
+  games with logos; the season's first week having a logo) — they now hold whatever the snapshot date. (2) The copy
+  read-backs for round 3's images now also run at 1280 × 900 (they ran at 1920 only), and found a real bug: at 1280 the
+  Team Calendar scale is 0.8, html-to-image gives each cloned card its computed height, and under a zoom below 1 that
+  height was too small, so the card's column wrapped and its tags came out beside the matchup, clipped by the cell
+  (whole view, day and selection copies). Fix: calendar cards never wrap into a second column (`flex-wrap: nowrap`);
+  no on-screen change (the e2e cell walks pass unchanged). The 1280 whole-view copy test fails without the fix.
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

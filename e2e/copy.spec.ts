@@ -13,7 +13,9 @@ const BG = [0x0f, 0x11, 0x15]; // --ck-bg
 const RATIO = 4;
 const MAX_SIDE = 16000;
 
-test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'runs once, at 1920 × 1080'));
+// Round 3's images (rest rows, fatigue columns, team week views, selections) are read back at 1280 × 900 too.
+const AT_1280 = /selection|full team list|team calendar in 1 and 2 weeks|a single day/;
+test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl' && !(info.project.name === 'desktop' && AT_1280.test(info.title)), 'runs once, at 1920 × 1080'));
 test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
 
 /** Area of an element inside the copied root, in CSS px, and what the image must show there. */
@@ -288,7 +290,8 @@ test('final scores are in the images: week view (1 and 2 weeks), league list day
 
   let v = await copyView(page);
   expect(scores(v)).toBe(2 * inWeek);
-  await check(page, 'scores-league-week', v, ['logo', 'text', 'score']);
+  // logos only where a game isn't final yet (final lines show the scores in the logo slots)
+  await check(page, 'scores-league-week', v, inWeek < (await page.locator('.ck-month-game').count()) ? ['logo', 'text', 'score'] : ['text', 'score']);
   await page.getByRole('tab', { name: '2 weeks' }).click();
   v = await copyView(page);
   expect(scores(v)).toBe(2 * finals.filter((d) => d >= '2026-10-18' && d <= '2026-10-31').length);

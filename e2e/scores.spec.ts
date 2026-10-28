@@ -38,7 +38,8 @@ test('League List: every final game shows "AWAY a @ HOME h", winner bold', async
     await open(page, `?view=league&layout=list&date=${date}`);
     for (const g of all.filter((x) => x.date === date)) {
       const card = page.locator(`.ck-card[data-game-id="${g.gameId}"]`);
-      expect(norm(await card.locator('.ck-matchup').textContent())).toBe(`${g.away.teamTricode} ${g.away.score} @ ${g.home.teamTricode} ${g.home.score}`);
+      // the names and scores only: league cards also carry a "B2B" badge per team on a back-to-back
+      expect(norm(await card.locator('.ck-matchup').evaluate((m) => [...m.querySelectorAll('.ck-team, .ck-score, .ck-vsat')].map((e) => e.textContent).join(' ')))).toBe(`${g.away.teamTricode} ${g.away.score} @ ${g.home.teamTricode} ${g.home.score}`);
       const win = await card.locator('.ck-score').evaluateAll((els) => els.map((e) => getComputedStyle(e).fontWeight));
       expect(win).toEqual([g.away.score > g.home.score ? '700' : '500', g.home.score > g.away.score ? '700' : '500']);
     }

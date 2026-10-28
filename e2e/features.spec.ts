@@ -330,7 +330,7 @@ test('league week view fits 1920×1080 without page scroll: every week of the se
   for (const weeks of [1, 2]) {
     await open(page, `?view=league&layout=calendar&date=${first}&weeks=${weeks}`);
     let worst = { spare: Infinity, start: '', need: 0, cell: 0 };
-    const size = await page.evaluate(() => ({ scale: Number(document.querySelector<HTMLElement>('.ck-week-view')!.dataset.scale), line: document.querySelector('.ck-month-game')!.getBoundingClientRect().width, logo: document.querySelector('.ck-month-game .ck-logo-backing')!.getBoundingClientRect().width, font: getComputedStyle(document.querySelector('.ck-mtri')!).fontSize }));
+    const size = await page.evaluate(() => ({ scale: Number(document.querySelector<HTMLElement>('.ck-week-view')!.dataset.scale), line: document.querySelector('.ck-month-game')!.getBoundingClientRect().width, logo: document.querySelector('.ck-month-game .ck-logo-backing')?.getBoundingClientRect().width ?? 0 /* 0: every game of the week is final */, font: getComputedStyle(document.querySelector('.ck-mtri')!).fontSize }));
     console.log(`[desktop-xl] ${weeks} week(s): scale ${size.scale}, line ${size.line} px, logo ${size.logo} px, tricode ${size.font}`);
     lineWidths[weeks] = size.line;
     if (weeks === 1) expect(size.scale).toBeGreaterThanOrEqual(1.4); // about 1.5× (weekScale)
@@ -537,7 +537,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
   expect(errors).toEqual([]);
 });
 
-test('lists capped at ~960 px (Team List 1000 px) and centered; calendars full width', async ({ page }, info) => {
+test('lists capped at ~960 px (Team List 1080 px) and centered; calendars full width', async ({ page }, info) => {
   const p = info.project.name;
   for (const [search, sel] of [['?view=league&layout=list', '.ck-league-list'], ['?view=team&layout=list&team=ORL', '.ck-team-list']] as const) {
     await open(page, search);

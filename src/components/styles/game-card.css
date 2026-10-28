@@ -124,6 +124,10 @@
 }
 .ck-cell .ck-card-compact {
   flex-direction: column;
+  /* one column, never a second: html-to-image gives the clone its computed height, which under a zoom below 1
+     (Team Calendar at 1280 × 900, scale 0.8) is too small, and a wrapping column then put the tags beside the
+     matchup, clipped by the cell (found 2026-10-28 by the copy read-back at 1280) */
+  flex-wrap: nowrap;
   align-items: flex-start;
   background: transparent;
   border: 0;
