@@ -55,7 +55,7 @@ async function clickCopy(page: Page, button: Locator): Promise<string> {
   await expect(button).toHaveAttribute('data-state', 'idle', { timeout: 5000 }); // ✓ of an earlier copy gone
   await page.evaluate(() => navigator.clipboard.writeText('')); // nothing left from an earlier copy
   await button.click();
-  await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 20_000 });
+  await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 }); // a full Team List is a ~4400 × 14000 px canvas: slow on CI runners
   return page.evaluate(async () => {
     const items = await navigator.clipboard.read();
     const item = items.find((i) => i.types.includes('image/png'));
@@ -197,6 +197,7 @@ test('whole view: league week view (1 and 2 weeks)', async ({ page }) => {
 });
 
 test('whole view: team calendar and the full team list', async ({ page }) => {
+  test.setTimeout(240_000); // three large copies
   await open(page, '?view=team&layout=calendar&team=LAL');
   await expect(page.locator('.ck-team-grid')).toBeVisible();
   await check(page, 'view-team-calendar', await copyView(page), ['logo', 'text', 'b2b', 'tv']);
