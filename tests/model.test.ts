@@ -88,18 +88,26 @@ describe('national TV', () => {
     expect(hasNationalTv(game({ date: '2026-11-01', utc: '2026-11-01T23:00:00Z' }))).toBe(false);
   });
 
+  it('NBA TV is not national TV (NBA.com\'s national filter leaves those games out)', () => {
+    const g = game({ date: '2026-11-01', utc: '2026-11-01T23:00:00Z', natl: ['NBA TV'] });
+    expect(nationalTv(g)).toEqual([]);
+    expect(hasNationalTv(g)).toBe(false);
+    expect(nationalTv(game({ date: '2026-11-01', utc: '2026-11-01T23:00:00Z', natl: ['ESPN', 'NBA TV'] }))).toEqual(['ESPN']);
+  });
+
   it('TV-only counts per date', () => {
     const d = dataOf([
-      game({ date: '2026-11-01', utc: '2026-11-01T23:00:00Z', natl: ['NBA TV'] }),
+      game({ date: '2026-11-01', utc: '2026-11-01T23:00:00Z', natl: ['ESPN'] }),
+      game({ date: '2026-11-01', utc: '2026-11-01T23:30:00Z', natl: ['NBA TV'] }),
       game({ date: '2026-11-01', utc: '2026-11-02T00:00:00Z' }),
       game({ date: '2026-11-02', utc: '2026-11-03T00:00:00Z' }),
     ]);
-    expect([...countsByDate(d)]).toEqual([['2026-11-01', 2], ['2026-11-02', 1]]);
+    expect([...countsByDate(d)]).toEqual([['2026-11-01', 3], ['2026-11-02', 1]]);
     expect([...countsByDate(d, true)]).toEqual([['2026-11-01', 1]]);
   });
 
-  it('real feed: names seen on shown games are the US national networks (ESPN2 only had preseason games)', () => {
+  it('real feed: names seen on shown games are the US national networks (ESPN2 only had preseason games; no NBA TV)', () => {
     const names = new Set(realData.games.flatMap(nationalTv));
-    expect([...names].sort()).toEqual(['ABC', 'ESPN', 'NBA TV', 'NBC', 'NBC Sports Network', 'Peacock', 'Prime Video', 'Telemundo']);
+    expect([...names].sort()).toEqual(['ABC', 'ESPN', 'NBC', 'NBC Sports Network', 'Peacock', 'Prime Video', 'Telemundo']);
   });
 });

@@ -175,7 +175,9 @@ describe('the gesture', () => {
 describe('in CalendarView', () => {
   it('bar: count, Escape clears, ✕ clears; view, team, period, span and toggle changes clear', async () => {
     Object.assign(HTMLElement.prototype, { setPointerCapture() {}, releasePointerCapture() {}, hasPointerCapture: () => true });
-    render(<CalendarView data={data} size={{ width: 1200, height: 900 }} now={Date.parse('2026-11-15T15:00:00Z')} timeZone="UTC" initial={{ mode: 'team', layout: 'calendar', teamId: TEAM.BOS }} />);
+    // mid-December: Next month + 1 week → Dec 27–Jan 2, where BOS (Dec 28) and MIA (Dec 29) have NBC games, so the
+    // "TV games only" and team steps still have a game to select (an NBA TV game doesn't count as national TV)
+    render(<CalendarView data={data} size={{ width: 1200, height: 900 }} now={Date.parse('2026-12-15T15:00:00Z')} timeZone="UTC" initial={{ mode: 'team', layout: 'calendar', teamId: TEAM.BOS }} />);
     // every game gets a rect in a column, so a box from top to bottom touches them all
     let i = 0;
     for (const g of document.querySelectorAll<HTMLElement>('.ck-team-grid [data-game-id]')) g.dataset.r = `100,${100 + 40 * i++},200,30`;

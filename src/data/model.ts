@@ -180,9 +180,17 @@ export function teamRestDays(data: CalendarData, teamId: number): string[] {
   return out;
 }
 
-/** US national TV broadcaster names (feed field broadcasters.nationalBroadcasters), de-duplicated, feed order. */
+/**
+ * NBA TV is in the feed's nationalBroadcasters, but NBA.com's "National broadcasters" filter leaves its games out
+ * (it's the league's own channel, "Watch with League Pass"), so it isn't national TV here.
+ */
+const NOT_NATIONAL = new Set(['NBA TV']);
+
+/** US national TV broadcaster names (feed field broadcasters.nationalBroadcasters minus NBA TV), de-duplicated, feed order. */
 export function nationalTv(g: ScheduleGame): string[] {
-  const names = (g.broadcasters?.nationalBroadcasters ?? []).map((b) => String(b.broadcasterDisplay ?? '').trim()).filter(Boolean);
+  const names = (g.broadcasters?.nationalBroadcasters ?? [])
+    .map((b) => String(b.broadcasterDisplay ?? '').trim())
+    .filter((n) => n && !NOT_NATIONAL.has(n));
   return [...new Set(names)];
 }
 

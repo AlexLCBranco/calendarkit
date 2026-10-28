@@ -59,6 +59,8 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   shown as plain "NBC" — it's an importance marker, not a where-to-watch guide.
 - `nationalOttBroadcasters` is empty for every game; `nationalRadioBroadcasters` (SiriusXM) is ignored.
   Only `nationalBroadcasters` drives the TV badge and the "TV games only" filter.
+- **NBA TV is left out** (2026-10-28, user report): NBA.com's "National broadcasters" filter doesn't show NBA TV
+  games (79 games, always NBA TV alone; description "Watch with League Pass…"), so `nationalTv()` drops it.
 
 ### 3. Game types in the current feed
 | gameId prefix | module `gameType` | games | notes |
