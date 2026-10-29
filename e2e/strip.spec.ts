@@ -68,7 +68,16 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; â€
   await list.evaluate((el) => {
     const w = window as unknown as { __rowMutations: number };
     w.__rowMutations = 0;
-    new MutationObserver((m) => (w.__rowMutations += m.length)).observe(el.querySelector('.ck-team-rows')!, { subtree: true, childList: true, attributes: true, characterData: true });
+    // every change counts, except the active-day class moving from row to row (item 10: that's its whole job)
+    const onlyActiveDay = (r: MutationRecord) => {
+      if (r.type !== 'attributes' || r.attributeName !== 'class') return false;
+      const was = new Set((r.oldValue ?? '').split(' ').filter(Boolean));
+      const now = new Set((r.target as Element).className.split(' ').filter(Boolean));
+      was.delete('ck-active-day');
+      now.delete('ck-active-day');
+      return was.size === now.size && [...was].every((c) => now.has(c));
+    };
+    new MutationObserver((m) => (w.__rowMutations += m.filter((r) => !onlyActiveDay(r)).length)).observe(el.querySelector('.ck-team-rows')!, { subtree: true, childList: true, attributes: true, attributeOldValue: true, characterData: true });
   });
   await list.hover();
   for (let i = 0; i < 8; i++) {

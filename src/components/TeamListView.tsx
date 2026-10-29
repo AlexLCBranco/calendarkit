@@ -6,6 +6,8 @@ import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { teamThreeInFour } from '../data/scheduleTags';
 import { TEAM_BY_ID } from '../data/teams';
 import { GameCard } from './GameCard';
+import { useActiveHighlight } from './ActiveHighlight';
+import { ACTIVE_DAY } from './copyAsImage';
 import type { ValueStore } from './valueStore';
 import { WeekStrip } from './WeekStrip';
 import { fmtDate, isCompact, TEAM_LIST_MAX_WIDTH, useTeamB2B, type WidgetSize } from './widget';
@@ -158,6 +160,24 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
     return () => ro.disconnect();
   }, []);
 
+  // The active day's row (the strip's selected day): a class on that row only and the overlay band over it, moved when
+  // the store changes and placed again when the rows change; rows never re-render for it. The band fades on the
+  // compositor (150 ms).
+  const highlight = useActiveHighlight();
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!topStore || !el) return;
+    const apply = () => {
+      const d = topStore.get();
+      for (const r of el.querySelectorAll<HTMLElement>(`.${ACTIVE_DAY}`)) if (r.dataset.rowDate !== d) r.classList.remove(ACTIVE_DAY);
+      const row = d ? el.querySelector<HTMLElement>(`.ck-daylist > [data-row-date="${d}"]`) : null;
+      row?.classList.add(ACTIVE_DAY);
+      highlight.show(row ? { key: d, top: row.offsetTop, left: row.offsetLeft, width: row.offsetWidth, height: row.offsetHeight } : undefined);
+    };
+    apply();
+    return topStore.subscribe(apply);
+  }, [topStore, rows]);
+
   // the strip's days: what each date holds (game: opponent; rest day: a row only with "Show rest days")
   const byDate = useMemo(() => {
     const m = new Map<string, string>();
@@ -205,6 +225,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
           )}
         </div>
         {handle && <div ref={tail} aria-hidden="true" />}
+        {topStore && highlight.layers}
       </div>
     </section>
   );

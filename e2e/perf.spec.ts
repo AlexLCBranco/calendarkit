@@ -135,13 +135,20 @@ async function openLeagueList(page: Page, search = '') {
   await page.goto(`/?view=league&layout=list&date=2026-11-01${search}`);
   await expect(page.getByTestId('day-title')).toContainText('November 1');
   await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+  // round 4: the active-day highlight is on (it follows the day at the top while the gesture runs)
+  await expect(page.locator('.ck-lday.ck-active-day')).toHaveCount(1);
 }
 
+// Since round 4 (items 10, 11) this gesture runs with the active-day highlight on (and today's countdowns ticking in
+// the countdown variant below): held to the same baselines as before those features.
 test('wheel-scrolling the League List through a month: frame times, main-thread time, long tasks', async ({ page }) => {
   test.setTimeout(180_000);
   // No fake clock here: Playwright's clock wraps Intl.DateTimeFormat, which made scrolling look slower than in a
   // real browser (2026-10-24). The list opens on an explicit date, so it needs no clock.
   checkScroll('scroll', await scrollRuns(page, 'scroll', () => openLeagueList(page), () => leagueListToDecember(page)));
+  // the highlight moved with the day at the top
+  await leagueListToDecember(page);
+  expect(await page.evaluate(() => document.querySelector<HTMLElement>('.ck-active-day')?.dataset.day)).toBe(await page.evaluate(() => document.querySelector<HTMLElement>('[aria-label="Week"] [aria-selected="true"]')?.dataset.date));
 });
 
 // Team List (2026-10-28, round 4): LAL's whole season (~82 rows), wheel down from the first game to the last and back

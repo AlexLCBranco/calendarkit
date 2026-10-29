@@ -848,6 +848,23 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   - Gotcha: the Vite dev server kept serving an old period-nav.css after an append (nested @import cache); touching
     calendar.css fixed it. The builds were never affected.
 
+- **Active day highlighted** (item 10): the strip's selected day — League List: its header in the accent and a faint
+  accent band with a 2 px accent bar over its rows; Team List: over that day's row. A class (`ACTIVE_DAY`) on the old /
+  new day only plus two overlay layers in the scroller (`ActiveHighlight.tsx`) that **crossfade** (opacity, 150 ms); the
+  header gets an accent copy of its text (::after, active day only) that fades in. League List: written when the top
+  day, the rendered days or their measured heights change (not per scroll event); Team List: on the store's change.
+  **Never in images**: the band is outside the rows; `suspendForCapture` (copyAsImage.ts) lifts the class, transitions
+  off, while html-to-image reads the node (e2e: 0 accent pixels in a copied active day; 1 622 + 5/5 bars without it).
+  - **Perf, measured**: the first version faded the rows' own background + box-shadow (150 ms CSS transitions): League
+    List scroll main thread **2 428 → 3 203 ms (+32 %)**, failing the guard (3 177 > 2 913); without transitions 2 494.
+    Overlay crossfade: 2 684 (+13 %); then the effect only on changes and the header pseudo-element only on the active
+    day: **2 727 (item 9) vs 2 620 ms** — no difference. Team List gesture 877 vs 937 ms (+7 %, within run noise). The
+    League List scroll guard now runs with the highlight on and checks it followed the day at the top.
+  - Tests: `tests/activeday.test.tsx` (class on the active day only, moves on a strip click / scroll, no row re-render,
+    suspendForCapture), e2e `activeday.spec.ts` (band over the rows, accent header, fades 0.15 s, follows the wheel in
+    both lists), copy e2e (no highlight in the image), strip.spec ignores the class moving between rows.
+  - Flake seen once: lists.spec "continuous days" (desktop-xl) found no card below the top at one step; 6/6 on rerun.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

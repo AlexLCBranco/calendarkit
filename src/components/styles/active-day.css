@@ -1,0 +1,38 @@
+/* Active day in the lists (round 4): the strip's selected day — League List: its header in the accent and a faint
+   accent band with a thin accent bar over its rows; Team List: over that day's row. The band is one of two overlay
+   layers (ActiveHighlight.tsx) that crossfade, the header an accent copy of its text over it (::after) that fades in:
+   opacity only, so a change never repaints the rows. Lifted while an image is copied. */
+.ck-hl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0; /* over the rows (not positioned), under the sticky day headers (z-index 1) */
+  box-sizing: border-box;
+  border-left: 2px solid var(--ck-accent);
+  border-radius: 8px;
+  background: rgba(78, 161, 255, 0.07);
+  opacity: 0;
+  transition: opacity 150ms ease;
+  will-change: opacity, transform;
+  pointer-events: none;
+}
+.ck-hl.ck-hl-on {
+  opacity: 1;
+}
+/* the active header only (a pseudo-element and a layer on every rendered header cost the scroll; PROJECT.md): its
+   accent copy fades in; the old one goes as the band crossfades */
+.ck-active-day > .ck-lday-head::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  background: var(--ck-bg);
+  color: var(--ck-accent);
+  pointer-events: none;
+  animation: ck-fade-in 150ms ease both;
+}
+@keyframes ck-fade-in {
+  from {
+    opacity: 0;
+  }
+}

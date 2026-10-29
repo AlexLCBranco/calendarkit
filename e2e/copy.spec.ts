@@ -501,3 +501,46 @@ test('selection image of the Team List: the B2B bracket only when both nights ar
   expect([...got.values()].filter(Boolean)).toEqual(['1', '2']);
   await check(page, 'selection-team-list-b2b', shot, ['logo', 'text', 'b2b']);
 });
+
+// Active day (round 4, item 10): the highlighted day's copy shows no highlight — the header text isn't accent blue and
+// the rows' left edge has no accent bar — and the live highlight is back after the copy.
+test('a single day: the active-day highlight is not in the image', async ({ page }) => {
+  await open(page, '?view=league&layout=list&date=2026-11-17');
+  const day = page.locator('.ck-lday[data-day="2026-11-17"]');
+  await expect(day).toHaveClass(/ck-active-day/);
+  await page.waitForTimeout(200); // the fade in is over
+  const v = await copyPart(page, day, 'copy-day');
+  writeFileSync(`${OUT}/day-league-list-active.png`, Buffer.from(v.png, 'base64'));
+  const geo = await day.evaluate((el) => {
+    const r0 = el.getBoundingClientRect();
+    const head = el.querySelector('.ck-lday-head')!;
+    const range = document.createRange();
+    range.selectNodeContents(head);
+    const t = range.getBoundingClientRect();
+    const cards = [...el.querySelectorAll('.ck-daylist > .ck-card')].map((c) => {
+      const b = c.getBoundingClientRect();
+      return { x: b.left - r0.left + 1.5, y: b.top - r0.top + b.height / 2 };
+    });
+    return { head: { x: t.left - r0.left, y: t.top - r0.top, w: t.width, h: t.height }, cards };
+  });
+  const r = await page.evaluate(
+    async ({ png, geo, ratio }) => {
+      const img = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
+      const c = new OffscreenCanvas(img.width, img.height);
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      const px = (x: number, y: number) => [...ctx.getImageData(Math.round(x * ratio), Math.round(y * ratio), 1, 1).data];
+      const blue = (p: number[]) => p[2]! > p[0]! + 80 && p[2]! > 180; // the accent #4ea1ff, not white text or grey
+      let headBlue = 0;
+      for (let x = geo.head.x; x < geo.head.x + geo.head.w; x += 0.5) for (let y = geo.head.y; y < geo.head.y + geo.head.h; y += 0.5) if (blue(px(x, y))) headBlue++;
+      return { headBlue, barBlue: geo.cards.filter((k) => blue(px(k.x, k.y))).length, cards: geo.cards.length };
+    },
+    { png: v.png, geo, ratio: v.target.ratio },
+  );
+  console.log(`[copy] active day image: ${r.headBlue} blue header pixels, ${r.barBlue} of ${r.cards} rows with a blue left bar`);
+  expect(r.cards).toBeGreaterThan(2);
+  expect(r.headBlue).toBe(0);
+  expect(r.barBlue).toBe(0);
+  // live again
+  await expect(day).toHaveClass(/ck-active-day/);
+});

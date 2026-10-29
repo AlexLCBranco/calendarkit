@@ -4,6 +4,8 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import { hasNationalTv, leagueRecords, localDate, weekOf, type CalendarData, type TeamRecord } from '../data/model';
+import { useActiveHighlight } from './ActiveHighlight';
+import { ACTIVE_DAY } from './copyAsImage';
 import { CopyButton } from './CopyButton';
 import { GameCard } from './GameCard';
 import { PeriodNav } from './PeriodNav';
@@ -158,6 +160,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
     setScrollTop(want);
   });
 
+
   const lo = scrollTop - viewH * LIST_OVERSCAN;
   const hi = scrollTop + viewH * (1 + LIST_OVERSCAN);
   let start = 0;
@@ -168,6 +171,21 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
   const lastH = days.length ? total - tops[days.length - 1]! : 0;
   // room after the last day, so every day can reach the top
   const tail = Math.max(0, viewH - lastH);
+
+  // The active day (the strip's selected day = the day at the top): a class on its section only (its header turns
+  // the accent), and the overlay band over its rows — written when it changes or new days mount or get measured; the
+  // day sections never re-render for it (Rule #1). Both fade on the compositor (150 ms).
+  const highlight = useActiveHighlight();
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    for (const s of el.querySelectorAll<HTMLElement>(`.${ACTIVE_DAY}`)) if (s.dataset.day !== topDay) s.classList.remove(ACTIVE_DAY);
+    const sec = el.querySelector<HTMLElement>(`[data-day="${topDay}"]`);
+    sec?.classList.add(ACTIVE_DAY);
+    const rows = sec?.querySelector<HTMLElement>('.ck-daylist');
+    highlight.show(sec && rows ? { key: topDay, top: sec.offsetTop + rows.offsetTop, left: rows.offsetLeft, width: rows.offsetWidth, height: rows.offsetHeight } : undefined);
+    // not on every scroll event: only when the day, the rendered days or their measured heights change
+  }, [topDay, start, end, measured, size.width]);
 
   const ti = index.get(topDay) ?? 0;
   const go = (i: number) => days[i] && jump(days[i].date);
@@ -211,6 +229,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
           <ListDaySection key={d.date} day={d} dataKey={hKey(d)} data={data} compact={compact} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
         ))}
         <div style={{ height: total - tops[end]! + tail }} aria-hidden="true" />
+        {highlight.layers}
       </div>
       <FatigueLegend />
     </section>
@@ -228,7 +247,9 @@ export const ListDaySection = memo(function ListDaySection({ day, dataKey, data,
   const fatigue = leagueFatigue(data); // once per data set
   return (
     <section className="ck-lday" data-day={day.date} data-key={dataKey} aria-label={dayHeading(day.date, day.games.length)}>
-      <h3 className="ck-lday-head">{dayHeading(day.date, day.games.length)}</h3>
+      <h3 className="ck-lday-head" data-text={dayHeading(day.date, day.games.length)}>
+        {dayHeading(day.date, day.games.length)}
+      </h3>
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
