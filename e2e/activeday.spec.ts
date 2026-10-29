@@ -39,18 +39,20 @@ test('League List: the selected day highlighted, follows the wheel, fades, secti
   await page.waitForTimeout(200);
   let l = await look();
   expect(l.days).toEqual(['2026-11-17']);
-  expect(l.head).toBe(ACCENT);
-  expect(l.band).toBe(ACCENT);
+  await expect.poll(async () => ((l = await look()), [l.head, l.band])).toEqual([ACCENT, ACCENT]);
   expect(l.fade).toContain('0.15s');
   await list.hover();
   for (let i = 0; i < 6; i++) {
     await page.mouse.wheel(0, 500);
     await settle(page);
-    await page.waitForTimeout(250);
-    l = await look();
-    expect(l.days).toEqual([l.selected]);
-    expect(l.head).toBe(ACCENT);
-    expect(l.band).toBe(ACCENT);
+    // polled: the wheel may still be moving and the 150 ms fade still running (CI's runners are slower; a fixed
+    // 250 ms wait failed there on 2026-10-29)
+    await expect
+      .poll(async () => {
+        l = await look();
+        return l.days.length === 1 && l.days[0] === l.selected && l.head === ACCENT && l.band === ACCENT;
+      })
+      .toBe(true);
   }
   expect(l.selected).not.toBe('2026-11-17');
 });
