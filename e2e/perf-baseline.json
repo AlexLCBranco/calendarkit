@@ -30,6 +30,9 @@
     "switch-league-list": 35,
     "team-scroll-frame-p95": 16.7,
     "team-scroll-frame-mean": 16.7,
-    "team-scroll-main-thread": 160
+    "team-scroll-main-thread": 160,
+    "scroll-countdown-frame-p95": 18,
+    "scroll-countdown-frame-mean": 16,
+    "scroll-countdown-main-thread": 865
   }
 }
