@@ -23,6 +23,7 @@ import { TeamListView, type TeamListHandle } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
 import { TeamPicker } from './TeamPicker';
 import { useTooltip } from './Tooltip';
+import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
 import { fmtRange, isCompact, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
 import './calendar.css';
@@ -142,7 +143,11 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     update({ teamSpan });
   };
   const teamList = useRef<TeamListHandle>(null);
-  const [teamAtNext, setTeamAtNext] = useState(true);
+  // whether the next game is at the top (the Today button): a store, so scrolling away doesn't re-render the view and
+  // every row with it (it did once per scroll away before round 4)
+  const [teamAtNext] = useState(() => createValueStore(true));
+  // Team List: the date of the row at the top (written while scrolling; read only by the title and the week strip)
+  const [teamTop] = useState(() => createValueStore(''));
 
   // Top bar navigation for the view on show.
   const days = useMemo(() => listDays(data, state.tvOnly), [data, state.tvOnly]);
@@ -288,7 +293,8 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         )}
         {team && list && !compact && (
           <div className="ck-nav ck-period">
-            <TodayButton onClick={() => teamList.current?.toNext()} disabled={teamAtNext} />
+            <TeamDayTitle store={teamTop} />
+            <StoreTodayButton store={teamAtNext} onClick={() => teamList.current?.toNext()} />
           </div>
         )}
         {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
@@ -326,7 +332,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       {team && <TeamHeader teamId={state.teamId} compact={compact} />}
       {team ? (
         list ? (
-          <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} handle={teamList} onAtNext={setTeamAtNext} />
+          <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
         ) : (
           <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
         )
@@ -415,4 +421,19 @@ function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: numbe
       Data updated {when}
     </span>
   );
+}
+
+/** Team List: the date of the row at the top ("Sunday, November 15, 2026"), from the store — re-renders alone. */
+function TeamDayTitle({ store }: { store: ValueStore<string> }) {
+  const date = useValue(store);
+  return (
+    <h2 className="ck-nav-title ck-team-day-title" data-testid="team-day-title">
+      {date ? listTitle(date, false) : ''}
+    </h2>
+  );
+}
+
+/** Today, disabled while the store says the list is already there. */
+function StoreTodayButton({ store, onClick }: { store: ValueStore<boolean>; onClick: () => void }) {
+  return <TodayButton onClick={onClick} disabled={useValue(store)} />;
 }

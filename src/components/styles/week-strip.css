@@ -1,0 +1,77 @@
+/* Compact week strip (lists, round 4): no boxes; a small weekday + month over the day number, the count / opponent
+   under it; the selected day in a filled pill, today's number in blue; ‹ › on the sides. ~44 px tall (the old boxed
+   strip was 61 px + 12 px margin). */
+.ck-strip {
+  flex: none;
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.ck-strip-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.ck-strip-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1px 0 2px;
+  background: transparent;
+  color: var(--ck-text);
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  line-height: 1.1;
+  cursor: pointer;
+}
+.ck-strip-day:hover:not(:disabled):not(.ck-strip-selected) {
+  background: var(--ck-surface);
+}
+.ck-strip-day:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ck-strip-mon,
+.ck-strip-sub {
+  font-size: 10px;
+  color: var(--ck-muted);
+  white-space: nowrap;
+}
+.ck-strip-num {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ck-strip-today .ck-strip-num {
+  color: var(--ck-accent);
+}
+.ck-strip-selected {
+  background: var(--ck-surface-2);
+  box-shadow: inset 0 0 0 1px var(--ck-accent);
+}
+.ck-strip-arrow {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 999px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ck-strip-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+/* The strip and the Team List's date title change while the list scrolls: their own layers with layout and paint
+   contained, so a change repaints them alone, not the page around them (measured: the Team List scroll's paint went
+   from 0 to 279 ms of main thread without this; PROJECT.md). */
+.ck-strip,
+.ck-team-day-title {
+  contain: layout paint;
+  will-change: transform;
+}

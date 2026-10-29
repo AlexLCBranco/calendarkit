@@ -170,11 +170,11 @@ describe('league list (continuous)', () => {
     fireEvent.click(screen.getByLabelText('Previous day'));
     fireEvent.click(screen.getByLabelText('Previous day'));
     expect(screen.getByTestId('day-title').textContent).toBe('Thursday, October 22, 2026');
-    fireEvent.click(screen.getByRole('tab', { name: /Tue\s*20/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Tuesday, October 20/ }));
     expect(screen.getByTestId('day-title').textContent).toBe('Tuesday, October 20, 2026');
     expect(days(screen.getByTestId('league-list'))).toContain('2026-10-20');
     expect((screen.getByLabelText('Previous day') as HTMLButtonElement).disabled).toBe(true); // season's first date
-    expect((screen.getByRole('tab', { name: /Mon\s*19/ }) as HTMLButtonElement).disabled).toBe(true); // before the season
+    expect((screen.getByRole('tab', { name: /^Monday, October 19/ }) as HTMLButtonElement).disabled).toBe(true); // before the season
   });
 
   it('league list rows show both teams with logos (on the backing) and keep "@"', () => {

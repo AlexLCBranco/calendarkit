@@ -68,6 +68,8 @@ export interface GameCardProps {
   copyable?: boolean;
   /** League List: each team's record going into the game, beside it on the outside ("3-1 [logo] BOS … DET [logo] 2-2"). */
   records?: ReadonlyMap<number, TeamRecord>;
+  /** Team List: the row's date (data-row-date), which the week strip follows while scrolling. */
+  rowDate?: string;
 }
 
 /** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
@@ -135,7 +137,7 @@ export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeI
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -234,6 +236,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B,
     <article
       className={`ck-card ck-card-${size}${cols ? ' ck-card-cols' : ''}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}${result ? ' ck-card-final' : ''}`}
       data-game-id={game.gameId}
+      data-row-date={rowDate}
       data-next={next || undefined}
       data-b2b={bracket}
       aria-label={dateLabel ? `${dateLabel}, ${label}` : label}

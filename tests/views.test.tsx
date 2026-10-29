@@ -41,7 +41,7 @@ describe('CalendarView (league)', () => {
     fireEvent.click(screen.getByLabelText('Previous day'));
     fireEvent.click(screen.getByLabelText('Previous day'));
     expect(screen.getByTestId('day-title').textContent).toBe('Thursday, October 22, 2026');
-    fireEvent.click(screen.getByRole('tab', { name: /Tue\s*20/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Tuesday, October 20/ }));
     expect(screen.getByTestId('day-title').textContent).toBe('Tuesday, October 20, 2026');
     expect((screen.getByLabelText('Previous day') as HTMLButtonElement).disabled).toBe(true); // season's first date
   });

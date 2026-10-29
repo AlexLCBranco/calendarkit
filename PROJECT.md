@@ -807,6 +807,31 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     lists tests use a 1280 widget for the week view; e2e features (fit walk at 1280 and 1920 with straight columns,
     cutoff), smoke, scores, copy (empty score slots aren't text; 2 logos per line), league-fatigue (155 px).
 
+- **Compact week strip, both lists** (item 8): `WeekStrip` — fixed Sun–Sat week (never recenters), no boxes: small
+  "Sun Nov" over a 16 px "15", a small line under it, the selected day in a filled pill (accent ring), today's number in
+  blue, ‹ › on the sides. **42.6 px** tall (the boxed strip was 61 px + 12 px margin). League List: the day's game count
+  (TV filter respected); ‹ › = the first game day of the previous / next week with games. **Team List** (desktop/tablet):
+  the same strip with the opponent under each date ("@ PHX" / "vs CHA"), days without a row dimmed and disabled (rest days
+  enabled with "Show rest days"), a click scrolls that row to the top, ‹ › = previous / next week with a game; a **date
+  title** in the top bar ("Sunday, November 15, 2026") left of Today. Top bar still one row at 1920 (Team List had ~500
+  px spare). Room after the last row so every row can reach the top (as in the League List; not in copies).
+  - **Following the scroll without re-rendering rows**: row tops measured after layout (and again when the row list
+    resizes — the font arriving moved them), the row at the top found by binary search in a frame callback, its date
+    written to a `ValueStore` (`valueStore.ts`, like selection.ts). Only the title and the strip read it: the strip
+    re-renders when the week changes, within a week only the old and new selected day. The Today button's "at the next
+    game" state moved to a store too (scrolling away used to re-render the view and every row once).
+  - **Perf, measured step by step** (Team List wheel gesture, interleaved A/B vs item 7, main-thread time medians): first
+    version (strip re-rendered on every row change) **1 001 vs 506 ms**; trace: paint 0 → 279 ms, layout 0 → 88, JS 29 →
+    151. Then: per-day selection (StoreDays) + `contain: layout paint` and own layers for the strip and title → paint 71,
+    layout 39, JS 63; still ~1.8× by TaskDuration (every change = a main-thread frame + commit during an otherwise
+    compositor-only scroll). **Final: the title and strip follow at most every 120 ms (`FOLLOW_MS`) plus once when the
+    list stops** → **516 vs 446 ms (+16 %)**, frames unchanged (mean 16.7, p95 16.8). Full run: team-scroll main thread
+    742 ms (baseline 660, limit 1 160). Rows untouched while scrolling (e2e MutationObserver: 0 mutations).
+  - Tests: `tests/strip.test.tsx` (both strips, counts with the TV filter, no recentering, ‹ ›, Team List title/strip on
+    the top row with a faked layout, day click, rest days, no tip-off formatted on a scroll, phones none — 6 of 7 fail
+    before), scroll-cost (the memo'd strip formats nothing on a scroll), e2e `strip.spec.ts` (strip height, wheel
+    follow, 0 row mutations, day click → row at top, ‹ ›, Today, top bar one row at 1920).
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

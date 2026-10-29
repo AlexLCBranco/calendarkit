@@ -1,12 +1,13 @@
 // League → List: the season as one continuous, virtualized list of game days, with a week strip.
 
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import { hasNationalTv, leagueRecords, localDate, weekOf, type CalendarData, type TeamRecord } from '../data/model';
 import { CopyButton } from './CopyButton';
 import { GameCard } from './GameCard';
 import { PeriodNav } from './PeriodNav';
+import { WeekStrip } from './WeekStrip';
 import { FatigueLegend } from './FatigueMark';
 import { fmtDate, isCompact, plural, type WidgetSize } from './widget';
 
@@ -170,6 +171,24 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
 
   const ti = index.get(topDay) ?? 0;
   const go = (i: number) => days[i] && jump(days[i].date);
+  // the strip's props stay the same objects while scrolling within a day, so it doesn't re-render (WeekStrip is memo)
+  const jumpRef = useRef(jump);
+  jumpRef.current = jump;
+  const pick = useCallback((d: string) => jumpRef.current(d), []);
+  const strip = useMemo(() => {
+    const week = weekOf(topDay);
+    const before = days.filter((d) => d.date < week[0]!).at(-1)?.date;
+    const prevWeekDay = before && days.find((d) => d.date >= weekOf(before)[0]!)?.date;
+    const nextWeekDay = days.find((d) => d.date > week[6]!)?.date;
+    return {
+      days: week.map((d) => ({ date: d, sub: counts.get(d) ? String(counts.get(d)) : '', disabled: !counts.get(d) })),
+      // previous / next week with games: its first game day (the strip stays Sun–Sat; it never recenters)
+      onPrev: () => prevWeekDay && jumpRef.current(prevWeekDay),
+      onNext: () => nextWeekDay && jumpRef.current(nextWeekDay),
+      prevDisabled: !prevWeekDay,
+      nextDisabled: !nextWeekDay,
+    };
+  }, [topDay, days, counts]);
 
   return (
     <section className="ck-league-list" aria-label="League schedule" style={{ maxHeight: size.height }}>
@@ -184,27 +203,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
           nextDisabled={ti >= days.length - 1}
         />
       )}
-      <div className="ck-week" role="tablist" aria-label="Week">
-        {weekOf(topDay).map((d) => {
-          const n = counts.get(d) ?? 0;
-          return (
-            <button
-              key={d}
-              type="button"
-              role="tab"
-              aria-selected={d === topDay}
-              className={`ck-weekday${d === topDay ? ' ck-weekday-selected' : ''}${d === today ? ' ck-weekday-today' : ''}`}
-              disabled={!n}
-              onClick={() => jump(d)}
-              data-date={d}
-            >
-              <span className="ck-weekday-name">{fmtDate(d, { weekday: 'short' })}</span>
-              <span className="ck-weekday-num">{Number(d.slice(8))}</span>
-              <span className="ck-weekday-count">{n ? n : '–'}</span>
-            </button>
-          );
-        })}
-      </div>
+      <WeekStrip {...strip} selected={topDay} today={today} onPick={pick} />
       <div className="ck-llist" ref={scroller} onScroll={onScroll} data-testid="league-list" data-select-scroller>
         {days.length === 0 && <p className="ck-empty">No games.</p>}
         <div style={{ height: tops[start] }} aria-hidden="true" />

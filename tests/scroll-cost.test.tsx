@@ -55,7 +55,7 @@ describe('League List scroll', () => {
     expect(before.length).toBeGreaterThan(1);
     // every formatter, cached or not (spying on the prototype reaches instances made before this line too); format is
     // a getter, read on every call. Counted: tip-off times (hour) and day headings (month, no year) — what a day
-    // section renders. The list's own week strip (weekday names, today's date) re-renders with the list; cheap.
+    // section renders — and, since round 4, the week strip's dates (memo: it renders only when the top day changes).
     const real = Object.getOwnPropertyDescriptor(Intl.DateTimeFormat.prototype, 'format')!.get!;
     let daySection = 0;
     const format = vi.spyOn(Intl.DateTimeFormat.prototype as unknown as Record<'format', unknown>, 'format', 'get').mockImplementation(function (this: Intl.DateTimeFormat) {
@@ -67,8 +67,9 @@ describe('League List scroll', () => {
     Object.defineProperty(list, 'scrollTop', { configurable: true, writable: true, value: list.scrollTop + 10 });
     fireEvent.scroll(list);
     expect([...list.querySelectorAll('[data-day]')].map((d) => d.getAttribute('data-day'))).toEqual(before);
-    expect(format).toHaveBeenCalled(); // the spy works (week strip)
-    expect(daySection).toBe(0);
+    fmtDate('2026-11-01', { month: 'short' });
+    expect(daySection).toBe(1); // the spy works
+    daySection = 0;
     format.mockRestore();
   });
 });
