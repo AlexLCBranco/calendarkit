@@ -37,7 +37,7 @@ export interface TeamListViewProps {
 
 export interface TeamListHandle {
   toNext: () => void;
-  /** Scrolls the row of this date (game or rest day) to the top. */
+  /** Scrolls the row of this date (game or rest day), or the next row after it, to the top. */
   toDate: (date: string) => void;
 }
 
@@ -108,8 +108,9 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
     track();
   };
   const toNext = () => scrollTo(nextTop());
+  /** The row of this date, or the next row after it (a day without a game → the next game). */
   const toDate = (date: string) => {
-    const row = tops.current.find((r) => r.date === date);
+    const row = tops.current.find((r) => r.date >= date);
     if (row) scrollTo(row.top);
   };
   if (handle) handle.current = { toNext, toDate };

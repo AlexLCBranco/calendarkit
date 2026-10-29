@@ -832,6 +832,22 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     before), scroll-cost (the memo'd strip formats nothing on a scroll), e2e `strip.spec.ts` (strip height, wheel
     follow, 0 row mutations, day click → row at top, ‹ ›, Today, top bar one row at 1920).
 
+- **Date picker in both lists** (item 9): a calendar icon (`DatePickButton`, 36 px like the arrows) right after the date
+  title opens `DatePicker` — the month popup (`MonthNavigator`, as in the week view's picker), rendered only while open.
+  ‹ › months; League List: game count per day (TV filter), days without games disabled, a day → the list there; Team
+  List: game days show the opponent ("@ PHX", 10 px), a day without a game → the next game (none after the last),
+  through `TeamListHandle.toDate` (the row of that date or the next row). **Keyboard**: the shown day is focused, ← → a
+  day, ↑ ↓ a week (skipping days that can't be picked, turning the month), Enter picks, Escape closes with the focus back
+  on the icon; a click outside closes. The arrows are new in `MonthNavigator` (the week picker had Escape/Tab only), so
+  the narrow count grid and the week picker get them too. Desktop/tablet (the phone top bar is full). Top bar still one
+  row at 1920. Closes when the view, layout or team changes.
+  - Tests: `tests/datepicker.test.tsx` (icon next to the title, popup only while open, counts with the TV filter, a pick
+    jumps, months, keyboard incl. into the next month, Escape → focus; Team List opponents, game day → its row, day
+    without a game → next game — 3/3 fail before), e2e `datepicker.spec.ts` (real keyboard, popup inside the window,
+    top bar). Perf unchanged (popup not rendered while closed).
+  - Gotcha: the Vite dev server kept serving an old period-nav.css after an append (nested @import cache); touching
+    calendar.css fixed it. The builds were never affected.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

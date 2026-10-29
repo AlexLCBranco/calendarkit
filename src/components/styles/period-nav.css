@@ -111,3 +111,30 @@
   opacity: 0.35;
   cursor: default;
 }
+
+/* Date picker icon (lists, round 4): next to the date title, the arrows' size */
+.ck-date-pick {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ck-date-pick:hover,
+.ck-date-pick[aria-expanded='true'] {
+  border-color: var(--ck-accent);
+}
+/* the Team List picker's day labels ("@ DET") are wider than a count */
+.ck-popup .ck-count {
+  white-space: nowrap;
+}
+.ck-count.ck-count-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ck-muted);
+}

@@ -1,6 +1,7 @@
 // Period navigation (prev · title · next), shared by every view that pages through days, weeks or months.
 
 import { addMonths } from '../data/model';
+import { DatePickButton } from './DatePicker';
 import { fmtMonth } from './widget';
 
 export interface PeriodNavProps {
@@ -17,9 +18,11 @@ export interface PeriodNavProps {
   /** "Today" button after the next arrow (back to today's games); disabled when already there. */
   onToday?: () => void;
   todayDisabled?: boolean;
+  /** A calendar icon right after the title that opens a date picker (the lists). */
+  pick?: { open: boolean; onToggle: () => void };
 }
 
-export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisabled, testId = 'period-title', onTitleClick, titleExpanded, onToday, todayDisabled }: PeriodNavProps) {
+export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisabled, testId = 'period-title', onTitleClick, titleExpanded, onToday, todayDisabled, pick }: PeriodNavProps) {
   return (
     <div className="ck-nav ck-period">
       <button type="button" className="ck-arrow" aria-label={`Previous ${unit}`} disabled={prevDisabled} onClick={onPrev}>
@@ -37,6 +40,7 @@ export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisab
           {title}
         </h2>
       )}
+      {pick && <DatePickButton open={pick.open} onClick={pick.onToggle} />}
       <button type="button" className="ck-arrow" aria-label={`Next ${unit}`} disabled={nextDisabled} onClick={onNext}>
         ›
       </button>

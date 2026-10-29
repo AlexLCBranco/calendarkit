@@ -4,11 +4,12 @@
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { addDays, dateFormat, defaultDay, isOver, localDate, monthOf, seasonMonths, teamGames, weekOf, type CalendarData } from '../data/model';
+import { addDays, dateFormat, defaultDay, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
 import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
 import { CopyButton } from './CopyButton';
+import { DatePickButton, DatePicker } from './DatePicker';
 import { WEEK_MIN_WIDTH } from './dayflow';
 import { LeagueListView, LeagueListWeek, listDays, listTitle, nearestDay } from './LeagueListView';
 import { LeagueWeekView, type WeekCount } from './LeagueWeekView';
@@ -103,6 +104,8 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   // Team week views: the first shown day (a Sunday)
   const [teamWeek, setTeamWeek] = useState(() => weekOf(teamDefaultDate(data, state.teamId, now) ?? state.date)[0]!);
   const [picking, setPicking] = useState(false);
+  // the lists' date picker (round 4)
+  const [datePick, setDatePick] = useState(false);
   const stateRef = useRef(state);
   stateRef.current = state;
   const tooltip = useTooltip();
@@ -143,6 +146,19 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     update({ teamSpan });
   };
   const teamList = useRef<TeamListHandle>(null);
+  // the picker closes when the view changes; Escape puts the focus back on its icon
+  useEffect(() => setDatePick(false), [state.mode, state.layout, state.teamId]);
+  const closeDatePick = (keyboard: boolean) => {
+    setDatePick(false);
+    if (keyboard) root.current?.querySelector<HTMLElement>('[data-testid="date-pick"]')?.focus();
+  };
+  // Team List picker: game days show the opponent; a day without a game goes to the next game (none after the last)
+  const teamPickGames = useMemo(() => (team && list ? teamGames(data, state.teamId).filter((g) => !state.tvOnly || hasNationalTv(g)) : []), [data, state.teamId, state.tvOnly, team, list]);
+  const teamPickCell = useMemo(() => {
+    const byDate = new Map(teamPickGames.map((g) => [g.dateEt, sideLabel(g, state.teamId)]));
+    const last = teamPickGames.at(-1)?.dateEt ?? '';
+    return (date: string) => ({ enabled: date <= last, label: byDate.get(date) });
+  }, [teamPickGames, state.teamId]);
   // whether the next game is at the top (the Today button): a store, so scrolling away doesn't re-render the view and
   // every row with it (it did once per scroll away before round 4)
   const [teamAtNext] = useState(() => createValueStore(true));
@@ -174,6 +190,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       onNext: () => days[i + 1] && update({ date: days[i + 1]!.date }),
       prevDisabled: i <= 0,
       nextDisabled: i < 0 || i >= days.length - 1,
+      pick: compact ? undefined : { open: datePick, onToggle: () => setDatePick((o) => !o) },
     };
   } else if (weekView) {
     const start = weekOf(state.date)[0]!;
@@ -289,12 +306,42 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
                 onClose={() => setPicking(false)}
               />
             )}
+            {datePick && !team && list && !compact && (
+              <DatePicker
+                data={data}
+                date={nearestDay(days, state.date)}
+                tvOnly={state.tvOnly}
+                today={today}
+                onPick={(date) => {
+                  setDatePick(false);
+                  update({ date });
+                }}
+                onClose={closeDatePick}
+              />
+            )}
           </div>
         )}
         {team && list && !compact && (
-          <div className="ck-nav ck-period">
-            <TeamDayTitle store={teamTop} />
-            <StoreTodayButton store={teamAtNext} onClick={() => teamList.current?.toNext()} />
+          <div className="ck-period-wrap">
+            <div className="ck-nav ck-period">
+              <TeamDayTitle store={teamTop} />
+              <DatePickButton open={datePick} onClick={() => setDatePick((o) => !o)} />
+              <StoreTodayButton store={teamAtNext} onClick={() => teamList.current?.toNext()} />
+            </div>
+            {datePick && (
+              <DatePicker
+                data={data}
+                date={teamTop.get() || today}
+                tvOnly={state.tvOnly}
+                today={today}
+                cell={teamPickCell}
+                onPick={(date) => {
+                  setDatePick(false);
+                  teamList.current?.toDate(date);
+                }}
+                onClose={closeDatePick}
+              />
+            )}
           </div>
         )}
         {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
