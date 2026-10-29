@@ -1,0 +1,69 @@
+/* League views (week view, League List): fatigue marks on the tricode. None takes width — background, outline and
+   text-decoration only, the plane absolutely placed — so the week view's 2-week line keeps its 119 px (3.42 px spare at
+   1920) and list rows don't move. Colours: --ck-b2b (yellow) for back-to-backs; 3-in-4 in the chips' purples
+   (scheduleTags: 1st/2nd #4c3d75, 3rd #7c4dcc, the 3rd stronger). */
+.ck-fm {
+  position: relative;
+  border-radius: 3px;
+}
+/* 2nd night: filled, dark text; the 1 px outline widens the fill a hair past the glyphs without taking width.
+   Outlines, not box-shadows: cheaper to paint (the League List scroll's main-thread time, PROJECT.md) */
+.ck-fm-n2 {
+  background: var(--ck-b2b);
+  outline: 1px solid var(--ck-b2b);
+  color: #1f1a02;
+}
+/* 1st night: thin outline */
+.ck-fm-n1 {
+  outline: 1px solid var(--ck-b2b);
+}
+/* keyboard focus: the accent ring outside the mark's own */
+.ck-fm:focus-visible {
+  box-shadow: 0 0 0 3px var(--ck-accent);
+}
+.ck-fm-tif {
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 1px;
+  text-decoration-skip-ink: none;
+  text-decoration-color: #4c3d75;
+}
+.ck-fm-tif-3 {
+  text-decoration-color: #7c4dcc;
+}
+/* metro change between the nights: a small plane over the tricode's top-right corner (like the old B2B dot) */
+.ck-fm-plane {
+  position: absolute;
+  top: -0.45em;
+  right: -0.5em;
+  width: 0.62em;
+  height: 0.62em;
+  color: var(--ck-b2b);
+  line-height: 0;
+  pointer-events: none;
+}
+.ck-fm-plane .ck-plane {
+  width: 100%;
+  height: 100%;
+}
+/* the line under the week grid and the League List (FATIGUE_LEGEND_H: 16 px line + 6 px above) */
+.ck-fm-legend {
+  flex: none;
+  margin-top: 6px;
+  height: 16px;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ck-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-fm-key-n2,
+.ck-fm-key-n1,
+.ck-fm-key-plane {
+  color: var(--ck-b2b);
+}
+.ck-fm-key-tif {
+  text-decoration: underline 2px #7c4dcc;
+  text-underline-offset: 1px;
+}

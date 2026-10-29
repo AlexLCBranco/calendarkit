@@ -79,10 +79,13 @@ describe('GameCard', () => {
     expect(screen.queryByTestId('tv-badge')).toBeNull();
   });
 
-  it('back-to-back marker per team', () => {
-    const el = render(<GameCard game={future} backToBackTeamIds={[TEAM.NYK]} now={NOW} timeZone="UTC" />);
-    expect(el.container.querySelectorAll('.ck-b2b')).toHaveLength(1);
-    expect(el.container.querySelector('.ck-b2b')!.getAttribute('title')).toMatch(/NYK/);
+  it('league fatigue marks per team, on its tricode (round 4: replaces the "B2B" badge)', () => {
+    const tip = 'NYK — 2/2 · AH (2nd night of a back-to-back)';
+    const fatigue = new Map([[TEAM.NYK, { nights: [2 as const], pairs: [], travels: false, tip }]]);
+    const el = render(<GameCard game={future} fatigue={fatigue} now={NOW} timeZone="UTC" />);
+    expect(el.container.querySelector('.ck-b2b')).toBeNull();
+    const marks = [...el.container.querySelectorAll<HTMLElement>('.ck-fm')];
+    expect(marks.map((m) => [m.textContent, m.classList.contains('ck-fm-n2'), m.dataset.tip])).toEqual([['NYK', true, tip]]);
   });
 });
 

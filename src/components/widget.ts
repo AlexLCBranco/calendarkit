@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { dateFormat, isBackToBack, teamB2BPairs, type CalendarData } from '../data/model';
+import { dateFormat, teamB2BPairs, type CalendarData } from '../data/model';
 import type { Team } from '../data/teams';
 import type { B2BNight } from './GameCard';
 
@@ -52,8 +52,6 @@ export function useNow(fixed?: number): number {
   return fixed ?? now;
 }
 
-export const b2bIds = (data: CalendarData, g: ScheduleGame) =>
-  [g.homeTeam.teamId, g.awayTeam.teamId].filter((id) => isBackToBack(data, id, g.dateEt));
 
 /** A team's back-to-back nights by gameId (a game can in theory be night 2 of one pair and night 1 of the next). */
 export function useTeamB2B(data: CalendarData, teamId: number) {

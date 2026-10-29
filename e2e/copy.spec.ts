@@ -26,16 +26,18 @@ type Target = { width: number; height: number; regions: Region[]; ratio: number 
 const MEASURE = `(root) => {
   const r0 = root.getBoundingClientRect();
   const out = [];
-  const add = (kind, sel) => root.querySelectorAll(sel).forEach((el) => {
+  // d: grow the area by d px each side (a 1 px box-shadow ring lies just outside its element)
+  const add = (kind, sel, d = 0) => root.querySelectorAll(sel).forEach((el) => {
     if (el.closest('[data-capture-exclude="true"]')) return;
     const r = el.getBoundingClientRect();
     if (r.width < 1 || r.height < 1) return;
-    out.push({ kind, x: r.left - r0.left, y: r.top - r0.top, w: r.width, h: r.height, what: (el.getAttribute('alt') || el.textContent || el.className).slice(0, 40) });
+    out.push({ kind, x: r.left - r0.left - d, y: r.top - r0.top - d, w: r.width + 2 * d, h: r.height + 2 * d, what: (el.getAttribute('alt') || el.textContent || el.className).slice(0, 40) });
   });
   add('logo', '.ck-logo-backing img');
   add('text', '.ck-team, .ck-mtri-text, .ck-vsat, .ck-at');
   add('score', '.ck-score, .ck-mscore');
-  add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp');
+  add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp, .ck-fm-n2');
+  add('b2b', '.ck-fm-n1', 1); // league views' 1st night: the yellow ring around the tricode (round 4)
   add('tif', '.ck-tif');
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
   add('rest', '.ck-rest-row .ck-date, .ck-rest');

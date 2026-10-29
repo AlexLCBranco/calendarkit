@@ -2,10 +2,12 @@
 
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { addDays, finalScore, hasNationalTv, isBackToBack, nationalTv, overtime, teamLabel, type CalendarData } from '../data/model';
+import { addDays, finalScore, hasNationalTv, nationalTv, overtime, teamLabel, type CalendarData } from '../data/model';
 import { CopyButton } from './CopyButton';
 import { busiestDayHeight, flowDay, scoreFontFor, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, weekScale } from './dayflow';
-import { B2BDot, TeamLogo } from './GameCard';
+import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
+import { FATIGUE_LEGEND_H, FatigueLegend, FatigueMark } from './FatigueMark';
+import { TeamLogo } from './GameCard';
 import { fmtDate, plural, type WidgetSize } from './widget';
 
 export type WeekCount = 1 | 2;
@@ -26,16 +28,15 @@ export interface LeagueWeekViewProps {
 }
 
 /** One side of a game line: logo (or, once the game is final, its score in the logo's slot) + tricode. */
-function MonthTeam({ team, b2b, score }: { team: ScheduleGame['homeTeam']; b2b: boolean; score?: { n: number; win: boolean } }) {
+function MonthTeam({ team, fatigue, score }: { team: ScheduleGame['homeTeam']; fatigue?: TeamFatigue; score?: { n: number; win: boolean } }) {
   const label = teamLabel(team);
   return (
     <>
       {score ? <span className={`ck-mscore${score.win ? ' ck-score-win' : ''}`}>{score.n}</span> : <TeamLogo team={team} />}
       <span className={`ck-mtri${score ? (score.win ? ' ck-win' : ' ck-loss') : ''}`} data-tricode={label}>
-        <span className="ck-mtri-text">
+        <FatigueMark f={fatigue} className="ck-mtri-text">
           {label}
-          {b2b && <B2BDot tip="Back-to-back" />}
-        </span>
+        </FatigueMark>
       </span>
     </>
   );
@@ -43,7 +44,7 @@ function MonthTeam({ team, b2b, score }: { team: ScheduleGame['homeTeam']; b2b: 
 
 export function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame }) {
   const tv = nationalTv(game);
-  const b2b = (id: number) => isBackToBack(data, id, game.dateEt);
+  const fat = leagueFatigue(data).get(game.gameId); // once per data set
   // final: the scores take the logos' slots and the TV pill is dropped (its column stays, so the "@" stays put)
   const fin = game.status === 'final' ? finalScore(game, game.awayTeam.teamId) : undefined;
   // overtime: in the final line's empty TV slot, so the line keeps its width
@@ -54,9 +55,9 @@ export function MonthGameLine({ data, game }: { data: CalendarData; game: Schedu
       data-game-id={game.gameId}
       aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}${ot ? ` (${ot})` : ''}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
     >
-      <MonthTeam team={game.awayTeam} b2b={b2b(game.awayTeam.teamId)} score={fin && { n: fin.score, win: fin.win }} />
+      <MonthTeam team={game.awayTeam} fatigue={fat?.get(game.awayTeam.teamId)} score={fin && { n: fin.score, win: fin.win }} />
       <span className="ck-at">@</span>
-      <MonthTeam team={game.homeTeam} b2b={b2b(game.homeTeam.teamId)} score={fin && { n: fin.oppScore, win: !fin.win }} />
+      <MonthTeam team={game.homeTeam} fatigue={fat?.get(game.homeTeam.teamId)} score={fin && { n: fin.oppScore, win: !fin.win }} />
       <span className="ck-tv-slot">
         {ot && (
           <span className="ck-ot" title="Overtime">
@@ -75,7 +76,7 @@ export function MonthGameLine({ data, game }: { data: CalendarData; game: Schedu
 
 /**
  * League → Calendar: 7 equal day columns, one or two week rows, every game of each day at full line size
- * (logos + tricodes, "AWAY @ HOME"; TV pill; B2B dot), grouped by local tip-off time. 1 week: one column
+ * (logos + tricodes, "AWAY @ HOME"; TV pill; fatigue marks on the tricodes), grouped by local tip-off time. 1 week: one column
  * of games per day; 2 weeks: the day flows into as many columns as fit (see flowDay). Rows are equal and fill the
  * height they're given. A day header opens that day in the list.
  */
@@ -92,7 +93,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
     if (el && root) setGridTop(el.getBoundingClientRect().top - root.getBoundingClientRect().top);
   }, [size.width, size.height]);
   const pad = size.width < ROOMY_WIDTH ? 2 : 4;
-  const scale = weeks === 1 ? weekScale(monthCellInner(size.width), size.height - gridTop - 2 * pad - 2, busiest) : 1;
+  const scale = weeks === 1 ? weekScale(monthCellInner(size.width), size.height - gridTop - FATIGUE_LEGEND_H - 2 * pad - 2, busiest) : 1;
   const L = scaleLine(scale);
   const vars = {
     '--ck-logo': `${L.logo}px`,
@@ -166,6 +167,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
           );
         })}
       </div>
+      <FatigueLegend />
     </section>
   );
 }

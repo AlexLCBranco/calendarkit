@@ -1,4 +1,4 @@
-// Back-to-back in yellow across the whole app (round 4, item 3): League List "B2B" tags, week-view dots, Team List
+// Back-to-back in yellow across the whole app (round 4, item 3): league tricode marks (item 6), Team List
 // labels (1/2 outline, 2/2 fill) + bracket, Team Calendar bars + arrows, opponent dot and "2/2" label. The stale data
 // stamp has its own variable and stays orange. Computed colours in a real browser (desktop-xl).
 
@@ -13,17 +13,17 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'col
 test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   const css = (sel: string, prop: string, pseudo?: string) => page.locator(sel).first().evaluate((e, [p, ps]) => getComputedStyle(e, ps || null).getPropertyValue(p!), [prop, pseudo]);
-  // League List: the B2B tag (text + border)
+  // League List: the tricode marks (round 4, item 6: replaced the "B2B" tag) — 2nd night filled, 1st night ringed
   await page.goto('/?view=league&layout=list&date=2026-10-24');
-  await expect(page.locator('.ck-card .ck-b2b').first()).toBeVisible();
-  expect(await css('.ck-card .ck-b2b', 'color')).toBe(YELLOW);
-  expect(await css('.ck-card .ck-b2b', 'border-top-color')).toBe(YELLOW);
+  await expect(page.locator('.ck-card .ck-fm-n2').first()).toBeVisible();
+  expect(await css('.ck-card .ck-fm-n2', 'background-color')).toBe(YELLOW);
+  expect(await css('.ck-card .ck-fm-n1', 'outline-color')).toBe(YELLOW);
   // the data stamp is stale at this clock (snapshot of Oct 28 vs Nov 15): orange, its own variable
   expect(await css('[data-testid="data-updated"]', 'color')).toBe(ORANGE);
   expect(await page.locator('.ck-root').evaluate((e) => getComputedStyle(e).getPropertyValue('--ck-stale').trim())).toBe('#e08a3c');
-  // week view: the dot on the 2nd night's tricode
+  // week view: the 2nd night's tricode filled (round 4, item 6: replaced the dot)
   await page.goto('/?view=league&layout=calendar&date=2026-11-15');
-  expect(await css('.ck-month-game .ck-b2b-mark', 'background-color')).toBe(YELLOW);
+  expect(await css('.ck-month-game .ck-fm-n2', 'background-color')).toBe(YELLOW);
   // Team List: labels, bracket, opponent dot and "2/2"
   await page.goto('/?view=team&layout=list&team=ORL');
   await expect(page.locator('.ck-b2b-n1').first()).toBeAttached();

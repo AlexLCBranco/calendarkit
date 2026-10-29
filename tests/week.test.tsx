@@ -299,7 +299,7 @@ describe('columns', () => {
   });
 });
 
-describe('TV pill and B2B dots (league)', () => {
+describe('TV pill and fatigue marks (league)', () => {
   it('national-TV games: pill text exactly "TV", tooltip = network names; others: empty reserved slot', () => {
     const el = openWeek(realData, '2026-11-02');
     let tv = 0;
@@ -325,21 +325,20 @@ describe('TV pill and B2B dots (league)', () => {
     expect(screen.getByRole('tooltip').textContent).toBe(pill.getAttribute('data-tip'));
   });
 
-  it('B2B dot on the 2/2 team only; two dots when both teams are on a B2B; no 1/2 or bar marks in league views', () => {
+  it('fatigue marks (round 4): fill on the 2/2 team, ring on the 1/2 team, both teams marked; no dot, labels or bars', () => {
     const d = dataOf([
-      game({ date: '2026-11-01', utc: '2026-11-01T23:00:00Z', home: TEAM.BOS, away: TEAM.NYK }),
-      game({ date: '2026-11-01', utc: '2026-11-01T23:30:00Z', home: TEAM.DEN, away: TEAM.MIA }),
+      game({ id: '0022609801', date: '2026-11-01', utc: '2026-11-01T23:00:00Z', home: TEAM.BOS, away: TEAM.NYK }),
+      game({ id: '0022609802', date: '2026-11-01', utc: '2026-11-01T23:30:00Z', home: TEAM.DEN, away: TEAM.MIA }),
       game({ id: '0022609901', date: '2026-11-02', utc: '2026-11-03T00:00:00Z', home: TEAM.LAL, away: TEAM.BOS }),
       game({ id: '0022609902', date: '2026-11-02', utc: '2026-11-03T00:30:00Z', home: TEAM.DEN, away: TEAM.NYK }),
     ]);
     const el = openWeek(d, '2026-11-02');
-    const one = el.container.querySelector('[data-game-id="0022609901"]')!;
-    expect([...one.querySelectorAll('.ck-b2b-mark')].map((m) => m.closest('.ck-mtri')!.getAttribute('data-tricode'))).toEqual(['BOS']);
-    expect(one.querySelector('.ck-b2b-mark')!.getAttribute('data-tip')).toBe('Back-to-back');
-    const both = el.container.querySelector('[data-game-id="0022609902"]')!;
-    expect([...both.querySelectorAll('.ck-b2b-mark')].map((m) => m.closest('.ck-mtri')!.getAttribute('data-tricode'))).toEqual(['NYK', 'DEN']);
-    expect(lines(el.container, '2026-11-01').flatMap((l) => [...l.querySelectorAll('.ck-b2b-mark')])).toHaveLength(0);
-    expect(el.container.querySelector('.ck-b2b-label, .ck-b2b-bar')).toBeNull();
+    const marks = (id: string, cls: string) => [...el.container.querySelectorAll(`[data-game-id="${id}"] .${cls}`)].map((m) => m.closest('.ck-mtri')!.getAttribute('data-tricode'));
+    expect(marks('0022609901', 'ck-fm-n2')).toEqual(['BOS']);
+    expect(marks('0022609902', 'ck-fm-n2')).toEqual(['NYK', 'DEN']);
+    expect(marks('0022609801', 'ck-fm-n1')).toEqual(['NYK', 'BOS']);
+    expect(marks('0022609802', 'ck-fm-n1')).toEqual(['DEN']);
+    expect(el.container.querySelector('.ck-b2b-mark, .ck-b2b-label, .ck-b2b-bar')).toBeNull();
   });
 });
 

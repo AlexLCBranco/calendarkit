@@ -40,8 +40,10 @@ test('League List: mirrored matchup, one x per part down every day, one line per
           out.order.push(seq);
           // every tricode and score's text inside its slot (a slot too narrow lets the text spill out sideways)
           for (const e of m.querySelectorAll('.ck-team, .ck-score, .ck-rec:not(:empty)')) {
+            // the text itself (a fatigue mark's plane, positioned outside, doesn't count)
+            const text = document.createTreeWalker(e, NodeFilter.SHOW_TEXT).nextNode()!;
             const range = document.createRange();
-            range.selectNodeContents(e.firstChild!);
+            range.selectNodeContents(text);
             const t = range.getBoundingClientRect();
             const b = e.getBoundingClientRect();
             if (t.left < b.left - 0.5 || t.right > b.right + 0.5) out.bad.push(`${c.dataset.gameId}: "${e.textContent}" spills out of its slot`);

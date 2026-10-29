@@ -1,0 +1,134 @@
+// @vitest-environment jsdom
+// Fatigue on the tricodes in the league views (round 4, item 6): week view and League List. Replaces the week view's
+// B2B dot and the League List's "B2B" badge. Filled = 2nd night of a back-to-back, outline = 1st night, ✈ = metro
+// change between the nights, purple underline = in a 3-in-4 set; a tooltip per team (leg, code, both games, travel,
+// every set, record going in; "rested" otherwise). Legend under the week grid and the League List.
+
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, render } from '@testing-library/react';
+import { CalendarView } from '../src/components/CalendarView';
+import { leagueFatigue } from '../src/data/fatigue';
+import { addDays, teamGames } from '../src/data/model';
+import { TEAMS } from '../src/data/teams';
+import { data } from './feed';
+
+afterEach(cleanup);
+
+const NOW = Date.parse('2026-10-23T15:00:00Z');
+const XL = { width: 1840, height: 1000 };
+const LEGEND = '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4';
+/** Metro of an arena city, written out here (the app's table is src/data/metro.ts). */
+const metro = (city: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' })[city] ?? city;
+
+/** Worked out here from dates only: nights, plane, 3-in-4 position per team game. */
+function expected(teamId: number) {
+  const games = teamGames(data, teamId);
+  const out = new Map<string, { nights: number[]; travels: boolean; tif: number }>();
+  for (const g of games) out.set(g.gameId, { nights: [], travels: false, tif: 0 });
+  games.forEach((g, i) => {
+    const next = games[i + 1];
+    if (next && addDays(g.dateEt, 1) === next.dateEt) {
+      out.get(g.gameId)!.nights.push(1);
+      out.get(next.gameId)!.nights.push(2);
+      const a = String(g.arenaCity ?? '').trim();
+      const b = String(next.arenaCity ?? '').trim();
+      if (a && b && metro(a) !== metro(b)) out.get(g.gameId)!.travels = out.get(next.gameId)!.travels = true;
+    }
+    const third = games[i + 2];
+    if (third && (Date.parse(third.dateEt) - Date.parse(g.dateEt)) / 86_400_000 <= 3)
+      [g, games[i + 1]!, third].forEach((x, k) => (out.get(x.gameId)!.tif = Math.max(out.get(x.gameId)!.tif, k + 1)));
+  });
+  return out;
+}
+
+describe('leagueFatigue (model)', () => {
+  it('every team, every game: nights, plane and 3-in-4 position = an independent count; tooltip parts; cached', () => {
+    const f = leagueFatigue(data);
+    expect(f).toBe(leagueFatigue(data));
+    let b2b = 0;
+    let rested = 0;
+    for (const t of TEAMS) {
+      for (const [id, want] of expected(t.id)) {
+        const got = f.get(id)!.get(t.id)!;
+        expect({ nights: [...got.nights].sort(), travels: got.travels, tif: got.tif?.position ?? 0 }, `${t.tricode} ${id}`).toEqual({ ...want, nights: [...want.nights].sort() });
+        for (const n of got.nights) expect(got.tip).toContain(`${t.tricode} — ${n}/2 · `);
+        if (got.nights.length) {
+          b2b++;
+          const p = got.pairs[0]!;
+          // both games with dates and opponents, home/away
+          expect(got.tip).toMatch(/\n[A-Z][a-z]{2} \d{1,2} (vs|@) [A-Z]{3} \((home|away)\) → [A-Z][a-z]{2} \d{1,2} (vs|@) [A-Z]{3} \((home|away)\)/);
+          expect(got.tip.includes(`Travels ${p.fromCity} → ${p.toCity}`)).toBe(got.travels);
+        }
+        if (got.tif) expect(got.tip).toContain('3 games in 4 days — ');
+        if (!got.nights.length && !got.tif) {
+          rested++;
+          expect(got.tip.split('\n')[0]).toBe(`${t.tricode} — rested`);
+        }
+      }
+    }
+    expect(b2b).toBeGreaterThan(400);
+    expect(rested).toBeGreaterThan(400);
+  });
+
+  it('record going in on the tooltip (known on each team\'s first game: 0-0)', () => {
+    const g = data.games.find((x) => x.gameType === 'regular')!;
+    expect(leagueFatigue(data).get(g.gameId)!.get(g.homeTeam.teamId)!.tip).toContain('Record going in: 0-0');
+  });
+});
+
+/** Every tricode mark in a container: [tricode, fill, outline, plane, tif position, tip]. */
+const marks = (root: ParentNode, sel: string) =>
+  [...root.querySelectorAll<HTMLElement>(sel)].map((e) => ({
+    tri: e.textContent!.replace('✈', '').trim(),
+    fill: e.classList.contains('ck-fm-n2'),
+    outline: e.classList.contains('ck-fm-n1'),
+    plane: !!e.querySelector('.ck-fm-plane'),
+    tif: Number(e.dataset.tif ?? 0),
+    tip: e.dataset.tip,
+    focus: e.tabIndex,
+  }));
+
+function check(root: ParentNode, sel: string, ids: string[]) {
+  const f = leagueFatigue(data);
+  let n = 0;
+  for (const id of ids) {
+    const g = data.games.find((x) => x.gameId === id)!;
+    const got = marks(root.querySelector(`[data-game-id="${id}"]`)!, sel);
+    expect(got.map((m) => m.tri), id).toEqual([g.awayTeam.teamTricode, g.homeTeam.teamTricode]);
+    [g.awayTeam, g.homeTeam].forEach((t, i) => {
+      const want = f.get(id)!.get(t.teamId)!;
+      expect(got[i], `${id} ${t.teamTricode}`).toEqual({ tri: t.teamTricode, fill: want.nights.includes(2), outline: want.nights.includes(1) && !want.nights.includes(2), plane: want.travels, tif: want.tif?.position ?? 0, tip: want.tip, focus: 0 });
+      n++;
+    });
+  }
+  return n;
+}
+
+describe('week view', () => {
+  it('every line of two weeks: marks on both tricodes, tooltip per team; no B2B dot; legend under the grid', () => {
+    const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ layout: 'calendar', date: '2026-11-01', weeks: 2 }} />).container;
+    const ids = [...el.querySelectorAll<HTMLElement>('.ck-month-game')].map((l) => l.dataset.gameId!);
+    expect(ids.length).toBeGreaterThan(80);
+    expect(check(el, '.ck-fm', ids)).toBe(2 * ids.length);
+    expect(el.querySelector('.ck-b2b-mark')).toBeNull();
+    expect(el.querySelectorAll('.ck-month-game .ck-fm-n2').length).toBeGreaterThan(5);
+    expect(el.querySelector('[data-testid="fatigue-legend"]')?.textContent).toBe(LEGEND);
+  });
+});
+
+describe('League List', () => {
+  it('every rendered row: marks on both tricodes, tooltip per team; no "B2B" badge; legend under the list', () => {
+    const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-02' }} />).container;
+    const ids = [...el.querySelectorAll<HTMLElement>('[data-testid="league-list"] .ck-card')].map((c) => c.dataset.gameId!);
+    expect(ids.length).toBeGreaterThan(15);
+    expect(check(el, '.ck-matchup .ck-fm', ids)).toBe(2 * ids.length);
+    expect(el.querySelector('.ck-b2b')).toBeNull();
+    expect(el.querySelector('[data-testid="fatigue-legend"]')?.textContent).toBe(LEGEND);
+  });
+
+  it('team views keep their own marks (labels, opponent dot), no league marks', () => {
+    const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAMS[0]!.id }} />).container;
+    expect(el.querySelector('.ck-fm')).toBeNull();
+    expect(el.querySelector('[data-testid="fatigue-legend"]')).toBeNull();
+  });
+});

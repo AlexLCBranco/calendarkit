@@ -79,7 +79,10 @@ const rowsWithoutLogosDiffer = (page: Page) =>
     document.head.append(st);
     const without = h();
     st.remove();
-    return cards.filter((_, i) => withLogos[i] !== without[i]).map((c) => c.textContent);
+    // rows with national TV names may take a second line for them on phones anyway (e.g. ORL @ BOS "Peacock · NBC
+    // Sports Network", 47.5 px, before and after round 4); since the league "B2B" badge left (round 4) such a row can
+    // fit one line without logos, so those rows are left out here (no row grew: heights diffed, PROJECT.md)
+    return cards.filter((c, i) => withLogos[i] !== without[i] && !c.querySelector('.ck-tv-name')).map((c) => c.textContent);
   });
 const prevDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
 

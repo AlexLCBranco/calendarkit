@@ -755,6 +755,34 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     slots at one x, "41-41" fits). Matchup-text tests strip or include the records.
   - The OT marker now sits after the home record ("… DET [logo] 2-2 OT").
 
+- **Fatigue on the tricode, league views** (item 6): `src/data/fatigue.ts` `leagueFatigue(data)` — for every game and both
+  teams: back-to-back nights (teamB2BPairs), plane on a metro change, 3-in-4 (teamThreeInFour) and a tooltip; **once per
+  data set** (WeakMap). `FatigueMark` draws it on the tricode in the week view and the League List (phones too, same
+  component): **yellow fill** (dark text) = 2nd night, **yellow 1 px outline** = 1st night, **small plane** over the
+  top-right corner = metro change (same rule as the team views), **purple underline** (2 px; the chips' #4c3d75, the 3rd
+  game #7c4dcc) = in a 3-in-4 set. Replaces the week view's B2B dot and the League List's "B2B" badge. Tooltip (hover
+  and focus, every tricode focusable) for that team: "BOS — 2/2 · HA (2nd night of a back-to-back)", both games with
+  dates, opponents and home/away, "Travels Boston → Los Angeles", every 3-in-4 set (the chip's tooltip), "Record going
+  in: 3-1"; "BOS — rested" when there's nothing. Legend under the week grid and the League List: "■ 2nd night · ▢ 1st
+  night · ✈ changed cities · 3-in-4" (22 px, taken out of the 1-week scale's cell height).
+  - **No width**: background, outline and text-decoration only, the plane absolutely placed. e2e at 1280/1920: 2-week
+    lines stay 119.00 px, no line or tricode column overflows, the plane overlaps no "@", TV pill or other tricode
+    (212 marks in the 2 weeks of Jan 3, 2027; 108 in 1 week; 96–120 in the League List of Jan 7). Row heights,
+    5 061 rows: none grew; 332 per width got 1.5 px shorter (36.5 → 35: the "B2B" pill is gone).
+  - **Busy?** The busiest days have no 1st nights (on Nov 2 and Dec 23, 15 games, every team plays and nobody plays the
+    next day: 8 / 6 fills, 0 outlines). Most marks: Jan 7, 2027 (12 games: 10 outlines, 5 fills, 13 underlines, 8
+    planes) — screenshots in test-output/round4-shots/ (item6-*.png). Busy but each tricode stays readable.
+  - **Perf**: the first version (1 px box-shadow rings, drop-shadow on the plane) cost the League List scroll ~9 % more
+    main-thread time (interleaved A/B, 14 runs: item 5 2 360, it 2 575 ms; frames unchanged at 16.7 ms); with CSS
+    stripped it was back to item 5, so it was paint. **Outlines instead of box-shadows, no filter: 2 389 ms (+1 %)**.
+    Load: `leagueFatigue` runs on the first League List / week view render (load-league-list 264 ms vs 226–240).
+    Marquee drag (Team List) p95 25 vs 23 ms pre-round, occasional long tasks in both (pre-round once 122 ms) — the
+    guard flaked once (113 ms) and passed on rerun.
+  - Tests: `tests/leaguefatigue.test.tsx` (model vs an independent count over every team's games incl. plane by metro and
+    3-in-4; marks + tooltip on every line of two weeks and every League List row; legend; none in team views),
+    week.test / card.test updated (fill/ring instead of dot/badge), e2e `league-fatigue.spec.ts` (geometry, colours,
+    tooltip hover + focus, legend in the window), b2b-color + copy read-backs (fill and ring yellow in the images).
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

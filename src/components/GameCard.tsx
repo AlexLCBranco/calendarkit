@@ -7,6 +7,8 @@ import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLab
 import { threeInFourLabel, threeInFourTip, type ThreeInFour } from '../data/scheduleTags';
 import { teamLogo } from '../data/teams';
 import { CopyButton } from './CopyButton';
+import { FatigueMark } from './FatigueMark';
+import type { TeamFatigue } from '../data/fatigue';
 import './calendar.css';
 
 /** The selected team's side of a back-to-back, as shown on one of its two nights. */
@@ -21,8 +23,8 @@ export interface GameCardProps {
   teamId?: number;
   /** Team view: show the selected team first (with its logo) before vs/@; otherwise only "vs CHI". */
   teamFirst?: boolean;
-  /** League view: teams in this game that also played the previous day (see isBackToBack). */
-  backToBackTeamIds?: number[];
+  /** League view: each team's schedule fatigue in this game (marks on its tricode + tooltip; leagueFatigue). */
+  fatigue?: ReadonlyMap<number, TeamFatigue>;
   /** Team view: the selected team's back-to-back nights on this game ("1/2 · HA", "2/2 · HA"). */
   b2b?: B2BNight[];
   /** Team view: B2B labels without the home/away code ("1/2"), for cells too narrow for "1/2 · HA". */
@@ -133,12 +135,11 @@ export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeI
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
   const side = teamId ? perspective(game, teamId) : undefined;
-  const b2bIds = new Set(backToBackTeamIds);
   const canOpen = !!onOpenGame && isOver(game, now);
   const away = teamLabel(game.awayTeam);
   const home = teamLabel(game.homeTeam);
@@ -196,7 +197,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
           {!side && rec(first)}
           {records && ' '}
           {logos && <TeamLogo team={first} />}
-          <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{teamLabel(first)}</span>
+          <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</span>
           {result && ' '}
           {score(result?.score, !!result?.win)}
         </span>{' '}
@@ -205,7 +206,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
           {score(result?.oppScore, !!result && !result.win)}
           {result && ' '}
           <span className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
-            {teamLabel(second)}
+            {fatigue ? <FatigueMark f={fatigue.get(second.teamId)}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
             {side && opponentB2B && <B2BDot tip={opponentB2B} />}
           </span>{' '}
           {logos && <TeamLogo team={second} />}
@@ -215,14 +216,6 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
         </span>
       </span>
     );
-  // league views: a "B2B" badge per team on its 2nd night, first among the tags
-  const leagueB2B = side
-    ? []
-    : [game.awayTeam, game.homeTeam].filter((t) => b2bIds.has(t.teamId)).map((t) => (
-        <span key={t.teamId} className="ck-tag ck-b2b" title={`${teamLabel(t)} back-to-back`}>
-          {size === 'compact' ? 'B2B' : `B2B · ${teamLabel(t)}`}
-        </span>
-      ));
 
   const streak = season?.streak;
   const seasonText = season?.game
@@ -270,7 +263,6 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
         </span>
       )}
       <span className="ck-tags">
-        {leagueB2B}
         {!cols && b2bLabels}
         {!cols && tifChip}
         {marks.map((m) => (

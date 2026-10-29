@@ -244,7 +244,7 @@ export function perspective(g: ScheduleGame, teamId: number): { home: boolean; t
 }
 
 /** "vs BKN" / "@ LAL" from the team's side. */
-const sideLabel = (g: ScheduleGame, teamId: number) => {
+export const sideLabel = (g: ScheduleGame, teamId: number) => {
   const p = perspective(g, teamId)!;
   return `${p.home ? 'vs' : '@'} ${teamLabel(p.opponent)}`;
 };
