@@ -24,6 +24,9 @@
     "switch-league-calendar": 32,
     "switch-team-calendar": 32,
     "switch-team-list": 50,
-    "switch-league-list": 35
+    "switch-league-list": 35,
+    "team-scroll-frame-p95": 16.7,
+    "team-scroll-frame-mean": 16.7,
+    "team-scroll-main-thread": 160
   }
 }

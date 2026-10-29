@@ -74,7 +74,7 @@ export interface CalendarViewProps {
   title?: string;
   /** Small muted note at the end of the top bar (e.g. the time zone); a tooltip icon on phones. */
   note?: string;
-  /** When the data was generated (ISO): "Data updated …" under the note, orange once older than STALE_AFTER_MS. */
+  /** When the data was generated (ISO): "Data updated …" under the note, orange (--ck-stale) once older than STALE_AFTER_MS. */
   updatedAt?: string;
 }
 

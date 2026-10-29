@@ -33,7 +33,7 @@ test('stamp in the viewer\'s zone, muted while fresh; orange with a tooltip afte
 
   await page.clock.setFixedTime(Date.parse(time) + 37 * H);
   await page.goto('/');
-  await expect(stamp).toHaveCSS('color', 'rgb(224, 138, 60)'); // --ck-b2b orange
+  await expect(stamp).toHaveCSS('color', 'rgb(224, 138, 60)'); // --ck-stale orange (B2B is yellow since round 4)
   await stamp.hover();
   await expect(page.getByTestId('tooltip')).toContainText('daily update may have failed');
 });

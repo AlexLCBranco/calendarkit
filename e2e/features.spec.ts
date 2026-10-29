@@ -446,7 +446,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
       };
     }, { a: dateOf(x.a), b: dateOf(x.b) });
     const name = `${dateOf(x.a)}→${dateOf(x.b)}`;
-    // labels: 1/2 outlined (no fill), 2/2 solid (orange fill), same code; short on phones
+    // labels: 1/2 outlined (no fill), 2/2 solid (yellow fill), same code; short on phones
     expect(r.la.text, name).toBe(p === 'phone' ? '1/2' : `1/2 · ${x.code}`);
     expect(r.lb.text, name).toBe(p === 'phone' ? '2/2' : `2/2 · ${x.code}`);
     expect(r.la.bg).toBe('rgba(0, 0, 0, 0)');
@@ -497,7 +497,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
   await page.locator(`[data-date="${dateOf(same.a)}"] .ck-b2b-label`).focus();
   await expect(tooltip).toHaveText(`Back-to-back: ${side(same.a)} → ${side(same.b)}`);
 
-  // opponent on its 2/2: orange dot on its tricode, tooltip
+  // opponent on its 2/2: yellow dot on its tricode, tooltip
   const dot = page.locator('.ck-team-grid .ck-opp .ck-b2b-mark').first();
   await expect(dot).toBeVisible();
   // 5 px, scaled with the rest of the cell content (Team Calendar scale)
@@ -525,7 +525,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
     }, [x.a.gameId, x.b.gameId]);
     const name = `list ${dateOf(x.a)}`;
     expect(r.a.left, name).toBe('2px');
-    expect(r.a.color).toBe('rgb(224, 138, 60)');
+    expect(r.a.color).toBe('rgb(245, 224, 66)'); // --ck-b2b yellow
     expect(r.a.text).toBe(`1/2 · ${x.code}`);
     expect(r.b.text).toBe(`2/2 · ${x.code}`);
     expect(r.a.plane && r.b.plane).toBe(x.travels);

@@ -1,7 +1,7 @@
 // Copy as image: clicks the real buttons, reads the PNG back from the clipboard and checks its pixels. For every
 // export: not blank, size = element size × the pixel ratio used, no transparent corners (dark background), every
 // logo area holds logo pixels (not just its light disc), every tricode / "@" area holds text, every B2B mark is
-// orange and every national-TV badge green in the image. PNGs are saved to test-output/copy-images/ (git-ignored).
+// yellow and every national-TV badge green in the image. PNGs are saved to test-output/copy-images/ (git-ignored).
 // Desktop XL only (1920 × 1080): the week view needs a desktop width; the copy code is the same at every width.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -158,7 +158,8 @@ async function analyze(page: Page, png: string, target: Target): Promise<Report>
             else if (r.kind === 'rest' && dist(p, base) > 40) hit++; // muted date + "Rest"
             else if (r.kind === 'tif' && p[2]! > p[1]! + 20 && p[2]! > p[0]! + 8) hit++; // purple (blue well above green and red)
             // hues, not exact colours: past games are drawn at 60 % opacity
-            else if (r.kind === 'b2b' && p[0]! > p[1]! + 25 && p[1]! > p[2]! + 20) hit++; // orange
+            // yellow: red and green alike, both well above blue (orange has red far above green)
+            else if (r.kind === 'b2b' && p[0]! > p[2]! + 40 && p[1]! > p[2]! + 40 && Math.abs(p[0]! - p[1]!) < 35) hit++;
             else if (r.kind === 'tv' && p[1]! > p[0]! + 40 && p[1]! > p[2]! + 15) hit++; // green
           }
         const need = r.kind === 'logo' ? 0.08 : r.kind === 'text' || r.kind === 'score' || r.kind === 'rest' ? 0.02 : 0.05;

@@ -22,6 +22,20 @@
         "--strictPort"
       ],
       "port": 5180
+    },
+    {
+      "name": "preview-old",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--outDir",
+        "test-output/old-dist",
+        "--port",
+        "4175",
+        "--strictPort"
+      ],
+      "port": 4175
     }
   ]
 }

@@ -27,7 +27,7 @@
 }
 
 /* Selected team's back-to-back: "1/2 · HA" outlined on night 1, "2/2 · HA" solid on night 2, plane on a city
-   change; a thin orange bar links the two cells (calendar), a bracket the two rows (list). */
+   change; a thin yellow bar links the two cells (calendar), a bracket the two rows (list). */
 .ck-b2b-label {
   display: inline-flex;
   align-items: center;
@@ -44,7 +44,7 @@
 }
 .ck-b2b-n2 {
   background: var(--ck-b2b);
-  color: #1f1206;
+  color: #1f1a02;
 }
 .ck-plane {
   display: block;
@@ -265,7 +265,7 @@
 .ck-b2b-opp {
   line-height: 1.5;
   border-radius: 999px;
-  border: 1px solid rgba(224, 138, 60, 0.6);
+  border: 1px solid rgba(245, 224, 66, 0.6);
   color: var(--ck-b2b);
   white-space: nowrap;
 }

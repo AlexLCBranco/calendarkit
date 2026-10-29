@@ -27,7 +27,7 @@ export interface GameCardProps {
   b2b?: B2BNight[];
   /** Team view: B2B labels without the home/away code ("1/2"), for cells too narrow for "1/2 · HA". */
   shortB2B?: boolean;
-  /** Team view: tooltip when the opponent is on the 2nd night of a back-to-back (orange dot on its tricode). */
+  /** Team view: tooltip when the opponent is on the 2nd night of a back-to-back (yellow dot on its tricode). */
   opponentB2B?: string;
   /** Team view: the selected team's 3-in-4 position and sets for this game ("3-in-4 · 2nd" chip). */
   tif?: ThreeInFour;
@@ -121,7 +121,7 @@ export function TifChip({ tif, team, opp = false }: { tif: ThreeInFour; team?: s
   );
 }
 
-/** Orange dot over a tricode: that team is on the 2nd night of a back-to-back. */
+/** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
 export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {

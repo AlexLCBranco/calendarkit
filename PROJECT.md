@@ -711,6 +711,19 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     updated (12 fail before), e2e `mirror.spec.ts` (League List at every width: one x per part, one line, text inside
     its slot), `fatigue.spec.ts` (logos, "vs", opponent tricode at one x over 2 400 rows), `scores.spec.ts` texts.
 
+- **B2B in yellow** (item 3): `--ck-b2b` #e08a3c (orange) → **#f5e042** (lemon, hue 53°; the Cup gold #d9a521 is 43° and
+  darker, so the two stay apart). Contrast 14.1:1 on the background, 13.0 on the cards, 11.7 on surface-2 (orange was
+  7.1); the solid 2/2 label's text #1f1a02 on yellow 12.9:1. Everywhere B2B shows: League List tags, week-view dot, Team
+  List labels + bracket + opponent dot + "2/2", Team Calendar bars + arrows. The stale data stamp has its own
+  `--ck-stale` (#e08a3c, still orange). Tests: `e2e/b2b-color.spec.ts` (computed colours of every B2B mark + the
+  stale stamp), bracket colour in `features.spec.ts`, copy read-backs check yellow (R ≈ G ≫ B) instead of orange —
+  all three fail on the old build.
+  - **Perf flake** (not from this change): the view-switch guard failed once in the full run (Team Calendar 109 > 90 ms)
+    and once in 3 reruns (102). Interleaved A/B, pre-round-4 build vs this one, 14 runs each: Team Calendar 55–101 vs
+    47–87 ms, Team List 57–93 vs 65–122, League Calendar 51–80 vs 44–86 — the old code shows the same outliers. The next
+    full perf run passed (76 ms). Baselines unchanged. Linux Team List scroll baseline added from CI (main thread 131 ms
+    → 160 with the usual +20 % for runner variance).
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip
