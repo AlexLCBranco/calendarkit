@@ -185,7 +185,7 @@
 }
 /* TV names in a desktop/tablet calendar cell: one pill per network, flowing with the other tags, so they wrap
    between networks ("Peacock · NBC Sports Network" is wider than a cell at a 1280 px window). Phones keep the dot. */
-.ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv) {
+.ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv, .ck-tv-short) {
   display: contents;
 }
 .ck-cell .ck-card-compact .ck-tv:not(.ck-compact .ck-tv) .ck-tv-sep {

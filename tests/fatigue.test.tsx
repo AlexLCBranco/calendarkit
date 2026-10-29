@@ -148,8 +148,11 @@ describe('Team Calendar: 3-in-4 chip next to the B2B label', () => {
         const g = byDate.get(cell.dataset.date!);
         const [pos] = (g && own.get(g.gameId)) ?? [0];
         const chip = cell.querySelector('[data-testid="tif"]');
-        expect(chip?.textContent ?? '', `${cell.dataset.date}`).toBe(pos ? `3-in-4 · ${ORD[pos]}` : '');
+        // short chip in cells (round 4): "3in4·2nd"; the full text stays in the tooltip and aria-label
+        expect(chip?.textContent ?? '', `${cell.dataset.date}`).toBe(pos ? `3in4·${ORD[pos]}` : '');
         if (chip) {
+          expect(chip.getAttribute('data-tip')).toMatch(/^3 games in 4 days — (set|\d sets):\n/);
+          expect(chip.getAttribute('aria-label')).toBe(chip.getAttribute('data-tip'));
           seen++;
           const tags = [...chip.parentElement!.children];
           const b2b = tags.filter((t) => t.classList.contains('ck-b2b-label'));
@@ -165,7 +168,7 @@ describe('Team Calendar: 3-in-4 chip next to the B2B label', () => {
     expect(document.querySelectorAll('.ck-tif')).toHaveLength(0);
   });
 
-  it('the scale probe holds the widest chip ("3-in-4 · 3rd")', () => {
+  it('the scale probe holds the widest chip ("3in4·3rd", the cells\' short chip)', () => {
     // the probe renders only while measuring; jsdom measures 0-size boxes, so check what it renders on first layout
     const seen: string[] = [];
     const orig = Element.prototype.getBoundingClientRect;
@@ -178,7 +181,7 @@ describe('Team Calendar: 3-in-4 chip next to the B2B label', () => {
     } finally {
       Element.prototype.getBoundingClientRect = orig;
     }
-    expect(new Set(seen)).toEqual(new Set(['3-in-4 · 3rd']));
+    expect(new Set(seen)).toEqual(new Set(['3in4·3rd']));
     expect(TEAM_BY_ID.size).toBe(30);
   });
 });

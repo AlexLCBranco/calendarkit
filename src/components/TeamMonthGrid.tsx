@@ -16,7 +16,9 @@ export const TEAM_CELL_MIN_HEIGHT = 92;
 export const TEAM_SCALE_MAX = 2;
 /**
  * Smallest scale (desktop/tablet). Below 1 only where even 1 doesn't fit the fullest cell: 1280 × 900 since the 3-in-4
- * chip (a cell with B2B + chip + "Peacock" + "NBC Sports Network" takes 3 tag rows of a 115 px 6-week cell).
+ * chip (a cell with B2B + chip + "Peacock" + "NBC Sports Network" took 3 tag rows of a 115 px 6-week cell). Round 4's
+ * "3in4·2nd" chip and "TV" pill don't lift it: a played game's score line with wide tricodes ("MEM 188 vs 186 MEM" +
+ * logos, ~170 px) is wider than the 163 px cell, so it takes 2 lines (worst cell 93 px at scale 1, room 72 px).
  */
 export const TEAM_SCALE_MIN = 0.8;
 /** Week views (1 or 2 week rows): bigger cells, so a larger cap; the probe still decides (see PROJECT.md). */
@@ -24,8 +26,8 @@ export const TEAM_WEEK_SCALE_MAX = 3;
 export const TEAM_SCALE_FILL = 0.9;
 
 /**
- * The fullest cell the season can have, for sizing the team calendar: the game with the longest national TV names,
- * as a Cup Final, on night 1 of a travelling back-to-back, with the opponent on its 2nd night.
+ * The fullest cell the season can have, for sizing the team calendar: a national TV game (one "TV" pill in cells since
+ * round 4), as a Cup Final, on night 1 of a travelling back-to-back, with the opponent on its 2nd night.
  */
 function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefined {
   const tvText = (g: ScheduleGame) => nationalTv(g).join(' · ').length;
@@ -34,9 +36,9 @@ function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefin
   // final with 3-digit scores (tabular digits: any 3 are as wide) in triple overtime, so a cell with a score fits too
   const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', statusText: 'Final/3OT', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
   const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
-  // and the 3rd game of a 3-in-4 ("3-in-4 · 3rd": the widest chip text)
+  // and the 3rd game of a 3-in-4 ("3in4·3rd", the cells' short chip: the widest chip text)
   const tif: ThreeInFour = { position: 3, sets: [] };
-  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, size: 'compact' };
+  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, shortTif: true, tvPill: true, size: 'compact' };
 }
 
 export interface TeamMonthGridProps {
@@ -161,7 +163,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               {/* week views can cross a month: the 1st says which */}
               <span className="ck-daynum">{weekView && date.endsWith('-01') ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
-              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
+              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} shortTif tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
               {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
             </div>
           );

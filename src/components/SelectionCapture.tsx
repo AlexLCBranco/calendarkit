@@ -75,7 +75,7 @@ function TeamDays({ data, teamId, now, timeZone, games, cellWidth, teamScale = 1
         <div key={date} className="ck-cell ck-day-cell ck-sel-day" data-date={date} style={{ width: cellWidth }}>
           <span className="ck-sel-dayhead">{dayHead(date, gs.length)}</span>
           {gs.map((g) => (
-            <GameCard key={g.gameId} game={g} teamId={teamId} b2b={b2b.byGame.get(g.gameId)} tif={tif.get(g.gameId)} opponentB2B={opponentSecondNight(data, g, teamId)} now={now} timeZone={timeZone} teamFirst logos scores size="compact" />
+            <GameCard key={g.gameId} game={g} teamId={teamId} b2b={b2b.byGame.get(g.gameId)} tif={tif.get(g.gameId)} shortTif tvPill opponentB2B={opponentSecondNight(data, g, teamId)} now={now} timeZone={timeZone} teamFirst logos scores size="compact" />
           ))}
         </div>
       ))}

@@ -724,6 +724,22 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     full perf run passed (76 ms). Baselines unchanged. Linux Team List scroll baseline added from CI (main thread 131 ms
     → 160 with the usual +20 % for runner variance).
 
+- **Team Calendar text at 1280 px** (item 4): calendar cells (month, 1 and 2 weeks, desktop/tablet; selection images
+  too) show the short chip **"3in4·2nd"** and, Alex's pick after measuring, one green **"TV" pill** with the network
+  names in its tooltip/aria-label (like the week view). The Team List keeps "3-in-4 · 2nd" and the names; phones keep
+  the dot. The probe holds both ("3in4·3rd", "TV").
+  - **Result**: 1920 × 1080 month **1.15 → 1.2**, weeks 2.0 → **2.05**; **1280 × 900 month stays 0.8**, weeks 1.3. The
+    target (≥ 1 at 1280) is **not reachable** without removing more from month cells — measured at 1280 (6-week cell
+    112 px, room 72 px by the 90 % rule, cell 163 px wide): the worst cell is 93 px at scale 1 because a played game's
+    score line with wide tricodes ("MEM 188 vs 186 MEM" + 2 logos ≈ 170 px) is wider than the cell and wraps; without
+    OT 93, without logos 87, without logos and OT 74. The fullest real cell (ATL Feb 8, 2027: "2/2 · HH", chip,
+    "Peacock", "NBC Sports Network") was 97.5 px at scale 1 with the names, 75 with "NBCSN", 52.5 with the pill. A
+    probe built from the real schedule (heaviest tag sets + worst-case score line) was tried: same 0.8 / 1.2, so the
+    worst-case probe stays.
+  - Tests: fatigue.test (cell chip text + tooltip, probe chip), scale.test (TV pill + tooltip in every LAL November TV
+    cell), e2e `calendar-cells.spec.ts` (pill/chip tooltips, Team List unchanged), Team Calendar walk: 1920 scale ≥ 1.2.
+    All fail on the old build.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

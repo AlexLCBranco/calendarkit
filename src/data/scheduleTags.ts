@@ -62,8 +62,8 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /** "Oct 21" (rotationkit's shortDate). */
 const shortDate = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`;
 
-/** Chip text: "3-in-4 · 3rd". */
-export const threeInFourLabel = (t: ThreeInFour) => `3-in-4 · ${ORDINAL[t.position]}`;
+/** Chip text: "3-in-4 · 3rd"; `short` (calendar cells): "3in4·3rd". */
+export const threeInFourLabel = (t: ThreeInFour, short = false) => (short ? `3in4·${ORDINAL[t.position]}` : `3-in-4 · ${ORDINAL[t.position]}`);
 
 /** Tooltip: "3 games in 4 days — set:" (or "N sets:"), then one line per set: "Oct 21, Oct 22, Oct 24 (3rd game)". */
 export function threeInFourTip(t: ThreeInFour, team?: string): string {

@@ -7,6 +7,7 @@ import { cleanup, render } from '@testing-library/react';
 import { CalendarView, LeagueWeekView, TeamMonthGrid, TEAM_SCALE_MAX } from '../src/components/CalendarView';
 import { LINE_WITH_SCORES, SCORE3_EM, busiestDayHeight, columnHeight, MONTH_LINE, MONTH_LINE_WIDTH, monthCellInner, scaleLine, timeGroups, WEEK_HEAD_H, WEEK_SCALE_FILL, WEEK_SCALE_MAX, weekScale, lineWidth } from '../src/components/dayflow';
 import { data } from './feed';
+import { hasNationalTv, nationalTv, teamGames } from '../src/data/model';
 
 afterEach(cleanup);
 
@@ -94,11 +95,19 @@ describe('team calendar sizes', () => {
     expect(el.container.querySelector('.ck-team-probe')).toBeNull();
   });
 
-  it('TV names wrap between networks, never inside one (one nowrap span per network)', () => {
+  it('TV in a calendar cell: one green "TV" pill, the network names in its tooltip and aria-label (round 4)', () => {
     const el = render(<TeamMonthGrid data={data} teamId={1610612747} month="2026-11" onMonthChange={() => {}} size={XL} now={NOW} timeZone="UTC" />);
-    const tv = [...el.container.querySelectorAll('.ck-tv')].find((t) => t.textContent === 'Peacock · NBC Sports Network')!;
-    expect([...tv.querySelectorAll('.ck-tv-name')].map((n) => n.textContent)).toEqual(['Peacock', 'NBC Sports Network']);
+    const tvGames = teamGames(data, 1610612747).filter((g) => g.dateEt.startsWith('2026-11') && hasNationalTv(g));
+    expect(tvGames.length).toBeGreaterThan(0);
+    for (const g of tvGames) {
+      const pill = el.container.querySelector(`.ck-day-cell[data-date="${g.dateEt}"] [data-testid="tv-badge"]`)!;
+      expect(pill.textContent, g.dateEt).toBe('TV');
+      expect(pill.getAttribute('data-tip')).toBe(nationalTv(g).join(' · '));
+      expect(pill.getAttribute('aria-label')).toBe(`US national TV: ${nationalTv(g).join(', ')}`);
+    }
+    expect(el.container.querySelector('.ck-day-cell .ck-tv-name')).toBeNull();
   });
+
 });
 
 describe('week view scores (final games)', () => {

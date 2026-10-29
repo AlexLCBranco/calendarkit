@@ -31,6 +31,10 @@ export interface GameCardProps {
   opponentB2B?: string;
   /** Team view: the selected team's 3-in-4 position and sets for this game ("3-in-4 · 2nd" chip). */
   tif?: ThreeInFour;
+  /** Team view: the short chip "3in4·2nd" (calendar cells). */
+  shortTif?: boolean;
+  /** National TV as one "TV" pill with the network names in its tooltip (calendar cells), instead of the names. */
+  tvPill?: boolean;
   /** Team view: the opponent's 3-in-4 over its own schedule (lighter chip; only shown with `fatigueColumns`). */
   opponentTif?: ThreeInFour;
   /**
@@ -102,8 +106,11 @@ export function B2BLabel({ night, short = false }: { night: B2BNight; short?: bo
   );
 }
 
-/** "3-in-4 · 2nd" (purple; the 3rd game stronger); tooltip lists every set. `opp`: the opponent's, lighter. */
-export function TifChip({ tif, team, opp = false }: { tif: ThreeInFour; team?: string; opp?: boolean }) {
+/**
+ * "3-in-4 · 2nd" (purple; the 3rd game stronger); tooltip lists every set. `opp`: the opponent's, lighter. `short`:
+ * "3in4·2nd" (calendar cells; the full text stays in the tooltip).
+ */
+export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeInFour; team?: string; opp?: boolean; short?: boolean }) {
   const tip = threeInFourTip(tif, opp ? team : undefined);
   return (
     <span
@@ -116,7 +123,7 @@ export function TifChip({ tif, team, opp = false }: { tif: ThreeInFour; team?: s
       role="img"
       tabIndex={0}
     >
-      {threeInFourLabel(tif)}
+      {threeInFourLabel(tif, short)}
     </span>
   );
 }
@@ -124,7 +131,7 @@ export function TifChip({ tif, team, opp = false }: { tif: ThreeInFour; team?: s
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -213,7 +220,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
   const bracket = side && nights.length ? nights.join(' ') : undefined;
   const cols = fatigueColumns && !!side;
   const b2bLabels = side && b2b.map((n) => <B2BLabel key={n.night} night={n} short={shortB2B} />);
-  const tifChip = side && tif && <TifChip tif={tif} />;
+  const tifChip = side && tif && <TifChip tif={tif} short={shortTif} />;
 
   return (
     <article
@@ -257,7 +264,12 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
           </span>
         ))}
         {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}
-        {tv.length > 0 && (
+        {tv.length > 0 && tvPill && (
+          <span className="ck-tag ck-tv ck-tv-short" data-tip={tv.join(' · ')} aria-label={`US national TV: ${tv.join(', ')}`} role="img" tabIndex={0} data-testid="tv-badge">
+            TV
+          </span>
+        )}
+        {tv.length > 0 && !tvPill && (
           <span className="ck-tag ck-tv" title="US national TV" data-testid="tv-badge">
             {tv.map((n, i) => (
               <Fragment key={n}>

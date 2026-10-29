@@ -254,9 +254,9 @@ test('team calendar: content scaled to the cell, nothing clipped in any cell —
       expect(r.scroll, name).toBeLessThanOrEqual(0);
       for (const gap of r.bars) expect(gap, `${name}: B2B bar at the bottom edge of its cells`).toBeGreaterThanOrEqual(0), expect(gap, name).toBeLessThanOrEqual(6);
       if (p === 'desktop-xl') {
-        expect(r.scale, name).toBeGreaterThan(1);
+        expect(r.scale, name).toBeGreaterThanOrEqual(1.2); // round 4's short chip + TV pill: 1.15 → 1.2
         if (r.logo) expect(r.logo, name).toBeCloseTo(16 * r.scale, 1);
-      } else expect(r.scale, name).toBeGreaterThanOrEqual(0.8); // TEAM_SCALE_MIN: 1280 × 900 since the 3-in-4 chip
+      } else expect(r.scale, name).toBeGreaterThanOrEqual(0.8); // TEAM_SCALE_MIN: 1280 × 900 (a 2-line score line, see TeamMonthGrid)
       const prev = seen.get(r.weeks);
       if (!prev || r.fill.used > prev.used) seen.set(r.weeks, { cell: `${name}: cell ${r.cell} px, scale ${r.scale}`, ...r.fill });
       const next = page.getByLabel('Next month');
