@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { hasNationalTv, localDate, weekOf, type CalendarData } from '../data/model';
+import { hasNationalTv, leagueRecords, localDate, weekOf, type CalendarData, type TeamRecord } from '../data/model';
 import { CopyButton } from './CopyButton';
 import { GameCard } from './GameCard';
 import { PeriodNav } from './PeriodNav';
@@ -215,19 +215,21 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
   );
 }
 
+const NO_RECORDS: ReadonlyMap<number, TeamRecord> = new Map();
 const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'short', month: 'short', day: 'numeric' })} · ${plural(n)}`;
 
 /** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
 // memo: the list re-renders on every scroll event; a day whose props haven't changed (the same day object from
 // `days`, same clock) is skipped. Re-rendering every visible day's cards per scroll event cost frames (2026-10-24).
 export const ListDaySection = memo(function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void }) {
+  const records = compact ? undefined : leagueRecords(data); // once per data set
   return (
     <section className="ck-lday" data-day={day.date} data-key={dataKey} aria-label={dayHeading(day.date, day.games.length)}>
       <h3 className="ck-lday-head">{dayHeading(day.date, day.games.length)}</h3>
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} copyable />
+          <GameCard key={g.gameId} game={g} backToBackTeamIds={b2bIds(data, g)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} copyable />
         ))}
       </div>
     </section>

@@ -342,6 +342,29 @@ export interface SeasonLine {
  * scores (the Cup Final doesn't count, as in the standings). Both are known up to the first game not yet final,
  * inclusive.
  */
+export type TeamRecord = NonNullable<SeasonLine['record']>;
+const recordsCache = new WeakMap<CalendarData, Map<string, Map<number, TeamRecord>>>();
+
+/**
+ * Every game's records going in, for both teams (gameId → teamId → W-L): the Team List season line's rule (teamSeason)
+ * for all 30 teams. Computed once per data set (League List rows read it while scrolling).
+ */
+export function leagueRecords(data: CalendarData): Map<string, Map<number, TeamRecord>> {
+  let out = recordsCache.get(data);
+  if (out) return out;
+  out = new Map();
+  for (const teamId of data.teamDates.keys()) {
+    for (const [gameId, line] of teamSeason(data, teamId)) {
+      if (!line.record) continue;
+      let m = out.get(gameId);
+      if (!m) out.set(gameId, (m = new Map()));
+      m.set(teamId, line.record);
+    }
+  }
+  recordsCache.set(data, out);
+  return out;
+}
+
 export function teamSeason(data: CalendarData, teamId: number): Map<string, SeasonLine> {
   const out = new Map<string, SeasonLine>();
   let n = 0;

@@ -740,6 +740,21 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     cell), e2e `calendar-cells.spec.ts` (pill/chip tooltips, Team List unchanged), Team Calendar walk: 1920 scale ≥ 1.2.
     All fail on the old build.
 
+- **Records going in, League List** (item 5): `leagueRecords(data)` (model.ts) = the Team List season line's rule
+  (teamSeason) for all 30 teams, gameId → team → W-L, **computed once per data set** (WeakMap). Each row: "3-1 [logo] BOS
+  113 @ 121 DET [logo] 2-2" — 11 px muted tabular, on the outside of each logo, in 3.3 em slots ("41-41" is 35.6 px) so
+  the logos keep one x; empty slot when unknown (after the team's first non-final regular-season game) or not a
+  regular-season game. aria-label ends ", records going in BOS 3-1, DET 2-2". Desktop/tablet; phones none.
+  - **Measured first** (every 3rd day of the season): widest row 652.8 px with records (was 565.6) of 960 px at 1920 and
+    721 px at 768 → no wrap. Row heights old vs new, 5 061 rows at 390/768/1280: 0 changed.
+  - Perf: the full run's League scroll main thread 2 295 ms (pre-round runs 2 003–2 242). A 2-way A/B suggested +17 %,
+    but a 5-way interleaved A/B of the builds (pre-round, items 1, 2, 4, this) gave medians 2 488 / 2 361 / 2 249 /
+    2 363 / 2 238 ms — noise (±20 % between identical runs), no regression.
+  - Tests: `tests/records.test.tsx` (model vs an independent count over the real feed + synthetic W/L/unknown/Cup Final;
+    rows at desktop and tablet incl. aria-label; phones none — 3 of 4 fail before), e2e `mirror.spec.ts` (record
+    slots at one x, "41-41" fits). Matchup-text tests strip or include the records.
+  - The OT marker now sits after the home record ("… DET [logo] 2-2 OT").
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

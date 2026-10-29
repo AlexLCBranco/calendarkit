@@ -17,6 +17,12 @@ const XL = { width: 1840, height: 1000 };
 const PHONE = { width: 360, height: 700 };
 const finals = data.games.filter((g) => g.status === 'final');
 const text = (el: Element) => el.textContent!.replace(/\s+/g, ' ').trim();
+/** Matchup text without the League List's records going in (round 4, tests/records.test.tsx). */
+const bare = (el: Element) => {
+  const c = el.cloneNode(true) as Element;
+  c.querySelectorAll('.ck-rec').forEach((r) => r.remove());
+  return text(c);
+};
 const card = (root: ParentNode, id: string) => root.querySelector(`.ck-card[data-game-id="${id}"]`)!;
 const won = (g: (typeof finals)[number], side: 'home' | 'away') => (side === 'home' ? g.homeTeam.score > g.awayTeam.score : g.awayTeam.score > g.homeTeam.score);
 
@@ -30,7 +36,7 @@ describe('League List', () => {
       const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date }} />).container;
       for (const g of finals.filter((x) => x.dateEt === date)) {
         const c = card(el, g.gameId);
-        expect(text(c.querySelector('.ck-matchup')!), g.gameId).toBe(`${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.score} ${g.homeTeam.teamTricode}`);
+        expect(bare(c.querySelector('.ck-matchup')!), g.gameId).toBe(`${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.score} ${g.homeTeam.teamTricode}`);
         const scores = [...c.querySelectorAll('.ck-score')];
         expect(scores.map((s) => [s.textContent, s.classList.contains('ck-score-win')])).toEqual([
           [String(g.awayTeam.score), won(g, 'away')],

@@ -211,3 +211,20 @@
   width: 1.3em;
   text-align: center;
 }
+/* League List: records going in, small and muted, on the outside of each logo; in fixed slots (fit "41-41") so the
+   logos stay at one x, the away record against its logo, the home record against its own. */
+.ck-rec {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ck-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ck-slots .ck-rec {
+  display: inline-block;
+  width: 3.3em; /* "41-41" is 35.6 px at 11 px */
+  text-align: right;
+}
+.ck-slots .ck-side + .ck-side .ck-rec {
+  text-align: left;
+}

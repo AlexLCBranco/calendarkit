@@ -43,7 +43,7 @@ describe('League List', () => {
   it('"NYK 118 @ 121 BOS OT": the marker after the last score, muted; aria-label says overtime', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-10' }} />).container;
     const c = el.querySelector(`.ck-card[data-game-id="${ot.gameId}"]`)!;
-    expect(text(c.querySelector('.ck-matchup')!)).toBe('NYK 118 @ 121 BOS OT');
+    expect(text(c.querySelector('.ck-matchup')!)).toBe('0-0 NYK 118 @ 121 BOS 0-0 OT'); // records going in (item 5) outside the logos
     expect(otOf(c)).toBe('OT');
     expect(c.getAttribute('aria-label')).toContain('final NYK 118, BOS 121 (OT)');
     expect(otOf(el.querySelector(`.ck-card[data-game-id="${ot2.gameId}"]`)!)).toBe('2OT');

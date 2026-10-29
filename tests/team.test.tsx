@@ -194,10 +194,10 @@ describe('selected team first, both logos', () => {
     expect(el.container.querySelector('.ck-detail .ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toMatch(/^BOS (vs|@) [A-Z]{3}$/);
   });
 
-  it('league views unchanged: AWAY @ HOME in the list', () => {
+  it('league views: AWAY @ HOME in the list (records going in on the outside, round 4)', () => {
     const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
     const g = data.byDate.get('2026-10-23')![0]!;
-    expect(el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-matchup`)!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`${g.awayTeam.teamTricode} @ ${g.homeTeam.teamTricode}`);
+    expect(el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-matchup`)!.textContent!.replace(/\s+/g, ' ').trim()).toMatch(new RegExp(`^(\\d+-\\d+ )?${g.awayTeam.teamTricode} @ ${g.homeTeam.teamTricode}( \\d+-\\d+)?$`));
   });
 });
 

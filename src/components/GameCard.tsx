@@ -3,7 +3,7 @@
 
 import { Fragment } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine } from '../data/model';
+import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord } from '../data/model';
 import { threeInFourLabel, threeInFourTip, type ThreeInFour } from '../data/scheduleTags';
 import { teamLogo } from '../data/teams';
 import { CopyButton } from './CopyButton';
@@ -64,6 +64,8 @@ export interface GameCardProps {
   scores?: boolean;
   /** Copy-as-image button on hover (lists, phone detail card). */
   copyable?: boolean;
+  /** League List: each team's record going into the game, beside it on the outside ("3-1 [logo] BOS … DET [logo] 2-2"). */
+  records?: ReadonlyMap<number, TeamRecord>;
 }
 
 /** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
@@ -131,7 +133,7 @@ export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeI
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -162,6 +164,15 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
   );
   const loss = (first: boolean) => (result && result.win !== first ? ' ck-loss' : '');
 
+  // league records going in, on the outside of each logo (an empty slot when unknown)
+  const recOf = (t: ScheduleGame['homeTeam']) => records?.get(t.teamId);
+  const recText = (r?: TeamRecord) => (r ? `${r.wins}-${r.losses}` : '');
+  const rec = (t: ScheduleGame['homeTeam']) =>
+    records && (
+      <span className="ck-rec" title={recOf(t) ? `${teamLabel(t)} record going in` : undefined}>
+        {recText(recOf(t))}
+      </span>
+    );
   // "[logo] BOS 113 @ 121 DET [logo]": first team (away, or the selected team), its score, "@"/"vs", the other score,
   // the other team, logos on the outside. Each side wraps as one unit in narrow cells.
   const [first, second] = side ? [side.team, side.opponent] : [game.awayTeam, game.homeTeam];
@@ -182,6 +193,8 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
     ) : (
       <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}`}>
         <span className="ck-side">
+          {!side && rec(first)}
+          {records && ' '}
           {logos && <TeamLogo team={first} />}
           <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{teamLabel(first)}</span>
           {result && ' '}
@@ -196,6 +209,8 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
             {side && opponentB2B && <B2BDot tip={opponentB2B} />}
           </span>{' '}
           {logos && <TeamLogo team={second} />}
+          {records && ' '}
+          {!side && rec(second)}
           {otMark}
         </span>
       </span>
@@ -215,7 +230,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
     : '';
   const label = side
     ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${seasonText ? `, ${seasonText}` : ''}`
-    : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}`;
+    : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${recOf(game.awayTeam) && recOf(game.homeTeam) ? `, records going in ${away} ${recText(recOf(game.awayTeam))}, ${home} ${recText(recOf(game.homeTeam))}` : ''}`;
   const nights = bracketNights ?? b2b.map((n) => n.night);
   const bracket = side && nights.length ? nights.join(' ') : undefined;
   const cols = fatigueColumns && !!side;
