@@ -152,10 +152,10 @@ describe('selected team first, both logos', () => {
         const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
         const home = g.homeTeam.teamId === teamId;
         const opp = home ? g.awayTeam : g.homeTeam;
-        // final games: the score beside each tricode (straight from the feed's scores)
+        // final games: "BOS 113 @ 121 DET", the scores next to each other (straight from the feed's scores)
         const self = home ? g.homeTeam : g.awayTeam;
         const [s, o] = g.status === 'final' ? [` ${self.score}`, ` ${opp.score}`] : ['', ''];
-        expect(row.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim(), g.gameId).toBe(`${tri}${s} ${home ? 'vs' : '@'} ${opp.teamTricode}${o}`);
+        expect(row.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim(), g.gameId).toBe(`${tri}${s} ${home ? 'vs' : '@'}${o} ${opp.teamTricode}`);
         expect(imgs(row), g.gameId).toEqual([`/logos/${tri}.svg`, `/logos/${opp.teamTricode}.svg`]);
         expect(row.querySelector('.ck-matchup > :first-child .ck-self')!.textContent).toBe(tri); // always first
       }
@@ -172,7 +172,7 @@ describe('selected team first, both logos', () => {
           const opp = home ? g.awayTeam : g.homeTeam;
           const self = home ? g.homeTeam : g.awayTeam;
           const [sc, o] = g.status === 'final' ? [` ${self.score}`, ` ${opp.score}`] : ['', '']; // final scores (scores.test.tsx)
-          expect(cell.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`${tri}${sc} ${home ? 'vs' : '@'} ${opp.teamTricode}${o}`);
+          expect(cell.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`${tri}${sc} ${home ? 'vs' : '@'}${o} ${opp.teamTricode}`);
           expect(imgs(cell)).toEqual([`/logos/${tri}.svg`, `/logos/${opp.teamTricode}.svg`]);
           n++;
         }

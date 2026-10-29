@@ -135,6 +135,17 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
   const home = teamLabel(game.homeTeam);
   // final score from the shown side: the selected team (team views) or the away team (league views)
   const result = scores ? finalScore(game, teamId ?? game.awayTeam.teamId) : undefined;
+  // Fixed slots (desktop/tablet League List, desktop Team List with its fatigue columns): every tricode, score and
+  // "@"/"vs" in a fixed-width slot, the score slots empty on games without a score, so the tricodes, logos and "@" sit
+  // at one x on every row. Elsewhere (phones, calendar cells) the parts take their natural width.
+  const slots = size === 'regular' && !!logos && (side ? fatigueColumns : true);
+  // the spaces keep textContent readable ("BOS 113 @ 121 DET"); inline-flex drops them
+  const score = (n: number | undefined, win: boolean) =>
+    n !== undefined ? (
+      <span className={`ck-score${win ? ' ck-score-win' : ''}`}>{n}</span>
+    ) : (
+      slots && <span className="ck-score-slot" aria-hidden="true" />
+    );
   const ot = result && overtime(game);
   const otMark = ot && (
     <>
@@ -143,49 +154,53 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
     </>
   );
   const loss = (first: boolean) => (result && result.win !== first ? ' ck-loss' : '');
-  // the space keeps textContent readable ("BOS 113"); inline-flex drops it, the margin spaces the score
-  const score = (n: number, win: boolean) => (
-    <>
-      {' '}
-      <span className={`ck-score${win ? ' ck-score-win' : ''}`}>{n}</span>
-    </>
-  );
 
-  const matchup = side ? (
-    <span className="ck-matchup">
-      {teamFirst && (
-        <>
-          <span className="ck-side">
-            {logos && <TeamLogo team={side.team} />}
-            <span className={`ck-team ck-self${loss(true)}`}>{teamLabel(side.team)}</span>
-            {result && score(result.score, result.win)}
-          </span>{' '}
-        </>
-      )}
-      <span className="ck-side">
-        <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}
-        <span className={`ck-team ck-opp${loss(false)}`}>
-          {teamLabel(side.opponent)}
-          {opponentB2B && <B2BDot tip={opponentB2B} />}
+  // "[logo] BOS 113 @ 121 DET [logo]": first team (away, or the selected team), its score, "@"/"vs", the other score,
+  // the other team, logos on the outside. Each side wraps as one unit in narrow cells.
+  const [first, second] = side ? [side.team, side.opponent] : [game.awayTeam, game.homeTeam];
+  const matchup =
+    side && !teamFirst ? (
+      <span className="ck-matchup">
+        <span className="ck-side">
+          <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}
+          <span className={`ck-team ck-opp${loss(false)}`}>
+            {teamLabel(side.opponent)}
+            {opponentB2B && <B2BDot tip={opponentB2B} />}
+          </span>
+          {result && ' '}
+          {result && score(result.oppScore, !result.win)}
+          {otMark}
         </span>
-        {result && score(result.oppScore, !result.win)}
-        {otMark}
       </span>
-    </span>
-  ) : (
-    <span className="ck-matchup">
-      {logos && <TeamLogo team={game.awayTeam} />}
-      <span className={`ck-team${loss(true)}`}>{away}</span>
-      {result && score(result.score, result.win)}
-      {b2bIds.has(game.awayTeam.teamId) && <span className="ck-tag ck-b2b" title={`${away} back-to-back`}>B2B</span>}
-      <span className="ck-vsat"> @ </span>
-      {logos && <TeamLogo team={game.homeTeam} />}
-      <span className={`ck-team${loss(false)}`}>{home}</span>
-      {result && score(result.oppScore, !result.win)}
-      {otMark}
-      {b2bIds.has(game.homeTeam.teamId) && <span className="ck-tag ck-b2b" title={`${home} back-to-back`}>B2B</span>}
-    </span>
-  );
+    ) : (
+      <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}`}>
+        <span className="ck-side">
+          {logos && <TeamLogo team={first} />}
+          <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{teamLabel(first)}</span>
+          {result && ' '}
+          {score(result?.score, !!result?.win)}
+        </span>{' '}
+        <span className="ck-side">
+          <span className="ck-vsat">{side ? (side.home ? 'vs' : '@') : '@'}</span>{' '}
+          {score(result?.oppScore, !!result && !result.win)}
+          {result && ' '}
+          <span className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
+            {teamLabel(second)}
+            {side && opponentB2B && <B2BDot tip={opponentB2B} />}
+          </span>{' '}
+          {logos && <TeamLogo team={second} />}
+          {otMark}
+        </span>
+      </span>
+    );
+  // league views: a "B2B" badge per team on its 2nd night, first among the tags
+  const leagueB2B = side
+    ? []
+    : [game.awayTeam, game.homeTeam].filter((t) => b2bIds.has(t.teamId)).map((t) => (
+        <span key={t.teamId} className="ck-tag ck-b2b" title={`${teamLabel(t)} back-to-back`}>
+          {size === 'compact' ? 'B2B' : `B2B · ${teamLabel(t)}`}
+        </span>
+      ));
 
   const streak = season?.streak;
   const seasonText = season?.game
@@ -233,6 +248,7 @@ export function GameCard({ game, teamId, teamFirst, backToBackTeamIds = [], b2b 
         </span>
       )}
       <span className="ck-tags">
+        {leagueB2B}
         {!cols && b2bLabels}
         {!cols && tifChip}
         {marks.map((m) => (

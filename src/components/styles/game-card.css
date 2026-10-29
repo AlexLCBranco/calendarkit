@@ -173,3 +173,41 @@
   color: var(--ck-muted);
   white-space: nowrap;
 }
+/* Mirrored matchup "[logo] BOS 113 @ 121 DET [logo]": the first score hugs the "@" from the left, the second from
+   the right (4 px from its tricode, as before). */
+.ck-mirror .ck-side + .ck-side .ck-score {
+  margin-left: 0;
+  margin-right: 4px;
+}
+/* league rows without slots (phones): the "@" keeps its own width (the 1.3 em is for team rows' "vs"/"@") */
+.ck-card-logos .ck-league:not(.ck-slots) .ck-vsat {
+  min-width: 0;
+}
+/* Fixed slots (lists on desktop/tablet): tricodes 2.6 em (MEM, the widest, 35.8 px at 14 px), scores 2 em (3
+   tabular digits in bold, 27.2 px at 14 px), "@"/"vs" 1.3 em; empty score slots on games without a score. Tricodes sit against their
+   logos, scores against the "@", so logos, tricodes and "@" are at one x on every row. */
+.ck-slots .ck-team {
+  display: inline-block;
+  width: 2.6em;
+  min-width: 0;
+}
+.ck-slots .ck-side + .ck-side .ck-team {
+  text-align: right;
+}
+.ck-slots .ck-score,
+.ck-slots .ck-score-slot {
+  display: inline-block;
+  width: 2em;
+  text-align: right;
+}
+.ck-slots .ck-side + .ck-side .ck-score {
+  text-align: left;
+}
+.ck-slots .ck-score,
+.ck-slots .ck-side + .ck-side .ck-score {
+  margin: 0; /* the slot is wider than the digits; the flex gap spaces it */
+}
+.ck-slots .ck-vsat {
+  width: 1.3em;
+  text-align: center;
+}

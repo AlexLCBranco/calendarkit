@@ -105,9 +105,9 @@ describe('team list row', () => {
 
   it('final game: score beside each tricode, winner highlighted; upcoming games: no score', () => {
     const el = render(<TeamListView data={data} teamId={TEAM.BOS} tvOnly={false} size={WIDE} now={NOW} timeZone="UTC" />).container;
-    const g = bos[0]!; // Oct 20: BOS 113 @ DET 121
+    const g = bos[0]!; // Oct 20: BOS 113 @ 121 DET
     const r = row(el, g.gameId);
-    expect(r.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`BOS ${g.awayTeam.score} @ DET ${g.homeTeam.score}`);
+    expect(r.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`BOS ${g.awayTeam.score} @ ${g.homeTeam.score} DET`);
     expect([...r.querySelectorAll('.ck-score')].map((s) => [s.textContent, s.classList.contains('ck-score-win')])).toEqual([
       [String(g.awayTeam.score), g.awayTeam.score > g.homeTeam.score],
       [String(g.homeTeam.score), g.homeTeam.score > g.awayTeam.score],

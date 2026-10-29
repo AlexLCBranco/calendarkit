@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Final scores in every view, for games with status final in the snapshot: League List rows ("BOS 113 @ DET 121"),
+// Final scores in every view, for games with status final in the snapshot: League List rows ("BOS 113 @ 121 DET"),
 // Team Calendar cells, the league week view (score in the logo's slot, no TV pill; upcoming lines unchanged) and the
 // Team List. Winner's score and tricode bright and bold, loser's muted. Phones keep the league/calendar views as before.
 
@@ -25,12 +25,12 @@ it('the fixture has final games to check (regular season, Oct 20–22)', () => {
 });
 
 describe('League List', () => {
-  it('every final game: "AWAY a @ HOME h", winner bright and bold, loser muted (score and tricode)', () => {
+  it('every final game: "AWAY a @ h HOME", winner bright and bold, loser muted (score and tricode)', () => {
     for (const date of new Set(finals.map((g) => g.dateEt))) {
       const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date }} />).container;
       for (const g of finals.filter((x) => x.dateEt === date)) {
         const c = card(el, g.gameId);
-        expect(text(c.querySelector('.ck-matchup')!), g.gameId).toBe(`${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.teamTricode} ${g.homeTeam.score}`);
+        expect(text(c.querySelector('.ck-matchup')!), g.gameId).toBe(`${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.score} ${g.homeTeam.teamTricode}`);
         const scores = [...c.querySelectorAll('.ck-score')];
         expect(scores.map((s) => [s.textContent, s.classList.contains('ck-score-win')])).toEqual([
           [String(g.awayTeam.score), won(g, 'away')],
@@ -62,7 +62,7 @@ describe('Team Calendar', () => {
         const home = g.homeTeam.teamId === t.id;
         const [me, opp] = home ? [g.homeTeam, g.awayTeam] : [g.awayTeam, g.homeTeam];
         const cell = el.querySelector(`[data-date="${g.dateEt}"]`)!;
-        expect(text(cell.querySelector('.ck-matchup')!), `${t.tricode} ${g.dateEt}`).toBe(`${me.teamTricode} ${me.score} ${home ? 'vs' : '@'} ${opp.teamTricode} ${opp.score}`);
+        expect(text(cell.querySelector('.ck-matchup')!), `${t.tricode} ${g.dateEt}`).toBe(`${me.teamTricode} ${me.score} ${home ? 'vs' : '@'} ${opp.score} ${opp.teamTricode}`);
         expect([...cell.querySelectorAll('.ck-score')].map((s) => s.classList.contains('ck-score-win'))).toEqual([me.score > opp.score, opp.score > me.score]);
         n++;
       }
@@ -109,7 +109,7 @@ describe('Team List', () => {
   it('loser\'s tricode muted, winner\'s not (scores as before)', () => {
     const bos = TEAMS.find((t) => t.tricode === 'BOS')!.id;
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: bos }} />).container;
-    const g = teamGames(data, bos).find((x) => x.status === 'final')!; // Oct 20: BOS 113 @ DET 121
+    const g = teamGames(data, bos).find((x) => x.status === 'final')!; // Oct 20: BOS 113 @ 121 DET
     const c = card(el, g.gameId);
     expect([...c.querySelectorAll('.ck-team')].map((t) => [t.textContent, t.classList.contains('ck-loss')])).toEqual([
       ['BOS', true],

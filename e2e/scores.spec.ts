@@ -30,7 +30,7 @@ const finals = (page: Page): Promise<Final[]> =>
   });
 const norm = (s: string | null) => (s ?? '').replace(/\s+/g, ' ').trim();
 
-test('League List: every final game shows "AWAY a @ HOME h", winner bold', async ({ page }) => {
+test('League List: every final game shows "AWAY a @ h HOME", winner bold', async ({ page }) => {
   await open(page, '?view=league&layout=list');
   const all = await finals(page);
   expect(all.length).toBeGreaterThan(10);
@@ -39,7 +39,7 @@ test('League List: every final game shows "AWAY a @ HOME h", winner bold', async
     for (const g of all.filter((x) => x.date === date)) {
       const card = page.locator(`.ck-card[data-game-id="${g.gameId}"]`);
       // the names and scores only: league cards also carry a "B2B" badge per team on a back-to-back
-      expect(norm(await card.locator('.ck-matchup').evaluate((m) => [...m.querySelectorAll('.ck-team, .ck-score, .ck-vsat')].map((e) => e.textContent).join(' ')))).toBe(`${g.away.teamTricode} ${g.away.score} @ ${g.home.teamTricode} ${g.home.score}`);
+      expect(norm(await card.locator('.ck-matchup').evaluate((m) => [...m.querySelectorAll('.ck-team, .ck-score, .ck-vsat')].map((e) => e.textContent).join(' ')))).toBe(`${g.away.teamTricode} ${g.away.score} @ ${g.home.score} ${g.home.teamTricode}`);
       const win = await card.locator('.ck-score').evaluateAll((els) => els.map((e) => getComputedStyle(e).fontWeight));
       expect(win).toEqual([g.away.score > g.home.score ? '700' : '500', g.home.score > g.away.score ? '700' : '500']);
     }
@@ -101,7 +101,7 @@ test('Team Calendar: every team with a final game, every final cell; scale print
       const home = g.home.teamTricode === tri;
       const [me, opp] = home ? [g.home, g.away] : [g.away, g.home];
       const cell = page.locator(`.ck-day-cell[data-date="${g.date}"]`);
-      expect(norm(await cell.locator('.ck-matchup').textContent())).toBe(`${tri} ${me.score} ${home ? 'vs' : '@'} ${opp.teamTricode} ${opp.score}${g.ot ? ` ${g.ot}` : ''}`);
+      expect(norm(await cell.locator('.ck-matchup').textContent())).toBe(`${tri} ${me.score} ${home ? 'vs' : '@'} ${opp.score} ${opp.teamTricode}${g.ot ? ` ${g.ot}` : ''}`);
       // nothing clipped in the cell
       expect(await cell.evaluate((c) => c.scrollHeight <= c.clientHeight + 1 && c.scrollWidth <= c.clientWidth + 1)).toBe(true);
       n++;
@@ -126,7 +126,7 @@ test('overtime marker: League List, Team List (worst case in its slot), week vie
   for (const g of ots) {
     await open(page, `?view=league&layout=list&date=${g.date}`);
     const card = page.locator(`.ck-card[data-game-id="${g.gameId}"]`);
-    expect(norm(await card.locator('.ck-matchup').evaluate((m) => [...m.querySelectorAll('.ck-team, .ck-score, .ck-vsat, .ck-ot')].map((e) => e.textContent).join(' ')))).toBe(`${g.away.teamTricode} ${g.away.score} @ ${g.home.teamTricode} ${g.home.score} ${g.ot}`);
+    expect(norm(await card.locator('.ck-matchup').evaluate((m) => [...m.querySelectorAll('.ck-team, .ck-score, .ck-vsat, .ck-ot')].map((e) => e.textContent).join(' ')))).toBe(`${g.away.teamTricode} ${g.away.score} @ ${g.home.score} ${g.home.teamTricode} ${g.ot}`);
     expect(await card.getAttribute('aria-label')).toContain(`(${g.ot})`);
     expect(await oneLine(`.ck-card[data-game-id="${g.gameId}"]`), `${g.gameId} League List one line`).toBe(true);
     for (const tri of [g.away.teamTricode, g.home.teamTricode]) {
@@ -140,13 +140,25 @@ test('overtime marker: League List, Team List (worst case in its slot), week vie
   await open(page, `?view=team&layout=list&team=${ots[0]!.home.teamTricode}`);
   const r = await page.locator(`[data-testid="team-list"] .ck-card[data-game-id="${ots[0]!.gameId}"] .ck-matchup`).evaluate((m) => {
     m.querySelectorAll('.ck-team').forEach((t) => (t.firstChild!.textContent = 'MEM'));
+    m.querySelectorAll('.ck-team').forEach((t) => t.classList.remove('ck-loss')); // both bold: the widest
     m.querySelectorAll('.ck-score').forEach((t) => (t.textContent = '188'));
     m.querySelector('.ck-ot')!.textContent = '3OT';
-    const kids = [...m.querySelectorAll('.ck-side')];
-    return { slot: m.getBoundingClientRect().width, content: kids.at(-1)!.getBoundingClientRect().right - kids[0]!.getBoundingClientRect().left, overflow: m.scrollWidth - m.clientWidth };
+    // content = the outermost edges of every part's box and of its text (text can spill out of a narrow slot)
+    const edges = [...m.querySelectorAll('.ck-side > *, .ck-team, .ck-score, .ck-ot')].flatMap((e) => {
+      const range = document.createRange();
+      range.selectNodeContents(e);
+      return [e.getBoundingClientRect(), range.getBoundingClientRect()].filter((r) => r.width > 0);
+    });
+    const spill = [...m.querySelectorAll('.ck-team, .ck-score')].filter((e) => {
+      const range = document.createRange();
+      range.selectNodeContents(e.firstChild!);
+      return range.getBoundingClientRect().right > e.getBoundingClientRect().right + 0.5;
+    }).length;
+    return { slot: m.getBoundingClientRect().width, content: Math.max(...edges.map((r) => r.right)) - Math.min(...edges.map((r) => r.left)), overflow: m.scrollWidth - m.clientWidth, spill };
   });
   console.log(`[scores] ${info.project.name} Team List worst-case matchup with OT: ${r.content.toFixed(2)} of ${r.slot} px`);
   expect(r.content).toBeLessThanOrEqual(r.slot);
+  expect(r.spill, 'tricode/score text inside its slot').toBe(0);
   // week view: in the TV column of the final line, inside the line
   const g = ots[0]!;
   for (const weeks of [1, 2]) {

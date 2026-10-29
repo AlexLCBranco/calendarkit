@@ -691,6 +691,26 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     `scores.spec.ts` "overtime marker" (League List / Team List one line, worst case in the slot, week-view TV column)
     + the Team Calendar text check now expects the marker; `features.spec.ts` cap 1110. All fail on the old build.
 
+- **Scores next to each other, logos mirrored** (item 2): `[logo] BOS 113 @ 121 DET [logo]` — away tricode, away
+  score, "@", home score, home tricode, home logo on the outside; team views keep the selected team first ("BOS 113 vs
+  121 CHI"). League List, Team List (incl. tablet and phone), Team Calendar; winner bright/bold, loser muted as before.
+  - **Fixed slots** (League List desktop + tablet; Team List desktop with its fatigue columns): tricode 2.6 em (MEM
+    35.8 px at 14 px), score 2 em (3 bold tabular digits 27.2 px — measured in the app; a first try at 1.6 em let the
+    digits spill out), "@"/"vs" 1.3 em, an empty score slot on games without a score. So logos, tricodes and "@" are at
+    one x on every row of a day / of the Team List, played or not (e2e: 6 days × 4 widths; all 30 teams). Elsewhere
+    (phone rows, calendar cells) the parts take their natural width; each side still wraps as one unit in cells.
+  - **League "B2B" badges** moved out of the matchup into the tags ("B2B · BOS"; "B2B" on phones) — item 6 replaces
+    them with tricode marks.
+  - **Measured**: League List widest row 565.6 of 960 px (tablet 736). Team List worst case written into a row
+    ("MEM 188 vs 188 MEM [logo] 3OT", both bold) 235.3 of the 244 px slot. Row heights old vs new, 5 061 rows (League
+    List every 4th day, 6 Team Lists; phone/tablet/1280): none grew; 9 phone League rows with a B2B badge went 49 →
+    47.5 px. One phone row (Cup Final "TBD @ TBD") first grew 28.5 → 47.5 px (the team rows' 1.3 em "@" width) — fixed.
+  - Perf (Windows): League scroll mean 17.0 / p95 16.8 / main 2 214 ms, Team List scroll main 808 ms, switches 46–79 ms;
+    all within limits.
+  - Tests: `tests/mirror.test.tsx` (part order + slots per view and width; 4/4 fail before), 8 matchup-text tests
+    updated (12 fail before), e2e `mirror.spec.ts` (League List at every width: one x per part, one line, text inside
+    its slot), `fatigue.spec.ts` (logos, "vs", opponent tricode at one x over 2 400 rows), `scores.spec.ts` texts.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip
