@@ -29,6 +29,87 @@ where-to-watch info, embedding in gauntlet.
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
+## Current state / handoff (2026-10-29)
+State at v1.15.0 (commit cd76d61, live at https://calendarkit-brown.vercel.app, CI green). Rounds 1–4 are done; the
+details and measurements per item are under "Decisions" (round 4: "### Round 4 (2026-10-28)").
+
+**Round 4 shipped (v1.4.0 → v1.15.0, one commit per item):** OT marker; scores next to each other with mirrored logos
+and fixed slots; B2B in yellow; Team Calendar short "3in4·2nd" chip + one "TV" pill; records going in (League List);
+fatigue marks on tricodes in the league views; week view with aligned rows; compact week strip in both lists (Team List
+title/strip follow the scroll); date picker in both lists; active-day highlight; countdown on today's games; links to
+hoopsjunkie.io game pages.
+- **hoopsjunkie ↗ links** (last item): URL = `https://hoopsjunkie.io/games/<NBA Eastern-time game date>/<away>-vs-<home>`,
+  lowercase tricodes — always the feed's `dateEt`, also for games after midnight UTC or after midnight in the viewer's
+  zone ("+1" games): verified 2026-10-29 in Alex's Chrome on 10 games (POR @ LAL, ET Oct 27, 03:00 UTC: the Oct 27 URL
+  loads, the Oct 28 one redirects to that day's scores). No link while a team is undecided. The widgets render a "↗"
+  (`GameLinkButton` in `src/components/GameCard.tsx`) that only raises `onOpenGameLink(gameId)`; the shell opens the URL
+  in a new tab (`openGameLink` in `src/App.tsx`, `HOOPSJUNKIE_BASE_URL` / `isGameLinkConfigured` / `gameLinkUrl` in
+  `src/config.ts`; an empty base URL hides it). It is `display: none` until the game is hovered or has focus inside
+  (`src/components/styles/copy.css`) — an always-present hidden button cost the League List scroll ~15–18 % main thread.
+  The glyph is CSS content (no text in rows) and the button is `data-capture-exclude`, so never in copy-as-image.
+  Placement: list rows under the copy button; Team Calendar cells left of the day's copy button (`TeamMonthGrid.tsx`);
+  week-view lines in the room right of the line (`LeagueWeekView.tsx`). Tests: `tests/gamelink.test.tsx`,
+  `e2e/gamelink.spec.ts`.
+
+**Where things live:**
+- League List: `src/components/LeagueListView.tsx` (virtualized day list, `ListDaySection` memo'd, strip, active day).
+- Week view, 1 and 2 weeks (League → Calendar; the two-week mode is the same component with `weeks={2}`):
+  `src/components/LeagueWeekView.tsx` (`MonthGameLine`); geometry in `src/components/dayflow.ts` (`MONTH_LINE`, 155 px
+  line, `WEEK_MIN_WIDTH` = 1179 px widget, `weekScale`, `flowDay`); styles `styles/week-view.css`. Below 1179 px the count
+  grid (`MonthNavigator.tsx`) shows instead.
+- B2B logic: `src/data/model.ts` (`isBackToBack`, `teamB2BPairs` incl. codes and the metro plane via
+  `src/data/metro.ts`, `opponentSecondNight`), league-view fatigue `src/data/fatigue.ts` (`leagueFatigue`, cached per
+  data set), 3-in-4 `src/data/scheduleTags.ts`. Marks: team views `B2BLabel` / `B2BDot` in `GameCard.tsx` + bars in
+  `TeamMonthGrid.tsx` + bracket in `styles/team.css`; league views `src/components/FatigueMark.tsx` +
+  `styles/fatigue-mark.css`. The B2B pop-up is the shared floating tooltip (`src/components/Tooltip.tsx`, every
+  `[data-tip]`): team views show `pair.tip`, league views the per-team text from `leagueFatigue`.
+- **B2B colour: `--ck-b2b: #f5e042`** (lemon yellow, `styles/base.css`); the stale data stamp has its own `--ck-stale`
+  (#e08a3c, orange).
+- Stores (no re-render on scroll/clock): `valueStore.ts` (Team List top row, Today state), `clock.ts` (one minute clock
+  per widget, countdowns, today's date; `CLOCK_TICK_EVENT` lets a test tick), `selection.ts`, `ActiveHighlight.tsx`.
+
+**Tests:**
+- `npm test` (Vitest, 311 tests, ~35 s), `npm run e2e` (Playwright; builds and serves the production build on :4174;
+  projects desktop 1280, desktop-xl 1920, tablet, phone, then perf), `npm run check-version`.
+- **Rule (Alex, 2026-10-29): wrap every test/build command in `timeout 300`, write the output to a file and grep the
+  file — never pipe test output into grep.** A perf run piped into grep hung for 7 h; the cause wasn't established. A full
+  `npm run e2e` takes ~5 min, so run it in chunks: `--project=desktop --project=desktop-xl` (~3.6 min), `--project=tablet
+  --project=phone` (~45 s), `--project=perf --no-deps` (~1.8 min). playwright.config.ts has `globalTimeout` 15 min and
+  a 180 s perf test timeout. A "preview" server already on :4174 is reused by Playwright (`reuseExistingServer`), so
+  stop it before e2e or it serves an old build.
+- Perf baselines: `e2e/perf-baseline.json` (win32 and linux). Never raise one to make a change pass. Main-thread time
+  varies ±20 % between identical runs on this PC, so before concluding a change is slower, compare **side by side**:
+  build each version into its own folder (`git worktree` at ../ck-old, `npx vite build --outDir ../calendarkit/test-output/
+  dist-<sha>`) and run `node test-output/m/abn.mjs <reps> <distA> <distB>` (League List wheel gesture, interleaved,
+  medians; `abt.mjs` = Team List, `abc.mjs` = countdown gesture). Last result (item 12, 5 runs each): **item 11 build
+  2,692 ms vs v1.15.0 2,696 ms** — no difference.
+- `test-output/` (git-ignored): `copy-images/` (copy e2e PNGs), `round4-shots/` (screenshots for Alex's eye check),
+  `m/` (measuring and A/B scripts, .bak copies), `dist-*` / `old-dist` (builds of older commits for A/B),
+  `e2e-*.log` (round 4 run logs), `perf.json` (with PERF_RECORD=1).
+
+**Open issues:**
+- Flaky: `e2e/lists.spec.ts` "league list: continuous days with sticky headers…" failed alone twice in round 4
+  (desktop-xl at item 10, tablet at item 12: `Cannot read properties of undefined (reading 'getBoundingClientRect')` —
+  the "no jumps when scrolling up" step found no card below the list's top at one step); passed on every rerun. Also
+  known flaky: `features.spec.ts` "team header and team picker" (failed once on phone in CI, earlier on tablet).
+- At 1280 × 900 the two-week week view makes the page scroll by up to 164 px on the busiest weeks (Nov 2: 15 games in
+  one column). It already scrolled 106–142 px before round 4; the fatigue legend added 22 px. Needs a decision; the fit
+  test caps it at 164 px there (`e2e/features.spec.ts`).
+- Team Calendar month view at 1280 × 900 stays at scale 0.8 (a played game's score line wraps in the 163 px cell).
+
+**Don't break:**
+- Rule #1 (speed): nothing that reacts to scroll or the clock may re-render a list or its rows — use a store, a class
+  toggled on the old/new element, or CSS; check with `e2e/perf.spec.ts` and the A/B scripts. Fades: opacity on
+  composited layers only (CSS transitions of row backgrounds/shadows cost +32 %); no box-shadow on many elements.
+- The Vite dev server caches the nested `@import`s of `calendar.css`: after editing `styles/*.css`, touch
+  `src/components/calendar.css`. Production builds are unaffected.
+- Copy as image: anything interactive or live (hover buttons, active-day highlight, countdowns) must be excluded
+  (`data-capture-exclude`) or lifted by `suspendForCapture` in `copyAsImage.ts` (`.ck-capturing`).
+- Edit files with the editor, not `sed` (Alex's rule). Push to `main` without force; the daily data bot commits
+  `public/data/schedule.json`, so rebase (`git pull --rebase`) when a push is rejected. Every app commit raises
+  package.json's version (CI `check-version`).
+- ../ck-old is a git worktree of this repo (detached at 4abac3d, node_modules junction) used only for A/B builds.
+
 ## Probe (2026-10-23)
 
 ### 1. CORS — browser cannot fetch the feed directly
