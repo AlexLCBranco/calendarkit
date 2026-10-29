@@ -24,6 +24,8 @@ export interface LeagueListViewProps {
   now: number;
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
+  /** The "↗" on each game: raised with its id; the host opens the game's page. */
+  onOpenGameLink?: (gameId: string) => void;
   /** Own day title and arrows (default); off when the host shows the navigation (CalendarView's top bar). */
   nav?: boolean;
 }
@@ -64,7 +66,7 @@ export const listTitle = (date: string, compact: boolean) => fmtDate(date, { wee
  * Only the days near the viewport are rendered; the rest are spacers sized from measured (or estimated) heights,
  * and the day at the top stays put while heights above it get measured. The week strip follows the day at the top.
  */
-export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, timeZone, onOpenGame, nav = true }: LeagueListViewProps) {
+export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, timeZone, onOpenGame, onOpenGameLink, nav = true }: LeagueListViewProps) {
   const compact = isCompact(size);
   const days = useMemo(() => listDays(data, tvOnly), [data, tvOnly]);
   const index = useMemo(() => new Map(days.map((d, i) => [d.date, i])), [days]);
@@ -226,7 +228,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
         {days.length === 0 && <p className="ck-empty">No games.</p>}
         <div style={{ height: tops[start] }} aria-hidden="true" />
         {days.slice(start, end).map((d) => (
-          <ListDaySection key={d.date} day={d} dataKey={hKey(d)} data={data} compact={compact} now={now} timeZone={timeZone} onOpenGame={onOpenGame} />
+          <ListDaySection key={d.date} day={d} dataKey={hKey(d)} data={data} compact={compact} now={now} timeZone={timeZone} onOpenGame={onOpenGame} onOpenGameLink={onOpenGameLink} />
         ))}
         <div style={{ height: total - tops[end]! + tail }} aria-hidden="true" />
         {highlight.layers}
@@ -242,7 +244,7 @@ const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'sho
 /** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
 // memo: the list re-renders on every scroll event; a day whose props haven't changed (the same day object from
 // `days`, same clock) is skipped. Re-rendering every visible day's cards per scroll event cost frames (2026-10-24).
-export const ListDaySection = memo(function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void }) {
+export const ListDaySection = memo(function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame, onOpenGameLink }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; onOpenGameLink?: (gameId: string) => void }) {
   const records = compact ? undefined : leagueRecords(data); // once per data set
   const fatigue = leagueFatigue(data); // once per data set
   return (
@@ -253,7 +255,7 @@ export const ListDaySection = memo(function ListDaySection({ day, dataKey, data,
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} onOpenGameLink={onOpenGameLink} copyable />
         ))}
       </div>
     </section>

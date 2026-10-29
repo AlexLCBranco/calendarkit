@@ -888,6 +888,29 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   `globalTimeout` 15 min (top-level only in Playwright; a full local run is ~5 min), perf project `timeout` 180 s, html
   reporter `open: 'never'`; every command wrapped in `timeout 300`, test output to a file, never piped into grep.
 
+- **Link to the game's hoopsjunkie.io page** (item 12): injury report, win probability, box score. **URL verified on the
+  live site** 2026-10-29 in Alex's Chrome (the app's own browser pane never got past hoopsjunkie's bot check, so it wasn't
+  used): `https://hoopsjunkie.io/games/<NBA ET date>/<away>-vs-<home>`, lowercase tricodes. 9 played games (8 tipping
+  after midnight UTC) and a future one (2026-11-15/lal-vs-phx) load; POR @ LAL, ET Oct 27, 03:00 UTC Oct 28 (00:00 in São
+  Paulo, a "+1" game): `2026-10-27/por-vs-lal` loads, `2026-10-28/por-vs-lal` redirects to that day's scores — so the
+  ET date (the feed's `dateEt`), never the viewer's. Tricode slugs GSW, NOP, SAS, BKN, NYK, UTA, PHX, OKC, MEM all match.
+  - Widget API kept: a "↗" (`GameLinkButton`) raises `onOpenGameLink(gameId)`; the shell (`openGameLink` in App.tsx,
+    `gameLinkUrl` in config.ts) opens it in a new tab, noopener. `HOOPSJUNKIE_BASE_URL` (empty = hidden), like
+    rotationkit's. Undecided teams: no link. Where: League List and Team List rows (under the copy button, the corner it
+    already covers), Team Calendar cells (left of the day's copy button), week-view lines (in the room right of the line,
+    9 px — 9.9 px free at 1280). On hover / focus-within; the glyph is CSS content (no text in rows); never in images.
+  - **Perf**: shown with opacity like the copy buttons, the hidden button on every game cost the League List scroll
+    +15–18 % main thread (A/B vs item 11: 2 565 → 3 029 ms; with `display: none` forced 2 717). Now `display: none` until
+    hover / focus-within: **2 692 vs 2 696 ms**. Keyboard: Tab to the row's copy button (a line's TV pill / mark) shows
+    it, the next Tab reaches it.
+  - Tests: `tests/gamelink.test.tsx` (URL rule incl. the after-midnight case and TBD, the shell opens with noopener, all
+    four views raise the event and never call window.open, no link without a handler / for TBD; 6/6 fail before),
+    e2e `gamelink.spec.ts` (hidden until hovered, inside its row / cell, covers no TV pill, tag, chip, mark or score
+    beyond what the copy button already covers, a click opens the expected URL in a new tab; hoopsjunkie stubbed).
+    League-fatigue and OT line checks measure the line's own parts (the "↗" hangs right of it on purpose).
+  - Flaky (2nd time, item 10 too): lists.spec "continuous days" (tablet) found no card below the top at one step; 3/3 on
+    rerun.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

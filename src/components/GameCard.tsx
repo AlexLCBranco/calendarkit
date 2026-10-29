@@ -71,7 +71,27 @@ export interface GameCardProps {
   records?: ReadonlyMap<number, TeamRecord>;
   /** Team List: the row's date (data-row-date), which the week strip follows while scrolling. */
   rowDate?: string;
+  /** A "↗" on hover that raises this with the game id (the host opens the game's page); never shown for undecided teams. */
+  onOpenGameLink?: (gameId: string) => void;
 }
+
+/** The "↗" to a game's page (round 4): a hover button that only raises the event; never part of an image. The glyph is
+ * CSS content, so it adds no text to rows and lines. */
+export const GameLinkButton = ({ game, onOpen }: { game: ScheduleGame; onOpen: (gameId: string) => void }) =>
+  game.awayTeam.teamId && game.homeTeam.teamId ? (
+    <button
+      type="button"
+      className="ck-open-link"
+      data-testid="open-link"
+      data-capture-exclude="true"
+      aria-label="Open the game page"
+      title="Game page: injury report, win probability, box score"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen(game.gameId);
+      }}
+    />
+  ) : null;
 
 /** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
 export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
@@ -160,7 +180,7 @@ export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeI
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, onOpenGameLink }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -266,6 +286,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B,
     >
       {/* first, so the season block stays the last part; positioned in the corner */}
       {copyable && <CopyButton hover label="Copy game as image" of=".ck-card" testId="copy-game" />}
+      {onOpenGameLink && <GameLinkButton game={game} onOpen={onOpenGameLink} />}
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
       <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
         <TipTime start={game.startTimeUtc ? Date.parse(game.startTimeUtc) : undefined} tip={tip} timeZone={timeZone} now={now} />

@@ -1,9 +1,9 @@
 // Standalone app shell: loads the schedule, sizes the widget to the window, keeps view state in the URL, and
-// handles onOpenGame by opening rotationkit. Everything else lives in the self-contained components.
+// handles onOpenGame by opening rotationkit and onOpenGameLink by opening the game's hoopsjunkie page. Everything else lives in the self-contained components.
 
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { CalendarView, type CalendarState } from './components/CalendarView';
-import { isRotationkitConfigured } from './config';
+import { gameLinkUrl, isGameLinkConfigured, isRotationkitConfigured } from './config';
 import { BUILD_INFO } from './build-info';
 import { SiteVersion } from './SiteVersion';
 import { loadCalendarData } from './data/load';
@@ -14,6 +14,13 @@ import { rotationkitUrl } from './rotationkit';
 /** Shell's handling of GameCard's "open game" action: the rotationkit deep link in a new tab. */
 export function openGameInRotationkit(gameId: string, open: (url: string) => void = (url) => window.open(url, '_blank', 'noopener')) {
   open(rotationkitUrl(gameId));
+}
+
+/** Shell's handling of the widgets' "↗" (onOpenGameLink): the game's hoopsjunkie page in a new tab. */
+export function openGameLink(data: CalendarData, gameId: string, open: (url: string) => void = (url) => window.open(url, '_blank', 'noopener')) {
+  const g = data.games.find((x) => x.gameId === gameId);
+  const url = g && gameLinkUrl(g);
+  if (url) open(url);
 }
 
 /**
@@ -97,6 +104,9 @@ export function App() {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
   const onOpenGame = isRotationkitConfigured() ? (id: string) => openGameInRotationkit(id) : undefined;
+  // stable: the League List's day sections are memo'd on their props
+  const openLink = useCallback((id: string) => data && openGameLink(data, id), [data]);
+  const onOpenGameLink = isGameLinkConfigured() ? openLink : undefined;
 
   const load = () => {
     setError(undefined);
@@ -122,6 +132,7 @@ export function App() {
             size={size}
             initial={initial}
             onOpenGame={onOpenGame}
+            onOpenGameLink={onOpenGameLink}
             onStateChange={writeUrlState}
             title={`NBA schedule ${data.seasonYear}`}
             note={`Times in your time zone (${timeZone})`}
