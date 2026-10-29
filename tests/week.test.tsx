@@ -11,14 +11,15 @@ import { data as realData } from './feed';
 import { dataOf, game, TEAM } from './synthetic';
 import { TEAMS } from '../src/data/teams';
 import type { CalendarData } from '../src/data/model';
+import { timeGroups } from '../src/components/dayflow';
 
 afterEach(cleanup);
 
 const { CalendarView, monthColumns } = CV;
 const WEEK_MIN_WIDTH = (CV as Record<string, unknown>).WEEK_MIN_WIDTH as number | undefined;
 
-const WIDE = { width: 1000, height: 800 }; // 1 game column per day cell
-const XL = { width: 1840, height: 1000 }; // 1920 px window: 2 columns in 2-week mode
+const WIDE = { width: 1248, height: 800 }; // 1280 px window (the week view needs ≥ 1179 px since round 4's 155 px line)
+const XL = { width: 1840, height: 1000 }; // 1920 px window (1 column per day since round 4)
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 
 function openWeek(data: CalendarData, date: string, size = WIDE, timeZone = 'UTC', weeks: 1 | 2 = 1, onStateChange?: (s: CV.CalendarState) => void) {
@@ -69,7 +70,7 @@ describe('week view: structure', () => {
     expect(lines(el.container, '2026-11-02').map((l) => l.getAttribute('data-game-id'))).toEqual(day.map((g) => g.gameId));
   });
 
-  it('each line: away logo + AWAY, "@", home logo + HOME — every line; no legend', () => {
+  it('each line (round 4, aligned): logo, AWAY, score slot, "@", score slot, HOME, logo, TV — every line; no legend', () => {
     const tips = [5, 2, 9, 0, 14, 7, 1, 12, 3, 10, 6, 13, 4, 11, 8];
     const games = tips.map((h, i) =>
       game({ date: '2026-11-10', utc: new Date(Date.UTC(2026, 10, 10, 23, 0) + h * 600_000).toISOString(), away: TEAMS[2 * i]!.id, home: TEAMS[2 * i + 1]!.id }),
@@ -83,7 +84,7 @@ describe('week view: structure', () => {
       const g = games.find((x) => x.gameId === l.getAttribute('data-game-id'))!;
       expect(tris(l)).toEqual([g.awayTeam.teamTricode, g.homeTeam.teamTricode]);
       expect(l.textContent).toBe(`${g.awayTeam.teamTricode}@${g.homeTeam.teamTricode}`);
-      expect([...l.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-logo-backing', 'ck-mtri', 'ck-at', 'ck-logo-backing', 'ck-mtri', 'ck-tv-slot']);
+      expect([...l.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-logo-backing', 'ck-mtri', 'ck-mscore', 'ck-at', 'ck-mscore', 'ck-mtri', 'ck-logo-backing', 'ck-tv-slot']);
       expect([...l.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([`/logos/${g.awayTeam.teamTricode}.svg`, `/logos/${g.homeTeam.teamTricode}.svg`]);
     }
     expect(screen.queryByTestId('month-legend')).toBeNull();
@@ -230,72 +231,42 @@ describe('time groups', () => {
 describe('columns', () => {
   const SP = 'America/Sao_Paulo';
   const cols = (cell: Element) => [...cell.querySelectorAll('.ck-month-day > .ck-mcol')];
-  const rows = (col: Element) => col.querySelectorAll('.ck-tlabel, [data-game-id]').length;
   const ids = (root: Element) => [...root.querySelectorAll('[data-game-id]')].map((l) => l.getAttribute('data-game-id'));
 
-  it('column count: 1 week → one column per day; 2 weeks → as many as fit (2 at 1920 px, 1 at 1280 px)', () => {
-    expect(monthColumns(1840)).toBe(2);
+  it('column count (round 4, 155 px line): one column per day in both modes, at 1920 and 1280', () => {
+    expect(monthColumns(1840)).toBe(1);
     expect(monthColumns(1248)).toBe(1);
-    openWeek(realData, '2026-11-15', XL, SP, 1);
-    expect(cols(cellOf(region(), '2026-11-15'))).toHaveLength(1);
-    cleanup();
-    openWeek(realData, '2026-11-15', XL, SP, 2);
-    expect(cols(cellOf(region(), '2026-11-15'))).toHaveLength(2);
-    cleanup();
-    openWeek(realData, '2026-11-15', { width: 1248, height: 800 }, SP, 2);
-    expect(cols(cellOf(region(), '2026-11-15'))).toHaveLength(1);
-  });
-
-  it('2 weeks at 1920 px, Nov 15: both columns used, balanced within one row', () => {
-    const one = openWeek(realData, '2026-11-15', XL, SP, 1);
-    const oneRows = rows(cols(cellOf(one.container, '2026-11-15'))[0]!);
-    expect(oneRows).toBeGreaterThanOrEqual(15);
-    cleanup();
-    const el = openWeek(realData, '2026-11-15', XL, SP, 2);
-    const [a, b, ...rest] = cols(cellOf(el.container, '2026-11-15'));
-    expect(rest).toHaveLength(0);
-    expect(ids(a!).length).toBeGreaterThan(0);
-    expect(ids(b!).length).toBeGreaterThan(0);
-    expect(Math.max(rows(a!), rows(b!))).toBeLessThanOrEqual(Math.ceil(oneRows / 2) + 1);
-    expect(Math.abs(rows(a!) - rows(b!))).toBeLessThanOrEqual(2);
-  });
-
-  it('newspaper order: column 1 then column 2 gives the games in tip-off order (every day of two weeks)', () => {
-    const el = openWeek(realData, '2026-11-15', XL, SP, 2);
-    for (const date of shownDates()) {
-      const games = realData.byDate.get(date!) ?? [];
-      const c = cols(cellOf(el.container, date!));
-      if (!games.length) continue;
-      expect(c.flatMap(ids), date!).toEqual(games.map((g) => g.gameId));
-      if (games.length >= 2) expect(ids(c[1]!).length, date!).toBeGreaterThan(0);
-      for (const col of c) {
-        const last = [...col.querySelectorAll('.ck-tlabel, [data-game-id]')].at(-1);
-        if (last) expect(last.matches('[data-game-id]'), date!).toBe(true); // no label ends a column
-      }
+    for (const weeks of [1, 2] as const) {
+      openWeek(realData, '2026-11-15', XL, SP, weeks);
+      expect(cols(cellOf(region(), '2026-11-15')), `${weeks}w`).toHaveLength(1);
+      cleanup();
     }
   });
 
-  it('a split group repeats its label (same muted style) at the top of column 2', () => {
-    const games = Array.from({ length: 8 }, (_, i) => game({ date: '2026-11-20', utc: '2026-11-20T22:00:00Z', away: TEAMS[2 * i]!.id, home: TEAMS[2 * i + 1]!.id }));
-    games.push(game({ date: '2026-11-20', utc: '2026-11-21T03:00:00Z', away: TEAMS[16]!.id, home: TEAMS[17]!.id }));
-    const el = openWeek(dataOf(games), '2026-11-20', XL, 'UTC', 2);
-    const [a, b] = cols(cellOf(el.container, '2026-11-20'));
-    const labelsA = [...a!.querySelectorAll('.ck-tlabel')];
-    const labelsB = [...b!.querySelectorAll('.ck-tlabel')];
-    expect(labelsA.map((l) => l.textContent)).toEqual(['22:00']);
-    expect(labelsB.map((l) => l.textContent)).toEqual(['22:00', '03:00 (+1)']);
-    expect(labelsB[0]!.className).toBe(labelsA[0]!.className);
-    expect(labelsB[0]!.getAttribute('data-repeat')).toBe('true');
-    expect([...ids(a!), ...ids(b!)]).toEqual(games.map((g) => g.gameId));
+  it('2 weeks at 1920 px: every day one column, every game in tip-off order, no label ends the column', () => {
+    const el = openWeek(realData, '2026-11-15', XL, SP, 2);
+    for (const date of shownDates()) {
+      const games = realData.byDate.get(date!) ?? [];
+      if (!games.length) continue;
+      const c = cols(cellOf(el.container, date!));
+      expect(c, date!).toHaveLength(1);
+      expect(ids(c[0]!), date!).toEqual(games.map((g) => g.gameId));
+      expect([...c[0]!.querySelectorAll('.ck-tlabel, [data-game-id]')].at(-1)!.matches('[data-game-id]'), date!).toBe(true);
+    }
   });
 
-  it('a group is not split when an unsplit layout is as balanced', () => {
-    const games = [0, 0, 0, 1, 1, 1].map((h, i) => game({ date: '2026-11-21', utc: `2026-11-21T2${h}:00:00Z`, away: TEAMS[2 * i]!.id, home: TEAMS[2 * i + 1]!.id }));
-    const el = openWeek(dataOf(games), '2026-11-21', XL, 'UTC', 2);
-    const [a, b] = cols(cellOf(el.container, '2026-11-21'));
-    expect([...a!.querySelectorAll('.ck-tlabel')].map((l) => l.textContent)).toEqual(['20:00']);
-    expect([...b!.querySelectorAll('.ck-tlabel')].map((l) => l.textContent)).toEqual(['21:00']);
-    expect(el.container.querySelector('[data-repeat]')).toBeNull();
+  // flowDay still balances several columns (a cell as wide as 2 lines: windows ≥ ~2600 px)
+  it('flowDay: newspaper order, a split group repeats its label, no split when an unsplit layout is as balanced', () => {
+    const eight = Array.from({ length: 8 }, (_, i) => game({ date: '2026-11-20', utc: '2026-11-20T22:00:00Z', away: TEAMS[2 * i]!.id, home: TEAMS[2 * i + 1]!.id }));
+    eight.push(game({ date: '2026-11-20', utc: '2026-11-21T03:00:00Z', away: TEAMS[16]!.id, home: TEAMS[17]!.id }));
+    const [a, b] = CV.flowDay(timeGroups(eight, 'UTC'), 2);
+    expect(a!.map((g) => g.label)).toEqual(['22:00']);
+    expect(b!.map((g) => [g.label, g.repeat])).toEqual([['22:00', true], ['03:00 (+1)', false]]);
+    expect([...a!, ...b!].flatMap((g) => g.games.map((x) => x.gameId))).toEqual(eight.map((g) => g.gameId));
+    const six = [0, 0, 0, 1, 1, 1].map((h, i) => game({ date: '2026-11-21', utc: `2026-11-21T2${h}:00:00Z`, away: TEAMS[2 * i]!.id, home: TEAMS[2 * i + 1]!.id }));
+    const [c, d] = CV.flowDay(timeGroups(six, 'UTC'), 2);
+    expect([c!.map((g) => g.label), d!.map((g) => g.label)]).toEqual([['20:00'], ['21:00']]);
+    expect([...c!, ...d!].some((g) => g.repeat)).toBe(false);
   });
 });
 
@@ -343,14 +314,14 @@ describe('TV pill and fatigue marks (league)', () => {
 });
 
 describe('narrow widths: count grid', () => {
-  it(`cutoff ${WEEK_MIN_WIDTH} px: a full-size line (119 px with "@") just fits a 7-column cell`, () => {
-    expect(CV.MONTH_LINE_WIDTH).toBe(119);
-    expect(WEEK_MIN_WIDTH).toBe(887);
-    expect(CV.monthCellInner(887)).toBeGreaterThanOrEqual(CV.MONTH_LINE_WIDTH);
-    expect(CV.monthCellInner(886)).toBeLessThan(CV.MONTH_LINE_WIDTH);
+  it(`cutoff ${WEEK_MIN_WIDTH} px: a full-size line (155 px, round 4) just fits a 7-column cell`, () => {
+    expect(CV.MONTH_LINE_WIDTH).toBe(155);
+    expect(WEEK_MIN_WIDTH).toBe(1179);
+    expect(CV.monthCellInner(1179)).toBeGreaterThanOrEqual(CV.MONTH_LINE_WIDTH);
+    expect(CV.monthCellInner(1178)).toBeLessThan(CV.MONTH_LINE_WIDTH);
   });
 
-  for (const width of [360, 700, 886]) {
+  for (const width of [360, 700, 1178]) {
     it(`${width} px: count-per-day grid (month), no game lines; a day opens the list`, () => {
       const el = openWeek(realData, '2026-11-02', { width, height: 800 });
       expect(screen.getByRole('region', { name: 'Month navigator' })).toBeTruthy();
@@ -362,8 +333,8 @@ describe('narrow widths: count grid', () => {
     });
   }
 
-  it('887 px: week view', () => {
-    openWeek(realData, '2026-11-02', { width: 887, height: 800 });
+  it('1179 px: week view', () => {
+    openWeek(realData, '2026-11-02', { width: 1179, height: 800 });
     expect(region()).toBeTruthy();
   });
 });

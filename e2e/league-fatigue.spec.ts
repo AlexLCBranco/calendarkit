@@ -1,5 +1,5 @@
 // Fatigue on the tricodes in the league views (round 4, item 6), in a real browser at 1280 and 1920: the marks take
-// no width (week-view lines stay 119 px in 2-week mode, nothing overflows its line or column), the plane clears the
+// no width (week-view lines stay 155 px in 2-week mode (119 before item 7), nothing overflows its line or column), the plane clears the
 // "@" and the TV pill, the colours (yellow fill / ring, purple underline), the tooltip for that team on hover and
 // focus, and the legend under the week grid and the League List. Prints the line widths.
 
@@ -63,7 +63,7 @@ for (const [name, search] of [
     console.log(`[league-fatigue] ${info.project.name} ${name}: ${r.marks} marks, line widths ${r.widths.join(', ')}`);
     expect(r.marks).toBeGreaterThan(10);
     expect(r.bad).toEqual([]);
-    if (name === 'week view, 2 weeks') expect(r.widths).toEqual(['119.00']);
+    if (name === 'week view, 2 weeks') expect(r.widths).toEqual(['155.00']); // round 4's aligned line
     // tooltip for that team, on hover and on focus
     const tip = page.getByTestId('tooltip');
     const scope = list ? '[data-day="2027-01-07"] ' : '';

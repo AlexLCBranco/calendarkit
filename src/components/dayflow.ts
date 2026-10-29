@@ -7,12 +7,14 @@ import { tipoff } from '../data/model';
 /**
  * Game line geometry in px. Widths are fixed rather than measured at runtime: the text is the bundled Inter font,
  * so they are the same on every OS. `tri` fits the widest tricode (MEM, 26.95 px at 11 px semibold).
- * Line: logo · gap · AWAY · sep (the "@", `atFont` px: 8.69 px wide at 9 px) · logo · gap · HOME · pillGap · TV.
- * AWAY is right-aligned in its column, so every line reads "AWAY @ HOME" with the "@" in one column.
- * `labelGap`: below a time label; `dot`: B2B dot. `scoreFont`: a final game's score, which takes its team's logo slot
- * (largest 0.1 px step where 3 tabular digits, SCORE3_EM wide, fit `logo`: 8.2 px → 15.91 px; 8.3 px → 16.10 px).
+ * Line (round 4, "option B": aligned columns, logos always): logo · gap · AWAY · sgap · score · sep (the "@",
+ * `atFont` px: 8.69 px wide at 9 px) · score · sgap · HOME · gap · logo · pillGap · TV. Logos on the outside, each
+ * tricode against its logo, each score in its own slot against the "@" (empty before the game), so every column — logos,
+ * tricodes, scores, "@" — is at one x down a day. `labelGap`: below a time label; `dot`: the old B2B dot (unused
+ * here since the fatigue marks). `scoreFont`: the score in its `score` slot (largest 0.1 px step where 3 tabular
+ * digits, SCORE3_EM wide, fit: 8.2 px → 15.91 px of 16).
  */
-export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2 } as const;
+export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sgap: 2, score: 16, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2 } as const;
 /** Width of the widest 3-digit score in em: tabular digits, bundled Inter, weight 500–700 (measured: 15.52 px at 8 px). */
 export const SCORE3_EM = 1.94;
 
@@ -29,11 +31,11 @@ export function scoreFontFor(slot: number): number {
   return f;
 }
 export type MonthLine = { [K in keyof typeof MONTH_LINE]: number };
-export const lineWidth = (L: MonthLine) => 2 * (L.logo + L.gap + L.tri) + L.sep + L.pillGap + L.pill;
+export const lineWidth = (L: MonthLine) => 2 * (L.logo + L.gap + L.tri + L.sgap + L.score) + L.sep + L.pillGap + L.pill;
 export const MONTH_LINE_WIDTH = lineWidth(MONTH_LINE);
 /** MONTH_LINE with every length (fonts included) times `s`. */
 export const scaleLine = (s: number): MonthLine => Object.fromEntries(Object.entries(MONTH_LINE).map(([k, v]) => [k, v * s])) as MonthLine;
-/** Space between game columns inside a day cell (2 × 119 + 8 = 246 of the 249.42 px cell at 1920 px). */
+/** Space between game columns inside a day cell (the 155 px line: 1 column at every width up to ~2600 px). */
 export const MONTH_COL_GAP = 8;
 /** Below this widget width the day grid uses 2 px gaps and cell padding (instead of 4 px). */
 export const ROOMY_WIDTH = 1000;
@@ -52,10 +54,16 @@ export function monthColumns(width: number): number {
 }
 
 /**
- * Smallest widget width where a full-size game line fits a 7-column day cell (monthCellInner ≥ 119 px). Below it,
- * League → Calendar shows the count grid. (width − 12) / 7 − 6 ≥ 119 → 887.
+ * Smallest widget width where a full-size game line fits a 7-column day cell (monthCellInner ≥ the line). Below it,
+ * League → Calendar shows the count grid. 155 px line (round 4): (width − 24) / 7 − 10 ≥ 155 → 1179 (887 with the 119 px
+ * line); a 1280 px window (1248 px content, cell 164.9 px) still shows the week view.
  */
-export const WEEK_MIN_WIDTH = Math.ceil(7 * (MONTH_LINE_WIDTH + 2 * 2 + 2) + 6 * 2);
+export const WEEK_MIN_WIDTH = (() => {
+  // monthCellInner drops at ROOMY_WIDTH (wider gaps), so search rather than invert the formula
+  let w = 1;
+  while (monthCellInner(w) < MONTH_LINE_WIDTH) w++;
+  return w;
+})();
 
 export type TimeGroup = { label: string; games: ScheduleGame[] };
 

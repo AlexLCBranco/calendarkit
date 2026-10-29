@@ -783,6 +783,30 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     week.test / card.test updated (fill/ring instead of dot/badge), e2e `league-fatigue.spec.ts` (geometry, colours,
     tooltip hover + focus, legend in the window), b2b-color + copy read-backs (fill and ring yellow in the images).
 
+- **Week view redesign, aligned rows** (item 7): line = `[logo] AWAY · score · @ · score · HOME [logo] · TV` in fixed
+  grid columns (MONTH_LINE: logo 16 · 1 · tricode 28 · 2 · score 16 · "@" 12 · score 16 · 2 · tricode 28 · 1 · logo 16 · 2 ·
+  TV 15 = **155 px**, was 119). Logos always shown (on the outside), each score in its own slot against the "@" (empty
+  before the game; 8.2 px, scoreFontFor), tricodes against their logos — so logos, tricodes, scores and "@" are at one
+  x down every day (e2e walks every week of the season, 1 and 2 weeks, at 1280 and 1920). Fatigue marks on the
+  tricodes (item 6), OT in the TV column of final lines (item 1). Day header, count, header → list, TV filter, copy,
+  marquee unchanged.
+  - **Measured first, then Alex's choice**: with the time on every line (9 px, "00:00 (+1)" 38.3 px) the line would be
+    191 px: 2 columns at 1920 need 390 of 249.4 px; it doesn't fit a 1280 cell (164.9 px) at all; 1-week zoom 1920
+    1.5 → 1.0. Alex picked **"no per-line time"**: the small time-group labels stay (10 px, muted), the rest is aligned.
+  - **Result**: one column of games per day in both modes (`monthColumns` → 1 up to a ~2600 px widget; `flowDay` kept
+    for wider). **1-week zoom: 1920 × 1080 1.5 → 1.25** (line 193.75 px, logos 20 px, tricodes 13.75 px), 1280 × 900 1.05
+    → 1.0. **Week view cutoff 887 → 1179 px widget** (window ≈ 1226 px; 1280 windows keep the week view, tablets the count
+    grid as before). Fit at 1920 × 1080: tallest day 561 px of a 978 px cell (1 week), 455 of 487 (2 weeks, Apr 4), no
+    page scroll. At 1280 × 900: 1 week 455 of 760, no page scroll; **2 weeks: the page scrolls up to 164 px** (week of
+    Nov 1: Nov 2's 15 games, 437 of 442 px, plus the 2nd row) — **already 106 / 70 / 142 px before round 4** (2-week mode
+    was one column there too), +22 px since item 6's legend. Not fixed: needs a decision (e.g. 2-week mode only from
+    ~1400 px, or a smaller row there).
+  - Perf: load-week-view 242 ms, marquee across the busiest 2 weeks p95 18 ms (102 games selected now: one column).
+  - Tests updated (fail on the old build by construction: 155 px, 1179, 1 column): week.test (line parts, columns,
+    cutoff, flowDay as a pure function), scale.test (1.25, 155, --ck-score), scores.test (logos + score slots), views /
+    lists tests use a 1280 widget for the week view; e2e features (fit walk at 1280 and 1920 with straight columns,
+    cutoff), smoke, scores, copy (empty score slots aren't text; 2 logos per line), league-fatigue (155 px).
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

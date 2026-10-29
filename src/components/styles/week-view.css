@@ -83,10 +83,10 @@
 }
 .ck-month-game {
   display: grid;
-  /* logo | gap | tricode | away-home gap | logo | gap | tricode | gap | TV */
+  /* logo | gap | AWAY | sgap | score | "@" | score | sgap | HOME | gap | logo | gap | TV — every column at one x */
   grid-template-columns:
-    var(--ck-logo) var(--ck-gap) var(--ck-tri) var(--ck-sep) var(--ck-logo) var(--ck-gap) var(--ck-tri)
-    var(--ck-pill-gap) var(--ck-pill);
+    var(--ck-logo) var(--ck-gap) var(--ck-tri) var(--ck-sgap) var(--ck-score) var(--ck-sep) var(--ck-score)
+    var(--ck-sgap) var(--ck-tri) var(--ck-gap) var(--ck-logo) var(--ck-pill-gap) var(--ck-pill);
   align-items: center;
   height: var(--ck-logo);
   font-size: var(--ck-font);
@@ -95,13 +95,21 @@
 }
 .ck-month-game > :nth-child(1) { grid-column: 1; }
 .ck-month-game > :nth-child(2) { grid-column: 3; }
-.ck-month-game > :nth-child(3) { grid-column: 4; }
-.ck-month-game > :nth-child(4) { grid-column: 5; }
+.ck-month-game > :nth-child(3) { grid-column: 5; }
+.ck-month-game > :nth-child(4) { grid-column: 6; }
 .ck-month-game > :nth-child(5) { grid-column: 7; }
 .ck-month-game > :nth-child(6) { grid-column: 9; }
-/* away tricode right-aligned against the "@" */
-.ck-month-game > :nth-child(2) {
+.ck-month-game > :nth-child(7) { grid-column: 11; }
+.ck-month-game > :nth-child(8) { grid-column: 13; }
+/* tricodes against their logos (away left-aligned, home right-aligned); scores against the "@" */
+.ck-month-game > :nth-child(6) {
   text-align: right;
+}
+.ck-month-game > :nth-child(3) {
+  text-align: right;
+}
+.ck-month-game > :nth-child(5) {
+  text-align: left;
 }
 /* "@" between the teams, centered in the away/home gap; smaller and muted like the other "@"s */
 .ck-at {
@@ -169,8 +177,8 @@
   gap: 2px;
 }
 
-/* Final game: the score sits in its team's logo slot (scoreFontFor: 8.2 px → "188" is 15.9 of 16 px), right-aligned
-   against the tricode; no TV pill (the column stays reserved). */
+/* Final game: each score in its own slot (scoreFontFor: 8.2 px → "188" is 15.9 of 16 px), against the "@"; no TV pill
+   (the column stays reserved; OT goes there). Empty before the game. */
 .ck-mscore {
   font-size: var(--ck-score-font);
   line-height: var(--ck-logo);

@@ -1,5 +1,5 @@
 // Final scores in every view, against the served snapshot (games with gameStatus 3), at the desktop widths (1280,
-// 1920): League List rows, league week view (1 and 2 weeks: score in the logo slot, fits it, no TV pill, "@" column
+// 1920): League List rows, league week view (1 and 2 weeks: score in its own slot, fits it, no TV pill, "@" column
 // straight), Team Calendar cells (every team with a final game). Prints the Team Calendar scale and the score
 // widths. Clock: Nov 15, 2026 (games from Oct 23 on are over but not final in the snapshot: unchanged).
 
@@ -47,7 +47,7 @@ test('League List: every final game shows "AWAY a @ h HOME", winner bold', async
 });
 
 for (const weeks of [1, 2] as const) {
-  test(`week view, ${weeks} week(s): score in the logo slot (fits), no TV pill, "@" column straight, upcoming lines unchanged`, async ({ page }, info) => {
+  test(`week view, ${weeks} week(s): score in its own slot (fits), logos kept, no TV pill, "@" column straight`, async ({ page }, info) => {
     await open(page, `?view=league&layout=calendar&date=2026-10-20${weeks === 2 ? '&weeks=2' : ''}`);
     const all = (await finals(page)).filter((g) => g.date >= '2026-10-18' && g.date <= (weeks === 1 ? '2026-10-24' : '2026-10-31'));
     expect(all.length).toBeGreaterThan(10);
@@ -57,7 +57,8 @@ for (const weeks of [1, 2] as const) {
       let slot = 0;
       for (const id of ids) {
         const line = document.querySelector(`.ck-month-game[data-game-id="${id}"]`)!;
-        if (line.querySelector('img, .ck-tv-pill')) out.push(`${id}: logo or TV pill on a final line`);
+        if (line.querySelector('.ck-tv-pill')) out.push(`${id}: TV pill on a final line`);
+        if (line.querySelectorAll('.ck-logo-backing img').length !== 2) out.push(`${id}: not 2 logos`);
         for (const s of line.querySelectorAll<HTMLElement>('.ck-mscore')) {
           const range = document.createRange();
           range.selectNodeContents(s);
@@ -82,7 +83,7 @@ for (const weeks of [1, 2] as const) {
       const line = page.locator(`.ck-month-game[data-game-id="${g.gameId}"]`);
       expect(await line.locator('.ck-mscore').allTextContents()).toEqual([String(g.away.score), String(g.home.score)]);
     }
-    if (weeks === 2 && info.project.name === 'desktop-xl') expect(await page.locator('.ck-month-day').first().getAttribute('data-cols')).toBe('2');
+    expect(await page.locator('.ck-month-day').first().getAttribute('data-cols')).toBe('1'); // 155 px line: one column per day
   });
 }
 

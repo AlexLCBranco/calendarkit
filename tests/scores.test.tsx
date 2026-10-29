@@ -87,12 +87,12 @@ describe('Team Calendar', () => {
 
 describe('League week view (1 and 2 weeks)', () => {
   for (const weeks of [1, 2] as const) {
-    it(`${weeks} week(s): final lines show "a AWAY @ h HOME" with the score in the logo slot and no TV pill; upcoming lines unchanged`, () => {
+    it(`${weeks} week(s): final lines show "[logo] AWAY a @ h HOME [logo]" (round 4: scores in their own slots, logos kept), no TV pill; upcoming lines: empty score slots`, () => {
       const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ layout: 'calendar', date: '2026-10-20', weeks }} />).container;
       for (const g of finals) {
         const line = el.querySelector(`.ck-month-game[data-game-id="${g.gameId}"]`)!;
-        expect(line.querySelectorAll('img'), g.gameId).toHaveLength(0);
-        expect([...line.children].map((c) => c.textContent!.trim())).toEqual([String(g.awayTeam.score), g.awayTeam.teamTricode, '@', String(g.homeTeam.score), g.homeTeam.teamTricode, '']);
+        expect([...line.querySelectorAll('img')].map((i) => i.getAttribute('src')), g.gameId).toEqual([`/logos/${g.awayTeam.teamTricode}.svg`, `/logos/${g.homeTeam.teamTricode}.svg`]);
+        expect([...line.children].map((c) => c.textContent!.trim())).toEqual(['', g.awayTeam.teamTricode, String(g.awayTeam.score), '@', String(g.homeTeam.score), g.homeTeam.teamTricode, '', '']);
         expect([...line.querySelectorAll('.ck-mscore')].map((s) => s.classList.contains('ck-score-win'))).toEqual([won(g, 'away'), won(g, 'home')]);
         expect([...line.querySelectorAll('.ck-mtri')].map((s) => s.classList.contains('ck-loss'))).toEqual([!won(g, 'away'), !won(g, 'home')]);
         expect(line.querySelector('.ck-tv-pill')).toBeNull();
@@ -103,7 +103,7 @@ describe('League week view (1 and 2 weeks)', () => {
       expect(upcoming.length).toBeGreaterThan(10);
       for (const l of upcoming) {
         const g = data.games.find((x) => x.gameId === l.getAttribute('data-game-id'))!;
-        expect(l.querySelector('.ck-mscore')).toBeNull();
+        expect([...l.querySelectorAll('.ck-mscore')].map((s) => s.textContent)).toEqual(['', '']);
         expect(l.querySelectorAll('img')).toHaveLength([g.awayTeam, g.homeTeam].filter((t) => t.teamId).length);
         expect(!!l.querySelector('.ck-tv-pill')).toBe(hasNationalTv(g));
       }

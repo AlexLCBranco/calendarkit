@@ -27,25 +27,25 @@ export interface LeagueWeekViewProps {
   onSelectDate: (date: string) => void;
 }
 
-/** One side of a game line: logo (or, once the game is final, its score in the logo's slot) + tricode. */
-function MonthTeam({ team, fatigue, score }: { team: ScheduleGame['homeTeam']; fatigue?: TeamFatigue; score?: { n: number; win: boolean } }) {
+/** A team's tricode (fatigue marks on it; winner bold, loser muted once final). */
+function MonthTri({ team, fatigue, score }: { team: ScheduleGame['homeTeam']; fatigue?: TeamFatigue; score?: { n: number; win: boolean } }) {
   const label = teamLabel(team);
   return (
-    <>
-      {score ? <span className={`ck-mscore${score.win ? ' ck-score-win' : ''}`}>{score.n}</span> : <TeamLogo team={team} />}
-      <span className={`ck-mtri${score ? (score.win ? ' ck-win' : ' ck-loss') : ''}`} data-tricode={label}>
-        <FatigueMark f={fatigue} className="ck-mtri-text">
-          {label}
-        </FatigueMark>
-      </span>
-    </>
+    <span className={`ck-mtri${score ? (score.win ? ' ck-win' : ' ck-loss') : ''}`} data-tricode={label}>
+      <FatigueMark f={fatigue} className="ck-mtri-text">
+        {label}
+      </FatigueMark>
+    </span>
   );
 }
+
+/** A score in its own slot (empty before the game, so the "@" stays put). */
+const MonthScore = ({ score }: { score?: { n: number; win: boolean } }) => <span className={`ck-mscore${score?.win ? ' ck-score-win' : ''}`}>{score?.n}</span>;
 
 export function MonthGameLine({ data, game }: { data: CalendarData; game: ScheduleGame }) {
   const tv = nationalTv(game);
   const fat = leagueFatigue(data).get(game.gameId); // once per data set
-  // final: the scores take the logos' slots and the TV pill is dropped (its column stays, so the "@" stays put)
+  // final: the scores fill their slots and the TV pill is dropped (its column stays: OT goes there)
   const fin = game.status === 'final' ? finalScore(game, game.awayTeam.teamId) : undefined;
   // overtime: in the final line's empty TV slot, so the line keeps its width
   const ot = fin && overtime(game);
@@ -55,9 +55,13 @@ export function MonthGameLine({ data, game }: { data: CalendarData; game: Schedu
       data-game-id={game.gameId}
       aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}${ot ? ` (${ot})` : ''}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
     >
-      <MonthTeam team={game.awayTeam} fatigue={fat?.get(game.awayTeam.teamId)} score={fin && { n: fin.score, win: fin.win }} />
+      <TeamLogo team={game.awayTeam} />
+      <MonthTri team={game.awayTeam} fatigue={fat?.get(game.awayTeam.teamId)} score={fin && { n: fin.score, win: fin.win }} />
+      <MonthScore score={fin && { n: fin.score, win: fin.win }} />
       <span className="ck-at">@</span>
-      <MonthTeam team={game.homeTeam} fatigue={fat?.get(game.homeTeam.teamId)} score={fin && { n: fin.oppScore, win: !fin.win }} />
+      <MonthScore score={fin && { n: fin.oppScore, win: !fin.win }} />
+      <MonthTri team={game.homeTeam} fatigue={fat?.get(game.homeTeam.teamId)} score={fin && { n: fin.oppScore, win: !fin.win }} />
+      <TeamLogo team={game.homeTeam} />
       <span className="ck-tv-slot">
         {ot && (
           <span className="ck-ot" title="Overtime">
@@ -98,6 +102,8 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
   const vars = {
     '--ck-logo': `${L.logo}px`,
     '--ck-gap': `${L.gap}px`,
+    '--ck-sgap': `${L.sgap}px`,
+    '--ck-score': `${L.score}px`,
     '--ck-tri': `${L.tri}px`,
     '--ck-sep': `${L.sep}px`,
     '--ck-at-font': `${L.atFont}px`,
@@ -109,7 +115,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
     '--ck-row-gap': `${L.rowGap}px`,
     '--ck-group-gap': `${L.groupGap}px`,
     '--ck-dot': `${L.dot}px`,
-    '--ck-score-font': `${scoreFontFor(L.logo)}px`, // not L.scoreFont: see scoreFontFor
+    '--ck-score-font': `${scoreFontFor(L.score)}px`, // not L.scoreFont: see scoreFontFor
     '--ck-col-gap': `${MONTH_COL_GAP}px`,
     '--ck-line': `${lineWidth(L)}px`,
   } as CSSProperties;

@@ -13,6 +13,7 @@ import { TEAM } from './synthetic';
 afterEach(cleanup);
 
 const WIDE = { width: 1000, height: 800 };
+const WEEK = { width: 1248, height: 800 }; // the week view needs ≥ 1179 px since round 4 (1280 px window)
 const PHONE = { width: 360, height: 700 };
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 const tab = (name: string) => screen.getByRole('tab', { name });
@@ -66,7 +67,7 @@ describe('List | Calendar switch', () => {
   });
 
   it('a click on a day in League → Calendar opens the list at that day', () => {
-    const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ layout: 'calendar', date: '2026-11-10' }} />);
+    const el = render(<CalendarView data={data} size={WEEK} now={NOW} timeZone="UTC" initial={{ layout: 'calendar', date: '2026-11-10' }} />);
     fireEvent.click(within(el.container.querySelector<HTMLElement>('[data-date="2026-11-14"]')!).getByTestId('day-header'));
     expect(view()).toBe('league-list');
     expect(selected('List')).toBe(true);
@@ -86,7 +87,7 @@ describe('TV games only, all four views', () => {
   });
 
   it('league calendar', () => {
-    const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ tvOnly: true, layout: 'calendar', date: '2026-11-02' }} />);
+    const el = render(<CalendarView data={data} size={WEEK} now={NOW} timeZone="UTC" initial={{ tvOnly: true, layout: 'calendar', date: '2026-11-02' }} />);
     expect(ids(el.container.querySelector('[data-date="2026-11-02"]')!)).toEqual(tvIds('2026-11-02'));
   });
 

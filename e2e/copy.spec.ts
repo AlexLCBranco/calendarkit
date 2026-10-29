@@ -35,7 +35,7 @@ const MEASURE = `(root) => {
   });
   add('logo', '.ck-logo-backing img');
   add('text', '.ck-team, .ck-mtri-text, .ck-vsat, .ck-at');
-  add('score', '.ck-score, .ck-mscore');
+  add('score', '.ck-score, .ck-mscore:not(:empty)'); // the week view's score slots are empty before the game
   add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp, .ck-fm-n2');
   add('b2b', '.ck-fm-n1', 1); // league views' 1st night: the yellow ring around the tricode (round 4)
   add('tif', '.ck-tif');
@@ -297,8 +297,8 @@ test('final scores are in the images: week view (1 and 2 weeks), league list day
 
   let v = await copyView(page);
   expect(scores(v)).toBe(2 * inWeek);
-  // logos only where a game isn't final yet (final lines show the scores in the logo slots)
-  await check(page, 'scores-league-week', v, inWeek < (await page.locator('.ck-month-game').count()) ? ['logo', 'text', 'score'] : ['text', 'score']);
+  // logos on every line since round 4 (scores in their own slots)
+  await check(page, 'scores-league-week', v, ['logo', 'text', 'score']);
   await page.getByRole('tab', { name: '2 weeks' }).click();
   v = await copyView(page);
   expect(scores(v)).toBe(2 * finals.filter((d) => d >= '2026-10-18' && d <= '2026-10-31').length);
@@ -466,11 +466,9 @@ test('selection images: only the selected games, in on-screen order, as drawn in
     // day headers: one per day with selected games (calendars and the League List), none in the Team List
     const days = [...new Set(picked.map((x) => x.date))];
     expect(shot.stage.heads.length, `${k.name} headers`).toBe(k.heads ? days.length : 0);
-    // 2 logos per game (final lines of the week view show scores in the logo slots), + the team header in team views
+    // 2 logos per game (the week view too since round 4: scores in their own slots), + the team header in team views
     const logos = shot.target.regions.filter((r) => r.kind === 'logo').length;
-    const lineScores = shot.target.regions.filter((r) => r.kind === 'score').length;
-    if (k.name.startsWith('league-week')) expect(logos + lineScores, k.name).toBe(2 * picked.length);
-    else expect(logos, k.name).toBe(2 * picked.length + (k.search.includes('view=team') ? 1 : 0));
+    expect(logos, k.name).toBe(2 * picked.length + (k.search.includes('view=team') ? 1 : 0));
     console.log(`[copy] selection-${k.name}: ${picked.length} games, ${days.length} day(s)`);
     await check(page, `selection-${k.name}`, shot, ['logo', 'text']);
     await page.keyboard.press('Escape');

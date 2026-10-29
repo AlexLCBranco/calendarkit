@@ -10,6 +10,7 @@ import { dataOf, game, TEAM } from './synthetic';
 afterEach(cleanup);
 
 const WIDE = { width: 1000, height: 800 };
+const WEEK = { width: 1248, height: 800 }; // the week view needs ≥ 1179 px since round 4 (1280 px window)
 const PHONE = { width: 360, height: 800 };
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 const day = (date: string) => document.querySelector<HTMLElement>(`[data-day="${date}"]`)!;
@@ -46,7 +47,7 @@ describe('CalendarView (league)', () => {
   });
 
   it('league week view (wide) jumps to the clicked day header', () => {
-    render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" initial={{ date: '2026-10-28' }} />);
+    render(<CalendarView data={realData} size={WEEK} now={NOW} timeZone="UTC" initial={{ date: '2026-10-28' }} />);
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
     const nav = screen.getByRole('region', { name: 'League week' });
     const header = within(nav).getByLabelText(`Wednesday, October 28: ${realData.byDate.get('2026-10-28')!.length} games`);

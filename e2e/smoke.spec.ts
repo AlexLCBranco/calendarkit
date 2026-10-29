@@ -127,7 +127,7 @@ test('league week view: every game listed with local logos, no broken images, no
         atClear: lines.filter((l) => { const at = box(l.querySelector('.ck-at')!); const t = l.querySelectorAll('.ck-mtri-text'); const logo = l.querySelectorAll('.ck-logo-backing')[1]!; return !(at.width > 0 && at.left >= box(t[0]!).right && at.right <= box(logo).left); }).length,
       };
     });
-    console.log(`[${project}] content ${r.content}px, cols ${r.cols}, cell inner ${r.cellInner.toFixed(2)}px, line ${r.lineW.toFixed(2)}px, col gap ${r.colGap}px, 2-col spare ${r.spare.toFixed(2)}px, font ${r.font}, logo ${r.logo}px`);
+    console.log(`[${project}] content ${r.content}px, cols ${r.cols}, cell inner ${r.cellInner.toFixed(2)}px, line ${r.lineW.toFixed(2)}px, spare ${(r.cellInner - r.lineW).toFixed(2)}px, font ${r.font}, logo ${r.logo}px`);
     expect(r.images).toBeGreaterThan(150);
     expect(r.broken).toEqual([]);
     expect(r.unbacked).toBe(0);
@@ -141,26 +141,16 @@ test('league week view: every game listed with local logos, no broken images, no
       expect(r.font).toBe('11px'); // same game-line size at 1280 and 1920
       expect(r.logo).toBe(16);
     }
-    if (project === 'desktop') expect(r.cols).toBe(1);
+    // round 4's aligned 155 px line: one column of games per day at 1280 and 1920
+    expect(r.cols).toBe(1);
+    expect(r.flow).toHaveLength(1);
+    expect(r.flow[0]!.lefts).toHaveLength(1);
+    expect(r.flow[0]!.endsWithGame).toBe(true);
+    expect(r.visual).toEqual(r.domOrder);
     if (project === 'desktop-xl') {
       expect(r.content).toBeGreaterThanOrEqual(1700);
-      expect(r.cols).toBe(2);
-      expect(r.spare).toBeGreaterThanOrEqual(3); // 2 × 119 + 8 = 246 of 249.42 px
-      // newspaper flow on Nov 15: both columns used, each a single x position, balanced within one row,
-      // reading column 1 then column 2 = DOM order (= tip-off order, checked in month.test.tsx), no label last
-      const [c1, c2] = r.flow;
-      console.log(`[${project}] Nov 15 columns: ${c1!.ids.length} + ${c2!.ids.length} games, heights ${c1!.height.toFixed(1)} / ${c2!.height.toFixed(1)}px, row ${r.unit.toFixed(1)}px`);
-      expect(r.flow).toHaveLength(2);
-      for (const c of r.flow) {
-        expect(c.ids.length).toBeGreaterThan(0);
-        expect(c.lefts).toHaveLength(1);
-        expect(c.endsWithGame).toBe(true);
-      }
-      expect(c2!.lefts[0]! > c1!.lefts[0]!).toBe(true);
-      expect(Math.abs(c1!.height - c2!.height)).toBeLessThanOrEqual(r.unit + 0.5);
-      expect(r.visual).toEqual(r.domOrder);
+      expect(r.cellInner - r.lineW).toBeGreaterThanOrEqual(90); // 155 of 249.42 px
     }
-    if (project === 'desktop') expect(r.flow).toHaveLength(1);
     // TV pill tooltip: network names on hover (one floating tooltip, never clipped by the cell)
     const pill = page.locator('.ck-week-view .ck-tv-pill').first();
     await pill.hover();
