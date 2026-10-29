@@ -3,7 +3,8 @@
 
 import { Fragment } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord } from '../data/model';
+import { finalScore, isOver, localDate, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord, type Tipoff } from '../data/model';
+import { countdownLabel, todayAt, useClockValue } from './clock';
 import { threeInFourLabel, threeInFourTip, type ThreeInFour } from '../data/scheduleTags';
 import { teamLogo } from '../data/teams';
 import { CopyButton } from './CopyButton';
@@ -81,6 +82,28 @@ export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
     </span>
   ) : (
     <span className="ck-logo-empty" aria-hidden="true" />
+  );
+}
+
+/**
+ * Tip-off time, or on today's games (viewer's zone) before tip-off the countdown "in 2h 35m" in its place (round 4).
+ * Reads the widget clock: a tick re-renders this text only. The plain time stays in the DOM, hidden, for images
+ * (`.ck-capturing` shows it, copyAsImage) and the title.
+ */
+function TipTime({ start, tip, timeZone, now }: { start?: number; tip: Tipoff; timeZone?: string; now: number }) {
+  const label = useClockValue((n) => (start !== undefined && todayAt(n, timeZone, localDate) === localDate(start, timeZone) ? countdownLabel(start, n) : undefined), now);
+  return (
+    <>
+      {label && (
+        <span className="ck-countdown" title={`Tip-off ${tip.label}`}>
+          {label}
+        </span>
+      )}
+      <span className={`ck-time-plain${label ? ' ck-time-hidden' : ''}`}>
+        {tip.time}
+        {tip.dayOffset !== 0 && <span className="ck-dayoff" title="Local calendar day after the NBA game date">{` (${tip.dayOffset > 0 ? '+' : ''}${tip.dayOffset})`}</span>}
+      </span>
+    </>
   );
 }
 
@@ -245,8 +268,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B,
       {copyable && <CopyButton hover label="Copy game as image" of=".ck-card" testId="copy-game" />}
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
       <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
-        {tip.time}
-        {tip.dayOffset !== 0 && <span className="ck-dayoff" title="Local calendar day after the NBA game date">{` (${tip.dayOffset > 0 ? '+' : ''}${tip.dayOffset})`}</span>}
+        <TipTime start={game.startTimeUtc ? Date.parse(game.startTimeUtc) : undefined} tip={tip} timeZone={timeZone} now={now} />
       </span>
       {cols && (
         <span className="ck-fat ck-fat-team" data-testid="fatigue-team">

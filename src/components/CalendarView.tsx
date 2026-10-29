@@ -3,11 +3,12 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { addDays, dateFormat, defaultDay, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
 import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
+import { ClockProvider, todayAt, useClock, useClockValue } from './clock';
 import { CopyButton } from './CopyButton';
 import { DatePickButton, DatePicker } from './DatePicker';
 import { WEEK_MIN_WIDTH } from './dayflow';
@@ -26,7 +27,7 @@ import { TeamPicker } from './TeamPicker';
 import { useTooltip } from './Tooltip';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
-import { fmtRange, isCompact, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
+import { fmtRange, isCompact, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 import './calendar.css';
 
 // The widgets live in their own files; re-exported here so hosts and tests keep one entry point.
@@ -87,7 +88,11 @@ const DEFAULT_TEAM = TEAMS[0]!.id;
 
 
 export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onStateChange, title, note, updatedAt }: CalendarViewProps) {
-  const now = useNow(fixedNow);
+  // The clock (round 4): one minute-aligned timer; what shows the time of day reads it. `now` (the default day, the
+  // next game, games over) is the time the widget opened — a tick no longer re-renders the view.
+  const clock = useClock(fixedNow);
+  const [openedAt] = useState(() => clock.get());
+  const now = fixedNow ?? openedAt;
   const compact = isCompact(size);
   const [state, setState] = useState<CalendarState>(() => ({
     mode: initial?.mode ?? 'league',
@@ -134,7 +139,8 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const openDay = (date: string) => update({ date, layout: 'list' });
   const list = state.layout === 'list';
   const team = state.mode === 'team';
-  const today = localDate(now, timeZone);
+  // today's date from the clock: the view re-renders when the date changes (midnight), not every minute
+  const today = useSyncExternalStore(clock.subscribe, () => todayAt(clock.get(), timeZone, localDate));
   const weekView = !team && !list && size.width >= WEEK_MIN_WIDTH;
   // Team → Calendar week views (desktop/tablet; phones keep the month)
   const teamWeeks = team && !list && !compact && state.teamSpan !== 'month' ? state.teamSpan : undefined;
@@ -276,177 +282,179 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   };
 
   return (
-    <div
-      ref={root}
-      className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`}
-      onPointerDown={selKind ? onMarquee : undefined}
-      style={{ maxWidth: size.width, height: list ? size.height : undefined, minHeight: list || compact ? undefined : size.height }}
-      {...tooltip.handlers}
-    >
-      <div className="ck-toolbar" data-testid="top-bar">
-        {title && <h1 className={`ck-title${compact ? ' ck-sr' : ''}`}>{title}</h1>}
-        <Segmented label="View" value={state.mode} options={[['league', 'League'], ['team', 'Team']]} onChange={(mode) => update({ mode })} />
-        <Segmented label="Layout" value={state.layout} options={[['list', 'List'], ['calendar', 'Calendar']]} onChange={setLayout} />
-        {team && <TeamPicker teamId={state.teamId} onChange={pickTeam} compact={compact} />}
-        {nav && (
-          <div className="ck-period-wrap">
-            <PeriodNav {...nav} />
-            {picking && weekView && (
-              <WeekPicker
-                data={data}
-                start={weekOf(state.date)[0]!}
-                weeks={state.weeks}
-                tvOnly={state.tvOnly}
-                size={size}
-                today={today}
-                onPick={(date) => {
-                  setPicking(false);
-                  update({ date: weekOf(date)[0]! });
-                }}
-                onClose={() => setPicking(false)}
-              />
-            )}
-            {datePick && !team && list && !compact && (
-              <DatePicker
-                data={data}
-                date={nearestDay(days, state.date)}
-                tvOnly={state.tvOnly}
-                today={today}
-                onPick={(date) => {
-                  setDatePick(false);
-                  update({ date });
-                }}
-                onClose={closeDatePick}
-              />
-            )}
-          </div>
-        )}
-        {team && list && !compact && (
-          <div className="ck-period-wrap">
-            <div className="ck-nav ck-period">
-              <TeamDayTitle store={teamTop} />
-              <DatePickButton open={datePick} onClick={() => setDatePick((o) => !o)} />
-              <StoreTodayButton store={teamAtNext} onClick={() => teamList.current?.toNext()} />
+    <ClockProvider clock={clock}>
+      <div
+        ref={root}
+        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`}
+        onPointerDown={selKind ? onMarquee : undefined}
+        style={{ maxWidth: size.width, height: list ? size.height : undefined, minHeight: list || compact ? undefined : size.height }}
+        {...tooltip.handlers}
+      >
+        <div className="ck-toolbar" data-testid="top-bar">
+          {title && <h1 className={`ck-title${compact ? ' ck-sr' : ''}`}>{title}</h1>}
+          <Segmented label="View" value={state.mode} options={[['league', 'League'], ['team', 'Team']]} onChange={(mode) => update({ mode })} />
+          <Segmented label="Layout" value={state.layout} options={[['list', 'List'], ['calendar', 'Calendar']]} onChange={setLayout} />
+          {team && <TeamPicker teamId={state.teamId} onChange={pickTeam} compact={compact} />}
+          {nav && (
+            <div className="ck-period-wrap">
+              <PeriodNav {...nav} />
+              {picking && weekView && (
+                <WeekPicker
+                  data={data}
+                  start={weekOf(state.date)[0]!}
+                  weeks={state.weeks}
+                  tvOnly={state.tvOnly}
+                  size={size}
+                  today={today}
+                  onPick={(date) => {
+                    setPicking(false);
+                    update({ date: weekOf(date)[0]! });
+                  }}
+                  onClose={() => setPicking(false)}
+                />
+              )}
+              {datePick && !team && list && !compact && (
+                <DatePicker
+                  data={data}
+                  date={nearestDay(days, state.date)}
+                  tvOnly={state.tvOnly}
+                  today={today}
+                  onPick={(date) => {
+                    setDatePick(false);
+                    update({ date });
+                  }}
+                  onClose={closeDatePick}
+                />
+              )}
             </div>
-            {datePick && (
-              <DatePicker
-                data={data}
-                date={teamTop.get() || today}
-                tvOnly={state.tvOnly}
-                today={today}
-                cell={teamPickCell}
-                onPick={(date) => {
-                  setDatePick(false);
-                  teamList.current?.toDate(date);
-                }}
-                onClose={closeDatePick}
-              />
-            )}
-          </div>
-        )}
-        {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
-        {team && !list && !compact && (
-          <Segmented
-            label="Span"
-            value={String(state.teamSpan) as '1' | '2' | 'month'}
-            options={[['1', '1 week'], ['2', '2 weeks'], ['month', 'Month']]}
-            onChange={(v) => setTeamSpan(v === 'month' ? 'month' : v === '2' ? 2 : 1)}
-          />
-        )}
-        {team && list && !compact && (
-          <label className="ck-check">
-            <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Show rest days
-          </label>
-        )}
-        <label className="ck-check">
-          <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact ? 'TV only' : 'TV games only'}
-        </label>
-        {note &&
-          (compact ? (
-            <span className="ck-note ck-note-icon" data-tip={note} aria-label={note} role="img" tabIndex={0}>
-              i
-            </span>
-          ) : (
-            <span className="ck-notes">
-              <span className="ck-note" data-testid="tz-note">
-                {note}
-              </span>
-              {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
-            </span>
-          ))}
-        <CopyButton label="Copy view as image" copy={copyView} testId="copy-view" />
-      </div>
-      {team && <TeamHeader teamId={state.teamId} compact={compact} />}
-      {team ? (
-        list ? (
-          <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
-        ) : (
-          <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
-        )
-      ) : list ? (
-        <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} nav={false} />
-      ) : weekView ? (
-        <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} />
-      ) : (
-        <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
-      )}
-      {tooltip.node}
-      <div ref={marquee} className="ck-marquee" aria-hidden="true" data-testid="marquee" />
-      <SelectionStyle store={selection} scope=".ck-select-area" />
-      {selKind && <SelectionBar store={selection} copy={copySelection} />}
-      {selCapture && selKind && (
-        <CaptureStage
-          onReady={selCapture.onReady}
-          width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : Math.max(selCapture.cellWidth ?? 0, 360)) + 2 * CAPTURE_PAD}
-          className={list ? ' ck-root-fill' : ' ck-root-grow'}
-        >
-          <div className="ck-capture-head">
-            {title && <span className="ck-title">{title}</span>}
-            {!list && nav?.title && <span className="ck-capture-period">{nav.title}</span>}
-            {state.tvOnly && <span className="ck-capture-filter">TV games only</span>}
-            {note && <span className="ck-note">{note}</span>}
-          </div>
-          {team && <TeamHeader teamId={state.teamId} compact={compact} />}
-          <SelectionCapture
-            kind={selKind}
-            data={data}
-            ids={selCapture.ids}
-            teamId={state.teamId}
-            tvOnly={state.tvOnly}
-            size={size}
-            now={now}
-            timeZone={timeZone}
-            cellWidth={selCapture.cellWidth}
-            teamScale={selCapture.teamScale}
-            weekStyle={selCapture.weekStyle}
-          />
-        </CaptureStage>
-      )}
-      {capture && (
-        <CaptureStage onReady={capture} width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : size.width) + 2 * CAPTURE_PAD} className={`${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`} minHeight={list || compact ? undefined : size.height}>
-          <div className="ck-capture-head">
-            {title && <span className="ck-title">{title}</span>}
-            {capturePeriod && <span className="ck-capture-period">{capturePeriod}</span>}
-            {state.tvOnly && <span className="ck-capture-filter">TV games only</span>}
-            {note && <span className="ck-note">{note}</span>}
-          </div>
-          {team && <TeamHeader teamId={state.teamId} compact={compact} />}
-          {team ? (
-            list ? (
-              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} />
-            ) : (
-              <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
-            )
-          ) : list ? (
-            <LeagueListWeek data={data} date={state.date} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} />
-          ) : weekView ? (
-            <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} />
-          ) : (
-            <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
           )}
-        </CaptureStage>
-      )}
-    </div>
+          {team && list && !compact && (
+            <div className="ck-period-wrap">
+              <div className="ck-nav ck-period">
+                <TeamDayTitle store={teamTop} />
+                <DatePickButton open={datePick} onClick={() => setDatePick((o) => !o)} />
+                <StoreTodayButton store={teamAtNext} onClick={() => teamList.current?.toNext()} />
+              </div>
+              {datePick && (
+                <DatePicker
+                  data={data}
+                  date={teamTop.get() || today}
+                  tvOnly={state.tvOnly}
+                  today={today}
+                  cell={teamPickCell}
+                  onPick={(date) => {
+                    setDatePick(false);
+                    teamList.current?.toDate(date);
+                  }}
+                  onClose={closeDatePick}
+                />
+              )}
+            </div>
+          )}
+          {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
+          {team && !list && !compact && (
+            <Segmented
+              label="Span"
+              value={String(state.teamSpan) as '1' | '2' | 'month'}
+              options={[['1', '1 week'], ['2', '2 weeks'], ['month', 'Month']]}
+              onChange={(v) => setTeamSpan(v === 'month' ? 'month' : v === '2' ? 2 : 1)}
+            />
+          )}
+          {team && list && !compact && (
+            <label className="ck-check">
+              <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Show rest days
+            </label>
+          )}
+          <label className="ck-check">
+            <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact ? 'TV only' : 'TV games only'}
+          </label>
+          {note &&
+            (compact ? (
+              <span className="ck-note ck-note-icon" data-tip={note} aria-label={note} role="img" tabIndex={0}>
+                i
+              </span>
+            ) : (
+              <span className="ck-notes">
+                <span className="ck-note" data-testid="tz-note">
+                  {note}
+                </span>
+                {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
+              </span>
+            ))}
+          <CopyButton label="Copy view as image" copy={copyView} testId="copy-view" />
+        </div>
+        {team && <TeamHeader teamId={state.teamId} compact={compact} />}
+        {team ? (
+          list ? (
+            <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
+          ) : (
+            <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
+          )
+        ) : list ? (
+          <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} nav={false} />
+        ) : weekView ? (
+          <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} />
+        ) : (
+          <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
+        )}
+        {tooltip.node}
+        <div ref={marquee} className="ck-marquee" aria-hidden="true" data-testid="marquee" />
+        <SelectionStyle store={selection} scope=".ck-select-area" />
+        {selKind && <SelectionBar store={selection} copy={copySelection} />}
+        {selCapture && selKind && (
+          <CaptureStage
+            onReady={selCapture.onReady}
+            width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : Math.max(selCapture.cellWidth ?? 0, 360)) + 2 * CAPTURE_PAD}
+            className={list ? ' ck-root-fill' : ' ck-root-grow'}
+          >
+            <div className="ck-capture-head">
+              {title && <span className="ck-title">{title}</span>}
+              {!list && nav?.title && <span className="ck-capture-period">{nav.title}</span>}
+              {state.tvOnly && <span className="ck-capture-filter">TV games only</span>}
+              {note && <span className="ck-note">{note}</span>}
+            </div>
+            {team && <TeamHeader teamId={state.teamId} compact={compact} />}
+            <SelectionCapture
+              kind={selKind}
+              data={data}
+              ids={selCapture.ids}
+              teamId={state.teamId}
+              tvOnly={state.tvOnly}
+              size={size}
+              now={now}
+              timeZone={timeZone}
+              cellWidth={selCapture.cellWidth}
+              teamScale={selCapture.teamScale}
+              weekStyle={selCapture.weekStyle}
+            />
+          </CaptureStage>
+        )}
+        {capture && (
+          <CaptureStage onReady={capture} width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : size.width) + 2 * CAPTURE_PAD} className={`${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`} minHeight={list || compact ? undefined : size.height}>
+            <div className="ck-capture-head">
+              {title && <span className="ck-title">{title}</span>}
+              {capturePeriod && <span className="ck-capture-period">{capturePeriod}</span>}
+              {state.tvOnly && <span className="ck-capture-filter">TV games only</span>}
+              {note && <span className="ck-note">{note}</span>}
+            </div>
+            {team && <TeamHeader teamId={state.teamId} compact={compact} />}
+            {team ? (
+              list ? (
+                <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} />
+              ) : (
+                <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
+              )
+            ) : list ? (
+              <LeagueListWeek data={data} date={state.date} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} />
+            ) : weekView ? (
+              <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} />
+            ) : (
+              <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
+            )}
+          </CaptureStage>
+        )}
+      </div>
+    </ClockProvider>
   );
 }
 
@@ -460,7 +468,7 @@ function teamDefaultDate(data: CalendarData, teamId: number, now: number): strin
 function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: number; timeZone?: string }) {
   const t = Date.parse(updatedAt);
   if (Number.isNaN(t)) return null;
-  const stale = now - t > STALE_AFTER_MS;
+  const stale = useClockValue((n) => n - t > STALE_AFTER_MS, now); // turns orange on the tick that crosses 36 h
   const when = dateFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
   const tip = stale ? 'Data is more than 36 hours old: the daily update may have failed.' : undefined;
   return (

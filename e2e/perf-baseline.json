@@ -12,7 +12,10 @@
     "switch-league-list": 60,
     "team-scroll-frame-p95": 16.8,
     "team-scroll-frame-mean": 16.7,
-    "team-scroll-main-thread": 660
+    "team-scroll-main-thread": 660,
+    "scroll-countdown-frame-p95": 33,
+    "scroll-countdown-frame-mean": 17.4,
+    "scroll-countdown-main-thread": 1819
   },
   "linux": {
     "load-league-list": 364,

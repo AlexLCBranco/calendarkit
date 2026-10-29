@@ -32,7 +32,7 @@ export const ACTIVE_DAY = 'ck-active-day';
 
 /**
  * Lifts the active-day highlight from `node` and everything in it, with transitions off so the copy reads the plain
- * look at once; returns the undo (the highlight is back, still without a fade, then transitions on again).
+ * look at once, and marks it `ck-capturing` (countdowns show their time); returns the undo (the highlight is back, still without a fade, then transitions on again).
  */
 export function suspendForCapture(node: HTMLElement): () => void {
   const els = [node, ...node.querySelectorAll<HTMLElement>(`.${ACTIVE_DAY}`)].filter((e) => e.classList.contains(ACTIVE_DAY));
@@ -40,7 +40,10 @@ export function suspendForCapture(node: HTMLElement): () => void {
   const transitions = all.map((e) => e.style.transition);
   all.forEach((e) => (e.style.transition = 'none'));
   els.forEach((e) => e.classList.remove(ACTIVE_DAY));
+  // countdowns show their plain time in images (CSS under .ck-capturing)
+  node.classList.add('ck-capturing');
   return () => {
+    node.classList.remove('ck-capturing');
     els.forEach((e) => e.classList.add(ACTIVE_DAY));
     void node.offsetWidth; // apply without a fade before the transitions come back
     all.forEach((e, i) => (e.style.transition = transitions[i]!));

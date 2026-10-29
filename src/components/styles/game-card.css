@@ -228,3 +228,18 @@
 .ck-slots .ck-side + .ck-side .ck-rec {
   text-align: left;
 }
+/* Countdown on today's games before tip-off (round 4): "in 2h 35m" in place of the time, same size (the widest,
+   "in 23h 59m", is 66.1 of the column's 77 px); the time itself stays, hidden, and comes back in images. */
+.ck-countdown {
+  color: var(--ck-accent);
+  white-space: nowrap;
+}
+.ck-time-hidden {
+  display: none;
+}
+.ck-capturing .ck-countdown {
+  display: none !important;
+}
+.ck-capturing .ck-time-hidden {
+  display: inline !important;
+}

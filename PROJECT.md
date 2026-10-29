@@ -865,6 +865,29 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     both lists), copy e2e (no highlight in the image), strip.spec ignores the class moving between rows.
   - Flake seen once: lists.spec "continuous days" (desktop-xl) found no card below the top at one step; 6/6 on rerun.
 
+- **Countdown on today's games** (item 11): a game of today (viewer's zone) before tip-off shows **"in 2h 35m"** ("in 2h",
+  "in 35m", minutes rounded up) in the accent in place of its time, League List and Team List (phones too); the time
+  again once it has started. Same size as the time: the widest, "in 23h 59m", is 66.1 px of the 77 px time column, so
+  rows keep their width. **One clock per widget** (`clock.ts`, `useClock`): a ValueStore set at load and at every
+  minute boundary (re-armed from the time itself), read by `TipTime` through context — a tick re-renders the countdown
+  texts only. The view's `now` is now the time it opened: before, a 60 s `useNow` re-rendered the whole view (every
+  visible day and row) every minute; today's date (strip, week view) and the stale-data stamp read the clock instead
+  (the view re-renders at midnight only). Images keep the plain time: it stays in the DOM, hidden, and
+  `.ck-capturing` (set by suspendForCapture) shows it and hides the countdown. `CLOCK_TICK_EVENT` lets a test tick now.
+  - **Perf check added**: the League List wheel gesture from Nov 15 with countdowns on screen, the clock moved a minute
+    and ticked after every piece. Playwright's fixed clock alone puts the frame p95 at ~33 ms (with ticks off: 34; on: 32),
+    so it has its own baseline from the build before the countdown with the identical gesture (8 interleaved runs:
+    p95 33.0 / mean 17.4 / main thread 1 819 ms; with the countdown 34.0 / 17.7 / 1 797). Linux baseline still to add
+    from CI.
+  - Tests: `tests/countdown.test.tsx` (labels; both lists; one minute-aligned timer; a tick formats no row time;
+    capture class), e2e `countdown.spec.ts` (fits and one line, runFor 60 s → every countdown a minute shorter and
+    nothing else in the list changed, time back after tip-off, the copy is made with the countdown hidden).
+- **Hang (2026-10-29)**: a perf run piped into `grep` never returned (7 h, killed by Alex). Rerun alone with output to a
+  file: exit 0 in 41 s; nothing of Playwright's left running afterwards — the cause couldn't be established (the tests
+  had printed their results; a process outliving Playwright and holding the pipe open would explain it, unproven). Since:
+  `globalTimeout` 15 min (top-level only in Playwright; a full local run is ~5 min), perf project `timeout` 180 s, html
+  reporter `open: 'never'`; every command wrapped in `timeout 300`, test output to a file, never piped into grep.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip
