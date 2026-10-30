@@ -30,8 +30,8 @@ where-to-watch info, embedding in gauntlet.
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
 ## Current state / handoff (2026-10-30, round 8 in progress)
-Round 8: Part 0 (Cup fixture from the feed, CI split into parallel jobs, ck-old removed, audit clean) and Part 1
-(v1.21.0: one-day League List, left-aligned, rows scaled by width). Parts 2–3 (map) follow. Details: "### Round 8".
+Round 8: Part 0 (Cup fixture from the feed, CI split into parallel jobs, ck-old removed, audit clean), Part 1
+(v1.21.0: one-day League List, left-aligned, rows scaled by width), Part 2 (v1.22.0: static map). Part 3 (hover) follows. Details: "### Round 8".
 
 ## Previous handoff (2026-10-30, after round 7)
 Round 7 shipped v1.18.2 (leftovers: merged chip in Team Calendar cells, no opponent dot beside its component, home
@@ -1320,6 +1320,54 @@ Ground rules as every round (desktop first, nothing slower, every check automate
 (display rate); loads 275 / 380 / 312 ms; switches 30–89 ms — all inside their limits. Seen once in a full local run:
 `fatigue.spec` "fatigue tooltips" (Team List, untouched) failed under load, then passed 5/5 alone — round 7's known race
 (a late scroll event closing the tooltip), not this change.
+
+**Part 2, map: static** (v1.22.0)
+- **Purpose**: see where the day's games are played, beside the list (Alex isn't from the US). References looked at for
+  look and behaviour only (no code): Google Flights Explore (list left, map right, hover links them), FlightConnections
+  (click a place, its routes drawn, the rest fades).
+- **Placement**: League List only, desktop only (where `leagueSideBySide`), right of the list after a 24 px gap, as wide
+  as the room allows at the outline's 1000 : 641, height-limited so the legend fits. It sits outside the list's scroller,
+  so it stays put while a busy night scrolls. Measured: **633 × 406 px at 1920 × 1080** (box; 428 with the legend),
+  **299 × 192 px at 1280 × 900**. Never over list content (e2e: no list element intersects it). Not in the Slate, not on
+  tablets/phones (they keep the centered list).
+- **Rendering**: a static SVG drawn in the page from `src/map/basemap.ts` — generated once by `scripts/make-basemap.ts`
+  (dev-only deps: us-atlas 3.0.1 states-10m = US Census cartographic boundaries; world-atlas 2.0.2 countries-50m = Natural
+  Earth, public domain; d3-geo's `geoAlbers`, fitted to the lower 48, clipped to the box; topojson-simplify with spherical
+  weights, `MIN_WEIGHT` 1e-6; coordinates rounded to whole units). The lower 48 + DC, southern Canada and northern Mexico
+  as plain land. No map service, no tiles, nothing fetched per view. **It's its own chunk** (`React.lazy`): the list
+  renders first, the map follows. `src/map/project.ts` is d3's conic equal-area maths in 20 lines, so d3 isn't bundled
+  (unit test: = d3-geo for every arena to 0.01 unit). Great Lakes show on the US side only (Natural Earth's Canada
+  polygon includes the lakes); Alaska and Hawaii aren't drawn (no NBA arena).
+- **Bundle**: map chunk ****39.5 KB (16.3 KB gzipped) + 1.7 KB CSS (0.6 KB gz)**, fetched after the list renders**; main bundle +1.7 KB (+0.7 KB gz): 315.6 → 317.3 KB (CSS +0.2 KB).
+- **Time zones** (`src/map/zones.ts`): states faintly tinted ET / CT / MT / PT, legend under the map with "time zone bands
+  are approximate". **Split states, shaded by their NBA arena city's zone**: FL (ET: Miami, Orlando; panhandle CT), IN
+  (ET: Indianapolis; NW/SW corners CT), MI (ET: Detroit; 4 UP counties CT), TN (CT: Memphis; East TN ET), TX (CT: Dallas,
+  Houston, San Antonio, Austin; El Paso area MT), OR (PT: Portland; most of Malheur County MT). **By their main zone (no
+  arena)**: KY (ET; west CT), KS (CT; 4 western counties MT), NE (CT; panhandle MT), ND (CT; southwest MT), SD (CT; west
+  MT), ID (MT; north PT). Arizona is MT (no daylight saving, so it matches PT's clock in summer — the band doesn't show
+  that). Canada and Mexico aren't shaded (Toronto, the only arena there, is ET).
+- **Dots**: one per game of the day the list shows (TV filter included), at the arena the **feed** gives (`arenaName` +
+  `arenaCity`), labeled with the home team's code; **yellow (`--ck-b2b`) when either team is on a back-to-back night**
+  (same rule as the rows: `leagueFatigue` nights), light grey otherwise. Dots closer than 14 units (both LA arenas, MSG /
+  Barclays) are spread 7 px around their middle, labels outward.
+- **Locations** — the feed's fields per game (checked 2026-10-30, 1 207 games): `arenaName`, `arenaCity`, `arenaState`
+  (US state / Canadian province code; abroad the country code — "MX", "FR" — or empty, Manchester), `isNeutral`. No
+  coordinates, no country field. 36 venues: the 30 home arenas, Moody Center (Austin: 3 SAS home games), Hinkle Fieldhouse
+  (IND 1 game + the Cup final), Arena CDMX (Mexico City), Accor Arena (Paris), Co-op Live (Manchester), and 6 Cup
+  knockout games with no arena yet. **Coordinates**: `src/map/arenas.ts`, one entry per venue, from Wikidata's P625 of
+  the arena's item (source noted as item@revision; the 10 with a Wikipedia geotag agree exactly) + T-Mobile Arena (Las
+  Vegas, for the Cup knockout once placed). Unit tests: every team's home arena listed; each arena inside its own state
+  (Census outline) or country (Natural Earth) by `geoContains` — an independent check; every game resolves. e2e: every
+  arena in the served snapshot has an entry; each dot lies on its feed state's outline.
+- **Off the map / unknown, never guessed**: a known place outside the box is an edge marker (square pin, muted label,
+  city + arrow, full place in its tooltip): **Nov 7 DEN @ IND "Mexico City ↓", Jan 14 NOP @ SAS "Paris →", Jan 17 SAS @
+  NOP "Manchester →"**. A game with no arena in the feed (the 6 Cup QF/SF games, Dec 4–8 in today's snapshot) is listed
+  under the map as "location unknown". An arena missing from the table would show the same (and fail the tests).
+- **Out of every copy**: the map is outside the copied nodes and `data-capture-exclude`; e2e: the view copy is the list's
+  width.
+
+- **Perf** (Windows PC, with the map): loads 271 / 338 / 295 ms; League scroll ×0.31, day-nav ×0.67 vs v1.17.1; every check
+  inside its limit. Local e2e: 236 / 236.
 
 **Later idea, not this round**: the same map in the Team view, showing a team's whole road trip.
 

@@ -1,0 +1,134 @@
+/* Round 8: the League List's map (LeagueMap). Loaded with the map's own chunk. Time zones: faint tints, apart from the
+   B2B yellow (dots) and the accent blue (hover); the bands are approximate (zones.ts). */
+.ck-map {
+  position: relative;
+}
+.ck-map-box {
+  position: relative;
+  width: 100%;
+}
+.ck-map-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.ck-map-land {
+  fill: #151820;
+  stroke: #262b35;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.ck-map-state {
+  stroke: #2f3542;
+  stroke-width: 0.75;
+  vector-effect: non-scaling-stroke;
+}
+.ck-tz-ET {
+  fill: #1d2433;
+}
+.ck-tz-CT {
+  fill: #1b2a2a;
+}
+.ck-tz-MT {
+  fill: #2a2433;
+}
+.ck-tz-PT {
+  fill: #212a1e;
+}
+.ck-map-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid #3a4150;
+  vertical-align: -2px;
+}
+.ck-map-swatch.ck-tz-ET {
+  background: #1d2433;
+}
+.ck-map-swatch.ck-tz-CT {
+  background: #1b2a2a;
+}
+.ck-map-swatch.ck-tz-MT {
+  background: #2a2433;
+}
+.ck-map-swatch.ck-tz-PT {
+  background: #212a1e;
+}
+
+/* a game: the dot on its arena, the home team's code beside it */
+.ck-map-dot {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 1;
+}
+.ck-map-pin {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cfd6e2;
+  box-shadow: 0 0 0 2px var(--ck-bg);
+}
+.ck-map-b2b .ck-map-pin,
+.ck-map-key-b2b {
+  background: var(--ck-b2b);
+}
+.ck-map-code {
+  position: absolute;
+  left: 9px;
+  top: -8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  color: var(--ck-text);
+  white-space: nowrap;
+  text-shadow: 0 0 3px var(--ck-bg), 0 0 3px var(--ck-bg), 0 0 2px var(--ck-bg);
+  pointer-events: none;
+}
+.ck-map-label-left .ck-map-code {
+  left: auto;
+  right: 9px;
+}
+/* off the map (Mexico City, Paris, Manchester): the label inside the frame, pointing out */
+.ck-map-edge .ck-map-pin {
+  border-radius: 2px;
+}
+.ck-map-edge .ck-map-code {
+  font-weight: 600;
+  color: var(--ck-muted);
+}
+.ck-map-unknown {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  font-size: 11px;
+  color: var(--ck-muted);
+}
+.ck-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ck-muted);
+}
+.ck-map-key {
+  white-space: nowrap;
+}
+.ck-map-key .ck-map-pin {
+  position: static;
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  box-shadow: none;
+  vertical-align: -1px;
+}
+.ck-map-note {
+  opacity: 0.8;
+}

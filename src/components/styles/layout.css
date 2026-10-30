@@ -97,3 +97,18 @@
   text-align: center;
   padding: 24px 0;
 }
+/* Round 8: the desktop League List and its map side by side (the map's own styles load with it, src/map/map.css) */
+.ck-league-split {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 24px; /* LEAGUE_MAP_GAP */
+}
+.ck-league-split > .ck-league-list {
+  flex: none;
+}
+.ck-map-slot {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-top: 4px;
+}

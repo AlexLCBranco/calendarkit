@@ -3,7 +3,7 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { addDays, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
@@ -31,7 +31,7 @@ import { TeamPicker } from './TeamPicker';
 import { useTooltip } from './Tooltip';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
-import { fmtRange, isCompact, LEAGUE_LIST_COLUMN, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
+import { fmtRange, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 import './calendar.css';
 
 // The widgets live in their own files; re-exported here so hosts and tests keep one entry point.
@@ -91,7 +91,10 @@ export interface CalendarViewProps {
 /** Older than this, the "Data updated" stamp turns orange: the daily update (~11:00 UTC) may have failed. */
 export const STALE_AFTER_MS = 36 * 3_600_000;
 
+const NO_GAMES: readonly ScheduleGame[] = [];
 const DEFAULT_TEAM = TEAMS[0]!.id;
+/** Round 8: the League List's map, its own chunk (outline + styles), loaded after the list is on screen. */
+const LeagueMap = lazy(() => import('../map/LeagueMap'));
 
 
 export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt }: CalendarViewProps) {
@@ -473,6 +476,16 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           )
         ) : slate ? (
           <SlateView data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} />
+        ) : list && leagueSideBySide(size.width) ? (
+          // round 8: the map beside the list (desktop); it stays put while a busy night scrolls
+          <div className="ck-league-split">
+            <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
+            <div className="ck-map-slot">
+              <Suspense fallback={null}>
+                <LeagueMap data={data} games={listDay?.games ?? NO_GAMES} room={{ width: size.width - leagueListWidth - LEAGUE_MAP_GAP, height: size.height - 48 }} />
+              </Suspense>
+            </div>
+          </div>
         ) : list ? (
           <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
         ) : weekView ? (
