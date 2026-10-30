@@ -53,6 +53,23 @@ export function suspendForCapture(node: HTMLElement): () => void {
 export const keepInCapture = (node: Node) => !(node instanceof HTMLElement && node.dataset.captureExclude === 'true');
 
 /**
+ * Computed properties a copy never needs (round 6). html-to-image writes every computed property (~480 in Chrome) into
+ * each clone's inline style, and the browser then parses all of it again to draw the SVG — that is most of a copy's
+ * time (full Team List: ~5 s, 85 % of it drawing a 19 MB SVG). Left out: the logical duplicates of physical properties
+ * (the widget is horizontal, left to right, so `inline-size` = `width`, `margin-inline-start` = `margin-left`, …) and
+ * what can't change a still image (animation, transitions, scroll snapping/margins, anchoring, pointer/caret/selection,
+ * paging, multi-column rules, ruby, math). Kept although it looks irrelevant: `overscroll-behavior-x/y` (leaving it out
+ * changed ~500 pixel channels of a League List image). Images are pixel-identical with and without the rest (checked on
+ * the six whole-view kinds, test-output/m6/copydiff.mjs).
+ */
+export const CAPTURE_SKIP_STYLE =
+  /^(?:(?:border|margin|padding|inset|overflow|overscroll-behavior|scroll-margin|scroll-padding|contain-intrinsic|max|min)-(?:block|inline)|(?:block|inline)-size$|border-(?:start|end)-(?:start|end)-radius$|corner-(?:start|end)-(?:start|end)-shape$|animation|transition|scroll-|view-transition|view-timeline|timeline|anchor-|position-(?:anchor|area|try|visibility)|interest-|trigger-|caret|cursor$|pointer-events$|touch-action$|user-select$|resize$|speak$|orphans$|widows$|break-|app-region$|window-drag$|interactivity$|reading-|field-sizing$|overflow-anchor$|scrollbar-|will-change$|print-color-adjust$|column-rule|row-rule|rule-overlap$|ruby-|math-|-webkit-(?:user-|tap-highlight|locale$|rtl-ordering$|line-break$|text-security$))/;
+
+let captureStyle: string[] | undefined;
+/** The computed properties every clone gets: the browser's list minus CAPTURE_SKIP_STYLE (worked out once). */
+export const captureStyleProperties = () => (captureStyle ??= [...getComputedStyle(document.documentElement)].filter((p) => !CAPTURE_SKIP_STYLE.test(p)));
+
+/**
  * Rasterises `node` onto a canvas. Every element tagged `data-capture-exclude="true"` is skipped, so the image is
  * the content only, not its interactive chrome. Throws on failure; callers own the user-facing state.
  */
@@ -64,6 +81,7 @@ export async function renderToCanvas(node: HTMLElement, options: RenderOptions):
     return await toCanvas(node, {
       pixelRatio,
       filter: keepInCapture,
+      includeStyleProperties: captureStyleProperties(),
       ...(options.zoom !== undefined ? { style: { zoom: String(options.zoom) } } : {}),
       ...(options.backgroundColor !== undefined ? { backgroundColor: options.backgroundColor } : {}),
     });

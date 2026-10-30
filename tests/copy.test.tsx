@@ -4,7 +4,8 @@
 
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { capturePixelRatio, COPY_PIXEL_RATIO, keepInCapture, MAX_CANVAS_SIDE, slackWrappingRows, WRAP_SLACK } from '../src/components/copyAsImage';
+import * as htmlToImage from 'html-to-image';
+import { CAPTURE_SKIP_STYLE, captureStyleProperties, capturePixelRatio, COPY_PIXEL_RATIO, keepInCapture, MAX_CANVAS_SIDE, renderToCanvas, slackWrappingRows, WRAP_SLACK } from '../src/components/copyAsImage';
 import { COPY_FEEDBACK_MS, CopyButton } from '../src/components/CopyButton';
 
 afterEach(() => {
@@ -23,6 +24,22 @@ describe('capturePixelRatio', () => {
     expect(capturePixelRatio(960, 8000, 4)).toBe(2);
     expect(capturePixelRatio(20000, 500, 4)).toBe(0.8);
     expect(capturePixelRatio(0, 0, 4)).toBe(4);
+  });
+});
+
+describe('style properties copied into clones (round 6: copies ~25 % faster)', () => {
+  it('leaves out logical duplicates and what a still image never shows; keeps what draws', () => {
+    for (const p of ['inline-size', 'block-size', 'margin-inline-start', 'padding-block-end', 'inset-inline-start', 'border-inline-end-width', 'border-start-end-radius', 'max-inline-size', 'overflow-block', 'overscroll-behavior-inline', 'animation-name', 'transition-duration', 'scroll-margin-top', 'scroll-snap-type', 'caret-color', 'cursor', 'user-select', 'pointer-events', 'will-change', 'view-transition-name', 'anchor-name', 'position-try-order', 'break-before', 'orphans', 'column-rule-width', 'ruby-position', 'math-depth', '-webkit-user-drag', '-webkit-tap-highlight-color', 'scrollbar-width', 'scrollbar-gutter', 'overflow-anchor'])
+      expect(CAPTURE_SKIP_STYLE.test(p), p).toBe(true);
+    for (const p of ['width', 'height', 'margin-left', 'padding-top', 'left', 'border-top-left-radius', 'overflow-x', 'overscroll-behavior-x', 'overscroll-behavior-y', 'font-size', 'font-family', 'color', 'fill', 'stroke', 'd', 'background-image', 'opacity', 'transform', 'outline-width', 'text-decoration-line', 'text-underline-offset', 'grid-template-areas', 'column-gap', 'content-visibility', 'display', 'position', 'white-space-collapse', '-webkit-font-smoothing', '-webkit-text-fill-color'])
+      expect(CAPTURE_SKIP_STYLE.test(p), p).toBe(false);
+  });
+  it('renderToCanvas hands html-to-image that list (not every computed property)', async () => {
+    const seen: { includeStyleProperties?: string[] }[] = [];
+    vi.spyOn(htmlToImage, 'toCanvas').mockImplementation(async (_n, o) => (seen.push(o as never), document.createElement('canvas')));
+    await renderToCanvas(document.createElement('div'), { pixelRatio: 1 });
+    expect(seen[0]!.includeStyleProperties).toEqual(captureStyleProperties());
+    expect(seen[0]!.includeStyleProperties!.some((p) => CAPTURE_SKIP_STYLE.test(p))).toBe(false);
   });
 });
 

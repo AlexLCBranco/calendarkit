@@ -56,8 +56,10 @@ async function open(page: Page, search: string) {
 async function clickCopy(page: Page, button: Locator): Promise<string> {
   await expect(button).toHaveAttribute('data-state', 'idle', { timeout: 5000 }); // ✓ of an earlier copy gone
   await page.evaluate(() => navigator.clipboard.writeText('')); // nothing left from an earlier copy
+  const t0 = Date.now();
   await button.click();
-  await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 }); // a full Team List is a ~4400 × 14000 px canvas: slow on CI runners
+  await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 }); // a full Team List is a ~4500 × 13600 px canvas: slow on CI runners
+  console.log(`[copy] ${await button.getAttribute('data-captured') ?? 'part'} copied in ${Date.now() - t0} ms`);
   return page.evaluate(async () => {
     const items = await navigator.clipboard.read();
     const item = items.find((i) => i.types.includes('image/png'));
@@ -285,9 +287,11 @@ test('a single game: league list card, team list card with B2B and TV', async ({
 });
 
 test('final scores are in the images: week view (1 and 2 weeks), league list day, team calendar, team list', async ({ page }) => {
-  // seven copies, the last a full Team List (~4400 × 14000 px): ~45–60 s on CI runners, past the 60 s default once
-  // round 5's Fatigue components made each copy ~10 % slower (full Team List locally 5.2 → 5.7 s)
-  test.setTimeout(150_000);
+  // seven copies, the last a full Team List (~4500 × 13600 px). Measured (round 6, after trimming the copied style
+  // properties, copyAsImage.ts CAPTURE_SKIP_STYLE): 18.7 s locally, 23.7 s on a CI runner before the trim. Round 5's
+  // three CI failures were not a slow test but one stalled copy (the full Team List still "idle" after 40+ s, where it
+  // normally takes ~5 s); the 150 s budget hid that. 90 s = ~4× the CI time.
+  test.setTimeout(90_000);
   await open(page, '?view=league&layout=calendar&date=2026-10-20');
   // the snapshot's final games: Oct 20–22, 2026 (week of Oct 18)
   const finals = await page.evaluate(async () => {
