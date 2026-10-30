@@ -4,7 +4,7 @@
 // busiest stretches (weeks of Mar 28 / Apr 4, 2027: Apr 4 has 13 games in 10 time groups) used to scroll the page by
 // 164 px at 1280 × 900 and 115 px at 1920 × 911. Walks every stretch, prints the tightest cell. Runs once (desktop-xl).
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -14,12 +14,14 @@ for (const size of [
   { width: 1920, height: 911 },
   { width: 1280, height: 900 },
 ]) {
-  test(`two weeks at ${size.width}×${size.height}: no page scroll on any stretch of the season, text at full size`, async ({ page }) => {
+  test(`two weeks at ${size.width}×${size.height}: no page scroll on any stretch of the season, text at full size, no plane on a time label`, async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize(size);
     await page.clock.setFixedTime(NOW);
     let tightest = { spare: Infinity, date: '' };
     let stretches = 0;
+    let planes = 0;
+    const overlaps: string[] = [];
     // "Next 2 weeks" steps by two weeks, so start once on each week parity: every pair of consecutive weeks is shown
     for (const first of ['2026-10-18', '2026-10-25'])
     for (let guard = 0, opened = false; guard < 20; guard++) {
@@ -43,7 +45,22 @@ for (const size of [
         const tri = document.querySelector('.ck-mtri-text')!;
         const line = document.querySelector('.ck-mline')!.getBoundingClientRect();
         const legend = document.querySelector('[data-testid="fatigue-legend"]')!.getBoundingClientRect();
-        return { start: cells[0]!.dataset.date!, scroll: se.scrollHeight - se.clientHeight, outside, spare, font: getComputedStyle(tri).fontSize, lineH: line.height, legendIn: legend.bottom <= innerHeight };
+        // round 6 (A5): each tricode's small plane (the team changes city between back-to-back nights) against the time
+        // labels' text (its ink box, not the label's full-width block)
+        const ink = (e: Element) => {
+          const rg = document.createRange();
+          rg.selectNodeContents(e);
+          return rg.getBoundingClientRect();
+        };
+        const labels = [...document.querySelectorAll('.ck-week-view .ck-tlabel')].map((l) => ({ text: l.textContent!, r: ink(l) }));
+        const planes = [...document.querySelectorAll('.ck-week-view .ck-fm-plane')];
+        const overlaps: string[] = [];
+        for (const pl of planes) {
+          const p = pl.getBoundingClientRect();
+          for (const { text, r } of labels)
+            if (p.left < r.right - 0.5 && r.left < p.right - 0.5 && p.top < r.bottom - 0.5 && r.top < p.bottom - 0.5) overlaps.push(`${pl.closest<HTMLElement>('[data-game-id]')!.dataset.gameId} under "${text}"`);
+        }
+        return { start: cells[0]!.dataset.date!, scroll: se.scrollHeight - se.clientHeight, outside, spare, font: getComputedStyle(tri).fontSize, lineH: line.height, legendIn: legend.bottom <= innerHeight, planes: planes.length, overlaps };
       });
       stretches++;
       expect(r.scroll, `page scroll, two weeks from ${r.start}`).toBeLessThanOrEqual(0);
@@ -51,6 +68,8 @@ for (const size of [
       expect(r.legendIn, `legend in the window, from ${r.start}`).toBe(true);
       expect([r.font, r.lineH]).toEqual(['11px', 16]);
       if (r.spare.px < tightest.spare) tightest = { spare: r.spare.px, date: r.spare.date };
+      planes += r.planes;
+      overlaps.push(...r.overlaps.map((o) => `${r.start}: ${o}`));
       const next = page.getByLabel('Next 2 weeks');
       if (await next.isDisabled()) break;
       await next.click();
@@ -58,5 +77,8 @@ for (const size of [
     }
     console.log(`[two-week fit] ${size.width}×${size.height}: ${stretches} stretches, tightest cell ${tightest.date} with ${tightest.spare.toFixed(1)} px spare`);
     expect(stretches).toBeGreaterThan(24);
+    console.log(`[two-week fit] ${size.width}×${size.height}: ${planes} planes, ${overlaps.length} on a time label${overlaps.length ? ` (${overlaps.slice(0, 3).join('; ')} …)` : ''}`);
+    expect(planes, 'planes checked').toBeGreaterThan(100);
+    expect(overlaps, 'a plane on a time label').toEqual([]);
   });
 }

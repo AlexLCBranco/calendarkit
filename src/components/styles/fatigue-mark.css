@@ -42,6 +42,15 @@
   line-height: 0;
   pointer-events: none;
 }
+/* 2-week view (round 6): the away team's plane sits inside the line, in the free band above the letters and just right
+   of them. Over the line it ran into a long time label ("00:00 (+1)") above a group's first game — 42 places over the
+   season. The home team's plane stays over its tricode's corner: time labels never reach that far right. */
+.ck-week-view[data-weeks='2'] .ck-mline > .ck-mtri:nth-child(2) .ck-fm-plane {
+  top: -0.02em;
+  right: -0.55em;
+  width: 0.5em;
+  height: 0.5em;
+}
 .ck-fm-plane .ck-plane {
   width: 100%;
   height: 100%;
