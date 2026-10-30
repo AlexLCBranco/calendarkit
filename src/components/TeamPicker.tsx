@@ -136,7 +136,10 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId: numb
                   className={`ck-picker-option${t.id === active ? ' ck-picker-active' : ''}`}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => pick(t.id)}
-                  onMouseEnter={() => setActive(t.id)}
+                  // only a pointer that really moves takes the highlight: when the list opens (or scrolls) under a
+                  // resting pointer, Chrome sends that option a mouseover/mouseenter with no movement, which used to
+                  // overwrite a keyboard choice made just before (round 6: the flaky "Miami instead of Orlando")
+                  onMouseMove={(e) => (e.movementX || e.movementY) && setActive(t.id)}
                 >
                   <TeamLogo team={{ teamId: t.id } as ScheduleGame['homeTeam']} />
                   {fullName(t)}

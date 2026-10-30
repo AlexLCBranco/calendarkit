@@ -133,6 +133,31 @@ describe('team picker', () => {
     expect(document.activeElement).toBe(screen.getByTestId('team-picker'));
   });
 
+  it('a pointer resting where the list opens (hover events without movement) never overrides the keyboard; a moving one highlights', () => {
+    // round 6: Chrome sends mouseover/mouseenter with no movement to the option under a resting pointer when the list
+    // appears; arriving after "o" it replaced Orlando with Miami (the flaky e2e "team header and team picker")
+    team(TEAM.MIA, 'list');
+    const btn = screen.getByTestId('team-picker');
+    btn.focus();
+    fireEvent.keyDown(btn, { key: 'ArrowDown' });
+    const list = screen.getByRole('listbox');
+    const active = () => document.getElementById(list.getAttribute('aria-activedescendant')!)!.textContent;
+    fireEvent.keyDown(list, { key: 'o' });
+    expect(active()).toBe('Orlando Magic');
+    const miami = screen.getByRole('option', { name: 'Miami Heat' });
+    fireEvent.mouseOver(miami);
+    fireEvent.mouseEnter(miami);
+    fireEvent.mouseMove(miami, { movementX: 0, movementY: 0 });
+    expect(active()).toBe('Orlando Magic');
+    fireEvent.keyDown(list, { key: 'Enter' });
+    expect(screen.getByTestId('team-header').textContent).toBe('Orlando Magic');
+    // a real move over an option still highlights it (and a click picks it)
+    fireEvent.keyDown(btn, { key: 'ArrowDown' });
+    const atl = screen.getByRole('option', { name: 'Atlanta Hawks' });
+    fireEvent.mouseMove(atl, { movementX: 3, movementY: 1 });
+    expect(document.getElementById(screen.getByRole('listbox').getAttribute('aria-activedescendant')!)!.textContent).toBe('Atlanta Hawks');
+  });
+
   it('phone: same picker in Team → List and Team → Calendar, team kept', () => {
     team(TEAM.BOS, 'list', PHONE);
     fireEvent.click(screen.getByTestId('team-picker'));

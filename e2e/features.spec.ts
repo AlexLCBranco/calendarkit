@@ -3,7 +3,7 @@
 // project width. Clock fixed at Nov 15, 2026 15:00 UTC (team views open on November). Screenshots:
 // e2e/screenshots/<project>-f-<view>.png.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const ORL = 1610612753;
@@ -130,6 +130,39 @@ test('team header and team picker: logos, mouse and keyboard, team change', asyn
   await expect(header).toHaveText('Orlando Magic');
   await expect(page.getByRole('region', { name: 'Magic games' })).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+// Round 6 (A3): the cause of the flaky "Miami instead of Orlando" above. When the list opens under a pointer that isn't
+// moving, Chrome sends the option under it a mouseover/mouseenter (no movement); the picker took that as a hover and
+// replaced the keyboard's choice whenever it arrived after the key. Here the pointer rests where Atlanta will be, the
+// list opens from the keyboard, and Enter is pressed only once the browser has hovered Atlanta — on the old build that
+// picks Atlanta every time.
+test('team picker: a pointer resting where the list opens never overrides the keyboard', async ({ page }, info) => {
+  test.skip(info.project.name === 'phone', 'touch device: no hover');
+  await open(page, '?view=team&layout=list&team=MIA');
+  const btn = page.getByTestId('team-picker');
+  const header = page.getByTestId('team-header');
+  const list = page.getByRole('listbox', { name: 'Teams' });
+  await btn.click();
+  const atl = (await page.getByRole('option', { name: 'Atlanta Hawks' }).boundingBox())!;
+  await page.keyboard.press('Escape');
+  await expect(list).toBeHidden();
+  await page.mouse.move(atl.x + atl.width / 2, atl.y + atl.height / 2); // the list is closed: over the page there
+  await btn.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(list).toBeFocused();
+  await expect(page.locator('.ck-picker-option:hover')).toHaveText('Atlanta Hawks'); // the browser's hover arrived
+  await expect(page.locator('.ck-picker-active')).toHaveText('Miami Heat');
+  await page.keyboard.press('o');
+  await expect(page.locator('.ck-picker-active')).toHaveText('Orlando Magic');
+  await page.keyboard.press('Enter');
+  await expect(header).toHaveText('Orlando Magic');
+  // a pointer that moves still highlights and picks
+  await btn.click();
+  await page.getByRole('option', { name: 'Chicago Bulls' }).hover();
+  await expect(page.locator('.ck-picker-active')).toHaveText('Chicago Bulls');
+  await page.keyboard.press('Enter');
+  await expect(header).toHaveText('Chicago Bulls');
 });
 
 test('team views: selected team first, vs/@ from its side, two loaded logos per game', async ({ page }, info) => {
