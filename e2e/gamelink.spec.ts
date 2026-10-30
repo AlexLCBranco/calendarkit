@@ -4,11 +4,39 @@
 // ctrl-click and Enter open it in a new tab; a drag that starts on it selects games and opens nothing.
 // hoopsjunkie.io is stubbed here: only the URL is checked.
 
-import { expect, test, type BrowserContext, type Page } from './fixtures';
+import { expect, test, type Browser, type BrowserContext, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
 test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop widths'));
+
+// The background tabs a middle / ctrl click opens are created by the browser, outside the test's context (checked
+// 2026-10-30, Chromium 156: a bare cross-origin <a target="_blank"> on a localhost page opens a tab that the context's
+// "page" event never reports; same-origin links and about:blank pages do get the event). So the browser's own target
+// list (CDP) is watched instead, and hoopsjunkie.io resolves to a closed local port, so the tab never reaches the real
+// site.
+test.use({ launchOptions: { args: ['--host-resolver-rules=MAP hoopsjunkie.io 127.0.0.1:9'] } });
+
+/** The URL of the page tab `act` opens (read from the browser's targets), or undefined after 5 s; the tab is closed. */
+async function tabOpenedBy(browser: Browser, act: () => Promise<unknown>): Promise<string | undefined> {
+  const cdp = await browser.newBrowserCDPSession();
+  const before = new Set<string>();
+  const urls = new Map<string, string>();
+  let armed = false;
+  cdp.on('Target.targetCreated', ({ targetInfo: t }) => (armed ? t.type === 'page' && urls.set(t.targetId, t.url) : before.add(t.targetId)));
+  cdp.on('Target.targetInfoChanged', ({ targetInfo: t }) => urls.has(t.targetId) && urls.set(t.targetId, t.url));
+  await cdp.send('Target.setDiscoverTargets', { discover: true }); // reports the existing targets first
+  armed = true;
+  await act();
+  let url: string | undefined;
+  for (let i = 0; i < 50 && !url; i++) {
+    url = [...urls.values()].find((u) => u.startsWith('http'));
+    if (!url) await new Promise((r) => setTimeout(r, 100));
+  }
+  for (const id of urls.keys()) if (!before.has(id)) await cdp.send('Target.closeTarget', { targetId: id }).catch(() => {});
+  await cdp.detach();
+  return url;
+}
 
 async function open(page: Page, context: BrowserContext, search: string) {
   await context.route('https://hoopsjunkie.io/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'stub' }));
@@ -31,7 +59,7 @@ for (const [name, search, hostSel] of [
   ['Team Calendar', '?view=team&layout=calendar&team=LAL', '.ck-day-cell:has(.ck-card)'],
   ['week view', '?view=league&layout=calendar&date=2026-11-16', '.ck-month-game'],
 ] as const) {
-  test(`${name}: the matchup is a link — new tab on click, middle-click, ctrl-click and Enter; pointer + underline on hover only; no "↗"`, async ({ page, context }) => {
+  test(`${name}: the matchup is a link — new tab on click, middle-click, ctrl-click and Enter; pointer + underline on hover only; no "↗"`, async ({ page, context, browser }) => {
     await open(page, context, search);
     const host = page.locator(hostSel).first();
     await host.scrollIntoViewIfNeeded();
@@ -73,9 +101,11 @@ for (const [name, search, hostSel] of [
       await tab.close();
       expect(page.url(), how).not.toContain('hoopsjunkie');
     }
-    // middle- and ctrl-click: headless Chromium opens no tab for them, not even for a bare <a target="_blank"> on an
-    // empty page (checked 2026-10-29: middle never, ctrl+click not reliably). So: a real middle / ctrl click on the <a>,
-    // and the event the browser acts on (auxclick / click with ctrlKey) reaches the window with nothing cancelling it
+    // middle- and ctrl-click (round 7, 1.1): a real middle / ctrl click opens a new tab with the game's URL (tabOpenedBy).
+    // Also checked at the event level: the event the browser acts on (auxclick / click with ctrlKey) reaches the window
+    // with nothing cancelling it. The context's stub route comes off first: it holds the background tab's request (that
+    // tab isn't the context's, so nothing answers it) and the tab never gets its URL; the resolver rule keeps it offline.
+    await context.unroute('https://hoopsjunkie.io/**');
     for (const how of ['middle', 'ctrl'] as const) {
       // caught on the way down (capture), read after the dispatch: defaultPrevented is final by then
       await link.evaluate((a, how) => {
@@ -84,8 +114,8 @@ for (const [name, search, hostSel] of [
         w.link = a;
         window.addEventListener(how === 'middle' ? 'auxclick' : 'click', (e) => (w.ev = e as MouseEvent), { once: true, capture: true });
       }, how);
-      if (how === 'middle') await link.click({ button: 'middle' });
-      else await link.click({ modifiers: ['ControlOrMeta'] });
+      const opened = await tabOpenedBy(browser, () => (how === 'middle' ? link.click({ button: 'middle' }) : link.click({ modifiers: ['ControlOrMeta'] })));
+      expect(opened, how).toBe(want);
       const seen = await page.evaluate(() => {
         const { ev, link } = window as unknown as { ev?: MouseEvent; link?: Element };
         return ev && { target: (ev.target as Element).closest('a') === link, cancelled: ev.defaultPrevented, ctrl: ev.ctrlKey || ev.metaKey, button: ev.button };

@@ -13,7 +13,7 @@
     "games": [
      {
       "gameId": "0022501201",
-      "gameCode": "20251209/TORNYK",
+      "gameCode": "20251209/NYKTOR",
       "gameStatus": 3,
       "gameStatusText": "Final",
       "gameSequence": 1,
@@ -34,9 +34,9 @@
       "gameLabel": "Emirates NBA Cup",
       "gameSubLabel": "Quarterfinal",
       "seriesText": "",
-      "arenaName": "Madison Square Garden",
-      "arenaState": "NY",
-      "arenaCity": "New York",
+      "arenaName": "Scotiabank Arena",
+      "arenaState": "ON",
+      "arenaCity": "Toronto",
       "postponedStatus": "N",
       "branchLink": "",
       "gameSubtype": "in-season-knockout",
@@ -123,17 +123,6 @@
        "awayOttBroadcasters": []
       },
       "homeTeam": {
-       "teamId": 1610612752,
-       "teamName": "Knicks",
-       "teamCity": "New York",
-       "teamTricode": "NYK",
-       "teamSlug": "knicks",
-       "wins": 0,
-       "losses": 0,
-       "score": 117,
-       "seed": 0
-      },
-      "awayTeam": {
        "teamId": 1610612761,
        "teamName": "Raptors",
        "teamCity": "Toronto",
@@ -142,6 +131,17 @@
        "wins": 0,
        "losses": 0,
        "score": 101,
+       "seed": 0
+      },
+      "awayTeam": {
+       "teamId": 1610612752,
+       "teamName": "Knicks",
+       "teamCity": "New York",
+       "teamTricode": "NYK",
+       "teamSlug": "knicks",
+       "wins": 0,
+       "losses": 0,
+       "score": 117,
        "seed": 0
       },
       "pointsLeaders": []
@@ -416,7 +416,7 @@
        "teamSlug": "suns",
        "wins": 0,
        "losses": 0,
-       "score": 125,
+       "score": 89,
        "seed": 0
       },
       "pointsLeaders": []
@@ -563,7 +563,7 @@
     "games": [
      {
       "gameId": "0022501229",
-      "gameCode": "20251213/ORLNYK",
+      "gameCode": "20251213/NYKORL",
       "gameStatus": 3,
       "gameStatusText": "Final",
       "gameSequence": 1,
@@ -673,17 +673,6 @@
        "awayOttBroadcasters": []
       },
       "homeTeam": {
-       "teamId": 1610612752,
-       "teamName": "Knicks",
-       "teamCity": "New York",
-       "teamTricode": "NYK",
-       "teamSlug": "knicks",
-       "wins": 0,
-       "losses": 0,
-       "score": 132,
-       "seed": 0
-      },
-      "awayTeam": {
        "teamId": 1610612753,
        "teamName": "Magic",
        "teamCity": "Orlando",
@@ -692,6 +681,17 @@
        "wins": 0,
        "losses": 0,
        "score": 120,
+       "seed": 0
+      },
+      "awayTeam": {
+       "teamId": 1610612752,
+       "teamName": "Knicks",
+       "teamCity": "New York",
+       "teamTricode": "NYK",
+       "teamSlug": "knicks",
+       "wins": 0,
+       "losses": 0,
+       "score": 132,
        "seed": 0
       },
       "pointsLeaders": []

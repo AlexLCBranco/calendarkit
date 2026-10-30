@@ -4,7 +4,10 @@
 // knockout games: gameId 002… (quarterfinals, semifinals: regular-season games) or 006… (the final), gameSubtype
 // "in-season-knockout", gameLabel "Emirates NBA Cup" + gameSubLabel, isNeutral + Las Vegas arena for the semifinals and
 // final, every date/time field in the feed's own conventions (gameDateEst = the ET date at 00:00 with a misleading "Z",
-// gameDateTimeEst = ET wall time with "Z", gameDateTimeUTC = real UTC). The matchups are illustrative.
+// gameDateTimeEst = ET wall time with "Z", gameDateTimeUTC = real UTC). Round 7 (1.2): the ET dates, matchups, away/home
+// sides and final scores were checked 2026-10-30 against hoopsjunkie.io's real game pages (each page names its first
+// team "Away"); two had the sides swapped (NYK was away at TOR, and the designated away team vs ORL) and PHX scored
+// 89, now fixed. Tip-off times and arena fields other than the cities are still illustrative.
 // node tests/fixtures/make-cup-knockout-2025.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
 
@@ -58,12 +61,12 @@ function game({ id, etDate, etTime, away, home, sub, neutral, arena, awayScore, 
 }
 const VEGAS = ['T-Mobile Arena', 'Las Vegas', 'NV'];
 const games = [
-  game({ id: '0022501201', etDate: '2025-12-09', etTime: '19:30', away: 'TOR', home: 'NYK', sub: 'Quarterfinal', neutral: false, arena: ['Madison Square Garden', 'New York', 'NY'], awayScore: 101, homeScore: 117 }),
+  game({ id: '0022501201', etDate: '2025-12-09', etTime: '19:30', away: 'NYK', home: 'TOR', sub: 'Quarterfinal', neutral: false, arena: ['Scotiabank Arena', 'Toronto', 'ON'], awayScore: 117, homeScore: 101 }),
   game({ id: '0022501202', etDate: '2025-12-09', etTime: '20:00', away: 'MIA', home: 'ORL', sub: 'Quarterfinal', neutral: false, arena: ['Kia Center', 'Orlando', 'FL'], awayScore: 108, homeScore: 117 }),
-  game({ id: '0022501203', etDate: '2025-12-10', etTime: '21:30', away: 'PHX', home: 'OKC', sub: 'Quarterfinal', neutral: false, arena: ['Paycom Center', 'Oklahoma City', 'OK'], awayScore: 125, homeScore: 138 }),
+  game({ id: '0022501203', etDate: '2025-12-10', etTime: '21:30', away: 'PHX', home: 'OKC', sub: 'Quarterfinal', neutral: false, arena: ['Paycom Center', 'Oklahoma City', 'OK'], awayScore: 89, homeScore: 138 }),
   // the late game: 11:30 pm ET on Dec 10 = 04:30 UTC on Dec 11 (and Dec 11 in São Paulo, 01:30)
   game({ id: '0022501204', etDate: '2025-12-10', etTime: '23:30', away: 'SAS', home: 'LAL', sub: 'Quarterfinal', neutral: false, arena: ['Crypto.com Arena', 'Los Angeles', 'CA'], awayScore: 132, homeScore: 119 }),
-  game({ id: '0022501229', etDate: '2025-12-13', etTime: '17:30', away: 'ORL', home: 'NYK', sub: 'Semifinal', neutral: true, arena: VEGAS, awayScore: 120, homeScore: 132 }),
+  game({ id: '0022501229', etDate: '2025-12-13', etTime: '17:30', away: 'NYK', home: 'ORL', sub: 'Semifinal', neutral: true, arena: VEGAS, awayScore: 132, homeScore: 120 }),
   // 9:00 pm ET Dec 13 = 02:00 UTC Dec 14
   game({ id: '0022501230', etDate: '2025-12-13', etTime: '21:00', away: 'SAS', home: 'OKC', sub: 'Semifinal', neutral: true, arena: VEGAS, awayScore: 111, homeScore: 109 }),
   // the final (006…: not a regular-season game); 8:30 pm ET Dec 16 = 01:30 UTC Dec 17

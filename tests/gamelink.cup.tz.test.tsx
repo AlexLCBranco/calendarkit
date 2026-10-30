@@ -24,11 +24,11 @@ const rawGames = (raw as unknown as { leagueSchedule: { gameDates: { games: Raw[
 
 /** Written out by hand: the URL each fixture game must link to. */
 const EXPECTED: Record<string, string> = {
-  '0022501201': 'https://hoopsjunkie.io/games/2025-12-09/tor-vs-nyk',
+  '0022501201': 'https://hoopsjunkie.io/games/2025-12-09/nyk-vs-tor', // round 7: these 7 URLs load the game's real page (checked 2026-10-30)
   '0022501202': 'https://hoopsjunkie.io/games/2025-12-09/mia-vs-orl',
   '0022501203': 'https://hoopsjunkie.io/games/2025-12-10/phx-vs-okc',
   '0022501204': 'https://hoopsjunkie.io/games/2025-12-10/sas-vs-lal', // 04:30 UTC Dec 11
-  '0022501229': 'https://hoopsjunkie.io/games/2025-12-13/orl-vs-nyk', // neutral (Las Vegas)
+  '0022501229': 'https://hoopsjunkie.io/games/2025-12-13/nyk-vs-orl', // neutral (Las Vegas)
   '0022501230': 'https://hoopsjunkie.io/games/2025-12-13/sas-vs-okc', // neutral, 02:00 UTC Dec 14
   '0062500001': 'https://hoopsjunkie.io/games/2025-12-16/sas-vs-nyk', // the final: neutral, 006…, 01:30 UTC Dec 17
 };
