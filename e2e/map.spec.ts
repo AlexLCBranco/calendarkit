@@ -161,3 +161,133 @@ test('no map on tablets and phones (the list keeps the width)', async ({ page },
   await page.waitForTimeout(300);
   await expect(map(page)).toHaveCount(0);
 });
+
+// ——— Part 3: hover and travel ———
+
+/** Each game of `date` with its teams' back-to-back ends, from the served snapshot (independent of the app). */
+const feedAround = (page: Page, date: string) =>
+  page.evaluate(async (date) => {
+    const raw = await (await fetch('/data/schedule.json')).json();
+    const games = (raw.leagueSchedule.gameDates as { games: FeedGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
+    const day = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
+    const on = (tri: string, d: string) => games.find((g) => g.gameDateEst.startsWith(d) && (g.awayTeam.teamTricode === tri || g.homeTeam.teamTricode === tri));
+    return games
+      .filter((g) => g.gameDateEst.startsWith(date))
+      .map((g) => ({
+        id: g.gameId,
+        arena: g.arenaName,
+        city: g.arenaCity,
+        travel: [g.awayTeam.teamTricode, g.homeTeam.teamTricode].flatMap((tri) => {
+          const y = on(tri, day(date, -1));
+          const t = on(tri, day(date, 1));
+          return [...(y ? [`${tri}:2 ${y.arenaName} -> ${g.arenaName}`] : []), ...(t ? [`${tri}:1 ${g.arenaName} -> ${t.arenaName}`] : [])];
+        }),
+      }));
+  }, date);
+
+test('hover a row: its dot lit, the others dimmed, the place and arena shown; exactly the right travel lines; none at rest', async ({ page }) => {
+  for (const date of ['2026-11-02', '2026-11-07']) {
+    await open(page, date);
+    await expect(map(page).locator('.ck-map-svg')).toBeVisible();
+    const feed = await feedAround(page, date);
+    expect(feed.some((g) => g.travel.length > 0)).toBe(true);
+    for (const g of feed) {
+      await page.locator(`[data-testid="league-list"] .ck-card[data-game-id="${g.id}"] .ck-time`).hover();
+      await expect(map(page).locator('.ck-map-hot')).toHaveAttribute('data-map-game', g.id);
+      expect(await map(page).locator('.ck-map-box').getAttribute('class')).toContain('ck-map-dimmed');
+      await expect.poll(() => map(page).locator('.ck-map-dot:not(.ck-map-hot)').evaluateAll((els) => els.every((e) => +getComputedStyle(e).opacity < 0.5))).toBe(true);
+      await expect(page.getByTestId('map-info')).toContainText(g.arena);
+      await expect(page.getByTestId('map-info')).toContainText(g.city);
+      // a line per team night whose other game is at another arena (the same arena: "stays", said in words)
+      const want = g.travel.filter((t) => { const [a, b] = t.slice(t.indexOf(' ') + 1).split(' -> '); return a !== b; }).sort();
+      const got = (await map(page).locator('[data-travel]').evaluateAll((els) => els.map((e) => `${(e as SVGElement).dataset.travel} ${(e as SVGElement).dataset.from} -> ${(e as SVGElement).dataset.to}`))).sort();
+      expect(got, `${date} ${g.id}`).toEqual(want);
+    }
+    // nothing hovered: no lines, nothing dimmed, no row lit
+    await page.mouse.move(2, 2);
+    await expect(map(page).locator('[data-travel]')).toHaveCount(0);
+    await expect(map(page).locator('.ck-map-dimmed')).toHaveCount(0);
+    await expect(page.locator('.ck-card.ck-map-hot')).toHaveCount(0);
+  }
+});
+
+test('a known B2B whose first night was a road game: BOS @ HOU, Nov 2 — the line runs from Orlando (BOS @ ORL, Nov 1) to Houston', async ({ page }) => {
+  await open(page, '2026-11-02');
+  const row = page.locator('[data-testid="league-list"] .ck-card').filter({ hasText: 'BOS' }).filter({ hasText: 'HOU' });
+  await row.locator('.ck-time').hover();
+  const line = map(page).locator('[data-travel="BOS:2"]');
+  await expect(line).toHaveAttribute('data-from', 'Kia Center');
+  await expect(line).toHaveAttribute('data-to', 'Toyota Center');
+  await expect(map(page).locator('[data-travel-end="BOS:2"]')).toContainText('BOS yesterday');
+  await expect(page.getByTestId('map-info')).toContainText('BOS from Orlando, FL yesterday (@ ORL)');
+  expect(await line.evaluate((e) => getComputedStyle(e).stroke)).toBe('rgb(255, 143, 90)'); // the away team's colour
+});
+
+test('hover a dot: its row lit (scrolled into view on a busy night), both ways; rows never move', async ({ page }) => {
+  await page.setViewportSize({ width: page.viewportSize()!.width, height: 640 }); // the 15 rows don't fit
+  await open(page, '2026-11-02');
+  await expect(map(page).locator('.ck-map-svg')).toBeVisible();
+  const list = page.getByTestId('league-list');
+  const rects = () => list.locator('.ck-card').evaluateAll((els) => els.map((e) => { const h = e as HTMLElement; return [h.offsetLeft, h.offsetTop, h.offsetWidth, h.offsetHeight].join(','); })); // layout boxes: unaffected by scrolling
+  const before = await rects();
+  const ids = await map(page).locator('.ck-map-dot[data-map-game]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.mapGame!));
+  expect(ids).toHaveLength(15);
+  let scrolled = 0;
+  for (const id of ids) {
+    const top0 = await list.evaluate((el) => el.scrollTop);
+    await map(page).locator(`[data-map-game="${id}"] .ck-map-pin`).hover({ force: true });
+    const row = list.locator(`.ck-card[data-game-id="${id}"]`);
+    await expect(row).toHaveClass(/ck-map-hot/);
+    await expect(page.locator('.ck-card.ck-map-hot')).toHaveCount(1);
+    const [r, l] = [await row.boundingBox(), await list.boundingBox()];
+    expect(r!.y).toBeGreaterThanOrEqual(l!.y - 1);
+    expect(r!.y + r!.height).toBeLessThanOrEqual(l!.y + l!.height + 1);
+    if ((await list.evaluate((el) => el.scrollTop)) !== top0) scrolled++;
+  }
+  expect(scrolled, 'some rows were off screen and got scrolled in').toBeGreaterThan(0);
+  // no layout shift: every row's box (in list coordinates) is as before any hover
+  expect(await rects()).toEqual(before);
+  // the hover outline is never in a copy: the copied node (the row, or its day) is marked .ck-capturing while it's taken
+  const outline = (on: 'row' | 'day') => page.locator('.ck-card.ck-map-hot').evaluate((e, on) => { const n = on === 'row' ? e : e.closest('.ck-lday')!; n.classList.add('ck-capturing'); const o = getComputedStyle(e).outlineStyle; n.classList.remove('ck-capturing'); return o; }, on);
+  expect(await outline('row')).toBe('none');
+  expect(await outline('day')).toBe('none');
+  expect(await page.locator('.ck-card.ck-map-hot').evaluate((e) => getComputedStyle(e).outlineStyle)).toBe('solid');
+});
+
+test('hover feels instant: pointer → highlight painted, row → dot and dot → row (median printed)', async ({ page }, info) => {
+  await open(page, '2026-11-02');
+  await expect(map(page).locator('.ck-map-svg')).toBeVisible();
+  // in the page: from the pointer event to the second frame after the target got its class (it's on screen by then)
+  await page.evaluate(() => {
+    const w = window as unknown as { __hov: number[]; __t0: number };
+    w.__hov = [];
+    addEventListener('pointerover', (e) => (w.__t0 = e.timeStamp), true);
+    new MutationObserver((ms) => {
+      if (!ms.some((m) => (m.target as Element).classList?.contains('ck-map-hot'))) return;
+      const t0 = w.__t0;
+      requestAnimationFrame(() => requestAnimationFrame((t) => w.__hov.push(t - t0)));
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  });
+  const ids = await page.getByTestId('league-list').locator('.ck-card').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.gameId!));
+  const take = async () => {
+    await page.waitForTimeout(100);
+    return page.evaluate(() => (window as unknown as { __hov: number[] }).__hov.splice(0));
+  };
+  const rowTimes: number[] = [];
+  const dotTimes: number[] = [];
+  for (const id of ids) {
+    await page.mouse.move(2, 2);
+    await take();
+    await page.locator(`.ck-card[data-game-id="${id}"] .ck-time`).hover();
+    rowTimes.push(Math.min(...(await take())));
+    await page.mouse.move(2, 2);
+    await take();
+    await map(page).locator(`[data-map-game="${id}"] .ck-map-pin`).hover({ force: true });
+    dotTimes.push(Math.min(...(await take())));
+  }
+  const med = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
+  console.log(`[map] ${info.project.name} hover → highlight on screen (2nd frame): row → dot median ${med(rowTimes).toFixed(1)} ms (max ${Math.max(...rowTimes).toFixed(1)}), dot → row median ${med(dotTimes).toFixed(1)} ms (max ${Math.max(...dotTimes).toFixed(1)})`);
+  // two frames of a 60 Hz display are ~33 ms; 50 leaves room for a slow runner
+  expect(med(rowTimes)).toBeLessThan(50);
+  expect(med(dotTimes)).toBeLessThan(50);
+});

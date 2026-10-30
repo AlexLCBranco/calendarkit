@@ -132,3 +132,107 @@
 .ck-map-note {
   opacity: 0.8;
 }
+
+/* Part 3: a hovered game — its dot lit, the others dimmed; its teams' back-to-back travel as arcs (away coral, home
+   sky, bent to opposite sides, arrow at the end); the info line under the map, its height always reserved */
+.ck-map-dot {
+  transition: opacity 80ms linear;
+}
+.ck-map-dimmed .ck-map-dot:not(.ck-map-hot) {
+  opacity: 0.28;
+}
+.ck-map-hot {
+  z-index: 3;
+}
+.ck-map-hot .ck-map-pin {
+  box-shadow: 0 0 0 2px var(--ck-bg), 0 0 0 4px var(--ck-accent);
+}
+.ck-map-dot[data-map-game] {
+  cursor: default;
+}
+.ck-map-pin {
+  pointer-events: auto;
+}
+.ck-map-travel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+.ck-travel {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  /* a dark casing so a line stays readable across the other */
+  filter: drop-shadow(0 0 1.5px var(--ck-bg));
+}
+.ck-travel-away {
+  stroke: #ff8f5a;
+  fill: #ff8f5a;
+  color: #ff8f5a;
+}
+.ck-travel-home {
+  stroke: #5ec8ff;
+  fill: #5ec8ff;
+  color: #5ec8ff;
+}
+.ck-travel.ck-travel-away,
+.ck-travel.ck-travel-home {
+  fill: none;
+}
+.ck-travel-head {
+  stroke: none;
+}
+.ck-travel-end {
+  position: absolute;
+  width: 0;
+  height: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.ck-travel-ring {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  box-sizing: border-box;
+}
+.ck-travel-label {
+  position: absolute;
+  left: 9px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 0 3px var(--ck-bg), 0 0 3px var(--ck-bg), 0 0 2px var(--ck-bg);
+}
+/* the two teams' labels never on top of each other: away above the ring, home below */
+.ck-travel-end.ck-travel-away .ck-travel-label {
+  top: -20px;
+}
+.ck-travel-end.ck-travel-home .ck-travel-label {
+  top: 6px;
+}
+.ck-map-info {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ck-muted);
+  overflow: hidden;
+}
+.ck-map-info b {
+  color: var(--ck-text);
+}
+.ck-map-info-place,
+.ck-map-info-travel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

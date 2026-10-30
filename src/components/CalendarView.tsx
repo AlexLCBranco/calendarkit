@@ -16,6 +16,7 @@ import { DatePickButton, DatePicker } from './DatePicker';
 import { WEEK_MIN_WIDTH } from './dayflow';
 import { leagueListStyle, LeagueListView, ListDaySection, listDays, listTitle, nearestDay } from './LeagueListView';
 import { LeagueWeekView, type WeekCount } from './LeagueWeekView';
+import { hoverHandlers, useClearHover, useHoverRow } from './MapHover';
 import { MonthNavigator } from './MonthNavigator';
 import { monthNav, PeriodNav, TodayButton, type PeriodNavProps } from './PeriodNav';
 import { Segmented } from './Segmented';
@@ -341,6 +342,10 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const viewKey = [state.mode, state.layout, state.teamId, state.tvOnly, state.showRest, state.weeks, state.teamSpan, teamMonth, teamWeek, leagueMonth, weekView ? weekOf(state.date)[0] : '', slate ? state.date : '', compact].join('|');
   useEffect(() => selection.clear(), [viewKey, selection]);
   const root = useRef<HTMLDivElement>(null);
+  // round 8 (Part 3): the game hovered in the League List or on its map; the list's row is lit without re-rendering it
+  const [mapHover] = useState(() => createValueStore(''));
+  useHoverRow(mapHover, root);
+  useClearHover(mapHover, `${state.mode}|${state.layout}|${nearestDay(days, state.date)}|${state.tvOnly}`);
   const [selCapture, setSelCapture] = useState<{ ids: ReadonlySet<string>; cellWidth?: number; teamScale?: number; weekStyle?: string; onReady: (node: HTMLElement) => void }>();
   const copySelection = (button: HTMLButtonElement) => {
     if (slate) {
@@ -478,11 +483,11 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           <SlateView data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} />
         ) : list && leagueSideBySide(size.width) ? (
           // round 8: the map beside the list (desktop); it stays put while a busy night scrolls
-          <div className="ck-league-split">
+          <div className="ck-league-split" {...hoverHandlers(mapHover)}>
             <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
             <div className="ck-map-slot">
               <Suspense fallback={null}>
-                <LeagueMap data={data} games={listDay?.games ?? NO_GAMES} room={{ width: size.width - leagueListWidth - LEAGUE_MAP_GAP, height: size.height - 48 }} />
+                <LeagueMap data={data} games={listDay?.games ?? NO_GAMES} room={{ width: size.width - leagueListWidth - LEAGUE_MAP_GAP, height: size.height - 48 }} hover={mapHover} />
               </Suspense>
             </div>
           </div>

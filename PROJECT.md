@@ -29,9 +29,9 @@ where-to-watch info, embedding in gauntlet.
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
-## Current state / handoff (2026-10-30, round 8 in progress)
+## Current state / handoff (2026-10-30, after round 8)
 Round 8: Part 0 (Cup fixture from the feed, CI split into parallel jobs, ck-old removed, audit clean), Part 1
-(v1.21.0: one-day League List, left-aligned, rows scaled by width), Part 2 (v1.22.0: static map). Part 3 (hover) follows. Details: "### Round 8".
+(v1.21.0: one-day League List, left-aligned, rows scaled by width), Part 2 (v1.22.0: static map), Part 3 (v1.23.0: hover links list and map, B2B travel lines). Details: "### Round 8".
 
 ## Previous handoff (2026-10-30, after round 7)
 Round 7 shipped v1.18.2 (leftovers: merged chip in Team Calendar cells, no opponent dot beside its component, home
@@ -1367,7 +1367,48 @@ Ground rules as every round (desktop first, nothing slower, every check automate
   width.
 
 - **Perf** (Windows PC, with the map): loads 271 / 338 / 295 ms; League scroll ×0.31, day-nav ×0.67 vs v1.17.1; every check
-  inside its limit. Local e2e: 236 / 236.
+  inside its limit. Local e2e: 236 / 236. CI (v1.22.0): loads 372 / 466 / 328 ms (v1.21.0: 227 / 354 / 247 — the week view,
+  which has no map, moved as much: runner variance; on the one Windows PC the League List load was 275 → 271 ms), League
+  scroll ×0.14, day-nav ×0.57, Team List ×1.05; all inside the limits. CI wall time 5.1 min.
+
+**Part 3, map: hover and travel** (v1.23.0)
+- **One hovered game, shared** (`src/components/MapHover.tsx`): a value store holds `list:<id>` / `map:<id>`. Pointer
+  handlers on the list + map area set it (a row, or a dot's pin; anything else clears it; a new day / view clears it).
+  The list never re-renders for it: the hovered row gets the class `ck-map-hot` straight on its element (an
+  **outline**, so nothing moves — e2e: every row's layout box identical before and after hovering all 15 dots). The map
+  re-renders (≤ 15 dots).
+- **Row → map (3.1)**: the game's dot lit (accent ring), every other dot dimmed to 28 %, and the info line under the map
+  (its two lines always reserved, so nothing moves): "BOS @ HOU Houston, TX · Toyota Center", then the travel in words —
+  "BOS from Orlando, FL yesterday (@ ORL)", "… on to … tomorrow", "played here yesterday" / "plays here again tomorrow"
+  for a team that stays in one arena, or "location unknown".
+- **Travel lines (3.2)**, `src/map/travel.ts`: for each team of the hovered game, from `leagueFatigue`'s B2B pairs (the
+  app's one rule: consecutive ET calendar days) — **2nd night: a line from yesterday's game to tonight's; 1st night: from
+  tonight's to tomorrow's**; a team on both nights (3 days running) gets both. Both ends are each game's **feed
+  location** (`gameLocation`), never the home arena. No line when both ends are the same arena (a home stand), or an end
+  is unknown — said in the info line instead. **Telling the teams apart**: away team coral (#ff8f5a), home team sky
+  (#5ec8ff); each line is an arc bent to its team's side (14 % of its length, ≥ 10 units), so two lines between the same
+  places never coincide; a dark casing keeps a line readable across the other; an arrowhead at the end; a ring + "BOS
+  yesterday" / "BOS tomorrow" at the far end (away label above the ring, home below, so they don't overlap).
+- **Only on hover (3.3)**: nothing drawn at rest (e2e). **Possible follow-up, not built: a "show all travel" toggle**, if
+  hovering one game at a time gets annoying.
+- **Map → row (3.4)**: hovering a dot lights its row and scrolls it into view (`block: 'nearest'`) when it's off screen on
+  a busy night (e2e at 1920 × 640 / 1280 × 640: some rows scrolled in, each one ended inside the list's visible part).
+- **Copies**: the outline is lifted while a copy is taken (`.ck-league-split .ck-capturing .ck-card.ck-map-hot` /
+  `….ck-map-hot.ck-capturing`; the first version's `.ck-capturing .ck-map-hot` lost on specificity — caught by the e2e).
+- **Timing (3.5)**, measured in e2e as pointer event → the second animation frame after the class is set (by then it's
+  on screen): **row → dot median 25–28 ms (max 33–44), dot → row median 29–30 ms (max 33–44)**, 1280 and 1920, headless
+  Chromium on the Windows PC — about two frames at 60 Hz. Guarded: median < 50 ms.
+- **Bundle**: map chunk 42.6 KB (17.5 KB gz) + 3.1 KB CSS (1.0 KB gz); main 318.4 KB (102.9 KB gz), +1.1 KB over v1.22.0
+  (the hover store and handlers).
+- **Perf** (Windows PC, v1.23.0): loads 274 / 354 / 309 ms; League scroll ×0.17, day-nav ×0.67, Team List ×0.98 vs v1.17.1;
+  switches 32–93 ms; all inside the limits. Local e2e 244 / 244, unit 378 / 378.
+- Tests: `tests/travel.test.ts` (every game of the season: lines = the teams with a game the day before / after, worked
+  out from the day lists, ends = those games' arenas; BOS @ HOU Nov 2, 2026 — BOS played @ ORL the night before, a road
+  game — Orlando → Houston; a home stand "stays"); e2e `map.spec.ts` (every row of Nov 2 and Nov 7 → its dot lit, others
+  dimmed, place + arena shown, lines exactly = the snapshot's B2B teams and ends; none at rest; every dot → its row,
+  scrolled in, no layout shift, outline lifted in copies; timing). **Against v1.22.0** all 4 hover tests fail; the 6 map
+  tests pass there. **Against v1.21.0** 4 of the 5 map e2e (placement, dots, edge markers, copies) fail; "no map in the
+  Slate" passes there by nature.
 
 **Later idea, not this round**: the same map in the Team view, showing a team's whole road trip.
 
