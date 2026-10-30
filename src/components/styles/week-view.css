@@ -67,7 +67,7 @@
 }
 .ck-tlabel {
   font-size: var(--ck-label-font);
-  line-height: 1.25;
+  line-height: var(--ck-label-line, 1.25);
   font-weight: 500;
   color: var(--ck-muted);
   font-variant-numeric: tabular-nums;
@@ -209,4 +209,17 @@
   line-height: var(--ck-logo);
   text-align: center;
   letter-spacing: -0.03em;
+}
+/* 2-week mode (round 5): tighter cell padding and day header, so the two rows fit a 1280 × 900 window (see
+   TWO_WEEK_SPACING in dayflow.ts; game lines keep their size) */
+.ck-week-view[data-weeks='2'] .ck-month-cell {
+  padding: 2px;
+  gap: 1px;
+}
+.ck-week-view[data-weeks='2'] .ck-wday {
+  padding-top: 1px;
+  padding-bottom: 1px;
+}
+.ck-week-view[data-weeks='2'] .ck-month-day {
+  margin-top: 1px;
 }

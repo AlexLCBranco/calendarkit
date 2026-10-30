@@ -15,7 +15,14 @@ import { tipoff } from '../data/model';
  * digits, SCORE3_EM wide, fit: 8.2 px → 15.91 px of 16). `fxRow` / `fxGap` / `fxFont`: 1-week mode's second row under a game
  * whose teams have fatigue (round 5: the compact Fatigue component under each team; its font ≈ 0.72 × `font`).
  */
-export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sgap: 2, score: 16, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2, fxRow: 11, fxGap: 1, fxFont: 7.9 } as const;
+export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sgap: 2, score: 16, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2, fxRow: 11, fxGap: 1, fxFont: 7.9, labelLine: 1.25 } as const;
+/**
+ * 2-week mode's vertical spacing (round 5): the two week rows must fit a 1280 × 900 window without page scroll (the
+ * busiest days, Apr 4, 2027 — 13 games in 10 time groups — and Nov 4 / Nov 2, 2026, overflowed by up to 164 px). Only
+ * gaps shrink: line height between games 3 → 2, between time groups 7 → 2, the label's line 12.5 → 10 px (font kept
+ * at 10 px) and its gap 2 → 1. Game lines, logos, tricodes and scores keep their size.
+ */
+export const TWO_WEEK_SPACING = { rowGap: 2, groupGap: 2, labelGap: 1, labelLine: 1 } as const;
 /** Width of the widest 3-digit score in em: tabular digits, bundled Inter, weight 500–700 (measured: 15.52 px at 8 px). */
 export const SCORE3_EM = 1.94;
 
@@ -34,8 +41,8 @@ export function scoreFontFor(slot: number): number {
 export type MonthLine = { [K in keyof typeof MONTH_LINE]: number };
 export const lineWidth = (L: MonthLine) => 2 * (L.logo + L.gap + L.tri + L.sgap + L.score) + L.sep + L.pillGap + L.pill;
 export const MONTH_LINE_WIDTH = lineWidth(MONTH_LINE);
-/** MONTH_LINE with every length (fonts included) times `s`. */
-export const scaleLine = (s: number): MonthLine => Object.fromEntries(Object.entries(MONTH_LINE).map(([k, v]) => [k, v * s])) as MonthLine;
+/** MONTH_LINE with every length (fonts included) times `s` (`labelLine` is a ratio: kept). */
+export const scaleLine = (s: number): MonthLine => Object.fromEntries(Object.entries(MONTH_LINE).map(([k, v]) => [k, k === 'labelLine' ? v : v * s])) as MonthLine;
 /** Space between game columns inside a day cell (the 155 px line: 1 column at every width up to ~2600 px). */
 export const MONTH_COL_GAP = 8;
 /** Below this widget width the day grid uses 2 px gaps and cell padding (instead of 4 px). */
@@ -85,14 +92,12 @@ export interface ColumnGroup extends TimeGroup {
   repeat: boolean;
 }
 
-const ROW_H = MONTH_LINE.logo + MONTH_LINE.rowGap;
-
 /** Games that get 1-week mode's fatigue row (MONTH_LINE.fxRow); none in 2-week mode. */
 export type FxRows = (g: ScheduleGame) => boolean;
 
 /** Estimated height (px) of one column of time groups at line geometry `L` (what the CSS lays out). */
 export const columnHeight = (c: TimeGroup[], L: MonthLine = MONTH_LINE, fx?: FxRows) =>
-  c.reduce((h, grp, i) => h + (i ? L.groupGap : 0) + L.labelFont * 1.25 + L.labelGap + grp.games.reduce((s, g) => s + L.logo + L.rowGap + (fx?.(g) ? L.fxRow + L.fxGap : 0), 0) - L.rowGap, 0);
+  c.reduce((h, grp, i) => h + (i ? L.groupGap : 0) + L.labelFont * L.labelLine + L.labelGap + grp.games.reduce((s, g) => s + L.logo + L.rowGap + (fx?.(g) ? L.fxRow + L.fxGap : 0), 0) - L.rowGap, 0);
 
 /**
  * Flows a day's time groups into `cols` columns in newspaper order (down column 1, then column 2, …), choosing the
@@ -100,7 +105,7 @@ export const columnHeight = (c: TimeGroup[], L: MonthLine = MONTH_LINE, fx?: FxR
  * ends a column. Splitting a group (its label repeats atop the next column) costs one game row, so a group is only
  * split when that balances the columns by more than a row. Heights are estimated from MONTH_LINE, not measured.
  */
-export function flowDay(groups: TimeGroup[], cols: number): ColumnGroup[][] {
+export function flowDay(groups: TimeGroup[], cols: number, L: MonthLine = MONTH_LINE): ColumnGroup[][] {
   const flat = groups.flatMap((grp, gi) => grp.games.map((g, i) => ({ g, gi, first: i === 0 })));
   const n = flat.length;
   // Column = games [a, b), as group pieces.
@@ -120,7 +125,7 @@ export function flowDay(groups: TimeGroup[], cols: number): ColumnGroup[][] {
   const walk = (cuts: number[], from: number) => {
     const p = parts(cuts);
     const splits = p.filter((c) => c[0]!.repeat).length;
-    const cost = Math.max(...p.map((c) => columnHeight(c))) + splits * ROW_H;
+    const cost = Math.max(...p.map((c) => columnHeight(c, L))) + splits * (L.logo + L.rowGap);
     // on a tie: fewer split groups, then the later break (earlier columns the longer ones, as in a newspaper)
     if (!best || cost < best.cost - 0.01 || (cost <= best.cost + 0.01 && splits <= best.splits)) best = { cost, splits, cuts };
     if (cuts.length < k - 1) for (let c = from; c < n; c++) walk([...cuts, c], c + 1);

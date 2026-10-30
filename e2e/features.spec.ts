@@ -355,7 +355,7 @@ test('league week view fits without page scroll (1920×1080 and 1280×900): ever
             h: b.height,
             // aligned columns (round 4): logos, tricodes (away left edge, home right edge), scores and "@" at one x
             // down the day (one column of games per day)
-            crooked: (['.ck-month-game > :nth-child(1)', '.ck-month-game > :nth-child(2) .ck-mtri-text', '.ck-at', '.ck-month-game > :nth-child(6) .ck-mtri-text', '.ck-month-game > :nth-child(7)', '.ck-month-game > :nth-child(3)', '.ck-month-game > :nth-child(5)'] as const).filter((sel, k) => {
+            crooked: (['.ck-mline > :nth-child(1)', '.ck-mline > :nth-child(2) .ck-mtri-text', '.ck-at', '.ck-mline > :nth-child(6) .ck-mtri-text', '.ck-mline > :nth-child(7)', '.ck-mline > :nth-child(3)', '.ck-mline > :nth-child(5)'] as const).filter((sel, k) => {
               const xs = [...c.querySelectorAll(sel)].map((e) => (k === 3 ? e.getBoundingClientRect().right : e.getBoundingClientRect().left).toFixed(1));
               return new Set(xs).size > 1;
             }),
@@ -363,12 +363,11 @@ test('league week view fits without page scroll (1920×1080 and 1280×900): ever
         });
         return { start: cells[0]!.dataset.date!, scroll: document.documentElement.scrollHeight - document.documentElement.clientHeight, games: document.querySelectorAll('.ck-week-view li').length, cells: out };
       });
-      // 1280 × 900, 2 weeks: the busiest days (15 games, one column of 165 px cells) never fitted 2 rows of the window —
-      // the page scrolled before round 4 too (106 / 70 / 142 px on the weeks of Nov 1, Dec 20, Apr 4; +22 px since the
-      // fatigue legend). Printed and capped there; nothing may be clipped. Everywhere else: no page scroll.
+      // no page scroll anywhere (round 5: 2 weeks at 1280 × 900 used to scroll by up to 164 px; e2e/two-week-fit.spec.ts)
       maxScroll = Math.max(maxScroll, r.scroll);
-      if (P === 'desktop' && weeks === 2) expect(r.scroll, `${weeks}w ${r.start}`).toBeLessThanOrEqual(164);
-      else expect(r.scroll, `${weeks}w ${r.start}`).toBeLessThanOrEqual(0);
+      expect(r.scroll, `${weeks}w ${r.start}`).toBeLessThanOrEqual(0);
+      // the crooked check must see every line's parts (it silently checked nothing once the line got its link wrapper)
+      expect(await page.locator('.ck-mline > :nth-child(1)').count()).toBe(r.games);
       expect(r.cells.reduce((n, c) => n + c.clipped, 0), `${weeks}w ${r.start}`).toBe(0);
       expect(r.cells.flatMap((c) => c.crooked), `${weeks}w ${r.start}: columns not straight`).toEqual([]);
       expect(r.games).toBe([...Array(7 * weeks)].reduce((n, _, i) => n + games.filter((g) => dateOf(g) === addDays(r.start, i)).length, 0));

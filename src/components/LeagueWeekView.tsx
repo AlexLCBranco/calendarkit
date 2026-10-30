@@ -4,7 +4,7 @@ import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from '
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { addDays, finalScore, hasNationalTv, nationalTv, overtime, teamLabel, type CalendarData } from '../data/model';
 import { CopyButton } from './CopyButton';
-import { busiestDayHeight, flowDay, scoreFontFor, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, weekScale } from './dayflow';
+import { busiestDayHeight, flowDay, MONTH_LINE, TWO_WEEK_SPACING, scoreFontFor, lineWidth, MONTH_COL_GAP, monthCellInner, monthColumns, ROOMY_WIDTH, scaleLine, timeGroups, weekScale } from './dayflow';
 import { hasFatigue, leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { Fatigue } from './Fatigue';
 import { FATIGUE_LEGEND_H, FatigueLegend, FatigueMark } from './FatigueMark';
@@ -118,7 +118,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
   }, [size.width, size.height]);
   const pad = size.width < ROOMY_WIDTH ? 2 : 4;
   const scale = weeks === 1 ? weekScale(monthCellInner(size.width), size.height - gridTop - FATIGUE_LEGEND_H - 2 * pad - 2, busiest) : 1;
-  const L = scaleLine(scale);
+  const L = weeks === 1 ? scaleLine(scale) : { ...MONTH_LINE, ...TWO_WEEK_SPACING };
   const vars = {
     '--ck-logo': `${L.logo}px`,
     '--ck-gap': `${L.gap}px`,
@@ -134,6 +134,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
     '--ck-label-gap': `${L.labelGap}px`,
     '--ck-row-gap': `${L.rowGap}px`,
     '--ck-group-gap': `${L.groupGap}px`,
+    '--ck-label-line': String(L.labelLine),
     '--ck-dot': `${L.dot}px`,
     '--ck-score-font': `${scoreFontFor(L.score)}px`, // not L.scoreFont: see scoreFontFor
     '--ck-col-gap': `${MONTH_COL_GAP}px`,
@@ -174,7 +175,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
               {games.length > 0 && <CopyButton hover label="Copy day as image" of=".ck-month-cell" testId="copy-day" />}
               {games.length > 0 && (
                 <div className="ck-month-day" data-cols={cols} style={{ gridTemplateColumns: `repeat(${cols}, var(--ck-line))` }}>
-                  {flowDay(timeGroups(games, timeZone), cols).map((col, ci) => (
+                  {flowDay(timeGroups(games, timeZone), cols, L).map((col, ci) => (
                     <div key={ci} className="ck-mcol">
                       {col.map((grp) => (
                         <div key={grp.label} className="ck-tgroup">

@@ -1059,6 +1059,21 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   checked every frame, 5 s cap with the rendered ranges in the error) — after each fast jump and each 200 px step; no
   retries, no longer sleeps. **After: 30 runs, 120/120 executions passed.** (A blank frame or two after a 30 000 px jump
   is how the virtualized list behaves; rendering synchronously in the scroll handler would cost every scroll frame.)
+- **Two-week view fits the window** (item 4, v1.17.1): measured first over every two-week stretch: page scroll up to
+  **164 px at 1280 × 900 and 115 px at 1920 × 911** (Alex's window too), on the stretches with Apr 4, 2027 (13 games in 10
+  time groups: 425 px of lines + labels in a 460 px cell). Vertical space only, game text unchanged (tricodes 11 px,
+  16 px lines/logos, scores): `TWO_WEEK_SPACING` (dayflow.ts) — gap between lines 3 → 2 px, between time groups 7 → 2,
+  time label line 12.5 → 10 px (its 10 px font kept, `--ck-label-line`), label gap 2 → 1; 2-week cells padding 4 → 2,
+  header padding 2 → 1, header-to-games 6 → 2 (`week-view.css`). The tallest day 425 → 342 px. **Result: no page scroll on
+  any of the 26 stretches at either size; tightest cell (Apr 4) 14 px spare at 1280 × 900, 38.5 px at 1920 × 911.** No
+  internal scrolling, so copies still capture the full view. 1-week mode unchanged. The toolbar was not touched.
+  - Tests: e2e `two-week-fit.spec.ts` (both sizes, every stretch from both week parities: no page scroll, no line outside
+    its cell, legend in the window, 11 px / 16 px; fails on the v1.17.0 build: page scroll from Nov 1 at 1920 × 911);
+    `features.spec.ts` fit walk: the 164 px allowance at 1280 is gone, and its straight-columns check (whose selectors
+    had stopped matching after item 2's link wrapper, so it checked nothing) is fixed and now asserts it sees every line.
+  - Perf guard: load-week-view 329 ms, switch to League Calendar 61 ms (both inside their limits; CSS spacing only).
+  - Seen, not changed: in 2-week mode a tricode's small plane can overlap the time label above it (42 cases on the
+    stretches walked at 1280, e.g. "00:00 (+1)"); the same 42 before this change.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

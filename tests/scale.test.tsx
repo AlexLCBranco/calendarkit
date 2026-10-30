@@ -44,7 +44,8 @@ describe('weekScale (1-week League Calendar)', () => {
 
   it('scaleLine multiplies every length; the scaled line width is the base width × s', () => {
     const L = scaleLine(1.5);
-    for (const k of Object.keys(MONTH_LINE) as (keyof typeof MONTH_LINE)[]) expect(L[k]).toBe(MONTH_LINE[k] * 1.5);
+    // labelLine is a line-height ratio (round 5), not a length: kept
+    for (const k of Object.keys(MONTH_LINE) as (keyof typeof MONTH_LINE)[]) expect(L[k]).toBe(k === 'labelLine' ? MONTH_LINE[k] : MONTH_LINE[k] * 1.5);
     expect(lineWidth(L)).toBe(232.5); // 155 × 1.5
   });
 });
