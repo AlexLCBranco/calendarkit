@@ -12,9 +12,10 @@ import { tipoff } from '../data/model';
  * tricode against its logo, each score in its own slot against the "@" (empty before the game), so every column — logos,
  * tricodes, scores, "@" — is at one x down a day. `labelGap`: below a time label; `dot`: the old B2B dot (unused
  * here since the fatigue marks). `scoreFont`: the score in its `score` slot (largest 0.1 px step where 3 tabular
- * digits, SCORE3_EM wide, fit: 8.2 px → 15.91 px of 16).
+ * digits, SCORE3_EM wide, fit: 8.2 px → 15.91 px of 16). `fxRow` / `fxGap` / `fxFont`: 1-week mode's second row under a game
+ * whose teams have fatigue (round 5: the compact Fatigue component under each team; its font ≈ 0.72 × `font`).
  */
-export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sgap: 2, score: 16, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2 } as const;
+export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sgap: 2, score: 16, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2, fxRow: 11, fxGap: 1, fxFont: 7.9 } as const;
 /** Width of the widest 3-digit score in em: tabular digits, bundled Inter, weight 500–700 (measured: 15.52 px at 8 px). */
 export const SCORE3_EM = 1.94;
 
@@ -86,9 +87,12 @@ export interface ColumnGroup extends TimeGroup {
 
 const ROW_H = MONTH_LINE.logo + MONTH_LINE.rowGap;
 
+/** Games that get 1-week mode's fatigue row (MONTH_LINE.fxRow); none in 2-week mode. */
+export type FxRows = (g: ScheduleGame) => boolean;
+
 /** Estimated height (px) of one column of time groups at line geometry `L` (what the CSS lays out). */
-export const columnHeight = (c: TimeGroup[], L: MonthLine = MONTH_LINE) =>
-  c.reduce((h, grp, i) => h + (i ? L.groupGap : 0) + L.labelFont * 1.25 + L.labelGap + grp.games.length * (L.logo + L.rowGap) - L.rowGap, 0);
+export const columnHeight = (c: TimeGroup[], L: MonthLine = MONTH_LINE, fx?: FxRows) =>
+  c.reduce((h, grp, i) => h + (i ? L.groupGap : 0) + L.labelFont * 1.25 + L.labelGap + grp.games.reduce((s, g) => s + L.logo + L.rowGap + (fx?.(g) ? L.fxRow + L.fxGap : 0), 0) - L.rowGap, 0);
 
 /**
  * Flows a day's time groups into `cols` columns in newspaper order (down column 1, then column 2, …), choosing the
@@ -146,10 +150,11 @@ export const WEEK_SCALE_FILL = 0.8;
 /** Day header (12 px text + padding) and the space above the games; not scaled (.ck-wday, .ck-month-day). */
 export const WEEK_HEAD_H = 24;
 
-/** The season's tallest day in one column at scale 1 (px): every game, grouped by tip-off time in `timeZone`. */
-export function busiestDayHeight(byDate: Map<string, ScheduleGame[]>, timeZone?: string): number {
+/** The season's tallest day in one column at scale 1 (px): every game, grouped by tip-off time in `timeZone`; `fx`: the
+ * games with a fatigue row (1-week mode). */
+export function busiestDayHeight(byDate: Map<string, ScheduleGame[]>, timeZone?: string, fx?: FxRows): number {
   let max = 0;
-  for (const games of byDate.values()) max = Math.max(max, columnHeight(timeGroups(games, timeZone)));
+  for (const games of byDate.values()) max = Math.max(max, columnHeight(timeGroups(games, timeZone), MONTH_LINE, fx));
   return max;
 }
 

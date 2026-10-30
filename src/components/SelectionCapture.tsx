@@ -10,7 +10,7 @@ import { teamThreeInFour } from '../data/scheduleTags';
 import { timeGroups } from './dayflow';
 import { GameCard } from './GameCard';
 import { listDays } from './LeagueListView';
-import { ListDaySection } from './LeagueListView';
+import { FATIGUE_SLOTS_MIN_WIDTH, ListDaySection } from './LeagueListView';
 import { MonthGameLine } from './LeagueWeekView';
 import { TeamListView } from './TeamListView';
 import { fmtDate, plural, useTeamB2B, type WidgetSize } from './widget';
@@ -32,6 +32,8 @@ export interface SelectionCaptureProps {
   teamScale?: number;
   /** League week view: the on-screen line variables (`style` of .ck-week-view), so lines are drawn at the same size. */
   weekStyle?: string;
+  /** League week view: 1 week (the lines get their Fatigue row, as on screen). */
+  weeks?: 1 | 2;
 }
 
 /** "Fri 23 Oct · 2 games" */
@@ -55,7 +57,7 @@ export function SelectionCapture(p: SelectionCaptureProps) {
       <section className="ck-league-list" aria-label="Selected games">
         <div className="ck-llist">
           {days.map((d) => (
-            <ListDaySection key={d.date} day={d} data={data} compact={false} now={now} timeZone={timeZone} />
+            <ListDaySection key={d.date} day={d} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} />
           ))}
         </div>
       </section>
@@ -84,7 +86,7 @@ function TeamDays({ data, teamId, now, timeZone, games, cellWidth, teamScale = 1
 }
 
 /** League week view: each day with selected games as its cell (same lines, time groups), at the on-screen size. */
-function WeekDays({ data, timeZone, games, cellWidth, weekStyle }: SelectionCaptureProps & { games: ScheduleGame[] }) {
+function WeekDays({ data, timeZone, games, cellWidth, weekStyle, weeks }: SelectionCaptureProps & { games: ScheduleGame[] }) {
   const ref = useRef<HTMLElement>(null);
   // the live view's line variables (set before the capture waits its two frames)
   useLayoutEffect(() => {
@@ -102,7 +104,7 @@ function WeekDays({ data, timeZone, games, cellWidth, weekStyle }: SelectionCapt
                   <div className="ck-tlabel">{grp.label}</div>
                   <ul className="ck-tgames">
                     {grp.games.map((g) => (
-                      <MonthGameLine key={g.gameId} data={data} game={g} />
+                      <MonthGameLine key={g.gameId} data={data} game={g} fxRow={weeks === 1} />
                     ))}
                   </ul>
                 </div>

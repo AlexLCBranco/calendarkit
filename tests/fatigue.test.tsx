@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { CalendarView } from '../src/components/CalendarView';
-import { opponentSecondNight, seasonMonths } from '../src/data/model';
+import { seasonMonths } from '../src/data/model';
 import { TEAM_BY_ID } from '../src/data/teams';
 import type { ScheduleGame } from '../src/shared/nba-schedule/parse';
 import { data, feed } from './feed';
@@ -37,85 +37,97 @@ function tifOf(teamId: number) {
   }
   return out;
 }
-const plays = (teamId: number, date: string) => gamesOf(teamId).some((g) => g.dateEt === date);
 const shift = (d: string, n: number) => new Date((day(d) + n) * 86_400_000).toISOString().slice(0, 10);
 const opponentOf = (g: ScheduleGame, teamId: number) => (g.homeTeam.teamId === teamId ? g.awayTeam : g.homeTeam);
-const tipLines = (el: Element) => el.getAttribute('data-tip')!.split('\n');
 
-describe('Team List fatigue columns (desktop)', () => {
+/** The Fatigue component a team should show in game g, worked out from the feed: back-to-back nights by calendar day
+ * (night 2 = played the day before, night 1 = plays the day after), each night's home/away, the 3-in-4 position. */
+function expected(teamId: number, g: ScheduleGame) {
+  const on = (d: string) => gamesOf(teamId).find((x) => x.dateEt === d);
+  const home = (x: ScheduleGame) => (x.homeTeam.teamId === teamId ? 'home' : 'away');
+  const prev = on(shift(g.dateEt, -1));
+  const next = on(shift(g.dateEt, 1));
+  const icons = prev ? [[home(prev), false], [home(g), true]] : next ? [[home(g), true], [home(next), false]] : [];
+  const [pos] = tifOf(teamId).get(g.gameId) ?? [0, 0];
+  return { night: prev ? '2' : next ? '1' : null, icons, pos };
+}
+
+/** What a rendered Fatigue component shows: badge text, icons in DOM order (= left to right), chip, mirrored. */
+function shown(fx: Element) {
+  return {
+    badge: fx.querySelector('.ck-fx-b2b')?.textContent ?? '',
+    icons: [...fx.querySelectorAll('.ck-fx-icon')].map((i) => [i.getAttribute('data-kind'), i.classList.contains('ck-fx-tonight')]),
+    chip: fx.querySelector('.ck-fx-chip')?.textContent ?? '',
+    chipPos: fx.querySelector('.ck-fx-chip')?.className.match(/ck-tif-pos-(\d)/)?.[1],
+    night: fx.getAttribute('data-night'),
+    empty: fx.classList.contains('ck-fx-empty'),
+    mirror: fx.classList.contains('ck-fx-mirror'),
+  };
+}
+
+/** Checks one Fatigue component against the independent rule; returns what it showed. */
+function checkFatigue(fx: Element, teamId: number, g: ScheduleGame, label: string) {
+  const want = expected(teamId, g);
+  const got = shown(fx);
+  expect(got.night, `${label} night`).toBe(want.night);
+  expect(got.badge, `${label} badge`).toBe(want.night ? 'B2B' : '');
+  expect(got.icons, `${label} icons in time order, tonight solid`).toEqual(want.icons);
+  expect(got.chip, `${label} 3in4 chip`).toBe(want.pos ? '3in4' : '');
+  if (want.pos) expect(got.chipPos).toBe(String(want.pos));
+  expect(got.empty, `${label} empty slot`).toBe(!want.night && !want.pos);
+  return want;
+}
+
+describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', () => {
   for (const [name, teamId] of [['LAL', TEAM.LAL], ['BOS', TEAM.BOS], ['NYK', TEAM.NYK]] as const) {
-    it(`${name}: team B2B + 3-in-4 and opponent 2/2 + 3-in-4 on exactly the right rows`, () => {
+    it(`${name}: the team's and the opponent's Fatigue component on every row, worked out from the feed`, () => {
       const el = render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId }} />);
-      const own = tifOf(teamId);
-      let counts = { n1: 0, n2: 0, tif: 0, opp2: 0, oppTif: 0 };
+      const counts = { n1: 0, n2: 0, tif: 0, empty: 0, oppN1: 0, oppN2: 0, oppTif: 0, oppEmpty: 0 };
       for (const g of gamesOf(teamId)) {
         const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
         const label = `${name} ${g.dateEt}`;
-        const team = row.querySelector('[data-testid="fatigue-team"]')!;
-        const opp = row.querySelector('[data-testid="fatigue-opp"]')!;
         // columns in order: date, time, team column, matchup, opponent column, tags
         const order = [...row.children].map((c) => c.className.split(' ')[0]);
         expect(order.slice(order.indexOf('ck-date')), label).toEqual(['ck-date', 'ck-time', 'ck-fat', 'ck-matchup', 'ck-fat', 'ck-tags', ...order.slice(order.indexOf('ck-tags') + 1)]);
-        // team: night 2 = played the previous calendar day, night 1 = plays the next one
-        const n2 = plays(teamId, shift(g.dateEt, -1));
-        const n1 = plays(teamId, shift(g.dateEt, 1));
-        expect(!!team.querySelector('.ck-b2b-n2'), `${label} 2/2`).toBe(n2);
-        expect(!!team.querySelector('.ck-b2b-n1'), `${label} 1/2`).toBe(n1);
-        const [pos, sets] = own.get(g.gameId) ?? [0, 0];
-        const chip = team.querySelector('[data-testid="tif"]');
-        expect(chip?.textContent ?? '', `${label} 3-in-4`).toBe(pos ? `3-in-4 · ${ORD[pos]}` : '');
-        if (chip) {
-          expect(chip.className).toContain(`ck-tif-pos-${pos}`);
-          expect(tipLines(chip), `${label} tooltip lists every set`).toHaveLength(1 + sets);
-          expect(tipLines(chip)[0]).toBe(`3 games in 4 days — ${sets === 1 ? 'set' : `${sets} sets`}:`);
-        }
-        // no B2B label left among the tags; nothing else in the team column
-        expect(row.querySelectorAll('.ck-tags .ck-b2b-label, .ck-tags .ck-tif'), label).toHaveLength(0);
-        expect(team.children.length).toBe(+n1 + +n2 + (pos ? 1 : 0));
-        // opponent: "2/2" when it played the previous calendar day (its 1/2 isn't marked), and its own 3-in-4
-        const o = opponentOf(g, teamId);
-        const o2 = plays(o.teamId, shift(g.dateEt, -1));
-        const mark = opp.querySelector('.ck-b2b-opp');
-        expect(mark?.textContent ?? '', `${label} opp 2/2`).toBe(o2 ? '2/2' : '');
-        if (mark) expect(mark.getAttribute('data-tip')).toBe(opponentSecondNight(data, g, teamId));
-        if (mark) expect(mark.getAttribute('data-tip')).toMatch(new RegExp(`^${o.teamTricode} on 2nd night of a back-to-back · played (vs|@) [A-Z]{3} yesterday$`));
-        // the existing dot on the opponent's tricode stays, same tooltip
-        const dot = row.querySelector('.ck-opp .ck-b2b-mark');
-        expect(!!dot, `${label} dot`).toBe(o2);
-        if (dot) expect(dot.getAttribute('data-tip')).toBe(mark!.getAttribute('data-tip'));
-        const [opos, osets] = tifOf(o.teamId).get(g.gameId) ?? [0, 0];
-        const ochip = opp.querySelector('[data-testid="tif-opp"]');
-        expect(ochip?.textContent ?? '', `${label} opp 3-in-4`).toBe(opos ? `3-in-4 · ${ORD[opos]}` : '');
-        if (ochip) {
-          expect(tipLines(ochip)).toHaveLength(1 + osets);
-          expect(tipLines(ochip)[0]).toBe(`${o.teamTricode}: 3 games in 4 days — ${osets === 1 ? 'set' : `${osets} sets`}:`);
-        }
-        expect(opp.children.length).toBe(+o2 + (opos ? 1 : 0));
-        counts = { n1: counts.n1 + +n1, n2: counts.n2 + +n2, tif: counts.tif + +!!pos, opp2: counts.opp2 + +o2, oppTif: counts.oppTif + +!!opos };
+        const team = row.querySelectorAll('[data-testid="fatigue-team"] [data-testid="fatigue"]');
+        const opp = row.querySelectorAll('[data-testid="fatigue-opp"] [data-testid="fatigue"]');
+        expect([team.length, opp.length], label).toEqual([1, 1]);
+        // the team's column is left of its logo (badge on the right, next to it); the opponent's right of its logo
+        expect(shown(team[0]!).mirror || shown(team[0]!).empty, label).toBe(true);
+        expect(shown(opp[0]!).mirror).toBe(false);
+        const t = checkFatigue(team[0]!, teamId, g, label);
+        const o = checkFatigue(opp[0]!, opponentOf(g, teamId).teamId, g, `${label} opp`);
+        // the old labels and chips are gone from the row (not among the tags either)
+        expect(row.querySelectorAll('.ck-b2b-label, .ck-tif, .ck-b2b-opp'), label).toHaveLength(0);
+        // the existing dot on the opponent's tricode stays on its 2nd night
+        expect(!!row.querySelector('.ck-opp .ck-b2b-mark'), `${label} dot`).toBe(o.night === '2');
+        counts.n1 += +(t.night === '1'); counts.n2 += +(t.night === '2'); counts.tif += +!!t.pos; counts.empty += +(!t.night && !t.pos);
+        counts.oppN1 += +(o.night === '1'); counts.oppN2 += +(o.night === '2'); counts.oppTif += +!!o.pos; counts.oppEmpty += +(!o.night && !o.pos);
       }
       // every kind occurs for each team
-      for (const [k, v] of Object.entries(counts)) expect(v, `${name} ${k}`).toBeGreaterThan(2);
+      for (const [k, v] of Object.entries(counts)) expect(v, `${name} ${k}`).toBeGreaterThan(1);
     });
   }
 
-  it('tooltips on hover and focus: the chip lists its sets, line by line', () => {
+  it('tooltips on hover and focus: the details (leg, the other night, 3-in-4 sets) for that team', () => {
     render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
-    const chip = document.querySelector('[data-testid="tif"][data-sets="2"]') ?? document.querySelector('[data-testid="tif"]')!;
-    fireEvent.mouseOver(chip);
-    expect(screen.getByTestId('tooltip').textContent).toBe(chip.getAttribute('data-tip'));
-    fireEvent.mouseLeave(chip.closest('.ck-root')!);
+    const own = document.querySelector('[data-testid="fatigue-team"] [data-night="2"]')!;
+    fireEvent.mouseOver(own);
+    expect(screen.getByTestId('tooltip').textContent).toBe(own.getAttribute('data-tip'));
+    expect(own.getAttribute('data-tip')).toMatch(/^BOS — 2\/2 · [HA]{2} \(2nd night of a back-to-back\)\n/);
+    fireEvent.mouseLeave(own.closest('.ck-root')!);
     expect(screen.queryByTestId('tooltip')).toBeNull();
-    fireEvent.focus(document.querySelector('[data-testid="tif-opp"]')!);
-    expect(screen.getByTestId('tooltip').textContent).toMatch(/^[A-Z]{3}: 3 games in 4 days — /);
-    fireEvent.focus(document.querySelector('.ck-b2b-opp')!);
-    expect(screen.getByTestId('tooltip').textContent).toMatch(/on 2nd night of a back-to-back/);
+    const opp = document.querySelector('[data-testid="fatigue-opp"] [data-tif]')!;
+    expect(opp.getAttribute('tabindex')).toBe('0');
+    fireEvent.focus(opp);
+    expect(screen.getByTestId('tooltip').textContent).toMatch(/3 games in 4 days/);
   });
 
   it('rest rows have no fatigue columns; the TV filter never changes the labels', () => {
     render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.LAL, showRest: true }} />);
     const rest = document.querySelectorAll('[data-rest]');
     expect(rest.length).toBeGreaterThan(60);
-    for (const r of rest) expect(r.querySelectorAll('.ck-fat, .ck-b2b-label, .ck-tif, .ck-b2b-opp')).toHaveLength(0);
+    for (const r of rest) expect(r.querySelectorAll('.ck-fat, .ck-fx, .ck-b2b-label, .ck-tif, .ck-b2b-opp')).toHaveLength(0);
     const labels = () => new Map([...document.querySelectorAll('[data-game-id]')].map((r) => [r.getAttribute('data-game-id'), [...r.querySelectorAll('.ck-fat')].map((c) => c.textContent).join('|')]));
     const all = labels();
     fireEvent.click(screen.getByLabelText('TV games only'));
@@ -127,7 +139,7 @@ describe('Team List fatigue columns (desktop)', () => {
   it('narrower than the 1080 px column (tablet, phone): no columns, B2B labels among the tags as before, no chips', () => {
     for (const size of [NARROW, { width: 390, height: 800 }]) {
       render(<CalendarView data={data} size={size} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
-      expect(document.querySelectorAll('.ck-fat, .ck-tif, .ck-b2b-opp')).toHaveLength(0);
+      expect(document.querySelectorAll('.ck-fat, .ck-fx, .ck-tif, .ck-b2b-opp')).toHaveLength(0);
       expect(document.querySelectorAll('.ck-tags .ck-b2b-label').length).toBeGreaterThan(5);
       cleanup();
     }

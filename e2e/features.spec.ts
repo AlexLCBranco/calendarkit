@@ -535,7 +535,12 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
       const br = (id: string) => {
         const cs = getComputedStyle(row(id), '::before');
         const b = row(id).getBoundingClientRect();
-        return { color: cs.borderLeftColor, left: cs.borderLeftWidth, top: parseFloat(cs.top), bottom: parseFloat(cs.bottom), h: b.height, text: row(id).querySelector('.ck-b2b-label')!.textContent, plane: !!row(id).querySelector('.ck-b2b-label [data-testid="plane"]') };
+        return { color: cs.borderLeftColor, left: cs.borderLeftWidth, top: parseFloat(cs.top), bottom: parseFloat(cs.bottom), h: b.height, ...(() => {
+          // desktop: the Fatigue component (round 5); tablet/phone: the "1/2 · HA" label as before
+          const fx = row(id).querySelector('[data-testid="fatigue-team"] .ck-fx');
+          const label = row(id).querySelector('.ck-b2b-label')?.textContent ?? '';
+          return fx ? { code: fx.getAttribute('data-code'), night: fx.getAttribute('data-night'), plane: null } : { code: label.slice(6), night: label.slice(0, 1), plane: !!row(id).querySelector('.ck-b2b-label [data-testid="plane"]') };
+        })() };
       };
       const gap = row(ids[1]!).getBoundingClientRect().top - row(ids[0]!).getBoundingClientRect().bottom;
       return { a: br(ids[0]!), b: br(ids[1]!), gap };
@@ -543,9 +548,9 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
     const name = `list ${dateOf(x.a)}`;
     expect(r.a.left, name).toBe('2px');
     expect(r.a.color).toBe('rgb(245, 224, 66)'); // --ck-b2b yellow
-    expect(r.a.text).toBe(`1/2 · ${x.code}`);
-    expect(r.b.text).toBe(`2/2 · ${x.code}`);
-    expect(r.a.plane && r.b.plane).toBe(x.travels);
+    // round 5: the Fatigue component in the team column (travel is in its tooltip; the plane there means "away")
+    expect([r.a.code, r.a.night, r.b.code, r.b.night]).toEqual([x.code, '1', x.code, '2']);
+    if (r.a.plane !== null) expect(r.a.plane && r.b.plane).toBe(x.travels);
     // night 1's bracket runs from its middle down past its edge, night 2's from above its edge to its middle: they meet in the gap
     expect(-r.a.bottom + -r.b.top).toBeGreaterThanOrEqual(r.gap - 0.5);
   }

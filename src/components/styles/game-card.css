@@ -61,6 +61,13 @@
   gap: 4px;
   font-weight: 600;
 }
+/* both teams with their scores (records, fatigue and OT outside it) */
+.ck-teams {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  min-width: 0;
+}
 .ck-vsat {
   color: var(--ck-muted);
   font-weight: 400;
@@ -159,7 +166,8 @@
 .ck-compact .ck-cell .ck-card-compact .ck-dayoff {
   display: block;
 }
-.ck-cell .ck-card-compact .ck-matchup {
+.ck-cell .ck-card-compact .ck-matchup,
+.ck-cell .ck-card-compact .ck-teams {
   flex-wrap: wrap;
   gap: 2px 4px;
 }
@@ -225,7 +233,7 @@
   width: 3.3em; /* "41-41" is 35.6 px at 11 px */
   text-align: right;
 }
-.ck-slots .ck-side + .ck-side .ck-rec {
+.ck-slots .ck-rec-home {
   text-align: left;
 }
 /* Countdown on today's games before tip-off (round 4): "in 2h 35m" in place of the time, same size (the widest,

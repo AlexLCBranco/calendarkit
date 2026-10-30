@@ -102,28 +102,26 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
   expect(sideways).toBeLessThanOrEqual(0);
 });
 
-test('fatigue tooltips on hover and focus: 3-in-4 sets line by line, opponent 2/2', async ({ page }) => {
+test('fatigue tooltips on hover and focus (round 5: on the Fatigue components): details line by line, opponent too', async ({ page }) => {
   await open(page, '?view=team&layout=list&team=BOS');
   const tip = page.getByTestId('tooltip');
-  const chip = page.getByTestId('tif').first();
-  await chip.scrollIntoViewIfNeeded();
-  await chip.hover();
-  const text = (await chip.getAttribute('data-tip'))!;
+  const own = page.locator('[data-testid="fatigue-team"] [data-testid="fatigue"][data-tif][data-night]').first();
+  await own.scrollIntoViewIfNeeded();
+  await own.hover();
+  const text = (await own.getAttribute('data-tip'))!;
   await expect(tip).toHaveText(text.replace(/\n/g, ' ')); // toHaveText collapses whitespace
-  // header + one line per set, each on its own line
+  // the leg, both games, the 3-in-4 sets: one per line
   const lines = await tip.evaluate((t) => Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight)));
   expect(lines).toBe(text.split('\n').length);
+  expect(text).toMatch(/^BOS — [12]\/2 · [HA]{2} \((1st|2nd) night of a back-to-back\)\n/);
+  expect(text).toContain('3 games in 4 days — ');
   const box = await tip.boundingBox();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   await page.mouse.move(5, 5);
   await expect(tip).toHaveCount(0);
-  const opp = page.locator('.ck-b2b-opp').first();
+  const opp = page.locator('[data-testid="fatigue-opp"] [data-testid="fatigue"][data-night="2"]').first();
   await opp.scrollIntoViewIfNeeded();
   await opp.focus();
-  await expect(tip).toHaveText(/^[A-Z]{3} on 2nd night of a back-to-back · played (vs|@) [A-Z]{3} yesterday$/);
-  const oc = page.getByTestId('tif-opp').first();
-  await oc.scrollIntoViewIfNeeded();
-  await oc.focus();
-  await expect(tip).toHaveText(/^[A-Z]{3}: 3 games in 4 days — (set|\d sets):/);
+  await expect(tip).toHaveText(/^[A-Z]{3} — 2\/2 · [HA]{2} \(2nd night of a back-to-back\)/);
 });

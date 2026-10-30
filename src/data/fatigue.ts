@@ -18,6 +18,9 @@ export interface TeamFatigue {
   tip: string;
 }
 
+/** The team has something to show in this game: a back-to-back night or a 3-in-4 set (the Fatigue component isn't empty). */
+export const hasFatigue = (f?: TeamFatigue) => !!f && (f.nights.length > 0 || !!f.tif);
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const md = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`;
 const where = (g: B2BPair['first'], teamId: number) => (g.homeTeam.teamId === teamId ? 'home' : 'away');

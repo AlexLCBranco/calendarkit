@@ -9,6 +9,7 @@ import { threeInFourLabel, threeInFourTip, type ThreeInFour } from '../data/sche
 import { teamLogo } from '../data/teams';
 import { CopyButton } from './CopyButton';
 import { FatigueMark } from './FatigueMark';
+import { Fatigue } from './Fatigue';
 import type { TeamFatigue } from '../data/fatigue';
 import './calendar.css';
 
@@ -26,6 +27,14 @@ export interface GameCardProps {
   teamFirst?: boolean;
   /** League view: each team's schedule fatigue in this game (marks on its tricode + tooltip; leagueFatigue). */
   fatigue?: ReadonlyMap<number, TeamFatigue>;
+  /**
+   * League List (desktop): each team's Fatigue component beside its logo, mirrored around the matchup
+   * ("[away fatigue] [logo] AWAY … HOME [logo] [home fatigue]"); the tricode marks then drop their plane (the
+   * component's plane means "away").
+   */
+  fatigueSlots?: boolean;
+  /** Team List with `fatigueColumns`: both teams' fatigue (leagueFatigue) for the two Fatigue columns. */
+  teamFatigue?: ReadonlyMap<number, TeamFatigue>;
   /** Team view: the selected team's back-to-back nights on this game ("1/2 · HA", "2/2 · HA"). */
   b2b?: B2BNight[];
   /** Team view: B2B labels without the home/away code ("1/2"), for cells too narrow for "1/2 · HA". */
@@ -38,11 +47,9 @@ export interface GameCardProps {
   shortTif?: boolean;
   /** National TV as one "TV" pill with the network names in its tooltip (calendar cells), instead of the names. */
   tvPill?: boolean;
-  /** Team view: the opponent's 3-in-4 over its own schedule (lighter chip; only shown with `fatigueColumns`). */
-  opponentTif?: ThreeInFour;
   /**
-   * Team list (desktop): schedule fatigue in two fixed-width columns — the team's B2B label + 3-in-4 chip between the
-   * time and the team, the opponent's "2/2" + 3-in-4 chip right after the opponent — instead of among the tags.
+   * Team list (desktop): schedule fatigue in two fixed-width columns — the team's Fatigue component between the time
+   * and the team, the opponent's right after the opponent (from `teamFatigue`) — instead of the B2B labels among the tags.
    */
   fatigueColumns?: boolean;
   /** Team list: the nights whose left-edge bracket is drawn (default: every night in `b2b`); a selection image draws
@@ -180,7 +187,7 @@ export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeI
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, opponentTif, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, onOpenGameLink }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, onOpenGameLink }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -213,15 +220,16 @@ export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B,
   // league records going in, on the outside of each logo (an empty slot when unknown)
   const recOf = (t: ScheduleGame['homeTeam']) => records?.get(t.teamId);
   const recText = (r?: TeamRecord) => (r ? `${r.wins}-${r.losses}` : '');
-  const rec = (t: ScheduleGame['homeTeam']) =>
+  const rec = (t: ScheduleGame['homeTeam'], home = false) =>
     records && (
-      <span className="ck-rec" title={recOf(t) ? `${teamLabel(t)} record going in` : undefined}>
+      <span className={`ck-rec${home ? ' ck-rec-home' : ''}`} title={recOf(t) ? `${teamLabel(t)} record going in` : undefined}>
         {recText(recOf(t))}
       </span>
     );
   // "[logo] BOS 113 @ 121 DET [logo]": first team (away, or the selected team), its score, "@"/"vs", the other score,
   // the other team, logos on the outside. Each side wraps as one unit in narrow cells.
   const [first, second] = side ? [side.team, side.opponent] : [game.awayTeam, game.homeTeam];
+  const fx = !side && fatigueSlots && !!fatigue;
   const matchup =
     side && !teamFirst ? (
       <span className="ck-matchup">
@@ -238,27 +246,31 @@ export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B,
       </span>
     ) : (
       <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}`}>
-        <span className="ck-side">
-          {!side && rec(first)}
-          {records && ' '}
-          {logos && <TeamLogo team={first} />}
-          <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</span>
-          {result && ' '}
-          {score(result?.score, !!result?.win)}
-        </span>{' '}
-        <span className="ck-side">
-          <span className="ck-vsat">{side ? (side.home ? 'vs' : '@') : '@'}</span>{' '}
-          {score(result?.oppScore, !!result && !result.win)}
-          {result && ' '}
-          <span className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
-            {fatigue ? <FatigueMark f={fatigue.get(second.teamId)}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
-            {side && opponentB2B && <B2BDot tip={opponentB2B} />}
+        {!side && rec(first)}
+        {fx && <Fatigue f={fatigue!.get(first.teamId)} team={teamLabel(first)} badge="right" />}
+        {(records || fx) && ' '}
+        <span className="ck-teams">
+          <span className="ck-side">
+            {logos && <TeamLogo team={first} />}
+            <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} plane={!fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</span>
+            {result && ' '}
+            {score(result?.score, !!result?.win)}
           </span>{' '}
-          {logos && <TeamLogo team={second} />}
-          {records && ' '}
-          {!side && rec(second)}
-          {otMark}
+          <span className="ck-side">
+            <span className="ck-vsat">{side ? (side.home ? 'vs' : '@') : '@'}</span>{' '}
+            {score(result?.oppScore, !!result && !result.win)}
+            {result && ' '}
+            <span className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
+              {fatigue ? <FatigueMark f={fatigue.get(second.teamId)} plane={!fx}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
+              {side && opponentB2B && <B2BDot tip={opponentB2B} />}
+            </span>{' '}
+            {logos && <TeamLogo team={second} />}
+          </span>
         </span>
+        {(records || fx) && ' '}
+        {fx && <Fatigue f={fatigue!.get(second.teamId)} team={teamLabel(second)} />}
+        {!side && rec(second, true)}
+        {otMark}
       </span>
     );
 
@@ -293,19 +305,13 @@ export function GameCard({ game, teamId, teamFirst, fatigue, b2b = [], shortB2B,
       </span>
       {cols && (
         <span className="ck-fat ck-fat-team" data-testid="fatigue-team">
-          {b2bLabels}
-          {tifChip}
+          <Fatigue f={teamFatigue?.get(side.team.teamId)} team={teamLabel(side.team)} badge="right" focusable />
         </span>
       )}
       {matchup}
       {cols && (
         <span className="ck-fat ck-fat-opp" data-testid="fatigue-opp">
-          {opponentB2B && (
-            <span className="ck-b2b-opp" data-tip={opponentB2B} aria-label={opponentB2B} role="img" tabIndex={0}>
-              2/2
-            </span>
-          )}
-          {opponentTif && <TifChip tif={opponentTif} team={teamLabel(side.opponent)} opp />}
+          <Fatigue f={teamFatigue?.get(side.opponent.teamId)} team={teamLabel(side.opponent)} focusable />
         </span>
       )}
       <span className="ck-tags">

@@ -36,9 +36,9 @@ const MEASURE = `(root) => {
   add('logo', '.ck-logo-backing img');
   add('text', '.ck-team, .ck-mtri-text, .ck-vsat, .ck-at');
   add('score', '.ck-score, .ck-mscore:not(:empty)'); // the week view's score slots are empty before the game
-  add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp, .ck-fm-n2');
+  add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp, .ck-fm-n2, .ck-fx-b2b:not(:empty)'); // round 5: the Fatigue component's badge
   add('b2b', '.ck-fm-n1', 1); // league views' 1st night: the yellow ring around the tricode (round 4)
-  add('tif', '.ck-tif');
+  add('tif', '.ck-tif, .ck-fx-chip');
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
   add('rest', '.ck-rest-row .ck-date, .ck-rest');
   return { width: root.offsetWidth, height: root.offsetHeight, regions: out };
@@ -214,9 +214,9 @@ test('whole view: team calendar and the full team list', async ({ page }, info) 
   // every game, not just the rows scrolled into view: 2 logos per row, + the team header's
   expect(view.target.regions.filter((r) => r.kind === 'logo').length).toBe(2 * shown + 1);
   const r = await check(page, 'view-team-list', view, ['logo', 'text', 'b2b', 'tv', 'tif']);
-  // both fatigue columns are in the image: the team's and the opponent's chips and the opponent's 2/2
-  expect(view.target.regions.filter((x) => x.kind === 'tif').length).toBe(await page.locator('.ck-team-rows .ck-tif').count());
-  expect(view.target.regions.filter((x) => x.kind === 'b2b').length).toBe(await page.locator('.ck-team-rows :is(.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp)').count());
+  // both Fatigue columns are in the image (round 5): every badge and chip of the team and the opponent
+  expect(view.target.regions.filter((x) => x.kind === 'tif').length).toBe(await page.locator('.ck-team-rows :is(.ck-tif, .ck-fx-chip)').count());
+  expect(view.target.regions.filter((x) => x.kind === 'b2b').length).toBe(await page.locator('.ck-team-rows :is(.ck-b2b-label, .ck-b2b-mark, .ck-fx-b2b:not(:empty))').count());
   expect(r.height / view.target.ratio, 'taller than the window').toBeGreaterThan(1080);
 
   // "Show rest days": the rest rows are in the image too, every one of them drawn
@@ -247,7 +247,10 @@ test('whole view and a day: team calendar in 1 and 2 weeks', async ({ page }) =>
 test('whole view: league list copies the whole week', async ({ page }) => {
   await open(page, '?view=league&layout=list&date=2026-11-15');
   const view = await copyView(page);
-  await check(page, 'view-league-list', view, ['logo', 'text', 'tv']);
+  await check(page, 'view-league-list', view, ['logo', 'text', 'tv', 'b2b', 'tif']);
+  // the Fatigue components are in the image (round 5): badges and chips
+  expect(view.target.regions.filter((r) => r.kind === 'b2b' && r.what === 'B2B').length).toBeGreaterThan(10);
+  expect(view.target.regions.filter((r) => r.kind === 'tif' && r.what === '3in4').length).toBeGreaterThan(10);
   // Nov 15 – 21: every game of the week (2 logos each)
   const week = await page.evaluate(async () => {
     const feed = await (await fetch('/data/schedule.json')).json();
@@ -277,7 +280,7 @@ test('a single game: league list card, team list card with B2B and TV', async ({
   await check(page, 'game-league-list', await copyPart(page, card, 'copy-game'), ['logo', 'text', 'tv']);
 
   await open(page, '?view=team&layout=list&team=ORL');
-  const row = page.locator('.ck-team-rows > .ck-card:has(.ck-b2b-label):has(.ck-b2b-mark)').first();
+  const row = page.locator('.ck-team-rows > .ck-card:has(.ck-fx-b2b:not(:empty)):has(.ck-b2b-mark)').first();
   await check(page, 'game-team-list', await copyPart(page, row, 'copy-game'), ['logo', 'text', 'b2b']);
 });
 

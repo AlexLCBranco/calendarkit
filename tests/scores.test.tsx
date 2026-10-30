@@ -17,10 +17,10 @@ const XL = { width: 1840, height: 1000 };
 const PHONE = { width: 360, height: 700 };
 const finals = data.games.filter((g) => g.status === 'final');
 const text = (el: Element) => el.textContent!.replace(/\s+/g, ' ').trim();
-/** Matchup text without the League List's records going in (round 4, tests/records.test.tsx). */
+/** Matchup text without the League List's records going in (round 4, tests/records.test.tsx) and Fatigue components (round 5). */
 const bare = (el: Element) => {
   const c = el.cloneNode(true) as Element;
-  c.querySelectorAll('.ck-rec').forEach((r) => r.remove());
+  c.querySelectorAll('.ck-rec, .ck-fx').forEach((r) => r.remove());
   return text(c);
 };
 const card = (root: ParentNode, id: string) => root.querySelector(`.ck-card[data-game-id="${id}"]`)!;
@@ -92,7 +92,7 @@ describe('League week view (1 and 2 weeks)', () => {
       for (const g of finals) {
         const line = el.querySelector(`.ck-month-game[data-game-id="${g.gameId}"]`)!;
         expect([...line.querySelectorAll('img')].map((i) => i.getAttribute('src')), g.gameId).toEqual([`/logos/${g.awayTeam.teamTricode}.svg`, `/logos/${g.homeTeam.teamTricode}.svg`]);
-        expect([...line.children].map((c) => c.textContent!.trim())).toEqual(['', g.awayTeam.teamTricode, String(g.awayTeam.score), '@', String(g.homeTeam.score), g.homeTeam.teamTricode, '', '']);
+        expect([...line.children].filter((c) => !c.classList.contains('ck-mfx')).map((c) => c.textContent!.trim())).toEqual(['', g.awayTeam.teamTricode, String(g.awayTeam.score), '@', String(g.homeTeam.score), g.homeTeam.teamTricode, '', '']);
         expect([...line.querySelectorAll('.ck-mscore')].map((s) => s.classList.contains('ck-score-win'))).toEqual([won(g, 'away'), won(g, 'home')]);
         expect([...line.querySelectorAll('.ck-mtri')].map((s) => s.classList.contains('ck-loss'))).toEqual([!won(g, 'away'), !won(g, 'home')]);
         expect(line.querySelector('.ck-tv-pill')).toBeNull();

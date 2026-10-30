@@ -428,6 +428,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
               cellWidth={selCapture.cellWidth}
               teamScale={selCapture.teamScale}
               weekStyle={selCapture.weekStyle}
+              weeks={state.weeks}
             />
           </CaptureStage>
         )}

@@ -3,7 +3,7 @@
 import { memo, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type RefObject } from 'react';
 import { hasNationalTv, isOver, opponentSecondNight, sideLabel, teamGames, teamRestDays, teamSeason, weekOf, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { teamThreeInFour } from '../data/scheduleTags';
+import { leagueFatigue } from '../data/fatigue';
 import { TEAM_BY_ID } from '../data/teams';
 import { GameCard } from './GameCard';
 import { useActiveHighlight } from './ActiveHighlight';
@@ -65,7 +65,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
   const rows = useMemo(() => (showRest && !only ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, data, teamId]);
   const b2b = useTeamB2B(data, teamId);
   const season = useMemo(() => teamSeason(data, teamId), [data, teamId]);
-  const tif = teamThreeInFour(data, teamId);
+  const fatigue = leagueFatigue(data); // once per data set: both teams' Fatigue columns
   const cols = !compact && size.width >= FATIGUE_COLUMNS_MIN_WIDTH;
   const next = (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.gameId;
   const scroller = useRef<HTMLDivElement>(null);
@@ -209,8 +209,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
                 b2b={b2b.byGame.get(g.gameId)}
                 bracketNights={only && b2b.byGame.get(g.gameId)?.filter((n) => only.has((n.night === 1 ? n.pair.second : n.pair.first).gameId)).map((n) => n.night)}
                 opponentB2B={opponentSecondNight(data, g, teamId)}
-                tif={cols ? tif.get(g.gameId) : undefined}
-                opponentTif={cols ? opponentTif(data, g, teamId) : undefined}
+                teamFatigue={cols ? fatigue.get(g.gameId) : undefined}
                 fatigueColumns={cols}
                 now={now}
                 timeZone={timeZone}
@@ -243,12 +242,6 @@ function withRest(games: ScheduleGame[], rest: string[]): (ScheduleGame | string
     out.push(g);
   }
   return out.concat(rest.slice(r));
-}
-
-/** The opponent's 3-in-4 for this game, over the opponent's own schedule. */
-function opponentTif(data: CalendarData, g: ScheduleGame, teamId: number) {
-  const opp = g.homeTeam.teamId === teamId ? g.awayTeam.teamId : g.homeTeam.teamId;
-  return opp ? teamThreeInFour(data, opp).get(g.gameId) : undefined;
 }
 
 /**

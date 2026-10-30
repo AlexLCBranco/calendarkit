@@ -26,12 +26,11 @@ test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   expect(await css('.ck-month-game .ck-fm-n2', 'background-color')).toBe(YELLOW);
   // Team List: labels, bracket, opponent dot and "2/2"
   await page.goto('/?view=team&layout=list&team=ORL');
-  await expect(page.locator('.ck-b2b-n1').first()).toBeAttached();
-  expect(await css('.ck-b2b-n1', 'color')).toBe(YELLOW);
-  expect(await css('.ck-b2b-n1', 'border-top-color')).toBe(YELLOW);
-  expect(await css('.ck-b2b-n2', 'background-color')).toBe(YELLOW);
+  // (round 5: the Fatigue component's badge and night icons in the columns, both teams)
+  await expect(page.locator('.ck-fx-b2b:not(:empty)').first()).toBeAttached();
+  expect(await css('.ck-fat-team .ck-fx-b2b:not(:empty)', 'background-color')).toBe(YELLOW);
+  expect(await css('.ck-fat-opp .ck-fx-b2b:not(:empty)', 'background-color')).toBe(YELLOW);
   expect(await css('.ck-card[data-b2b]', 'border-left-color', '::before')).toBe(YELLOW);
-  expect(await css('.ck-b2b-opp', 'color')).toBe(YELLOW);
   expect(await css('.ck-matchup .ck-b2b-mark', 'background-color')).toBe(YELLOW);
   // Team Calendar: bars and the arrows of week-break halves
   await page.goto('/?view=team&layout=calendar&team=ORL');

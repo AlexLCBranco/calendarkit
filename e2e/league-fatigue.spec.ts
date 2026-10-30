@@ -82,7 +82,8 @@ for (const [name, search] of [
     await expect(tip).toHaveText(/^[A-Z]{3} — rested( Record going in: \d+-\d+)?$/);
     // legend: visible, inside the window, under the grid / list
     const legend = page.getByTestId('fatigue-legend');
-    await expect(legend).toHaveText('■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4');
+    // round 5: the views with the Fatigue component (League List, 1 week) explain it; 2 weeks keeps the tricode legend
+    await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back: +home +away, earlier night first, tonight solid · 3in4 3 games in 4 nights · ■ 2nd night · ▢ 1st night$/);
     const lb = (await legend.boundingBox())!;
     expect(lb.y + lb.height).toBeLessThanOrEqual(page.viewportSize()!.height);
     const above = (await page.locator(list ? '[data-testid="league-list"]' : '.ck-week-grid').boundingBox())!;

@@ -992,6 +992,42 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   - Flaky (2nd time, item 10 too): lists.spec "continuous days" (tablet) found no card below the top at one step; 3/3 on
     rerun.
 
+### Round 5 (2026-10-29)
+- **Fatigue component** (item 1, v1.16.0): `src/components/Fatigue.tsx` + `styles/fatigue.css` — one component, `full`
+  (12 px) and `compact` (≈ 0.72 × the week line's font) sizes: yellow **"B2B" badge**, the two nights as **house (home) /
+  plane (away)** in time order (earlier night left; tonight solid, the other night faded via fill-opacity in the image),
+  **"3in4" chip** (the chips' purples, 3rd game stronger). A grid of fixed tracks (`b n1 n2 c`, 8 em), so an empty
+  component (team not on a B2B / 3-in-4) has the same width; `.ck-fx-mirror` swaps only the badge and chip tracks (badge
+  next to the team's logo), never the night icons. Icons are CSS background images (data-URI SVG, fill #f5e042 = --ck-b2b),
+  no SVG elements; at most 4 children. Tooltip = `leagueFatigue`'s text (leg, both games with opponents, travel, 3-in-4
+  sets/game number, record) — details only.
+  - **League List (desktop, widget ≥ 960 px)**: `[rec] [away fx] [logo AWAY score @ score HOME logo] [home fx] [rec]`
+    (matchup now `.ck-rec`, `.ck-fx`, `.ck-teams`, `.ck-fx`, `.ck-rec`). Tablet/phone unchanged (tricode marks only). The
+    tricode marks stay yellow, but lose their small plane where the component is shown (its plane means "away").
+  - **Team List (desktop)**: the two fatigue columns hold the team's (mirrored) and the opponent's component (replaces the
+    "1/2 · HA" label, "3-in-4 · 2nd" chips and the opponent's "2/2"); the bracket and the opponent's tricode dot stay.
+    Tablet/phone keep the labels among the tags.
+  - **Week view, 1 week**: a second row under each line where either team has fatigue — compact components, the away one
+    starting under the away logo, the home one ending under the home logo (columns stay aligned). `busiestDayHeight`
+    counts that row (`MONTH_LINE.fxRow` 11 + `fxGap` 1), so the **1-week scale at 1920 × 911 went 1.25 → 1.1** (1280 × 900
+    stays 1.0, 1920 × 1080 stays 1.25). No component in 2-week mode (legend and tricode marks as before). There is no room
+    for it inline: a 1280 cell is 164.9 px for a 155 px line.
+  - Legend in the League List and 1-week view explains the component; 2-week keeps the old one.
+  - Selection images (League List, 1-week view) draw the components too (`SelectionCapture`).
+  - **Perf** (interleaved A/B, `test-output/m5/abn.mjs` / `abt.mjs` at 1920 × 911, base = v1.15.0 build): an SVG version
+    with 9 elements per component measured League 1145 → 1873 ms in a 7-run A/B, but 2388 vs 2417 in a 12-run rerun
+    (noise); the final grid/CSS-icon version: **League List 2703 → 2848 ms (+5 %), Team List 620 → 643 ms (+4 %)**, medians
+    of 12 / 15 runs, inside the ±20 % run spread. Perf guard: frames p95 16.8 ms, League scroll main thread 2786 ms (limit
+    2913).
+  - **Copy**: League List week image 3936 × 10 064 px before and after (984 × 2516 CSS px × 4) — the stage width is the
+    list's, not the content's; badges and chips are pixel-checked in the images (`copy.spec.ts`).
+  - Tests: `tests/fatigue.test.tsx` (Team List: every row of LAL/BOS/NYK vs an independent calendar-day rule),
+    `tests/leaguefatigue.test.tsx` (League List rows vs leagueFatigue, the HA case, 1-week rows), e2e
+    `fatigue-component.spec.ts` (1920 × 911 and 1280 × 900: one x per column, same width empty or not, icon order, week
+    rows under the logos, no page scroll; HA 2nd night MIA @ CHA Oct 24: faded house left of a solid plane). A team on an
+    HA 2nd night is always the away team, so the home (mirrored) column is checked with AH 2nd night (WAS @ CHI) and HA
+    1st night (CHI @ MIL); likewise HH only occurs in home columns and AA only in away columns.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

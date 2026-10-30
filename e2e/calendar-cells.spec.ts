@@ -24,6 +24,6 @@ test('Team Calendar: "3in4·…" chip and "TV" pill with full-text tooltips; Tea
   await chip.focus();
   await expect(tip).toHaveText(/^3 games in 4 days — (set|\d sets):/);
   await page.goto('/?view=team&layout=list&team=LAL');
-  await expect(page.locator('[data-testid="team-list"] [data-testid="tif"]').first()).toHaveText(/^3-in-4 · (1st|2nd|3rd)$/);
+  await expect(page.locator('[data-testid="team-list"] .ck-fx-chip').first()).toHaveText('3in4'); // round 5: the Fatigue component's chip
   await expect(page.locator('[data-testid="team-list"] .ck-tv-name').first()).toBeAttached();
 });

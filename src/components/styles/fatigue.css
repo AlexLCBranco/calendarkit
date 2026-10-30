@@ -1,0 +1,123 @@
+/* Fatigue component (Fatigue.tsx, round 5): [B2B][night 1][night 2][3in4] in a grid of fixed tracks, so badges, icons
+   and chips sit at one x on every row; an empty component keeps the same width. Sizes in em of the component's font:
+   full 12 px (lists), compact ≈ 0.72 × the week view's line font (7.9 px at scale 1). `.ck-fx-mirror` swaps the badge
+   and chip tracks (badge on the right); the two night tracks never swap — earlier night on the left. Cheap to scroll:
+   at most 4 children, the icons are background images (no SVG elements), flat fills, no opacity, shadows or filters. */
+.ck-fx {
+  display: inline-grid;
+  grid-template-columns: 2.6em 1.15em 1.15em 2.5em;
+  grid-template-areas: 'b n1 n2 c';
+  column-gap: 0.2em;
+  align-items: center;
+  flex: none;
+  width: 8em; /* 2.6 + 1.15 + 1.15 + 2.5 + 3 × 0.2 */
+  height: 1.4em;
+  font-size: 12px;
+  line-height: 1;
+  vertical-align: middle;
+}
+.ck-fx-mirror {
+  grid-template-columns: 2.5em 1.15em 1.15em 2.6em;
+  grid-template-areas: 'c n1 n2 b';
+}
+.ck-fx-compact {
+  font-size: var(--ck-fx-font, 7.9px);
+  column-gap: 0.15em;
+  width: 7.85em;
+}
+.ck-fx-b2b {
+  grid-area: b;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #1f1a02;
+  background: var(--ck-b2b);
+  border-radius: 3px;
+}
+.ck-fx > .ck-fx-icon:nth-of-type(1) {
+  grid-area: n1;
+}
+.ck-fx > .ck-fx-icon:nth-of-type(2) {
+  grid-area: n2;
+}
+/* house = home, plane = away; tonight solid, the other night faded (fill-opacity in the image, not CSS opacity).
+   The fill is --ck-b2b (#f5e042), written into the images. */
+.ck-fx-icon {
+  display: block;
+  width: 1.15em;
+  height: 1.15em;
+  background: no-repeat center / contain;
+}
+.ck-fx-home {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23f5e042' fill-opacity='.3' d='M8 1.2 0.8 7.6h2.1v7.2h3.9v-4.4h2.4v4.4h3.9V7.6h2.1Z'/%3E%3C/svg%3E");
+}
+.ck-fx-home.ck-fx-tonight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23f5e042' d='M8 1.2 0.8 7.6h2.1v7.2h3.9v-4.4h2.4v4.4h3.9V7.6h2.1Z'/%3E%3C/svg%3E");
+}
+.ck-fx-away {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23f5e042' fill-opacity='.3' transform='rotate(45 8 8)' d='M8 0c.6 0 1 .5 1 1.2v4.3l6 3.5v1.5L9 8.7v3.6l1.8 1.3V15L8 14.2 5.2 15v-1.4L7 12.3V8.7L1 10.5V9l6-3.5V1.2C7 .5 7.4 0 8 0Z'/%3E%3C/svg%3E");
+}
+.ck-fx-away.ck-fx-tonight {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23f5e042' transform='rotate(45 8 8)' d='M8 0c.6 0 1 .5 1 1.2v4.3l6 3.5v1.5L9 8.7v3.6l1.8 1.3V15L8 14.2 5.2 15v-1.4L7 12.3V8.7L1 10.5V9l6-3.5V1.2C7 .5 7.4 0 8 0Z'/%3E%3C/svg%3E");
+}
+/* the 3-in-4 chip: the Team List chips' purples (1st/2nd #4c3d75, the 3rd stronger) */
+.ck-fx-chip {
+  grid-area: c;
+  justify-self: center;
+  font-size: 0.8em;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0 0.3em;
+  border-radius: 999px;
+  background: #2a2140;
+  color: #c4b5fd;
+  border: 1px solid #4c3d75;
+  white-space: nowrap;
+}
+.ck-fx-chip.ck-tif-pos-3 {
+  background: #3a2160;
+  color: #e9d5ff;
+  border-color: #7c4dcc;
+}
+.ck-fx:focus-visible {
+  outline: 2px solid var(--ck-accent);
+  outline-offset: 1px;
+}
+/* week view, 1 week: the compact components in a second row under the line, the away team's under its logo (badge on
+   the left), the home team's ending under the home logo (badge on the right) — columns 1–11 of the line's grid */
+.ck-month-game.ck-month-fx {
+  height: auto;
+  grid-template-rows: var(--ck-logo) var(--ck-fx-row);
+  row-gap: var(--ck-fx-gap);
+}
+.ck-month-game > .ck-mfx {
+  grid-row: 2;
+  grid-column: 1 / 12;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: var(--ck-fx-row);
+}
+.ck-mfx .ck-fx {
+  height: var(--ck-fx-row);
+}
+/* legend keys (FatigueLegend with the component) */
+.ck-fm-legend .ck-fx-icon {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  vertical-align: -1px;
+}
+.ck-fx-key-b2b {
+  font-weight: 700;
+  font-size: 10px;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--ck-b2b);
+  color: #1f1a02;
+}
+.ck-fm-legend .ck-fx-chip {
+  font-size: 9px;
+}

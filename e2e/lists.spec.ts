@@ -263,7 +263,7 @@ test('team list: every game in order, opens at the next game, earlier games abov
     [...el.querySelectorAll<HTMLElement>('article')].map((a) => ({
       id: a.dataset.gameId!,
       next: a.hasAttribute('data-next'),
-      b2b: !!a.querySelector('.ck-b2b-n2'),
+      b2b: !!a.querySelector('.ck-b2b-n2, [data-testid="fatigue-team"] [data-night="2"]'), // round 5: the Fatigue component on desktop
       date: a.querySelector('.ck-date')!.textContent!,
       matchup: [...a.querySelector('.ck-matchup')!.querySelectorAll('.ck-self, .ck-vsat, .ck-opp')].map((e) => e.textContent).join(' '), // without scores
       imgs: a.querySelectorAll('.ck-logo-backing img').length,

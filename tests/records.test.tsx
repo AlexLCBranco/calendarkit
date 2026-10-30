@@ -80,9 +80,9 @@ describe('League List rows', () => {
           const m = c.querySelector('.ck-matchup')!;
           const recs = [...m.querySelectorAll('.ck-rec')];
           expect(recs.map((x) => x.textContent), `${size.width} ${g.gameId}`).toEqual([want.get(g.gameId)!.get(g.awayTeam.teamId) ?? '', want.get(g.gameId)!.get(g.homeTeam.teamId) ?? '']);
-          // outside the logos: first and last part of the matchup's sides
-          expect(m.firstElementChild!.firstElementChild!.classList.contains('ck-rec')).toBe(true);
-          expect(m.lastElementChild!.querySelector('.ck-logo-backing, .ck-logo-empty')!.nextElementSibling!.classList.contains('ck-rec')).toBe(true);
+          // outside the logos (and outside the Fatigue components on desktop, round 5): first and last part of the matchup
+          const parts = [...m.children].map((x) => x.className.split(' ')[0]).filter((x) => x !== 'ck-ot');
+          expect(parts, `${size.width} ${g.gameId}`).toEqual(size === XL ? ['ck-rec', 'ck-fx', 'ck-teams', 'ck-fx', 'ck-rec'] : ['ck-rec', 'ck-teams', 'ck-rec']);
           const a = want.get(g.gameId)!.get(g.awayTeam.teamId);
           const h = want.get(g.gameId)!.get(g.homeTeam.teamId);
           if (a && h) expect(c.getAttribute('aria-label')).toContain(`records going in ${g.awayTeam.teamTricode} ${a}, ${g.homeTeam.teamTricode} ${h}`);

@@ -11,7 +11,7 @@ import { GameCard } from './GameCard';
 import { PeriodNav } from './PeriodNav';
 import { WeekStrip } from './WeekStrip';
 import { FatigueLegend } from './FatigueMark';
-import { fmtDate, isCompact, plural, type WidgetSize } from './widget';
+import { fmtDate, isCompact, LIST_MAX_WIDTH, plural, type WidgetSize } from './widget';
 
 export interface LeagueListViewProps {
   data: CalendarData;
@@ -32,6 +32,9 @@ export interface LeagueListViewProps {
 
 /** Height estimates (px) for a day not measured yet: sticky header + one card row per game (+ 6 px gap). */
 const LIST_HEAD = 38;
+/** League List rows get both teams' Fatigue components where the whole LIST_MAX_WIDTH column fits (desktop). */
+export const FATIGUE_SLOTS_MIN_WIDTH = LIST_MAX_WIDTH;
+
 const listRow = (compact: boolean) => (compact ? 27 : 35) + 6;
 /** Days stay rendered this far (in viewport heights) above and below the visible part. */
 const LIST_OVERSCAN = 0.75;
@@ -228,12 +231,12 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, ti
         {days.length === 0 && <p className="ck-empty">No games.</p>}
         <div style={{ height: tops[start] }} aria-hidden="true" />
         {days.slice(start, end).map((d) => (
-          <ListDaySection key={d.date} day={d} dataKey={hKey(d)} data={data} compact={compact} now={now} timeZone={timeZone} onOpenGame={onOpenGame} onOpenGameLink={onOpenGameLink} />
+          <ListDaySection key={d.date} day={d} dataKey={hKey(d)} data={data} compact={compact} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} onOpenGame={onOpenGame} onOpenGameLink={onOpenGameLink} />
         ))}
         <div style={{ height: total - tops[end]! + tail }} aria-hidden="true" />
         {highlight.layers}
       </div>
-      <FatigueLegend />
+      <FatigueLegend component={size.width >= FATIGUE_SLOTS_MIN_WIDTH} />
     </section>
   );
 }
@@ -244,7 +247,7 @@ const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'sho
 /** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
 // memo: the list re-renders on every scroll event; a day whose props haven't changed (the same day object from
 // `days`, same clock) is skipped. Re-rendering every visible day's cards per scroll event cost frames (2026-10-24).
-export const ListDaySection = memo(function ListDaySection({ day, dataKey, data, compact, now, timeZone, onOpenGame, onOpenGameLink }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; onOpenGameLink?: (gameId: string) => void }) {
+export const ListDaySection = memo(function ListDaySection({ day, dataKey, data, compact, fatigueSlots = false, now, timeZone, onOpenGame, onOpenGameLink }: { day: ListDay; dataKey?: string; data: CalendarData; compact: boolean; fatigueSlots?: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; onOpenGameLink?: (gameId: string) => void }) {
   const records = compact ? undefined : leagueRecords(data); // once per data set
   const fatigue = leagueFatigue(data); // once per data set
   return (
@@ -255,7 +258,7 @@ export const ListDaySection = memo(function ListDaySection({ day, dataKey, data,
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} onOpenGameLink={onOpenGameLink} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} onOpenGameLink={onOpenGameLink} copyable />
         ))}
       </div>
     </section>
@@ -271,7 +274,7 @@ export function LeagueListWeek({ data, date, tvOnly, size, now, timeZone }: { da
       <div className="ck-llist">
         {days.length === 0 && <p className="ck-empty">No games.</p>}
         {days.map((d) => (
-          <ListDaySection key={d.date} day={d} data={data} compact={isCompact(size)} now={now} timeZone={timeZone} />
+          <ListDaySection key={d.date} day={d} data={data} compact={isCompact(size)} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} />
         ))}
       </div>
     </section>
