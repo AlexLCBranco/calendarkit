@@ -222,8 +222,8 @@ describe('selected team first, both logos', () => {
   it('league views: AWAY @ HOME in the list (records going in on the outside, round 4)', () => {
     const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
     const g = data.byDate.get('2026-10-23')![0]!;
-    // (the Fatigue components' "B2B" / "3in4" left out, round 5)
-    expect(el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-matchup`)!.textContent!.replace(/B2B|3in4/g, '').replace(/\s+/g, ' ').trim()).toMatch(new RegExp(`^(\\d+-\\d+ )?${g.awayTeam.teamTricode} @ ${g.homeTeam.teamTricode}( \\d+-\\d+)?$`));
+    // (the Fatigue components' "B2B" / "4in6 · 2nd" left out, rounds 5–6)
+    expect(el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-matchup`)!.textContent!.replace(/B2B|\d+in\d+( · \d+(st|nd|rd|th))?/g, '').replace(/\s+/g, ' ').trim()).toMatch(new RegExp(`^(\\d+-\\d+ )?${g.awayTeam.teamTricode} @ ${g.homeTeam.teamTricode}( \\d+-\\d+)?$`));
   });
 });
 

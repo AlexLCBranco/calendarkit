@@ -13,17 +13,18 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'col
 test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   const css = (sel: string, prop: string, pseudo?: string) => page.locator(sel).first().evaluate((e, [p, ps]) => getComputedStyle(e, ps || null).getPropertyValue(p!), [prop, pseudo]);
-  // League List: the tricode marks (round 4, item 6: replaced the "B2B" tag) — 2nd night filled, 1st night ringed
+  // League List: the Fatigue components' badges (round 6: the tricodes beside them lost their yellow marks)
   await page.goto('/?view=league&layout=list&date=2026-10-24');
-  await expect(page.locator('.ck-card .ck-fm-n2').first()).toBeVisible();
-  expect(await css('.ck-card .ck-fm-n2', 'background-color')).toBe(YELLOW);
-  expect(await css('.ck-card .ck-fm-n1', 'outline-color')).toBe(YELLOW);
+  await expect(page.locator('.ck-card .ck-fx-b2b').first()).toBeVisible();
+  expect(await css('.ck-card .ck-fx-b2b', 'background-color')).toBe(YELLOW);
+  expect(await page.locator('.ck-card .ck-fm-n1, .ck-card .ck-fm-n2').count()).toBe(0);
   // the data stamp is stale at this clock (snapshot of Oct 28 vs Nov 15): orange, its own variable
   expect(await css('[data-testid="data-updated"]', 'color')).toBe(ORANGE);
   expect(await page.locator('.ck-root').evaluate((e) => getComputedStyle(e).getPropertyValue('--ck-stale').trim())).toBe('#e08a3c');
-  // week view: the 2nd night's tricode filled (round 4, item 6: replaced the dot)
-  await page.goto('/?view=league&layout=calendar&date=2026-11-15');
+  // week view, 2 weeks (no component): the 2nd night's tricode filled, the 1st ringed (round 4, item 6)
+  await page.goto('/?view=league&layout=calendar&date=2026-11-15&weeks=2');
   expect(await css('.ck-month-game .ck-fm-n2', 'background-color')).toBe(YELLOW);
+  expect(await css('.ck-month-game .ck-fm-n1', 'outline-color')).toBe(YELLOW);
   // Team List: labels, bracket, opponent dot and "2/2"
   await page.goto('/?view=team&layout=list&team=ORL');
   // (round 5: the Fatigue component's badge and night icons in the columns, both teams)

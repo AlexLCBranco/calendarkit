@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { teamB2BPairs, teamGames } from '../src/data/model';
-import { teamThreeInFour, threeInFour, threeInFourLabel, threeInFourTip } from '../src/data/scheduleTags';
+import { mergedChip, mergedDays, mergedLabel, mergedTip, ordinal, teamThreeInFour, threeInFour, threeInFourLabel, threeInFourTip } from '../src/data/scheduleTags';
 import { TEAMS } from '../src/data/teams';
 import { data, feed } from './feed';
 import { dataOf, game, TEAM } from './synthetic';
@@ -103,5 +103,68 @@ describe('teamThreeInFour on the real feed, all 30 teams', () => {
     }
     expect(sets).toBeGreaterThan(200);
     expect(thirds).toBeGreaterThan(200);
+  });
+});
+
+// Round 6 (E): overlapping 3-in-4 sets merged into one stretch, chained; label = games "in" days first→last inclusive,
+// with tonight's place; the pop-up's day strip.
+describe('merged 3-in-4 stretches', () => {
+  const HOU = TEAMS.find((t) => t.tricode === 'HOU')!.id;
+  const merged = (dates: string[]) => {
+    const g = sched(dates);
+    const t = threeInFour(g);
+    return g.map((x) => (t.get(x.gameId) ? mergedChip(t.get(x.gameId)!.merged) : null));
+  };
+
+  it('HOU, Oct 28 / 30 / 31 / Nov 2, 2026 (sets Oct 28-30-31 and Oct 30-31-Nov 2): "4in6", Oct 30 is the 2nd; strip game, rest, TONIGHT, game, rest, game', () => {
+    const hou = teamGames(data, HOU);
+    const t = teamThreeInFour(data, HOU);
+    const oct30 = hou.find((g) => g.dateEt === '2026-10-30')!;
+    const m = t.get(oct30.gameId)!.merged;
+    expect(t.get(oct30.gameId)!.sets.map((s) => s.dates.join(' '))).toEqual(['2026-10-28 2026-10-30 2026-10-31', '2026-10-30 2026-10-31 2026-11-02']);
+    expect(m.dates).toEqual(['2026-10-28', '2026-10-30', '2026-10-31', '2026-11-02']);
+    expect([mergedLabel(m), m.position, mergedChip(m)]).toEqual(['4in6', 2, '4in6 · 2nd']);
+    expect(mergedDays(m)).toBe('2026-10-28:g 2026-10-29:r 2026-10-30:t 2026-10-31:g 2026-11-01:r 2026-11-02:g');
+    expect(mergedTip(m)).toBe('4 games in 6 days (Oct 28 – Nov 2), tonight the 2nd');
+    // every game of the stretch shares it, each with its own place
+    expect(m.ids.map((id) => mergedChip(t.get(id)!.merged))).toEqual(['4in6 · 1st', '4in6 · 2nd', '4in6 · 3rd', '4in6 · 4th']);
+  });
+
+  it('a single set: "3in4" with its place ("3in4 · 3rd")', () => {
+    expect(merged(['2025-11-01', '2025-11-03', '2025-11-04', '2025-11-08'])).toEqual(['3in4 · 1st', '3in4 · 2nd', '3in4 · 3rd', null]);
+    expect(merged(['2025-11-01', '2025-11-02', '2025-11-03'])).toEqual(['3in3 · 1st', '3in3 · 2nd', '3in3 · 3rd']);
+  });
+
+  it('two sets that share no game stay separate', () => {
+    // Nov 1-3-4 and Nov 8-9-11: no game in common (no set starts at Nov 3 or Nov 4)
+    expect(merged(['2025-11-01', '2025-11-03', '2025-11-04', '2025-11-08', '2025-11-09', '2025-11-11'])).toEqual(['3in4 · 1st', '3in4 · 2nd', '3in4 · 3rd', '3in4 · 1st', '3in4 · 2nd', '3in4 · 3rd']);
+  });
+
+  it('a long chain merges transitively: 7 games in 11 days (A shares with B, B with C …, A not with the last)', () => {
+    const dates = ['2027-02-02', '2027-02-04', '2027-02-05', '2027-02-07', '2027-02-09', '2027-02-10', '2027-02-12']; // BOS's real stretch
+    expect(merged(dates)).toEqual(['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'].map((o) => `7in11 · ${o}`));
+    const g = sched(dates);
+    const m = threeInFour(g).get(g[0]!.gameId)!.merged;
+    // Feb 2 (tonight) 3 4 5 6 7 8 9 10 11 12: game, rest, game, game, rest, game, rest, game, game, rest, game
+    expect(mergedDays(m).split(' ').map((d) => d.slice(11)).join('')).toBe('trggrgrggrg');
+    // and on the real feed: BOS Feb 2–12, 2027 is one stretch
+    const bos = teamThreeInFour(data, TEAM.BOS);
+    const feb4 = teamGames(data, TEAM.BOS).find((x) => x.dateEt === '2027-02-04')!;
+    expect(mergedChip(bos.get(feb4.gameId)!.merged)).toBe('7in11 · 2nd');
+  });
+
+  it('the season\'s longest stretches are 7in11 and every game in a set has exactly one stretch', () => {
+    let longest = 0;
+    for (const t of TEAMS)
+      for (const [, x] of teamThreeInFour(data, t.id)) {
+        expect(x.merged.ids).toContain(x.sets[0]!.ids[0]);
+        for (const s of x.sets) for (const id of s.ids) expect(x.merged.ids).toContain(id); // every set inside its stretch
+        longest = Math.max(longest, x.merged.ids.length);
+      }
+    expect(longest).toBe(7);
+  });
+
+  it('ordinal', () => {
+    expect([1, 2, 3, 4, 7, 11, 12, 13, 21, 22].map(ordinal)).toEqual(['1st', '2nd', '3rd', '4th', '7th', '11th', '12th', '13th', '21st', '22nd']);
   });
 });

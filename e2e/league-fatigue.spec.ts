@@ -69,9 +69,11 @@ for (const [name, search] of [
     // tooltip for that team, on hover and on focus
     const tip = page.getByTestId('tooltip');
     const scope = list ? '[data-day="2027-01-07"] ' : '';
-    const mark = page.locator(`${scope}.ck-fm-n2`).first();
+    // a team on its 2nd night (round 6: where the component is shown the tricode has no yellow fill — found by its tooltip)
+    const mark = page.locator(`${scope}.ck-fm[data-tip*="2/2 · "]`).first();
     await mark.hover();
-    await expect(tip).toHaveText((await mark.getAttribute('data-tip'))!.replace(/\n/g, ' '));
+    await expect(tip).toContainText((await mark.getAttribute('data-tip'))!.replace(/\n/g, ' '));
+    expect(await tip.evaluate((t) => t.firstChild!.textContent)).toBe(await mark.getAttribute('data-tip'));
     expect(await mark.getAttribute('data-tip')).toMatch(/^[A-Z]{3} — 2\/2 · (HH|HA|AH|AA) \(2nd night of a back-to-back\)\n/);
     const box = (await tip.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
@@ -83,7 +85,7 @@ for (const [name, search] of [
     // legend: visible, inside the window, under the grid / list
     const legend = page.getByTestId('fatigue-legend');
     // round 5: the views with the Fatigue component (League List, 1 week) explain it; 2 weeks keeps the tricode legend
-    await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back: +home +away, earlier night first, tonight solid · 3in4 3 games in 4 nights · ■ 2nd night · ▢ 1st night$/);
+    await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd$/);
     const lb = (await legend.boundingBox())!;
     expect(lb.y + lb.height).toBeLessThanOrEqual(page.viewportSize()!.height);
     const above = (await page.locator(list ? '[data-testid="league-list"]' : '.ck-week-grid').boundingBox())!;

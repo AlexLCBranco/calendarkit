@@ -19,3 +19,47 @@
 [data-tip] {
   cursor: help;
 }
+/* round 6: the 3-in-4 stretch's days under the text (Tooltip.tsx DayStrip): game days filled purple, rest days empty,
+   tonight yellow-ringed; the date under each cell */
+.ck-tip-days {
+  display: flex;
+  gap: 3px;
+  margin: 4px 0 2px;
+  white-space: nowrap;
+}
+.ck-tip-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 16px;
+}
+.ck-tip-day > i {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid #7c4dcc;
+  box-sizing: border-box;
+}
+.ck-tip-game > i,
+.ck-tip-tonight > i {
+  background: #7c4dcc;
+}
+.ck-tip-rest > i {
+  background: transparent;
+  border-color: #4c3d75;
+}
+.ck-tip-tonight > i {
+  outline: 2px solid var(--ck-b2b);
+  outline-offset: 1px;
+}
+.ck-tip-num {
+  font-size: 10px;
+  line-height: 1.1;
+  color: var(--ck-muted);
+}
+.ck-tip-tonight .ck-tip-num {
+  color: var(--ck-text);
+  font-weight: 700;
+}

@@ -3,38 +3,57 @@
    full 12 px (lists), compact ≈ 0.72 × the week view's line font (7.9 px at scale 1). `.ck-fx-mirror` swaps the badge
    and chip tracks (badge on the right); the two night tracks never swap — earlier night on the left. Cheap to scroll:
    at most 4 children, the icons are background images (no SVG elements), flat fills, no opacity, shadows or filters. */
+/* round 6: the chip track fits the widest merged stretch in the season, "7in11 · 2nd" (4.6 em of this font with its
+   padding and border); compact components show the stretch without tonight's place ("7in11"): see .ck-fx-compact */
 .ck-fx {
   display: inline-grid;
-  grid-template-columns: 2.6em 1.15em 1.15em 2.5em;
+  grid-template-columns: 2.6em 1.15em 1.15em 4.75em;
   grid-template-areas: 'b n1 n2 c';
   column-gap: 0.2em;
   align-items: center;
   flex: none;
-  width: 8em; /* 2.6 + 1.15 + 1.15 + 2.5 + 3 × 0.2 */
+  width: 10.25em; /* 2.6 + 1.15 + 1.15 + 4.75 + 3 × 0.2 */
   height: 1.4em;
   font-size: 12px;
   line-height: 1;
   vertical-align: middle;
 }
 .ck-fx-mirror {
-  grid-template-columns: 2.5em 1.15em 1.15em 2.6em;
+  grid-template-columns: 4.75em 1.15em 1.15em 2.6em;
   grid-template-areas: 'c n1 n2 b';
 }
+/* compact (week view, 1 week: two under a 155 px line at 1280): the chip track fits "7in11" (2.9 em); the full
+   "7in11 · 2nd" would make the pair ~166 px wide, more than the 163 px day cell at 1280 × 900 */
 .ck-fx-compact {
   font-size: var(--ck-fx-font, 7.9px);
   column-gap: 0.15em;
-  width: 7.85em;
+  grid-template-columns: 2.6em 1.15em 1.15em 3em;
+  width: 8.35em; /* 2.6 + 1.15 + 1.15 + 3 + 3 × 0.15 */
+}
+.ck-fx-compact.ck-fx-mirror {
+  grid-template-columns: 3em 1.15em 1.15em 2.6em;
 }
 .ck-fx-b2b {
   grid-area: b;
   height: 100%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1em;
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #1f1a02;
   background: var(--ck-b2b);
   border-radius: 3px;
+}
+/* the leg (round 6): a dark dot beside the first B (1st night) or the second B (2nd night), inside the badge's own
+   width ("B2B" is 2.0 em of the 2.6 em badge) */
+.ck-fx-leg {
+  flex: none;
+  width: 0.32em;
+  height: 0.32em;
+  border-radius: 50%;
+  background: #1f1a02;
 }
 .ck-fx > .ck-fx-icon:nth-of-type(1) {
   grid-area: n1;
@@ -65,7 +84,7 @@
 /* the 3-in-4 chip: the Team List chips' purples (1st/2nd #4c3d75, the 3rd stronger) */
 .ck-fx-chip {
   grid-area: c;
-  justify-self: center;
+  justify-self: start; /* against the night icons (round 6: the merged labels differ in width) */
   font-size: 0.8em;
   font-weight: 600;
   line-height: 1.5;
@@ -120,4 +139,16 @@
 }
 .ck-fm-legend .ck-fx-chip {
   font-size: 9px;
+}
+/* round 6: the legend's badges, drawn like the component's (with the leg dot) */
+.ck-fx-legend .ck-fx-b2b {
+  display: inline-flex;
+  height: 13px;
+  padding: 0 3px;
+  font-size: 10px;
+  line-height: 1;
+  vertical-align: -2px;
+}
+.ck-fx-mirror > .ck-fx-chip {
+  justify-self: end;
 }

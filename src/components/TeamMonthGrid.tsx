@@ -37,7 +37,7 @@ function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefin
   const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', statusText: 'Final/3OT', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
   const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
   // and the 3rd game of a 3-in-4 ("3in4·3rd", the cells' short chip: the widest chip text)
-  const tif: ThreeInFour = { position: 3, sets: [] };
+  const tif: ThreeInFour = { position: 3, sets: [], merged: { ids: [], dates: [], days: 4, position: 3 } };
   return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, shortTif: true, tvPill: true, size: 'compact' };
 }
 

@@ -298,14 +298,19 @@ describe('TV pill and fatigue marks (league)', () => {
     expect(screen.getByRole('tooltip').textContent).toBe(pill.getAttribute('data-tip'));
   });
 
-  it('fatigue marks (round 4): fill on the 2/2 team, ring on the 1/2 team, both teams marked; no dot, labels or bars', () => {
+  it('fatigue marks (round 4, 2 weeks): fill on the 2/2 team, ring on the 1/2 team, both teams marked; no dot, labels or bars; none in 1 week (round 6)', () => {
     const d = dataOf([
       game({ id: '0022609801', date: '2026-11-01', utc: '2026-11-01T23:00:00Z', home: TEAM.BOS, away: TEAM.NYK }),
       game({ id: '0022609802', date: '2026-11-01', utc: '2026-11-01T23:30:00Z', home: TEAM.DEN, away: TEAM.MIA }),
       game({ id: '0022609901', date: '2026-11-02', utc: '2026-11-03T00:00:00Z', home: TEAM.LAL, away: TEAM.BOS }),
       game({ id: '0022609902', date: '2026-11-02', utc: '2026-11-03T00:30:00Z', home: TEAM.DEN, away: TEAM.NYK }),
     ]);
-    const el = openWeek(d, '2026-11-02');
+    const one = openWeek(d, '2026-11-02');
+    // 1 week shows the Fatigue component under the line: the tricodes keep no yellow fill or ring (round 6)
+    expect(one.container.querySelectorAll('.ck-mfx .ck-fx-b2b').length).toBeGreaterThan(0);
+    expect(one.container.querySelector('.ck-fm-n1, .ck-fm-n2')).toBeNull();
+    cleanup();
+    const el = openWeek(d, '2026-11-02', WIDE, 'UTC', 2);
     const marks = (id: string, cls: string) => [...el.container.querySelectorAll(`[data-game-id="${id}"] .${cls}`)].map((m) => m.closest('.ck-mtri')!.getAttribute('data-tricode'));
     expect(marks('0022609901', 'ck-fm-n2')).toEqual(['BOS']);
     expect(marks('0022609902', 'ck-fm-n2')).toEqual(['NYK', 'DEN']);

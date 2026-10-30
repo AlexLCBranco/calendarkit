@@ -109,12 +109,22 @@ test('fatigue tooltips on hover and focus (round 5: on the Fatigue components): 
   await own.scrollIntoViewIfNeeded();
   await own.hover();
   const text = (await own.getAttribute('data-tip'))!;
-  await expect(tip).toHaveText(text.replace(/\n/g, ' ')); // toHaveText collapses whitespace
-  // the leg, both games, the 3-in-4 sets: one per line
-  const lines = await tip.evaluate((t) => Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight)));
+  // the text, then (round 6) the stretch's day strip
+  await expect(tip).toContainText(text.replace(/\n/g, ' ')); // collapses whitespace
+  expect(await tip.evaluate((t) => t.firstChild!.textContent)).toBe(text);
+  // the leg, both games, the merged 3-in-4 stretch, the record: one per line, the strip under them
+  const strip = tip.getByTestId('tip-days');
+  await expect(strip).toBeVisible();
+  const lines = await tip.evaluate((t) => Math.round((t.querySelector('[data-testid="tip-days"]')!.getBoundingClientRect().top - t.getBoundingClientRect().top) / parseFloat(getComputedStyle(t).lineHeight)));
   expect(lines).toBe(text.split('\n').length);
   expect(text).toMatch(/^BOS — [12]\/2 · [HA]{2} \((1st|2nd) night of a back-to-back\)\n/);
-  expect(text).toContain('3 games in 4 days — ');
+  expect(text).toMatch(/\n\d+in\d+ · \d+(st|nd|rd|th): \d+ games in \d+ days \([A-Z][a-z]{2} \d+ – [A-Z][a-z]{2} \d+\), tonight the \d+(st|nd|rd|th)(\n|$)/);
+  expect(text).not.toContain('3 games in 4 days — ');
+  // the strip: one cell per day of the stretch, exactly one tonight, games at both ends
+  const kinds = await strip.locator('.ck-tip-day').evaluateAll((els) => els.map((e) => e.getAttribute('data-kind')));
+  expect(kinds.filter((k) => k === 'tonight')).toHaveLength(1);
+  expect(kinds[0]).not.toBe('rest');
+  expect(kinds.at(-1)).not.toBe('rest');
   const box = await tip.boundingBox();
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width);

@@ -254,7 +254,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         <MatchLink game={game} gameLink={gameLink} className="ck-teams">
           <span className="ck-side">
             {logos && <TeamLogo team={first} />}
-            <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} plane={!fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</span>
+            <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} component={fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</span>
             {result && ' '}
             {score(result?.score, !!result?.win)}
           </span>{' '}
@@ -263,7 +263,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
             {score(result?.oppScore, !!result && !result.win)}
             {result && ' '}
             <span className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
-              {fatigue ? <FatigueMark f={fatigue.get(second.teamId)} plane={!fx}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
+              {fatigue ? <FatigueMark f={fatigue.get(second.teamId)} component={fx}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
               {side && opponentB2B && <B2BDot tip={opponentB2B} />}
             </span>{' '}
             {logos && <TeamLogo team={second} />}

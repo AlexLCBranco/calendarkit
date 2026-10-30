@@ -31,11 +31,11 @@ export interface LeagueWeekViewProps {
 }
 
 /** A team's tricode (fatigue marks on it; winner bold, loser muted once final). */
-function MonthTri({ team, fatigue, score, plane }: { team: ScheduleGame['homeTeam']; fatigue?: TeamFatigue; score?: { n: number; win: boolean }; plane: boolean }) {
+function MonthTri({ team, fatigue, score, component }: { team: ScheduleGame['homeTeam']; fatigue?: TeamFatigue; score?: { n: number; win: boolean }; component: boolean }) {
   const label = teamLabel(team);
   return (
     <span className={`ck-mtri${score ? (score.win ? ' ck-win' : ' ck-loss') : ''}`} data-tricode={label}>
-      <FatigueMark f={fatigue} className="ck-mtri-text" plane={plane}>
+      <FatigueMark f={fatigue} className="ck-mtri-text" component={component}>
         {label}
       </FatigueMark>
     </span>
@@ -65,11 +65,11 @@ export function MonthGameLine({ data, game, gameLink, fxRow = false }: { data: C
       {/* logos, tricodes, scores and "@": the link to the game page (a subgrid on the line's columns, round 5) */}
       <MatchLink game={game} gameLink={gameLink} className="ck-mline">
         <TeamLogo team={game.awayTeam} />
-        <MonthTri team={game.awayTeam} fatigue={away} plane={!fxRow} score={fin && { n: fin.score, win: fin.win }} />
+        <MonthTri team={game.awayTeam} fatigue={away} component={fxRow} score={fin && { n: fin.score, win: fin.win }} />
         <MonthScore score={fin && { n: fin.score, win: fin.win }} />
         <span className="ck-at">@</span>
         <MonthScore score={fin && { n: fin.oppScore, win: !fin.win }} />
-        <MonthTri team={game.homeTeam} fatigue={home} plane={!fxRow} score={fin && { n: fin.oppScore, win: !fin.win }} />
+        <MonthTri team={game.homeTeam} fatigue={home} component={fxRow} score={fin && { n: fin.oppScore, win: !fin.win }} />
         <TeamLogo team={game.homeTeam} />
       </MatchLink>
       <span className="ck-tv-slot">

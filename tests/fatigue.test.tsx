@@ -37,6 +37,26 @@ function tifOf(teamId: number) {
   }
   return out;
 }
+/**
+ * gameId → [games in its merged 3-in-4 stretch, days from its first to its last game inclusive, the game's place]
+ * (round 6), independently: from a set's first game, the stretch grows while another set starts inside it (and so
+ * shares a game with it).
+ */
+function stretchOf(teamId: number) {
+  const games = gamesOf(teamId);
+  const isSet = (i: number) => i + 2 < games.length && day(games[i + 2]!.dateEt) - day(games[i]!.dateEt) <= 3;
+  const out = new Map<string, [number, number, number]>();
+  for (let i = 0; i < games.length; i++) {
+    if (!isSet(i)) continue;
+    let end = i + 2;
+    for (let k = i + 1; k <= end; k++) if (isSet(k)) end = k + 2;
+    const s = games.slice(i, end + 1);
+    s.forEach((g, k) => out.set(g.gameId, [s.length, day(s.at(-1)!.dateEt) - day(s[0]!.dateEt) + 1, k + 1]));
+    i = end;
+  }
+  return out;
+}
+const ord = (k: number) => ['', '1st', '2nd', '3rd'][k] ?? `${k}th`;
 const shift = (d: string, n: number) => new Date((day(d) + n) * 86_400_000).toISOString().slice(0, 10);
 const opponentOf = (g: ScheduleGame, teamId: number) => (g.homeTeam.teamId === teamId ? g.awayTeam : g.homeTeam);
 
@@ -49,13 +69,20 @@ function expected(teamId: number, g: ScheduleGame) {
   const next = on(shift(g.dateEt, 1));
   const icons = prev ? [[home(prev), false], [home(g), true]] : next ? [[home(g), true], [home(next), false]] : [];
   const [pos] = tifOf(teamId).get(g.gameId) ?? [0, 0];
-  return { night: prev ? '2' : next ? '1' : null, icons, pos };
+  const st = stretchOf(teamId).get(g.gameId);
+  return { night: prev ? '2' : next ? '1' : null, icons, pos, chip: st ? `${st[0]}in${st[1]} · ${ord(st[2])}` : '', place: st?.[2] ?? 0 };
 }
 
 /** What a rendered Fatigue component shows: badge text, icons in DOM order (= left to right), chip, mirrored. */
 function shown(fx: Element) {
   return {
     badge: fx.querySelector('.ck-fx-b2b')?.textContent ?? '',
+    // the leg dot: before the first B (1) or after the second B (2), in DOM order = left to right
+    leg: (() => {
+      const b = fx.querySelector('.ck-fx-b2b');
+      const dot = b?.querySelector('.ck-fx-leg');
+      return !dot ? null : b!.firstChild === dot ? '1' : b!.lastChild === dot ? '2' : '?';
+    })(),
     icons: [...fx.querySelectorAll('.ck-fx-icon')].map((i) => [i.getAttribute('data-kind'), i.classList.contains('ck-fx-tonight')]),
     chip: fx.querySelector('.ck-fx-chip')?.textContent ?? '',
     chipPos: fx.querySelector('.ck-fx-chip')?.className.match(/ck-tif-pos-(\d)/)?.[1],
@@ -71,9 +98,11 @@ function checkFatigue(fx: Element, teamId: number, g: ScheduleGame, label: strin
   const got = shown(fx);
   expect(got.night, `${label} night`).toBe(want.night);
   expect(got.badge, `${label} badge`).toBe(want.night ? 'B2B' : '');
+  expect(got.leg, `${label} leg dot`).toBe(want.night);
   expect(got.icons, `${label} icons in time order, tonight solid`).toEqual(want.icons);
-  expect(got.chip, `${label} 3in4 chip`).toBe(want.pos ? '3in4' : '');
-  if (want.pos) expect(got.chipPos).toBe(String(want.pos));
+  expect(!!want.pos, `${label} in a 3-in-4 set iff in a stretch`).toBe(!!want.chip);
+  expect(got.chip, `${label} merged 3in4 chip`).toBe(want.chip);
+  if (want.chip) expect(got.chipPos).toBe(String(Math.min(3, want.place)));
   expect(got.empty, `${label} empty slot`).toBe(!want.night && !want.pos);
   return want;
 }
@@ -109,7 +138,7 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
     });
   }
 
-  it('tooltips on hover and focus: the details (leg, the other night, 3-in-4 sets) for that team', () => {
+  it('tooltips on hover and focus: the details (leg, the other night, the merged 3-in-4 stretch) for that team', () => {
     render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
     const own = document.querySelector('[data-testid="fatigue-team"] [data-night="2"]')!;
     fireEvent.mouseOver(own);
@@ -120,7 +149,8 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
     const opp = document.querySelector('[data-testid="fatigue-opp"] [data-tif]')!;
     expect(opp.getAttribute('tabindex')).toBe('0');
     fireEvent.focus(opp);
-    expect(screen.getByTestId('tooltip').textContent).toMatch(/3 games in 4 days/);
+    expect(screen.getByTestId('tooltip').textContent).toMatch(/\d+in\d+ · \d+(st|nd|rd|th): \d+ games in \d+ days \(/);
+    expect(screen.getByTestId('tip-days')).toBeTruthy();
   });
 
   it('rest rows have no fatigue columns; the TV filter never changes the labels', () => {

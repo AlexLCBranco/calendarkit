@@ -42,7 +42,12 @@ const columns = (page: Page, rowSel: string, parts: string[]) =>
           const b = f.getBoundingClientRect();
           add(`fx${i}.left`, r2(b.left));
           add(`fx${i}.width`, r2(b.width));
-          for (const s of f.children) add(`fx${i}.${getComputedStyle(s).gridArea.split(' ')[0]}`, r2(s.getBoundingClientRect().left)); // grid areas b, n1, n2, c
+          // grid areas b, n1, n2, c: their left x — for the chip its inner edge (round 6: it hugs the icons; its width varies)
+          for (const s of f.children) {
+            const area = getComputedStyle(s).gridArea.split(' ')[0];
+            const sb = s.getBoundingClientRect();
+            add(`fx${i}.${area}`, r2(area === 'c' && f.classList.contains('ck-fx-mirror') ? sb.right : sb.left));
+          }
           for (const c of f.children) if (c.getBoundingClientRect().right > b.right + 0.5 || c.getBoundingClientRect().left < b.left - 0.5) bad.push(`${row.dataset.gameId} fx${i} slot outside`);
           // the night icons in time order: DOM order = left to right
           const ic = [...f.querySelectorAll('.ck-fx-icon')].map((x) => x.getBoundingClientRect().left);
@@ -164,3 +169,140 @@ test('a known HA 2nd night (MIA @ CHA, Oct 24, 2026) at 1920 × 911: readable B2
   expect(ax).toBeGreaterThan(a[1]!.x);
   await page.locator('[data-game-id="0022600104"]').screenshot({ path: 'test-output/round5-shots/e2e-ha-row.png' });
 });
+
+// ---------------------------------------------------------------- round 6
+
+/** Every B2B badge in the rows: its column (0 = away / the team's own, 1 = home / the opponent), the leg, the dot's side. */
+const legs = (page: Page, rowSel: string) =>
+  page.evaluate((rowSel) => {
+    const out: { id: string; col: number; leg: string; side: string; inside: boolean; dotW: number; textOk: boolean }[] = [];
+    for (const row of document.querySelectorAll<HTMLElement>(rowSel)) {
+      [...row.querySelectorAll<HTMLElement>('[data-testid="fatigue"]')].forEach((fx, col) => {
+        const b = fx.querySelector<HTMLElement>('.ck-fx-b2b');
+        if (!b) return;
+        const dot = b.querySelector('.ck-fx-leg')!.getBoundingClientRect();
+        const text = [...b.childNodes].find((n) => n.nodeType === 3)!;
+        const tr = document.createRange();
+        tr.selectNodeContents(text);
+        const t = tr.getBoundingClientRect();
+        const box = b.getBoundingClientRect();
+        out.push({
+          id: row.dataset.gameId ?? '',
+          col,
+          leg: b.dataset.leg!,
+          side: dot.right <= t.left + 0.5 ? 'left' : dot.left >= t.right - 0.5 ? 'right' : 'overlap',
+          inside: dot.left >= box.left - 0.5 && dot.right <= box.right + 0.5 && t.left >= box.left - 0.5 && t.right <= box.right + 0.5,
+          dotW: dot.width,
+          textOk: text.textContent === 'B2B',
+        });
+      });
+    }
+    return out;
+  }, rowSel);
+
+for (const size of SIZES) {
+  test(`leg dot ${size.width}×${size.height}: left of "B2B" on a 1st night, right of it on a 2nd, in both columns of every view; never flips`, async ({ page }) => {
+    const seen = new Set<string>();
+    const views: [string, string][] = [
+      ['?view=league&layout=list&date=2026-10-24', '[data-testid="league-list"] .ck-card'],
+      ['?view=league&layout=list&date=2026-11-02', '[data-testid="league-list"] .ck-card'],
+      ['?view=league&layout=calendar&date=2026-11-01&weeks=1', '.ck-month-game'],
+      ['?view=team&layout=list&team=LAL', '[data-testid="team-list"] .ck-card'],
+    ];
+    for (const [search, rowSel] of views) {
+      await open(page, size, search);
+      const all = await legs(page, rowSel);
+      expect(all.length, search).toBeGreaterThan(5);
+      for (const l of all) {
+        expect(l.side, `${search} ${l.id} column ${l.col} leg ${l.leg}`).toBe(l.leg === '1' ? 'left' : 'right');
+        expect(l.inside, `${search} ${l.id}: dot and text inside the badge`).toBe(true);
+        expect(l.textOk).toBe(true);
+        expect(l.dotW, 'a visible dot').toBeGreaterThanOrEqual(2);
+        seen.add(`${search.includes('team=') ? 'team' : search.includes('calendar') ? 'week' : 'list'} col${l.col} leg${l.leg}`);
+      }
+    }
+    // every combination occurred: both legs in both columns, in the League List, the week view and the Team List
+    for (const v of ['list', 'week', 'team']) for (const c of [0, 1]) for (const g of [1, 2]) expect([...seen], `${v} col${c} leg${g}`).toContain(`${v} col${c} leg${g}`);
+  });
+
+  test(`yellow tricode boxes ${size.width}×${size.height}: none where the component is shown, kept where it is not; legend per view`, async ({ page }) => {
+    const yellow = (sel: string) =>
+      page.locator(sel).evaluateAll((els) => els.filter((e) => getComputedStyle(e).backgroundColor === 'rgb(245, 224, 66)' || (getComputedStyle(e).outlineStyle !== 'none' && getComputedStyle(e).outlineColor === 'rgb(245, 224, 66)')).length);
+    const legend = page.getByTestId('fatigue-legend');
+    const FX = /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd$/;
+    const MARKS = '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4';
+    // League List (a component for each team) and the 1-week view (the component row)
+    for (const search of ['?view=league&layout=list&date=2026-10-24', '?view=league&layout=calendar&date=2026-11-01&weeks=1']) {
+      await open(page, size, search);
+      expect(await page.locator('.ck-fx-b2b').count(), search).toBeGreaterThan(3);
+      expect(await page.locator('.ck-fm-n1, .ck-fm-n2').count(), search).toBe(0);
+      expect(await yellow('.ck-fm'), `${search}: yellow on a tricode`).toBe(0);
+      await expect(legend).toHaveText(FX);
+      expect(await legend.evaluate((l) => l.scrollWidth <= l.clientWidth), 'legend not cut off').toBe(true);
+    }
+    // the 2-week view has no component: the boxes stay, with their legend
+    await open(page, size, '?view=league&layout=calendar&date=2026-11-01&weeks=2');
+    expect(await page.locator('.ck-fx').count()).toBe(0);
+    expect(await page.locator('.ck-fm-n2').count()).toBeGreaterThan(3);
+    expect(await page.locator('.ck-fm-n1').count()).toBeGreaterThan(3);
+    expect(await yellow('.ck-fm-n2')).toBe(await page.locator('.ck-fm-n2').count());
+    await expect(legend).toHaveText(MARKS);
+    // the League List narrower than the component needs (tablets): boxes and their legend
+    await page.setViewportSize({ width: 900, height: size.height });
+    await page.goto('/?view=league&layout=list&date=2026-10-24');
+    await page.waitForSelector('[data-game-id]');
+    expect(await page.locator('.ck-fx').count()).toBe(0);
+    expect(await page.locator('.ck-fm-n2, .ck-fm-n1').count()).toBeGreaterThan(3);
+    await expect(legend).toHaveText(MARKS);
+  });
+
+  test(`merged 3-in-4 chip ${size.width}×${size.height}: the season's widest ("7in11 · 2nd", BOS Feb 4, 2027) fits its slot; rows one line; compact "7in11" fits two under a line`, async ({ page }) => {
+    const fit = (rowSel: string) =>
+      page.evaluate((rowSel) => {
+        const out: { chip: string; inside: boolean; fxW: number }[] = [];
+        for (const fx of document.querySelectorAll<HTMLElement>(`${rowSel} [data-testid="fatigue"]`)) {
+          const c = fx.querySelector<HTMLElement>('.ck-fx-chip');
+          if (!c) continue;
+          const b = fx.getBoundingClientRect();
+          const r = c.getBoundingClientRect();
+          // inside the component (its last track), and the text not wider than the chip
+          out.push({ chip: c.textContent!, inside: r.left >= b.left - 0.5 && r.right <= b.right + 0.5 && c.scrollWidth <= Math.ceil(r.width) + 0.5, fxW: +b.width.toFixed(2) });
+        }
+        return out;
+      }, rowSel);
+    await open(page, size, '?view=league&layout=list&date=2027-02-04');
+    let chips = await fit('[data-testid="league-list"] .ck-lday[data-day="2027-02-04"] .ck-card');
+    expect(chips.map((c) => c.chip)).toContain('7in11 · 2nd');
+    for (const c of chips) expect(c.inside, c.chip).toBe(true);
+    const widths = await page.locator('.ck-lday[data-day="2027-02-04"] [data-testid="fatigue"]').evaluateAll((els) => [...new Set(els.map((e) => e.getBoundingClientRect().width.toFixed(2)))]);
+    expect(widths, 'empty and full components: one width').toHaveLength(1);
+    const heights = await page.locator('.ck-lday[data-day="2027-02-04"] .ck-card').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
+    expect(Math.max(...heights), 'one line per row').toBeLessThanOrEqual(36.5);
+    // the Team List: BOS's own column holds it
+    await open(page, size, '?view=team&layout=list&team=BOS');
+    chips = await fit('[data-testid="team-list"] .ck-card');
+    expect(chips.map((c) => c.chip)).toContain('7in11 · 2nd');
+    for (const c of chips) expect(c.inside, c.chip).toBe(true);
+    expect(new Set(chips.map((c) => c.fxW)).size).toBe(1);
+    // the week view: compact "7in11", both components under the line, apart; game text unchanged
+    await open(page, size, '?view=league&layout=calendar&date=2027-02-04&weeks=1');
+    chips = await fit('.ck-month-game');
+    expect(chips.map((c) => c.chip)).toContain('7in11');
+    for (const c of chips) expect(c.inside, c.chip).toBe(true);
+    const row = await page.evaluate(() => {
+      const bad: string[] = [];
+      for (const l of document.querySelectorAll<HTMLElement>('.ck-month-game')) {
+        const fx = [...l.querySelectorAll('.ck-mfx .ck-fx')].map((e) => e.getBoundingClientRect());
+        if (fx.length !== 2) continue;
+        const line = l.querySelector('.ck-mline')!.getBoundingClientRect();
+        if (fx[0]!.right > fx[1]!.left - 4) bad.push(`${l.dataset.gameId} too close`);
+        if (fx[0]!.left < line.left - 0.5 || fx[1]!.right > line.right + 0.5) bad.push(`${l.dataset.gameId} outside the line`);
+      }
+      return { bad, tri: getComputedStyle(document.querySelector('.ck-mtri-text')!).fontSize, scale: document.querySelector<HTMLElement>('.ck-week-view')!.dataset.scale };
+    });
+    expect(row.bad).toEqual([]);
+    // game text at the size round 5 left it: 1-week scale 1.1 at 1920 × 911, 1 at 1280 × 900
+    expect(row.scale).toBe(size.width === 1920 ? '1.1' : '1');
+    expect(row.tri).toBe(size.width === 1920 ? '12.1px' : '11px');
+  });
+}

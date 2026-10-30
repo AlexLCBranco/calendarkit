@@ -3,7 +3,7 @@
 // (teamB2BPairs, teamThreeInFour, leagueRecords); computed once per data set, never per render or scroll.
 
 import { leagueRecords, sideLabel, teamB2BPairs, type B2BPair, type CalendarData } from './model';
-import { ORDINAL, teamThreeInFour, threeInFourTip, type ThreeInFour } from './scheduleTags';
+import { mergedChip, mergedDays, mergedTip, teamThreeInFour, type ThreeInFour } from './scheduleTags';
 import { TEAM_BY_ID } from './teams';
 
 export interface TeamFatigue {
@@ -14,8 +14,10 @@ export interface TeamFatigue {
   /** The team changes metro between the two nights of one of those pairs. */
   travels: boolean;
   tif?: ThreeInFour;
-  /** Tooltip: leg and code, both games with dates and opponents, travel, every 3-in-4 set, record going in. */
+  /** Tooltip: leg and code, both games with dates and opponents, travel, the merged 3-in-4 stretch, record going in. */
   tip: string;
+  /** The tooltip's day strip for the 3-in-4 stretch (mergedDays: "YYYY-MM-DD:g|r|t …"), when there is one. */
+  days?: string;
 }
 
 /** The team has something to show in this game: a back-to-back night or a 3-in-4 set (the Fatigue component isn't empty). */
@@ -50,12 +52,13 @@ export function leagueFatigue(data: CalendarData): Map<string, Map<number, TeamF
         `${md(pair.first.dateEt)} ${sideLabel(pair.first, teamId)} (${where(pair.first, teamId)}) → ${md(pair.second.dateEt)} ${sideLabel(pair.second, teamId)} (${where(pair.second, teamId)})`,
         ...(pair.travels ? [`Travels ${pair.fromCity} → ${pair.toCity}`] : []),
       ]);
-      if (!legs.length) lines.push(`${tri} — ${tif ? `3-in-4 · ${ORDINAL[tif.position]}` : 'rested'}`);
-      if (tif) lines.push(threeInFourTip(tif));
+      if (!legs.length) lines.push(`${tri} — ${tif ? mergedChip(tif.merged) : 'rested'}`);
+      // round 6: overlapping 3-in-4 sets as one stretch (was a line per set); the tooltip draws its days under the text
+      if (tif) lines.push(`${mergedChip(tif.merged)}: ${mergedTip(tif.merged)}`);
       if (rec) lines.push(`Record going in: ${rec.wins}-${rec.losses}`);
       let m = out.get(g.gameId);
       if (!m) out.set(g.gameId, (m = new Map()));
-      m.set(teamId, { nights: legs.map((l) => l.night), pairs: legs.map((l) => l.pair), travels: legs.some((l) => l.pair.travels), tif, tip: lines.join('\n') });
+      m.set(teamId, { nights: legs.map((l) => l.night), pairs: legs.map((l) => l.pair), travels: legs.some((l) => l.pair.travels), tif, tip: lines.join('\n'), days: tif && mergedDays(tif.merged) });
     }
   }
   cache.set(data, out);

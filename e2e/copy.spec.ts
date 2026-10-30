@@ -19,7 +19,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl' && !(
 test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
 
 /** Area of an element inside the copied root, in CSS px, and what the image must show there. */
-type Region = { kind: 'logo' | 'text' | 'score' | 'b2b' | 'tv' | 'rest' | 'tif'; x: number; y: number; w: number; h: number; what: string };
+type Region = { kind: 'logo' | 'text' | 'score' | 'b2b' | 'tv' | 'rest' | 'tif' | 'leg'; x: number; y: number; w: number; h: number; what: string };
 type Target = { width: number; height: number; regions: Region[]; ratio: number };
 
 /** Every area to check inside `root` (runs in the page). Exported as a string so it works for the stage too. */
@@ -39,6 +39,7 @@ const MEASURE = `(root) => {
   add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp, .ck-fm-n2, .ck-fx-b2b:not(:empty)'); // round 5: the Fatigue component's badge
   add('b2b', '.ck-fm-n1', 1); // league views' 1st night: the yellow ring around the tricode (round 4)
   add('tif', '.ck-tif, .ck-fx-chip');
+  add('leg', '.ck-fx-leg'); // round 6: the badge's leg dot
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
   add('rest', '.ck-rest-row .ck-date, .ck-rest');
   return { width: root.offsetWidth, height: root.offsetHeight, regions: out };
@@ -165,8 +166,10 @@ async function analyze(page: Page, png: string, target: Target): Promise<Report>
             // yellow: red and green alike, both well above blue (orange has red far above green)
             else if (r.kind === 'b2b' && p[0]! > p[2]! + 40 && p[1]! > p[2]! + 40 && Math.abs(p[0]! - p[1]!) < 35) hit++;
             else if (r.kind === 'tv' && p[1]! > p[0]! + 40 && p[1]! > p[2]! + 15) hit++; // green
+            // the dark dot on the yellow badge: not yellow (yellow has red far above blue, also faded on past games)
+            else if (r.kind === 'leg' && p[0]! - p[2]! < 70) hit++;
           }
-        const need = r.kind === 'logo' ? 0.08 : r.kind === 'text' || r.kind === 'score' || r.kind === 'rest' ? 0.02 : 0.05;
+        const need = r.kind === 'leg' ? 0.2 : r.kind === 'logo' ? 0.08 : r.kind === 'text' || r.kind === 'score' || r.kind === 'rest' ? 0.02 : 0.05;
         if (!total || hit / total < need) failures.push(`${r.kind} "${r.what}" at ${r.x.toFixed(0)},${r.y.toFixed(0)}: ${((hit / Math.max(total, 1)) * 100).toFixed(1)}% < ${need * 100}%`);
       }
       return { width, height, corners, inkShare: ink / n, colors: colors.size, failures, counts };
@@ -249,10 +252,12 @@ test('whole view and a day: team calendar in 1 and 2 weeks', async ({ page }) =>
 test('whole view: league list copies the whole week', async ({ page }) => {
   await open(page, '?view=league&layout=list&date=2026-11-15');
   const view = await copyView(page);
-  await check(page, 'view-league-list', view, ['logo', 'text', 'tv', 'b2b', 'tif']);
+  await check(page, 'view-league-list', view, ['logo', 'text', 'tv', 'b2b', 'tif', 'leg']);
   // the Fatigue components are in the image (round 5): badges and chips
   expect(view.target.regions.filter((r) => r.kind === 'b2b' && r.what === 'B2B').length).toBeGreaterThan(10);
-  expect(view.target.regions.filter((r) => r.kind === 'tif' && r.what === '3in4').length).toBeGreaterThan(10);
+  // round 6: the merged chips ("4in6 · 2nd") and the leg dots (dark, inside the badges) are drawn too
+  expect(view.target.regions.filter((r) => r.kind === 'tif' && /^\d+in\d+ · \d+(st|nd|rd|th)$/.test(r.what)).length).toBeGreaterThan(10);
+  expect(view.target.regions.filter((r) => r.kind === 'leg').length).toBe(view.target.regions.filter((r) => r.kind === 'b2b' && r.what === 'B2B').length);
   // Nov 15 – 21: every game of the week (2 logos each)
   const week = await page.evaluate(async () => {
     const feed = await (await fetch('/data/schedule.json')).json();

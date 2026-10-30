@@ -5,7 +5,7 @@
 // every set, record going in; "rested" otherwise). Legend under the week grid and the League List.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { CalendarView } from '../src/components/CalendarView';
 import { leagueFatigue } from '../src/data/fatigue';
 import { addDays, teamGames } from '../src/data/model';
@@ -17,8 +17,25 @@ afterEach(cleanup);
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 const XL = { width: 1840, height: 1000 };
 const LEGEND = '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4';
-/** Views with the Fatigue component (round 5): League List (desktop) and the 1-week view. */
-const LEGEND_FX = 'B2B back-to-back:  home  away, earlier night first, tonight solid · 3in4 3 games in 4 nights · ■ 2nd night · ▢ 1st night';
+/** Views with the Fatigue component: League List (desktop) and the 1-week view. Round 6: the leg dot, the merged chip; no
+ * tricode keys (the tricodes there have no yellow marks). */
+const LEGEND_FX = 'B2B back-to-back, 1st night (again tomorrow) · B2B 2nd night (played yesterday) ·  home  away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd';
+/** gameId → "4in6 · 2nd" for a team, worked out here: sets chained while one starts inside the stretch (round 6). */
+function stretches(teamId: number) {
+  const games = teamGames(data, teamId);
+  const isSet = (i: number) => i + 2 < games.length && (Date.parse(games[i + 2]!.dateEt) - Date.parse(games[i]!.dateEt)) / 86_400_000 <= 3;
+  const out = new Map<string, string>();
+  for (let i = 0; i < games.length; i++) {
+    if (!isSet(i)) continue;
+    let end = i + 2;
+    for (let k = i + 1; k <= end; k++) if (isSet(k)) end = k + 2;
+    const st = games.slice(i, end + 1);
+    const days = (Date.parse(st.at(-1)!.dateEt) - Date.parse(st[0]!.dateEt)) / 86_400_000 + 1;
+    st.forEach((g, k) => out.set(g.gameId, `${st.length}in${days} · ${['', '1st', '2nd', '3rd'][k + 1] ?? `${k + 1}th`}`));
+    i = end;
+  }
+  return out;
+}
 /** Metro of an arena city, written out here (the app's table is src/data/metro.ts). */
 const metro = (city: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' })[city] ?? city;
 
@@ -61,7 +78,14 @@ describe('leagueFatigue (model)', () => {
           expect(got.tip).toMatch(/\n[A-Z][a-z]{2} \d{1,2} (vs|@) [A-Z]{3} \((home|away)\) → [A-Z][a-z]{2} \d{1,2} (vs|@) [A-Z]{3} \((home|away)\)/);
           expect(got.tip.includes(`Travels ${p.fromCity} → ${p.toCity}`)).toBe(got.travels);
         }
-        if (got.tif) expect(got.tip).toContain('3 games in 4 days — ');
+        // round 6: the merged stretch, one line ("4in6 · 2nd: 4 games in 6 days (Oct 28 – Nov 2), tonight the 2nd"), and its days
+        const chip = stretches(t.id).get(id);
+        expect(!!got.tif, `${t.tricode} ${id} stretch`).toBe(!!chip);
+        if (chip) {
+          expect(got.tip).toContain(`${chip}: ${chip.split('in')[0]} games in `);
+          expect(got.tip).not.toContain('3 games in 4 days — ');
+          expect(got.days!.split(' ').filter((d) => d.endsWith(':t'))).toHaveLength(1);
+        }
         if (!got.nights.length && !got.tif) {
           rested++;
           expect(got.tip.split('\n')[0]).toBe(`${t.tricode} — rested`);
@@ -90,7 +114,8 @@ const marks = (root: ParentNode, sel: string) =>
     focus: e.tabIndex,
   }));
 
-function check(root: ParentNode, sel: string, ids: string[], planes = true) {
+/** `component`: the view shows the Fatigue component — the tricodes then have no plane and no yellow fill / outline. */
+function check(root: ParentNode, sel: string, ids: string[], component = false) {
   const f = leagueFatigue(data);
   let n = 0;
   for (const id of ids) {
@@ -99,7 +124,7 @@ function check(root: ParentNode, sel: string, ids: string[], planes = true) {
     expect(got.map((m) => m.tri), id).toEqual([g.awayTeam.teamTricode, g.homeTeam.teamTricode]);
     [g.awayTeam, g.homeTeam].forEach((t, i) => {
       const want = f.get(id)!.get(t.teamId)!;
-      expect(got[i], `${id} ${t.teamTricode}`).toEqual({ tri: t.teamTricode, fill: want.nights.includes(2), outline: want.nights.includes(1) && !want.nights.includes(2), plane: planes && want.travels, tif: want.tif?.position ?? 0, tip: want.tip, focus: 0 });
+      expect(got[i], `${id} ${t.teamTricode}`).toEqual({ tri: t.teamTricode, fill: !component && want.nights.includes(2), outline: !component && want.nights.includes(1) && !want.nights.includes(2), plane: !component && want.travels, tif: want.tif?.position ?? 0, tip: want.tip, focus: 0 });
       n++;
     });
   }
@@ -143,12 +168,15 @@ describe('Fatigue component (round 5)', () => {
         // badge next to the logo: the away column mirrored, the home column not
         expect(fx.classList.contains('ck-fx-mirror')).toBe(i === 0);
         expect(fx.querySelector('.ck-fx-b2b')?.textContent ?? '').toBe(pair ? 'B2B' : '');
+        // round 6: the leg dot beside the first B (1st night) or the second B (2nd night), whichever column
+        const badge = fx.querySelector('.ck-fx-b2b');
+        if (pair) expect(badge!.firstChild === badge!.querySelector('.ck-fx-leg') ? 1 : badge!.lastChild === badge!.querySelector('.ck-fx-leg') ? 2 : 0, `${g.gameId} ${i} leg`).toBe(want.nights[0]);
         expect(icons(fx)).toEqual(pair ? [...pair.code].map((c, k) => `${c === 'H' ? 'home' : 'away'}${want.nights[0] === k + 1 ? '!' : ''}`) : []);
-        expect(fx.querySelector('.ck-fx-chip')?.textContent ?? '').toBe(want.tif ? '3in4' : '');
+        expect(fx.querySelector('.ck-fx-chip')?.textContent ?? '').toBe(stretches(t.teamId).get(g.gameId) ?? '');
         expect(fx.getAttribute('data-tip')).toBe(want.tip);
       });
-      // the tricode marks stay (yellow), without their plane (the component's plane means "away")
-      expect(c.querySelector('.ck-fm-plane')).toBeNull();
+      // the tricode marks lose their plane (the component's plane means "away") and, round 6, their yellow fill / outline
+      expect(c.querySelector('.ck-fm-plane, .ck-fm-n1, .ck-fm-n2')).toBeNull();
     }
     expect(shown).toBeGreaterThan(10);
   });
@@ -191,7 +219,9 @@ describe('Fatigue component (round 5)', () => {
         [true, false, !has(g.gameId, g.awayTeam.teamId)],
         [true, true, !has(g.gameId, g.homeTeam.teamId)],
       ]);
-      expect(l.querySelector('.ck-fm-plane')).toBeNull();
+      expect(l.querySelector('.ck-fm-plane, .ck-fm-n1, .ck-fm-n2')).toBeNull();
+      // compact chips: the stretch without tonight's place ("4in6"; the full chip doesn't fit two under a 1280 line)
+      for (const [x, t] of [[fx[0]!, g.awayTeam], [fx[1]!, g.homeTeam]] as const) expect(x.querySelector('.ck-fx-chip')?.textContent ?? '').toBe(stretches(t.teamId).get(g.gameId)?.split(' · ')[0] ?? '');
     }
     expect(rows).toBeGreaterThan(20);
     expect(one.querySelector('[data-testid="fatigue-legend"]')?.textContent).toBe(LEGEND_FX);
@@ -207,7 +237,7 @@ describe('League List', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-02' }} />).container;
     const ids = [...el.querySelectorAll<HTMLElement>('[data-testid="league-list"] .ck-card')].map((c) => c.dataset.gameId!);
     expect(ids.length).toBeGreaterThan(15);
-    expect(check(el, '.ck-matchup .ck-fm', ids, false)).toBe(2 * ids.length);
+    expect(check(el, '.ck-matchup .ck-fm', ids, true)).toBe(2 * ids.length);
     expect(el.querySelector('.ck-b2b')).toBeNull();
     expect(el.querySelector('[data-testid="fatigue-legend"]')?.textContent).toBe(LEGEND_FX);
   });
@@ -216,5 +246,44 @@ describe('League List', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAMS[0]!.id }} />).container;
     expect(el.querySelector('.ck-fm')).toBeNull();
     expect(el.querySelector('[data-testid="fatigue-legend"]')).toBeNull();
+  });
+});
+
+describe('pop-up (round 6): the merged stretch and its day strip', () => {
+  it('HOU on Oct 30, 2026: "4in6 · 2nd" chip; the pop-up has the stretch line, the record, and the days game, rest, TONIGHT, game, rest, game', () => {
+    const HOU = TEAMS.find((t) => t.tricode === 'HOU')!.id;
+    const g = data.games.find((x) => x.dateEt === '2026-10-30' && (x.homeTeam.teamId === HOU || x.awayTeam.teamId === HOU))!;
+    const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-10-30' }} />).container;
+    const fx = el.querySelectorAll(`[data-testid="league-list"] [data-game-id="${g.gameId}"] .ck-matchup > .ck-fx`)[g.homeTeam.teamId === HOU ? 1 : 0]!;
+    expect(fx.querySelector('.ck-fx-chip')!.textContent).toBe('4in6 · 2nd');
+    fireEvent.mouseOver(fx);
+    const tip = screen.getByTestId('tooltip');
+    expect(tip.textContent).toContain('4in6 · 2nd: 4 games in 6 days (Oct 28 – Nov 2), tonight the 2nd');
+    expect(tip.textContent).not.toContain('3 games in 4 days — ');
+    const cells = [...within(tip).getByTestId('tip-days').children];
+    expect(cells.map((c) => c.getAttribute('data-kind'))).toEqual(['game', 'rest', 'tonight', 'game', 'rest', 'game']);
+    expect(cells.map((c) => c.getAttribute('data-date'))).toEqual(['2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', '2026-11-01', '2026-11-02']);
+    expect(cells.map((c) => c.querySelector('.ck-tip-num')!.textContent)).toEqual(['Oct 28', '29', '30', '31', 'Nov 1', '2']);
+    // the tricode's own pop-up (2-week view / tablets) is the same, strip included
+    expect(el.querySelector(`[data-game-id="${g.gameId}"] .ck-fm[data-tip-days]`)).not.toBeNull();
+    // the other pop-up lines stay: HOU on Oct 23 (2nd of its Oct 21–26 stretch), whose record going in is known (the
+    // saved feed is from Oct 23, so Oct 30's isn't)
+    const g23 = data.games.find((x) => x.dateEt === '2026-10-23' && (x.homeTeam.teamId === HOU || x.awayTeam.teamId === HOU))!;
+    const t23 = leagueFatigue(data).get(g23.gameId)!.get(HOU)!;
+    expect(t23.tip).toMatch(/\n4in6 · 2nd: 4 games in 6 days \(Oct 21 – Oct 26\), tonight the 2nd\n/);
+    expect(t23.tip).toMatch(/\nRecord going in: \d+-\d+$/);
+  });
+
+  it('no strip for a team not in a 3-in-4 stretch', () => {
+    // a team on a back-to-back but in no 3-in-4 set
+    const f = leagueFatigue(data);
+    const no = (id: string, t: number) => !!f.get(id)!.get(t)!.nights.length && !f.get(id)!.get(t)!.tif;
+    const g = data.games.find((x) => x.dateEt >= '2026-10-23' && (no(x.gameId, x.awayTeam.teamId) || no(x.gameId, x.homeTeam.teamId)))!;
+    const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: g.dateEt }} />).container;
+    const plain = el.querySelectorAll<HTMLElement>(`[data-game-id="${g.gameId}"] .ck-matchup > .ck-fx`)[no(g.gameId, g.awayTeam.teamId) ? 0 : 1]!;
+    expect(plain.querySelector('.ck-fx-chip')).toBeNull();
+    fireEvent.mouseOver(plain);
+    expect(screen.getByTestId('tooltip')).toBeTruthy();
+    expect(screen.queryByTestId('tip-days')).toBeNull();
   });
 });
