@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Round 6, A4: game links for NBA Cup knockout games (Dec 9–16, 2025), from a fixture in the feed's real format
 // (tests/fixtures/cup-knockout-2025.json, built by make-cup-knockout-2025.mjs: quarterfinals at home sites, semifinals
-// and the final at a neutral site, the final a 006… game, a late quarterfinal at 11:30 pm ET). Expected URL, as for
+// and the final at a neutral site, the final a 006… game, a late quarterfinal at 10:00 pm ET = 03:00 UTC the next day;
+// round 8: every time from the NBA feed's boxscores). Expected URL, as for
 // every game: https://hoopsjunkie.io/games/<feed gameDateEst date>/<away>-vs-<home>, lowercase tricodes, away and home
 // as the feed designates them (also at a neutral site: the feed still names a home team, and it's the only order the
 // app has). Runs under America/New_York and America/Sao_Paulo; the views use the process zone, as in the app.
@@ -24,10 +25,10 @@ const rawGames = (raw as unknown as { leagueSchedule: { gameDates: { games: Raw[
 
 /** Written out by hand: the URL each fixture game must link to. */
 const EXPECTED: Record<string, string> = {
-  '0022501201': 'https://hoopsjunkie.io/games/2025-12-09/nyk-vs-tor', // round 7: these 7 URLs load the game's real page (checked 2026-10-30)
-  '0022501202': 'https://hoopsjunkie.io/games/2025-12-09/mia-vs-orl',
+  '0022501201': 'https://hoopsjunkie.io/games/2025-12-09/mia-vs-orl', // round 7: these 7 URLs load the game's real page (checked 2026-10-30)
+  '0022501202': 'https://hoopsjunkie.io/games/2025-12-09/nyk-vs-tor',
   '0022501203': 'https://hoopsjunkie.io/games/2025-12-10/phx-vs-okc',
-  '0022501204': 'https://hoopsjunkie.io/games/2025-12-10/sas-vs-lal', // 04:30 UTC Dec 11
+  '0022501204': 'https://hoopsjunkie.io/games/2025-12-10/sas-vs-lal', // 10:00 pm ET = 03:00 UTC Dec 11
   '0022501229': 'https://hoopsjunkie.io/games/2025-12-13/nyk-vs-orl', // neutral (Las Vegas)
   '0022501230': 'https://hoopsjunkie.io/games/2025-12-13/sas-vs-okc', // neutral, 02:00 UTC Dec 14
   '0062500001': 'https://hoopsjunkie.io/games/2025-12-16/sas-vs-nyk', // the final: neutral, 006…, 01:30 UTC Dec 17
@@ -43,7 +44,7 @@ describe('NBA Cup knockout games (Dec 9–16, 2025): link from the feed\'s ET da
     expect(rawGames.filter((g) => g.isNeutral).length).toBe(3);
     // the late game: ET Dec 10, but Dec 11 in UTC
     const late = rawGames.find((g) => g.gameId === '0022501204')!;
-    expect([late.gameDateEst.slice(0, 10), late.gameDateTimeUTC]).toEqual(['2025-12-10', '2025-12-11T04:30:00Z']);
+    expect([late.gameDateEst.slice(0, 10), late.gameDateTimeUTC]).toEqual(['2025-12-10', '2025-12-11T03:00:00Z']);
   });
 
   it('appGameLink gives the expected URL for every game (the same rule as regular games)', () => {
