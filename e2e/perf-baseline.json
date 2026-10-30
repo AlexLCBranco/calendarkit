@@ -5,17 +5,14 @@
     "load-team-calendar": 294,
     "scroll-frame-p95": 16.8,
     "scroll-frame-mean": 16.7,
-    "scroll-main-thread": 1942,
     "switch-league-calendar": 54,
     "switch-team-calendar": 50,
     "switch-team-list": 81,
     "switch-league-list": 60,
     "team-scroll-frame-p95": 16.8,
     "team-scroll-frame-mean": 16.7,
-    "team-scroll-main-thread": 660,
     "scroll-countdown-frame-p95": 33,
-    "scroll-countdown-frame-mean": 17.4,
-    "scroll-countdown-main-thread": 1819
+    "scroll-countdown-frame-mean": 17.4
   },
   "linux": {
     "load-league-list": 364,
@@ -23,16 +20,13 @@
     "load-team-calendar": 307,
     "scroll-frame-p95": 16.8,
     "scroll-frame-mean": 16.7,
-    "scroll-main-thread": 1100,
     "switch-league-calendar": 32,
     "switch-team-calendar": 32,
     "switch-team-list": 50,
     "switch-league-list": 35,
     "team-scroll-frame-p95": 16.7,
     "team-scroll-frame-mean": 16.7,
-    "team-scroll-main-thread": 160,
     "scroll-countdown-frame-p95": 18,
-    "scroll-countdown-frame-mean": 16,
-    "scroll-countdown-main-thread": 865
+    "scroll-countdown-frame-mean": 16
   }
 }
