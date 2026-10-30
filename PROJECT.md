@@ -1328,7 +1328,7 @@ Ground rules as every round (desktop first, nothing slower, every check automate
 - **Placement**: League List only, desktop only (where `leagueSideBySide`), right of the list after a 24 px gap, as wide
   as the room allows at the outline's 1000 : 641, height-limited so the legend fits. It sits outside the list's scroller,
   so it stays put while a busy night scrolls. Measured: **633 × 406 px at 1920 × 1080** (box; 428 with the legend),
-  **299 × 192 px at 1280 × 900**. Never over list content (e2e: no list element intersects it). Not in the Slate, not on
+  **299 × 192 px at 1280 × 900**. **Alex (2026-10-30): keep the small map at 1280 as is** (not hidden, rows not wrapped to make room). Never over list content (e2e: no list element intersects it). Not in the Slate, not on
   tablets/phones (they keep the centered list).
 - **Rendering**: a static SVG drawn in the page from `src/map/basemap.ts` — generated once by `scripts/make-basemap.ts`
   (dev-only deps: us-atlas 3.0.1 states-10m = US Census cartographic boundaries; world-atlas 2.0.2 countries-50m = Natural
