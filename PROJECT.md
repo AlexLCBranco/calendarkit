@@ -1228,6 +1228,11 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     every game, same facts as the League List, names/"@"/scores/OT vs the snapshot, keys + arrows + wheel, the four copy
     sizes with transparency / fit / sharpness / column rule, marquee of 3). Readability "≥ 12 px names when fitted" is
     the test's threshold; whether that reads well on the whiteboard is for Alex's eyes.
+  - **Round 7 tests vs the pre-round build** (v1.18.1 served, desktop-xl): 14 of the new/changed e2e fail there as they
+    should (b2b-color, calendar-cells, mirror, rest, today-cell ×2, two-week-fit ×2, slate ×7); the game-link and
+    per-kind alignment checks pass there (they guard behaviour that already held; the link test fails on a mutation that
+    cancels auxclick / ctrl-click). Unit: clock 3/3, today-cell 3/4 (the 4th checks "no highlight" off-month), mirror,
+    fatigue chip and rest tests fail on the old code.
   - Perf guard (vs v1.17.1, same run): League scroll ×0.975, Team List scroll ×1.015 (the ×1.155 after part 2 was run
     noise — same code), loads 298 / 319 / 303 ms, switches 47–66 ms, marquee p95 18 ms. The Slate itself has no scroll
     guard (a day is ≤ 15 cards, no virtualization involved).
