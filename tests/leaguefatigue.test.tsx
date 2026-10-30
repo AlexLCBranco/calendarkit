@@ -151,7 +151,7 @@ describe('Fatigue component (round 5)', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-02' }} />).container;
     const f = leagueFatigue(data);
     const cards = [...el.querySelectorAll<HTMLElement>('[data-testid="league-list"] .ck-card')];
-    expect(cards.length).toBeGreaterThan(15);
+    expect(cards.length).toBe(data.byDate.get('2026-11-02')!.length); // round 8: that day only (15 games)
     let shown = 0;
     for (const c of cards) {
       const g = data.games.find((x) => x.gameId === c.dataset.gameId)!;
@@ -236,7 +236,7 @@ describe('League List', () => {
   it('every rendered row: marks on both tricodes, tooltip per team; no "B2B" badge; legend under the list', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-02' }} />).container;
     const ids = [...el.querySelectorAll<HTMLElement>('[data-testid="league-list"] .ck-card')].map((c) => c.dataset.gameId!);
-    expect(ids.length).toBeGreaterThan(15);
+    expect(ids.length).toBe(data.byDate.get('2026-11-02')!.length); // round 8: that day only
     expect(check(el, '.ck-matchup .ck-fm', ids, true)).toBe(2 * ids.length);
     expect(el.querySelector('.ck-b2b')).toBeNull();
     expect(el.querySelector('[data-testid="fatigue-legend"]')?.textContent).toBe(LEGEND_FX);

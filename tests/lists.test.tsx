@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-// List | Calendar switch (League and Team), continuous league list, team list. jsdom has no layout, so the list
-// virtualizer runs on its height estimates here; real scrolling is covered by e2e/lists.spec.ts.
+// List | Calendar switch (League and Team), the one-day league list (round 8), team list. Real scrolling is covered by
+// e2e/lists.spec.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { CalendarView, LeagueListView } from '../src/components/CalendarView';
+import { CalendarView } from '../src/components/CalendarView';
 import { addDays, hasNationalTv, isBackToBack, isOver, markers, nationalTv, teamGames } from '../src/data/model';
 import { TEAM_BY_ID } from '../src/data/teams';
 import { data } from './feed';
@@ -107,61 +107,87 @@ describe('TV games only, all four views', () => {
   });
 });
 
-describe('league list (continuous)', () => {
-  it('opens on the default day with its header; following game days come after it, each with a header', () => {
+describe('league list: one day at a time (round 8)', () => {
+  const title = () => screen.getByTestId('day-title').textContent;
+
+  it("opens on the default day with its header and only that day's games", () => {
     const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
     const list = screen.getByTestId('league-list');
-    const shown = days(list);
-    expect(screen.getByTestId('day-title').textContent).toBe('Friday, October 23, 2026');
-    expect(shown).toContain('2026-10-23');
-    const i = data.dates.indexOf(shown[0]!);
-    expect(shown).toEqual(data.dates.slice(i, i + shown.length)); // consecutive game days, no empty days
-    expect(shown.length).toBeGreaterThan(1);
+    expect(title()).toBe('Friday, October 23, 2026');
+    expect(days(list)).toEqual(['2026-10-23']);
     const n = data.byDate.get('2026-10-23')!.length;
     expect(list.querySelector('[data-day="2026-10-23"] .ck-lday-head')!.textContent).toBe(`Fri, Oct 23 · ${n} games`);
-    expect(ids(list.querySelector('[data-day="2026-10-23"]')!)).toEqual(data.byDate.get('2026-10-23')!.map((g) => g.gameId));
-    expect(el.container.querySelector('[data-day="2026-10-19"]')).toBeNull(); // no games that day
+    expect(ids(list)).toEqual(data.byDate.get('2026-10-23')!.map((g) => g.gameId));
+    expect(el.container.querySelector('[data-day="2026-10-24"]')).toBeNull();
   });
 
-  it('renders only a bounded number of days, also far into the season', () => {
+  it('one day also far into the season, and on the busiest night', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ date: '2027-02-10' }} />);
-    const shown = days(screen.getByTestId('league-list'));
-    expect(shown).toContain('2027-02-10');
-    expect(shown.length).toBeLessThanOrEqual(12);
-    expect(data.dates.length).toBeGreaterThan(100);
+    expect(days(screen.getByTestId('league-list'))).toEqual(['2027-02-10']);
+    cleanup();
+    const busiest = [...data.byDate].sort((x, y) => y[1].length - x[1].length)[0]!;
+    expect(busiest[1].length).toBeGreaterThanOrEqual(15);
+    render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ date: busiest[0] }} />);
+    expect(ids(screen.getByTestId('league-list'))).toEqual(busiest[1].map((g) => g.gameId));
   });
 
-  it('scrolling moves the week strip and the date to the day at the top', () => {
+  it('scrolling never changes the day', () => {
     const onStateChange = vi.fn();
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" onStateChange={onStateChange} />);
     const list = screen.getByTestId('league-list');
     let top = 0;
     Object.defineProperty(list, 'scrollTop', { get: () => top, set: (v: number) => (top = v), configurable: true });
-    fireEvent.scroll(list); // settle at the current position
-    top += 4000;
-    fireEvent.scroll(list);
-    const title = screen.getByTestId('day-title').textContent!;
-    expect(title).not.toBe('Friday, October 23, 2026');
-    const date = onStateChange.mock.lastCall![0].date as string;
-    expect(date > '2026-10-24').toBe(true);
-    expect(days(list)).toContain(date);
-    expect(within(screen.getByRole('tablist', { name: 'Week' })).getByRole('tab', { selected: true }).getAttribute('data-date')).toBe(date);
+    for (const y of [400, 4000, 40000]) {
+      top = y;
+      fireEvent.scroll(list);
+      fireEvent.wheel(list, { deltaY: 2000 });
+    }
+    expect(title()).toBe('Friday, October 23, 2026');
+    expect(days(list)).toEqual(['2026-10-23']);
+    expect(onStateChange).not.toHaveBeenCalled();
   });
 
-  it('a re-render between a user scroll and its scroll event keeps the new position (no snap back)', () => {
-    const props = { data, date: '2026-11-15', onSelectDate: () => {}, tvOnly: false, size: WIDE, timeZone: 'UTC' };
-    const el = render(<LeagueListView {...props} now={NOW} />);
-    const list = screen.getByTestId('league-list');
-    let top = 0;
-    Object.defineProperty(list, 'scrollTop', { get: () => top, set: (v: number) => (top = v), configurable: true });
-    fireEvent.scroll(list);
-    const before = screen.getByTestId('day-title').textContent;
-    top = 3000; // the user scrolled; the scroll event is still queued
-    el.rerender(<LeagueListView {...props} now={NOW + 60_000} />); // e.g. the clock ticks
-    expect(top).toBe(3000);
-    fireEvent.scroll(list);
-    expect(top).toBe(3000);
-    expect(screen.getByTestId('day-title').textContent).not.toBe(before);
+  it('every way to change the day lands on the right day, showing only it', () => {
+    const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
+    const only = (date: string, head: string) => {
+      expect(title()).toBe(head);
+      expect(days(screen.getByTestId('league-list'))).toEqual([date]);
+      expect(ids(screen.getByTestId('league-list'))).toEqual(data.byDate.get(date)!.map((g) => g.gameId));
+    };
+    fireEvent.click(screen.getByLabelText('Next day'));
+    only('2026-10-24', 'Saturday, October 24, 2026');
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    only('2026-10-25', 'Sunday, October 25, 2026');
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+    only('2026-10-23', 'Friday, October 23, 2026');
+    fireEvent.keyDown(window, { key: 'ArrowRight', ctrlKey: true }); // a modifier: not ours
+    only('2026-10-23', 'Friday, October 23, 2026');
+    fireEvent.click(screen.getByRole('tab', { name: /^Wednesday, October 21/ }));
+    only('2026-10-21', 'Wednesday, October 21, 2026');
+    fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+    only('2026-10-23', 'Friday, October 23, 2026');
+    fireEvent.click(screen.getByLabelText('Next week'));
+    only('2026-10-25', 'Sunday, October 25, 2026'); // the next week's first game day
+    fireEvent.click(screen.getByTestId('date-pick'));
+    fireEvent.click(el.container.querySelector<HTMLElement>('[data-testid="date-picker"] [data-date="2026-10-28"]')!);
+    only('2026-10-28', 'Wednesday, October 28, 2026');
+  });
+
+  it('← / → move one day in the List and in the Slate (one listener, never twice), none in the Team List', () => {
+    render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(title()).toBe('Saturday, October 24, 2026');
+    fireEvent.click(tab('Slate'));
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(title()).toBe('Sunday, October 25, 2026');
+    fireEvent.click(tab('List'));
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+    expect(title()).toBe('Saturday, October 24, 2026');
+    fireEvent.click(tab('Team'));
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    fireEvent.click(tab('League'));
+    expect(title()).toBe('Saturday, October 24, 2026');
   });
 
   it('week strip click and prev/next arrows jump between game days', () => {

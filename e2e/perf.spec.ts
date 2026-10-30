@@ -1,5 +1,5 @@
 // Performance guard (1920 × 1080, own Playwright project "perf" that runs after every other project, so no other
-// test shares the machine): load → first view rendered, wheel-scrolling the League List through a month, and
+// test shares the machine; on CI a job of its own since round 8): load → first view rendered, the League List within a busy night and day by day (round 8), the Team List,
 // switching views. Fails when a metric gets meaningfully worse than the baseline in e2e/perf-baseline.json
 // (limit = max(baseline × PERF_RATIO, baseline + the metric's slack); see PROJECT.md "Performance").
 // Prints `[perf] …` lines; PERF_RECORD=1 writes the measured numbers to test-output/perf.json.
@@ -193,35 +193,78 @@ async function wheel(page: Page, testId: string, yDistance: number) {
   await cdp.detach();
 }
 
-/** League List from Nov 1 (explicit date: no clock needed) to December, a month of game days, in 4000 px pieces. */
-async function leagueListToDecember(page: Page) {
-  for (let i = 0; i < 10 && !/December/.test((await page.getByTestId('day-title').textContent()) ?? ''); i++) await wheel(page, 'league-list', -4000);
-  await expect(page.getByTestId('day-title')).toContainText('December');
-}
-async function openLeagueList(page: Page, base = '') {
-  await page.goto(`${base}/?view=league&layout=list&date=2026-11-01`);
-  await expect(page.getByTestId('day-title')).toContainText('November 1');
-  await page.waitForFunction(() => [...document.images].every((i) => i.complete));
-  // round 4: the active-day highlight is on (it follows the day at the top while the gesture runs)
-  await expect(page.locator('.ck-lday.ck-active-day')).toHaveCount(1);
-}
-
 /** The reference build's page: same window and zone as the project's, opening dates through the URL (it predates B2). */
-const refPage = (browser: Browser) => browser.newPage({ viewport: { width: 1920, height: 1080 }, timezoneId: 'America/Sao_Paulo' });
+const refPage = (browser: Browser, viewport = { width: 1920, height: 1080 }) => browser.newPage({ viewport, timezoneId: 'America/Sao_Paulo' });
 
-// Since round 4 (items 10, 11) this gesture runs with the active-day highlight on (and today's countdowns ticking in
-// the countdown variant below).
-test('wheel-scrolling the League List through a month: frame times, main-thread time, long tasks', async ({ page, browser }) => {
+/**
+ * Round 8: the League List shows one day; scrolling only moves within a busy night, and the days change by navigation.
+ * The old month-long wheel gesture (Nov 1 → December through the continuous list) can't run on it any more, so the
+ * League List is guarded by two A/B checks against the same reference build, each the same user action on both:
+ * - `scroll`: the wheel over the season's busiest kind of night (Nov 2, 15 games) in a short window (1920 × 700, so the
+ *   day overflows), 1500 px down and back up. On the reference that scrolls through the continuous list from Nov 2.
+ * - `day-nav`: 20 clicks on "Next day" from Nov 2 (both builds have the button): rendering a new day each time.
+ * Frames keep the old scroll baselines (`scroll-frame-*`); main-thread time is held to the reference (×1.25).
+ */
+const BUSY_NIGHT = '2026-11-02';
+const SHORT = { width: 1920, height: 700 };
+async function openBusyNight(page: Page, base = '') {
+  await page.goto(`${base}/?view=league&layout=list&date=${BUSY_NIGHT}`);
+  await expect(page.getByTestId('day-title')).toContainText('November 2');
+  await page.waitForFunction(() => [...document.images].every((i) => i.complete));
+  await page.getByTestId('league-list').evaluate((el) => (el.scrollTop = 0));
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+}
+
+test('wheel-scrolling the League List within a busy night: frame times, main-thread time, long tasks', async ({ page, browser }) => {
   test.setTimeout(240_000);
   // No fake clock here: Playwright's clock wraps Intl.DateTimeFormat, which made scrolling look slower than in a
   // real browser (2026-10-24). The list opens on an explicit date, so it needs no clock.
-  const ref = await refPage(browser);
-  const arm = (name: string, p: Page, base: string): Arm => ({ name, page: p, reset: () => openLeagueList(p, base), gesture: () => leagueListToDecember(p) });
+  await page.setViewportSize(SHORT);
+  const ref = await refPage(browser, SHORT);
+  const arm = (name: string, p: Page, base: string): Arm => ({
+    name,
+    page: p,
+    reset: () => openBusyNight(p, base),
+    gesture: async () => {
+      await wheel(p, 'league-list', -1500);
+      await wheel(p, 'league-list', 1500);
+    },
+  });
   checkScroll('scroll', await scrollRunsAB('scroll', [arm('current', page, ''), arm('reference', ref, refBase)]));
   await ref.close();
-  // the highlight moved with the day at the top
-  await leagueListToDecember(page);
-  expect(await page.evaluate(() => document.querySelector<HTMLElement>('.ck-active-day')?.dataset.day)).toBe(await page.evaluate(() => document.querySelector<HTMLElement>('[aria-label="Week"] [aria-selected="true"]')?.dataset.date));
+  // the current build's day overflowed (so the gesture scrolled) and stayed put
+  await openBusyNight(page);
+  expect(await page.getByTestId('league-list').evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(100);
+  await wheel(page, 'league-list', -1500);
+  await expect(page.getByTestId('day-title')).toContainText('November 2');
+});
+
+test('League List day by day: 20 × "Next day", frame times and main-thread time', async ({ page, browser }) => {
+  test.setTimeout(240_000);
+  const ref = await refPage(browser);
+  const arm = (name: string, p: Page, base: string): Arm => ({
+    name,
+    page: p,
+    reset: () => openBusyNight(p, base),
+    gesture: async () => {
+      for (let i = 0; i < 20; i++) {
+        await p.getByLabel('Next day').click();
+        await p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      }
+    },
+  });
+  const runs = await scrollRunsAB('day-nav', [arm('current', page, ''), arm('reference', ref, refBase)]);
+  await ref.close();
+  checkScroll('day-nav', runs);
+  // 20 game days on from Nov 2 (from the served snapshot: Nov 23, 2026)
+  const want = await page.evaluate(async (from) => {
+    const raw = await (await fetch('/data/schedule.json')).json();
+    const days = [...new Set((raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string }[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId)).map((g) => g.gameDateEst.slice(0, 10)))].sort();
+    return days[days.indexOf(from) + 20]!;
+  }, BUSY_NIGHT);
+  await openBusyNight(page);
+  for (let i = 0; i < 20; i++) await page.getByLabel('Next day').click();
+  await expect(page.locator('[data-testid="league-list"] [data-day]')).toHaveAttribute('data-day', want);
 });
 
 // (round 7, 2.3: the countdown and its "while the countdown ticks" scroll check are gone with it)

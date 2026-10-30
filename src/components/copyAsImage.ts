@@ -74,21 +74,29 @@ export const captureStyleProperties = () => (captureStyle ??= [...getComputedSty
  * the content only, not its interactive chrome. Throws on failure; callers own the user-facing state.
  */
 export async function renderToCanvas(node: HTMLElement, options: RenderOptions): Promise<HTMLCanvasElement> {
-  const pixelRatio = capturePixelRatio(node.scrollWidth, node.scrollHeight, options.pixelRatio);
+  // Round 8: a node inside a zoomed ancestor (the desktop League List) is copied as big as it is on screen: the clone
+  // gets the node's whole zoom (`currentCSSZoom`: its own × its ancestors'), and the image that many times its layout
+  // size (clientWidth etc. don't include the zoom). An explicit `zoom` option keeps its old meaning.
+  const zoom = options.zoom ?? onScreenZoom(node);
+  const scale = options.zoom === undefined ? zoom : 1;
+  const pixelRatio = capturePixelRatio(node.scrollWidth * scale, node.scrollHeight * scale, options.pixelRatio);
   const restore = slackWrappingRows(node);
   const unsuspend = suspendForCapture(node);
   try {
     // html-to-image's toCanvas, except loading the image (loadImage): the node's size as it measures it, its SVG, drawn
     // at the pixel ratio
     const px = (p: string) => parseFloat(getComputedStyle(node).getPropertyValue(p)) || 0;
-    const width = node.clientWidth + px('border-left-width') + px('border-right-width');
-    const height = node.clientHeight + px('border-top-width') + px('border-bottom-width');
+    // zoomed: the on-screen box (sub-pixel; clientWidth rounds), and the clone keeps its layout size — html-to-image
+    // would otherwise give the clone the image's width as its own CSS width, under the zoom
+    const box = scale !== 1 ? node.getBoundingClientRect() : undefined;
+    const width = box ? box.width : node.clientWidth + px('border-left-width') + px('border-right-width');
+    const height = box ? box.height : node.clientHeight + px('border-top-width') + px('border-bottom-width');
     const svg = await toSvg(node, {
       width,
       height,
       filter: keepInCapture,
       includeStyleProperties: captureStyleProperties(),
-      ...(options.zoom !== undefined ? { style: { zoom: String(options.zoom) } } : {}),
+      ...(box ? { style: { zoom: String(zoom), width: `${box.width / zoom}px`, height: `${box.height / zoom}px` } } : options.zoom !== undefined ? { style: { zoom: String(options.zoom) } } : {}),
     });
     const img = await loadImage(svg);
     const canvas = document.createElement('canvas');
@@ -107,6 +115,9 @@ export async function renderToCanvas(node: HTMLElement, options: RenderOptions):
     restore();
   }
 }
+
+/** The node's zoom on screen (its own CSS zoom × its ancestors'); 1 where the browser doesn't tell. */
+export const onScreenZoom = (node: HTMLElement) => (node as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom ?? 1;
 
 /**
  * Loads the copy's SVG as an image. html-to-image's own loader waits on `img.decode()` and has no handler for its

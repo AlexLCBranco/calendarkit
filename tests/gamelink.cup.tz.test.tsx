@@ -71,8 +71,8 @@ describe('NBA Cup knockout games (Dec 9–16, 2025): link from the feed\'s ET da
         expect(a.getAttribute('href'), id).toBe(EXPECTED[id]);
         seen.add(id);
       }
-      // the League List renders the days near the top (Dec 9, 10, 13 at least); the week views: Dec 7–13 / Dec 7–20
-      expect(seen.size).toBeGreaterThanOrEqual(initial.layout === 'calendar' && 'weeks' in initial ? 7 : 4);
+      // the League List shows Dec 9 only (round 8: one day); the week views: Dec 7–13 / Dec 7–20
+      expect(seen.size).toBe(initial.layout === 'calendar' ? ('weeks' in initial ? 7 : 6) : 2);
     });
   }
 });

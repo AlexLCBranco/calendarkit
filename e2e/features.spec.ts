@@ -591,7 +591,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
   expect(errors).toEqual([]);
 });
 
-test('lists capped at ~960 px (Team List 1110 px) and centered; calendars full width', async ({ page }, info) => {
+test('lists capped at ~960 px (Team List 1110 px) and centered — the desktop League List left-aligned at 910 × zoom (round 8); calendars full width', async ({ page }, info) => {
   const p = info.project.name;
   for (const [search, sel] of [['?view=league&layout=list', '.ck-league-list'], ['?view=team&layout=list&team=ORL', '.ck-team-list']] as const) {
     await open(page, search);
@@ -602,10 +602,14 @@ test('lists capped at ~960 px (Team List 1110 px) and centered; calendars full w
       return { root: root.width, w: list.width, leftGap: list.left - root.left, rightGap: root.right - list.right, outside: inner.filter((b) => b.width && (b.left < list.left - 0.5 || b.right > list.right + 0.5)).length };
     }, sel);
     console.log(`[${p}] ${sel}: ${r.w.toFixed(0)} px of ${r.root.toFixed(0)} px`);
-    const cap = sel === '.ck-team-list' && r.root >= 1110 ? 1110 : 960; // the Team List is 1110 px where its fatigue columns show
-    expect(r.w).toBeLessThanOrEqual(cap);
-    if (r.root > cap) expect(r.w).toBe(cap);
-    expect(Math.abs(r.leftGap - r.rightGap)).toBeLessThanOrEqual(1);
+    // round 8: the desktop League List is left-aligned, LEAGUE_LIST_COLUMN (910) × its zoom (1.3 at 1920, 1 at 1280), the map
+    // on its right; tablets and phones keep the centered 960 px column
+    const side = sel === '.ck-league-list' && (p === 'desktop' || p === 'desktop-xl');
+    const cap = side ? Math.round(910 * (p === 'desktop-xl' ? 1.3 : 1)) : sel === '.ck-team-list' && r.root >= 1110 ? 1110 : 960; // the Team List is 1110 px where its fatigue columns show
+    expect(r.w).toBeLessThanOrEqual(cap + 0.5);
+    if (r.root > cap) expect(r.w).toBeCloseTo(cap, 0);
+    if (side) expect(r.leftGap).toBeLessThanOrEqual(0.5);
+    else expect(Math.abs(r.leftGap - r.rightGap)).toBeLessThanOrEqual(1);
     expect(r.outside).toBe(0);
     if (p === 'desktop-xl') await shot(page, sel === '.ck-league-list' ? 'league-list' : 'team-list-top', p);
   }
@@ -619,7 +623,8 @@ test('lists capped at ~960 px (Team List 1110 px) and centered; calendars full w
 
 test('TV games only: per day never more games than without the filter, and every game shown has a national broadcaster', async ({ page }, info) => {
   const p = info.project.name;
-  await open(page, weekView(p) ? '?view=league&layout=calendar&date=2026-11-15&weeks=2' : '?view=league&layout=list&date=2026-11-15');
+  // round 8: the list shows one day — Nov 16, which has a national TV game (Nov 15 has none)
+  await open(page, weekView(p) ? '?view=league&layout=calendar&date=2026-11-15&weeks=2' : '?view=league&layout=list&date=2026-11-16');
   const games = await feed(page);
   const national = new Set(games.filter((g) => (g.broadcasters.nationalBroadcasters ?? []).length > 0).map((g) => g.gameId));
   const perDay = () =>
@@ -629,7 +634,7 @@ test('TV games only: per day never more games than without the filter, and every
       return out;
     });
   const before = await perDay();
-  expect(Object.keys(before).length).toBeGreaterThan(1);
+  expect(Object.keys(before).length).toBe(weekView(p) ? 14 : 1);
   await page.getByLabel('TV games only').check();
   await expect(page).toHaveURL(/tv=1/);
   const after = await perDay();

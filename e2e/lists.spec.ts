@@ -1,4 +1,4 @@
-// List | Calendar switch, continuous league list and team list, in a real browser at every project width.
+// List | Calendar switch, the one-day league list (round 8) and team list, in a real browser at every project width.
 // The clock is fixed (Nov 15, 2026, 15:00 UTC) so the default day / next game are known. Screenshots of the four
 // views go to e2e/screenshots/<project>-<league|team>-<list|calendar>.png.
 
@@ -29,26 +29,6 @@ async function pickTeam(page: Page, name: string) {
 /** League → Calendar is the week view where 7 columns fit a game line (desktop widths), else the count grid. */
 const weekView = (project: string) => project === 'desktop' || project === 'desktop-xl';
 const settle = (page: Page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-/**
- * In the page: resolves once the League List's rendered days cover its whole viewport (the virtualized list re-renders
- * after the scroll event, in a later task; after a long programmatic jump that can take more than two frames on a busy
- * machine — the cause of this test's old flake). Checked every frame; rejects after 5 s with what was rendered.
- */
-function covered(el: Element): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    const t0 = performance.now();
-    const check = () => {
-      const b = el.getBoundingClientRect();
-      const secs = [...el.querySelectorAll('[data-day]')].map((s) => s.getBoundingClientRect());
-      const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-      if (secs.length && secs[0]!.top <= b.top + 1 && (atEnd || secs.at(-1)!.bottom >= b.bottom - 1)) return resolve(true);
-      if (performance.now() - t0 > 5000) return reject(new Error(`rendered days never covered the list: scrollTop ${el.scrollTop}, days ${secs.map((s) => `${Math.round(s.top - b.top)}..${Math.round(s.bottom - b.top)}`).join(' ')}`));
-      requestAnimationFrame(check);
-    };
-    check();
-  });
-}
-
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
   await page.goto(`/${search}`);
@@ -162,115 +142,123 @@ test('old ?view= links open the matching view', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('league list: continuous days with sticky headers, week strip follows, bounded rendering', async ({ page }, info) => {
+/** The day's games straight from the served snapshot (independent of the app's code), in feed order. */
+const feedDay = (page: Page, date: string) =>
+  page.evaluate(async (date) => {
+    const raw = await (await fetch('/data/schedule.json')).json();
+    return (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string }[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId) && g.gameDateEst.startsWith(date)).map((g) => g.gameId);
+  }, date);
+/** What the League List shows: its day sections and the game ids in them. */
+const shownList = (page: Page) =>
+  page.getByTestId('league-list').evaluate((el) => ({
+    days: [...el.querySelectorAll<HTMLElement>('[data-day]')].map((d) => d.dataset.day!),
+    ids: [...el.querySelectorAll<HTMLElement>('[data-game-id]')].map((d) => d.dataset.gameId!),
+    title: document.querySelector('[data-testid="day-title"]')!.textContent!,
+  }));
+
+// Round 8 (1.1–1.3): one day on screen; only the arrows, the arrow keys, the date picker, Today and the day strip change it.
+test('league list: one day at a time, never changed by scrolling, every navigation lands on the right day', async ({ page }, info) => {
   const errors = collectErrors(page);
   const cdn = collectCdn(page);
+  const project = info.project.name;
+  const desktop = project === 'desktop' || project === 'desktop-xl';
   await open(page, '');
   const list = page.getByTestId('league-list');
-  // opens on the default day, at the top of the list
   await expect(page.getByTestId('day-title')).toHaveText(/Nov(ember)? 15, 2026/);
-  const topOf = () =>
-    list.evaluate((el) => {
-      const top = el.getBoundingClientRect().top;
-      const days = [...el.querySelectorAll<HTMLElement>('[data-day]')];
-      const first = days.find((d) => d.getBoundingClientRect().bottom > top + 1)!;
-      const head = first.querySelector('.ck-lday-head')!.getBoundingClientRect();
-      // sticky: at the top of the list, or being pushed up by the next day as its own day ends
-      const pushed = head.top < top && head.bottom >= first.getBoundingClientRect().bottom - parseFloat(getComputedStyle(first).paddingBottom) - 1;
-      return { day: first.dataset.day!, headAtTop: Math.abs(head.top - top) < 1.5 || pushed, headText: first.querySelector('.ck-lday-head')!.textContent, sectionTop: first.getBoundingClientRect().top - top, rendered: days.length, all: days.map((d) => d.dataset.day!) };
-    });
-  let t = await topOf();
-  expect(t.day).toBe(DEFAULT_DAY);
-  expect(Math.abs(t.sectionTop)).toBeLessThan(1.5);
-  expect(t.headText).toMatch(/^Sun, Nov 15 · \d+ games$/);
-  expect(t.all.indexOf(DEFAULT_DAY)).toBeGreaterThanOrEqual(0);
+  const expectDay = async (date: string) => {
+    const want = await feedDay(page, date);
+    await expect.poll(() => shownList(page).then((x) => [x.days, x.ids])).toEqual([[date], want]);
+    expect(await list.evaluate((el) => el.querySelector('.ck-lday-head')!.getBoundingClientRect().top - el.getBoundingClientRect().top)).toBeLessThan(1.5);
+  };
+  await expectDay(DEFAULT_DAY);
 
-  // row size unchanged by the logos: single-line rows are 35 / 36.5 px (desktop) and 27 / 28.5 px (phone) as before,
-  // and no row gets taller (or wraps) because of its logos
+  // rows: bigger on desktop (zoom from LEAGUE_FONT_*: 1.3 at 1920, 1 at 1280; LEAGUE_ROW_HEIGHT 40), as before elsewhere
   expect(await rowsWithoutLogosDiffer(page)).toEqual([]);
+  const zoom = project === 'desktop-xl' ? 1.3 : 1;
   const single = await list.evaluate((el) => [...new Set([...el.querySelectorAll('.ck-card')].map((c) => Math.round(c.getBoundingClientRect().height * 2) / 2))]);
-  expect(Math.min(...single)).toBe(info.project.name === 'phone' ? 27 : 35);
-  const logo = await list.evaluate((el) => el.querySelector('.ck-card .ck-logo-backing')!.getBoundingClientRect().height);
-  expect(logo).toBe(16);
+  expect(Math.min(...single)).toBe(desktop ? 40 * zoom : project === 'phone' ? 27 : 35);
+  expect(await list.evaluate((el) => el.querySelector('.ck-card .ck-logo-backing')!.getBoundingClientRect().height)).toBeCloseTo(16 * zoom, 1);
 
-  // scroll with the wheel: next days follow continuously, the header of the day at the top sticks, week strip follows
+  // the wheel and a scrollbar jump never change the day (the list may scroll within it)
   await list.hover();
-  let seen = new Set<string>([t.day]);
-  for (let i = 0; i < 25; i++) {
-    await page.mouse.wheel(0, 400);
-    await settle(page);
-    t = await topOf();
-    seen.add(t.day);
-    expect(t.headAtTop, `sticky header ${t.day}`).toBe(true);
-    expect(t.rendered).toBeLessThanOrEqual(12);
-    // the week strip and title name the day at the top (within 2 px of a day boundary either day is fine); polled,
-    // as a wheel scroll may still be animating
-    const topDayShown = () =>
-      list.evaluate((el) => {
-        const d = document.querySelector('[aria-label="Week"] [aria-selected="true"]')!.getAttribute('data-date')!;
-        const s = el.querySelector('[data-day="' + d + '"]')!.getBoundingClientRect();
-        const top = el.getBoundingClientRect().top;
-        const title = document.querySelector('[data-testid="day-title"]')!.textContent!;
-        return s.top - top <= 2 && s.bottom - top >= -2 && title.endsWith(Number(d.slice(8)) + ', ' + d.slice(0, 4)) ? 'ok' : d + ' ' + (s.top - top) + '..' + (s.bottom - top) + ' ' + title;
-      });
-    await expect.poll(topDayShown).toBe('ok');
-  }
-  expect(seen.size).toBeGreaterThan(3);
-  const ordered = [...seen].sort();
-  expect([...seen]).toEqual(ordered);
-  const shownDay = await page.getByRole('tablist', { name: 'Week' }).getByRole('tab', { selected: true }).getAttribute('data-date');
-  await expect(page).toHaveURL(new RegExp(`date=${shownDay}`));
-
-  // clicking a week-strip day scrolls it to the top
-  const target = await page.getByRole('tablist', { name: 'Week' }).getByRole('tab').and(page.locator(':not([disabled]):not([aria-selected="true"])')).last();
-  const targetDate = (await target.getAttribute('data-date'))!;
-  await target.click();
+  for (let i = 0; i < 12; i++) await page.mouse.wheel(0, i < 8 ? 600 : -300);
+  await list.evaluate((el) => (el.scrollTop = el.scrollHeight));
   await settle(page);
-  t = await topOf();
-  expect(t.day).toBe(targetDate);
-  expect(Math.abs(t.sectionTop)).toBeLessThan(1.5);
-  // arrows jump a game day
+  await expect.poll(() => shownList(page).then((x) => [x.days, x.ids])).toEqual([[DEFAULT_DAY], await feedDay(page, DEFAULT_DAY)]);
+  await expect(page.getByTestId('day-title')).toHaveText(/Nov(ember)? 15, 2026/);
+  expect(page.url()).not.toMatch(/date=/);
+
+  // every way to change the day; a new day starts at its top
   await page.getByLabel('Next day').click();
-  await settle(page);
-  const afterNext = (await topOf()).day;
-  expect(afterNext > targetDate).toBe(true);
-  await page.getByLabel('Previous day').click();
-  await settle(page);
-  expect((await topOf()).day).toBe(targetDate);
-
-  // fast scrolling anywhere: bounded rendering, the top day's header at the top, no jumps when scrolling up
-  const total = await list.evaluate((el) => el.scrollHeight);
-  for (const f of [0.9, 0.1, 0.55, 0.3, 0.75, 0.02]) {
-    await list.evaluate((el, y) => (el.scrollTop = y), total * f);
-    await list.evaluate(covered);
-    t = await topOf();
-    expect(t.rendered).toBeLessThanOrEqual(12);
-    expect(t.headAtTop).toBe(true);
+  await expectDay('2026-11-16');
+  if (desktop) {
+    await page.keyboard.press('ArrowRight');
+    await expectDay('2026-11-17');
+    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowLeft');
+    await expectDay(DEFAULT_DAY);
   }
-  const jumps = await list.evaluate(async (el, src) => {
-    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    const rendered = new Function(`return ${src}`)() as (el: Element) => Promise<boolean>; // covered(), in the page
-    el.scrollTop = el.scrollHeight * 0.6;
-    await rendered(el);
-    let bad = 0;
-    for (let k = 0; k < 60; k++) {
-      const card = [...el.querySelectorAll('article')].find((a) => a.getBoundingClientRect().top > el.getBoundingClientRect().top + 100)!;
-      const before = card.getBoundingClientRect().top;
-      el.scrollTop -= 200;
-      await frame();
-      await rendered(el);
-      if (!card.isConnected || Math.abs(card.getBoundingClientRect().top - before - 200) > 1.5) bad++;
-    }
-    return bad;
-  }, covered.toString());
-  expect(jumps).toBe(0);
-  const days = await page.evaluate(async () => {
-    const raw = await (await fetch('/data/schedule.json')).json();
-    return (raw.leagueSchedule.gameDates as unknown[]).length;
-  });
-  expect(days).toBeGreaterThan(100);
+  await page.getByLabel('Previous day').click();
+  await expectDay(desktop ? '2026-11-14' : DEFAULT_DAY); // desktop: back at Nov 15 by the keys first
+  // a day in the strip's week (Nov 8–14 on desktop, Nov 15–21 elsewhere)
+  await page.getByRole('tablist', { name: 'Week' }).getByRole('tab', { name: desktop ? /^Tuesday, November 10/ : /^Wednesday, November 18/ }).click();
+  await expectDay(desktop ? '2026-11-10' : '2026-11-18');
+  if (project !== 'phone') {
+    await page.getByRole('button', { name: 'Today' }).click();
+    await expectDay(DEFAULT_DAY);
+  }
+  if (project === 'phone') await page.getByRole('tablist', { name: 'Week' }).getByRole('tab', { name: /^Sunday, November 15/ }).click(); // no Today on phones
+  await page.getByLabel('Next week').click();
+  await expectDay('2026-11-22');
+  if (desktop) {
+    await page.getByTestId('date-pick').click();
+    await page.getByTestId('date-picker').locator('[data-date="2026-11-27"]').click();
+    await expectDay('2026-11-27');
+  }
+  expect(page.url()).not.toMatch(/date=/);
   expect(cdn).toEqual([]);
   expect(errors).toEqual([]);
+});
+
+// Round 8 (1.2): on a busy night the list scrolls within that day only.
+test('league list: a 15-game night scrolls within the day only', async ({ page }, info) => {
+  test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop widths');
+  const width = page.viewportSize()!.width;
+  await page.setViewportSize({ width, height: 640 }); // a short window, so the 15 rows can't fit
+  const date = '2026-11-02';
+  await open(page, `?view=league&layout=list&date=${date}`);
+  const want = await feedDay(page, date);
+  expect(want).toHaveLength(15);
+  const list = page.getByTestId('league-list');
+  const m = await list.evaluate((el) => ({ sh: el.scrollHeight, ch: el.clientHeight }));
+  expect(m.sh).toBeGreaterThan(m.ch);
+  await list.hover();
+  for (let i = 0; i < 20; i++) await page.mouse.wheel(0, 500);
+  await expect.poll(() => list.evaluate((el) => Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 1)).toBe(true);
+  const end = await shownList(page);
+  expect([end.days, end.ids]).toEqual([[date], want]);
+  expect(end.title).toMatch(/November 2, 2026/);
+  // the end of the scroll is the day's last row (plus the day's own padding): no further days, no spacer
+  const gap = await list.evaluate((el) => el.getBoundingClientRect().bottom - [...el.querySelectorAll('.ck-card')].at(-1)!.getBoundingClientRect().bottom);
+  expect(gap).toBeGreaterThanOrEqual(0);
+  expect(gap).toBeLessThan(20);
+});
+
+// Round 8 (1.4): the list starts at the page's left edge; the right side is free for the map.
+test('league list: left-aligned at 1280 and 1920, right side free', async ({ page }, info) => {
+  test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop widths');
+  await open(page, '');
+  const r = await page.evaluate(() => {
+    const root = document.querySelector('.ck-root')!.getBoundingClientRect();
+    const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
+    return { root: [root.left, root.right] as [number, number], bar: box('[data-testid="top-bar"]').left, strip: box('[data-testid="week-strip"]').left, list: box('[data-testid="league-list"]').left, head: box('.ck-lday-head').left, right: box('.ck-league-list').right };
+  });
+  for (const x of [r.bar, r.strip, r.list]) expect(Math.abs(x - r.root[0])).toBeLessThan(1);
+  expect(Math.abs(r.head - r.root[0])).toBeLessThan(4);
+  // the list column (LEAGUE_LIST_COLUMN 910 × zoom) leaves the right side free
+  const zoom = info.project.name === 'desktop-xl' ? 1.3 : 1;
+  expect(r.right - r.root[0]).toBeCloseTo(910 * zoom, 0);
+  expect(r.root[1] - r.right).toBeGreaterThan(260);
 });
 
 test('team list: every game in order, opens at the next game, earlier games above, markers and B2B', async ({ page }, info) => {

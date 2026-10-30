@@ -82,3 +82,8 @@
   text-decoration: underline 2px #7c4dcc;
   text-underline-offset: 1px;
 }
+/* round 8: the one-day League List's column (910 px before its zoom) is narrower than the legend's one line: two lines */
+.ck-league-side .ck-fm-legend {
+  height: auto;
+  white-space: normal;
+}

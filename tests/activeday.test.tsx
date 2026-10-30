@@ -33,25 +33,13 @@ function countTipoffs() {
 }
 
 describe('League List', () => {
-  it('the top day (the strip\'s selected day) has the class, only it; a strip click moves it to the new day', () => {
+  // round 8: one day at a time — nothing to tell apart, so the strip-day highlight is gone (1.3)
+  it('no active-day class or band: the list shows one day', () => {
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-17' }} />);
-    expect(active()).toEqual(['2026-11-17']);
+    expect(active()).toEqual([]);
     fireEvent.click(screen.getByRole('tab', { name: /^Thursday, November 19/ }));
-    expect(active()).toEqual(['2026-11-19']);
-  });
-
-  it('moving the highlight re-renders no day: no tip-off time formatted', () => {
-    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-17' }} />);
-    const days = () => new Set([...document.querySelectorAll<HTMLElement>('[data-testid="league-list"] [data-day]')].map((d) => d.dataset.day!));
-    const before = days();
-    const n = countTipoffs();
-    fireEvent.click(screen.getByRole('tab', { name: /^Wednesday, November 18/ }));
-    expect(active()).toEqual(['2026-11-18']);
-    // only days that newly came into the rendered window render (one tip-off per game); the days that stay — the old
-    // and the new active day among them — don't
-    const mounted = [...days()].filter((d) => !before.has(d));
-    expect(before.has('2026-11-17') && before.has('2026-11-18')).toBe(true);
-    expect(n.tipoffs).toBe(mounted.reduce((k, d) => k + data.byDate.get(d)!.length, 0));
+    expect(active()).toEqual([]);
+    expect(document.querySelector('[data-testid="league-list"] .ck-hl')).toBeNull();
   });
 });
 

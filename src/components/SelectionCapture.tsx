@@ -10,7 +10,7 @@ import { teamThreeInFour } from '../data/scheduleTags';
 import { timeGroups } from './dayflow';
 import { GameCard } from './GameCard';
 import { listDays } from './LeagueListView';
-import { FATIGUE_SLOTS_MIN_WIDTH, ListDaySection } from './LeagueListView';
+import { FATIGUE_SLOTS_MIN_WIDTH, leagueListStyle, ListDaySection } from './LeagueListView';
 import { MonthGameLine } from './LeagueWeekView';
 import { TeamListView } from './TeamListView';
 import { fmtDate, plural, useTeamB2B, type WidgetSize } from './widget';
@@ -55,7 +55,8 @@ export function SelectionCapture(p: SelectionCaptureProps) {
       .map((d) => ({ date: d.date, games: d.games.filter((g) => ids.has(g.gameId)) }))
       .filter((d) => d.games.length);
     return (
-      <section className="ck-league-list" aria-label="Selected games">
+      // the rows as on screen (round 8: the desktop list's zoom and column)
+      <section className={`ck-league-list${leagueListStyle(size.width) ? ' ck-league-side' : ''}`} aria-label="Selected games" style={leagueListStyle(size.width)}>
         <div className="ck-llist">
           {days.map((d) => (
             <ListDaySection key={d.date} day={d} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} />

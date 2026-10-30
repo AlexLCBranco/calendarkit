@@ -37,7 +37,7 @@ test('League List: compact strip, fixed week on a click, ‹ › weeks', async (
   const strip = page.getByTestId('week-strip');
   const h = (await strip.boundingBox())!.height;
   console.log(`[strip] ${info.project.name} League List strip ${h} px`);
-  expect(h).toBeLessThanOrEqual(46);
+  expect(h).toBeLessThanOrEqual(46 * (info.project.name === 'desktop-xl' ? 1.3 : 1)); // round 8: the desktop list's zoom
   const dates = () => strip.getByRole('tab').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.date));
   const week = await dates();
   await strip.locator('[data-date="2026-11-20"]').click();

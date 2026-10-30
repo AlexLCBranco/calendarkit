@@ -29,7 +29,11 @@ where-to-watch info, embedding in gauntlet.
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
-## Current state / handoff (2026-10-30, after round 7)
+## Current state / handoff (2026-10-30, round 8 in progress)
+Round 8: Part 0 (Cup fixture from the feed, CI split into parallel jobs, ck-old removed, audit clean) and Part 1
+(v1.21.0: one-day League List, left-aligned, rows scaled by width). Parts 2–3 (map) follow. Details: "### Round 8".
+
+## Previous handoff (2026-10-30, after round 7)
 Round 7 shipped v1.18.2 (leftovers: merged chip in Team Calendar cells, no opponent dot beside its component, home
 plane inside the line; tests: modified clicks open a real tab, Cup URLs checked against hoopsjunkie), v1.19.0 (today in
 the Team Calendar, rest days on by default and never stored, countdown removed with the minute tick, tight unplayed
@@ -362,7 +366,7 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   showed: `?view=team` → Calendar, `?view=league` → List. "TV games only" is shown and applies in all four.
   Clicking a day header in League → Calendar opens League → List at that day. The URL always carries `tv=1` when on
   and `weeks=2` when the week view shows two weeks (kept across layouts; old links open one week).
-- **League list** (`LeagueListView`): one scrolling list of game days (days without games — or without TV games
+- **League list** (`LeagueListView`) — **superseded in round 8: one day at a time, see "### Round 8"**. Before: one scrolling list of game days (days without games — or without TV games
   when filtered — are left out), each under a sticky header "Sun, Nov 15 · 9 games". The nav title and week strip
   show the day at the top of the list; week-strip days without games are disabled; clicking one scrolls it to the
   top; arrows jump to the previous/next game day. Opens on the default day. **Rendering**: only days within 0.75
@@ -425,7 +429,7 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   on desktop, 2 columns (East | West) on phones — every option with its logo. Keyboard: Enter/Space/↓ open on the
   current team, ↑/↓ move, ←/→ jump a division (a conference on phones), Home/End, a letter jumps to the next team
   whose city or name starts with it, Enter picks, Escape/Tab close; focus returns to the button.
-- **List width**: League List and Team List content capped at **960 px** (`LIST_MAX_WIDTH`), centered; week strip,
+- **List width** (round 8: the desktop League List is left-aligned at 910 px × its zoom, see "### Round 8"): League List and Team List content capped at **960 px** (`LIST_MAX_WIDTH`), centered; week strip,
   day headers and the team header align to it. Calendars keep the full 1840 px.
 - **Tooltips**: one floating tooltip per widget for every `[data-tip]` (TV pill, B2B dots and labels, the phone
   note) on hover and keyboard focus; fixed position and clamped into the viewport, so cells with overflow: hidden
@@ -1236,6 +1240,88 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   - Perf guard (vs v1.17.1, same run): League scroll ×0.975, Team List scroll ×1.015 (the ×1.155 after part 2 was run
     noise — same code), loads 298 / 319 / 303 ms, switches 47–66 ms, marquee p95 18 ms. The Slate itself has no scroll
     guard (a day is ≤ 15 cards, no virtualization involved).
+
+### Round 8 (2026-10-30)
+Ground rules as every round (desktop first, nothing slower, every check automated where possible, never invent data).
+
+**Part 0, housekeeping**
+- **0.1 Cup fixture from the feed** (test only): `tests/fixtures/cup-knockout-2025.json` now takes every game id, ET date,
+  tip-off, side, score and arena from the NBA feed's own boxscores (`cdn.nba.com/static/json/liveData/boxscore/
+  boxscore_<gameId>.json`, fetched 2026-10-30 with the module's `DEFAULT_HEADERS`; values written into
+  `make-cup-knockout-2025.mjs`). Found: ids 0022501201 / 0022501202 had been swapped (real: MIA @ ORL 6:00 pm, NYK @ TOR
+  8:30 pm on Dec 9) and every quarterfinal time was made up. **There is no 11:30 pm ET game**: the latest real one is
+  SAS @ LAL, Dec 10, **10:00 pm ET = 03:00 UTC Dec 11** (00:00 Dec 11 in São Paulo), so the date-rollover test still runs
+  on real data, at 10 pm. `isNeutral` isn't in the boxscore: set where the arena city isn't the home team's (the three
+  Las Vegas games). URL tests re-run on it: 13/13 (both zones).
+- **0.2 CI split** (`.github/workflows/ci.yml`): one job did everything in sequence — **10.0 / 14.1 / 10.1 min** for the
+  last three runs before the split (e2e 8.3–11.1 min of it, the perf project ~2.5 min of that). Now four jobs side by
+  side on every push: `unit` (version check, unit tests in both zones, typecheck + build), `e2e` × 2 by project
+  (`desktop-xl` alone, which has the copy tests; `desktop` + `tablet` + `phone`) and `perf` (the perf project alone, on
+  its own runner — as before, nothing else runs on its machine). A push waits for the slowest job. Playwright's own
+  `--shard=1/2` was tried first and split by file group badly: 7.1 vs 1.4 min (first split run: wall time 7.9 min).
+  **Perf regressions are not caught later**: the perf job runs on every push, in parallel, and finishes in ~4 min — before
+  the e2e jobs, where it used to be the last 2.5 min of the single job. Limits unchanged (25 min per job).
+- **0.3** The stale worktree `C:/Users/alexc/ck-old` (4abac3d, detached, clean, commit on main) was removed with
+  `git worktree remove`. Git left its `node_modules`, a junction to this checkout's `node_modules`: only the link was
+  deleted (non-recursive), then the empty folder.
+- **0.4** `npm audit`: 0 vulnerabilities.
+
+**Part 1, League List: one day at a time** (v1.21.0)
+- **One day on screen** (`LeagueListView`): the day shown is `nearestDay(days, date)`; the continuous virtualized list,
+  its height measuring, anchoring and spacers are gone. The day changes **only** by: the top bar's ← / → (previous /
+  next game day), the arrow keys, the date picker, Today, and a click in the day strip (and its ‹ › weeks). **Scrolling
+  never changes the day**; on a busy night the list scrolls within that day (its scrollbar covers that day only). A new
+  day starts at its top.
+- **Arrow keys**: one window listener in CalendarView for whichever of the League List or the Slate is on show
+  (`dayKeys`), with the Slate's rules (not in a field, a tab row, a listbox/grid, an open picker, or with a modifier). The
+  Team List and calendars have none. Unit test: List → Slate → List move one day per key, never two.
+- **Removed with the long scroll**: the strip-day highlight in the League List (header in the accent + band; the Team
+  List keeps its row highlight), the scroll handler, and **`date=` in the URL** — the shell no longer writes it (round 6
+  already ignored it on load). Opening on today (round 6: the clock's date, kept in the season, midnight rollover) is
+  unchanged.
+- **Left-aligned, desktop** (`leagueSideBySide`): from a widget wide enough to leave the map ≥ `LEAGUE_MAP_MIN` (260 px)
+  after a 24 px gap, the list (top bar, strip, day, rows) starts at the page's left edge and the right side is the map's
+  (Part 2). Tablets and phones keep the centered 960 px list and their rows.
+- **Bigger rows, scaled by width** (Alex, 2026-10-30: "scale rows by width"): the desktop list is drawn at a CSS
+  `zoom` = base font ÷ 14, so every per-row element grows together (time, records, chips, B2B badges with leg dot,
+  night icons, team codes, Cup label, TV badge, the tight "@"). Constants in `widget.ts`: **`LEAGUE_FONT_MIN` 14 px at a
+  1280 px window, `LEAGUE_FONT_MAX` 18.2 px at 1920** (linear between, clamped) → zoom 1.0 / 1.3; **`LEAGUE_ROW_HEIGHT`
+  40 px** (before the zoom; was 35) → rows 40 / 52 px; **`LEAGUE_LIST_COLUMN` 910 px** (before the zoom) → 910 / 1183 px.
+  The column: the widest row of the season measured **844 px** at 14 px (GSW @ DEN, Oct 23, played) and an unplayed
+  836 px row gains ~66 px of score slots once played, so 910 keeps every row on one line. **What's left for the map:
+  314 px at 1280, 633 px at 1920.** (The ~1.05 zoom and ~400 px map at 1280 I estimated when asking were from one day's
+  rows; the season's widest rows need the 910 px column, so 1280 stays at zoom 1.) The Fatigue legend under the list
+  takes two lines in the narrower column.
+- **Copies**: a copy button on each row and one for the day (hover, as before), the top bar's "Copy view" = **the day on
+  show** (the whole-week League List copy is gone; no multi-day copy), marquee selection as before. Images are the rows
+  as on screen: `renderToCanvas` copies a node inside a zoomed ancestor at its `currentCSSZoom`, the image its on-screen
+  size and the clone its layout size (html-to-image would otherwise give the clone the image's width as its CSS width,
+  under the zoom). Pixel ratio 4 as before: a 12-game day at 1920 is 1207 × 822 CSS px → 4828 × 3288 px, every logo,
+  code, badge, chip, leg dot and TV badge pixel-checked (copy.spec).
+- **Zoom button considered, not built**: browser zoom (Ctrl + / Ctrl −) already does this.
+- **Slate** unchanged (round 7).
+- Tests: unit `lists.test.tsx` (one day; busiest night; scrolling never changes the day; every navigation incl. keys,
+  modifier ignored, strip, Today, next week, date picker; List/Slate keys), `leaguezoom.test.ts`, `activeday.test.tsx`
+  (no League List highlight), `scroll-cost.test.tsx` (a scroll within the day formats nothing), `leaguefatigue`, `app`
+  (no `date=`); e2e `lists.spec.ts` (one day = the snapshot's games for it, at all four widths, wheel and scrollbar never
+  change it, every navigation lands on the right day; a 15-game night in a 640 px window scrolls to its last row and
+  no further; left-aligned at 1280 and 1920 with ≥ 260 px free on the right), `copy.spec.ts` (day copy at on-screen
+  size), and updated row-height / gap thresholds (zoom-aware) in `fatigue-component`, `mirror`, `strip`, `features`.
+  **Against v1.20.0**: 13 of the new/changed e2e checks and all 12 new/changed unit tests fail there.
+- **Perf guard updated, not deleted**: the old League gesture (wheel from Nov 1 to December through the continuous list)
+  can't run on one day, so the League List has two A/B checks against v1.17.1 in the same run, each the same user action
+  on both builds: `scroll` — the wheel 1500 px down and up over Nov 2 (15 games) in a 1920 × 700 window, so the day
+  overflows (frames keep the old `scroll-frame-*` baselines; main thread ≤ ×1.25 the reference); `day-nav` — 20 clicks on
+  "Next day" from Nov 2 (main thread ≤ ×1.25; frames printed). Results under "Round 8 perf".
+
+**Round 8 perf** (Part 1, Windows PC, guard vs v1.17.1 in the same run): League `scroll` (busy night) main thread 70 vs
+576 ms, **×0.12** (the reference scrolls through other days' rows; the one-day list only moves its 15 rows); `day-nav`
+**×0.62 / ×0.69** (two runs); Team List scroll ×1.20 (unchanged code; CI showed ×1.18 on v1.20.0); frames 16.7 ms
+(display rate); loads 275 / 380 / 312 ms; switches 30–89 ms — all inside their limits. Seen once in a full local run:
+`fatigue.spec` "fatigue tooltips" (Team List, untouched) failed under load, then passed 5/5 alone — round 7's known race
+(a late scroll event closing the tooltip), not this change.
+
+**Later idea, not this round**: the same map in the Team view, showing a team's whole road trip.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

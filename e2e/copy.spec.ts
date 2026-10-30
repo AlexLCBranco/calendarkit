@@ -42,7 +42,9 @@ const MEASURE = `(root) => {
   add('leg', '.ck-fx .ck-fx-leg'); // round 6: the badges' leg dots (not the legend's: 3 px, read too faintly on Linux)
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
   add('rest', '.ck-rest-row .ck-date, .ck-rest');
-  return { width: root.offsetWidth, height: root.offsetHeight, regions: out };
+  // round 8: an element inside the zoomed League List is copied at its on-screen size (its layout size × currentCSSZoom)
+  const z = root.currentCSSZoom ?? 1;
+  return { width: z === 1 ? root.offsetWidth : r0.width, height: z === 1 ? root.offsetHeight : r0.height, regions: out };
 }`;
 
 async function open(page: Page, search: string) {
@@ -80,7 +82,7 @@ async function copyPart(page: Page, parent: Locator, testId: string) {
   await expect(button).toBeVisible();
   const target = (await parent.evaluate((el, src) => (0, eval)(src)(el), MEASURE)) as Omit<Target, 'ratio'>;
   // html-to-image sizes the image from the element's own box (scrollWidth/Height for the cap)
-  const ratio = await parent.evaluate((el, [r, max]) => Math.min(r, max / Math.max(el.scrollWidth, el.scrollHeight)), [RATIO, MAX_SIDE] as const);
+  const ratio = await parent.evaluate((el, [r, max]) => Math.min(r, max / Math.max(el.scrollWidth, el.scrollHeight) / ((el as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom ?? 1)), [RATIO, MAX_SIDE] as const);
   return { png: await clickCopy(page, button), target: { ...target, ratio } };
 }
 
@@ -250,22 +252,26 @@ test('whole view and a day: team calendar in 1 and 2 weeks', async ({ page }) =>
   }
 });
 
-test('whole view: league list copies the whole week', async ({ page }) => {
-  await open(page, '?view=league&layout=list&date=2026-11-15');
+// Round 8 (1.6): the League List's view copy is the day on show (the week copy is gone), its rows as big as on screen.
+test('whole view: league list copies the day on show, at its on-screen size', async ({ page }) => {
+  await open(page, '?view=league&layout=list&date=2026-11-18');
   const view = await copyView(page);
   await check(page, 'view-league-list', view, ['logo', 'text', 'tv', 'b2b', 'tif', 'leg']);
-  // the Fatigue components are in the image (round 5): badges and chips
-  expect(view.target.regions.filter((r) => r.kind === 'b2b' && r.what === 'B2B').length).toBeGreaterThan(10);
-  // round 6: the merged chips ("4in6 · 2nd") and the leg dots (dark, inside the badges) are drawn too
-  expect(view.target.regions.filter((r) => r.kind === 'tif' && /^\d+in\d+ · \d+(st|nd|rd|th)$/.test(r.what)).length).toBeGreaterThan(10);
-  expect(view.target.regions.filter((r) => r.kind === 'leg').length).toBe(view.target.regions.filter((r) => r.kind === 'b2b' && r.what === 'B2B').length);
-  // Nov 15 – 21: every game of the week (2 logos each)
-  const week = await page.evaluate(async () => {
+  // the Fatigue components are in the image (round 5): badges and chips; round 6: merged chips and leg dots
+  const badges = view.target.regions.filter((r) => r.kind === 'b2b' && r.what === 'B2B').length;
+  expect(badges).toBeGreaterThan(0);
+  expect(view.target.regions.filter((r) => r.kind === 'tif' && /^\d+in\d+ · \d+(st|nd|rd|th)$/.test(r.what)).length).toBeGreaterThan(0);
+  expect(view.target.regions.filter((r) => r.kind === 'leg').length).toBe(badges);
+  // Nov 18 only: every game of the day (2 logos each), no other day
+  const day = await page.evaluate(async () => {
     const feed = await (await fetch('/data/schedule.json')).json();
-    const dates = ['2026-11-15', '2026-11-16', '2026-11-17', '2026-11-18', '2026-11-19', '2026-11-20', '2026-11-21'];
-    return feed.leagueSchedule.gameDates.flatMap((d: { games: { gameId: string; gameDateEst: string }[] }) => d.games).filter((g: { gameId: string; gameDateEst: string }) => g.gameId.startsWith('002') && dates.includes(g.gameDateEst.slice(0, 10))).length;
+    return feed.leagueSchedule.gameDates.flatMap((d: { games: { gameId: string; gameDateEst: string }[] }) => d.games).filter((g: { gameId: string; gameDateEst: string }) => g.gameId.startsWith('002') && g.gameDateEst.startsWith('2026-11-18')).length;
   });
-  expect(view.target.regions.filter((r) => r.kind === 'logo').length).toBe(2 * week);
+  expect(day).toBe(12);
+  expect(view.target.regions.filter((r) => r.kind === 'logo').length).toBe(2 * day);
+  // the rows as on screen: a row's height in the image = its height on screen (52 px at 1920: zoom 1.3) × the ratio
+  const rowH = await page.locator('[data-testid="league-list"] .ck-card').first().evaluate((c) => c.getBoundingClientRect().height);
+  expect(rowH).toBeCloseTo(52, 0);
 });
 
 test('a single day: week view cell, team calendar cell, league list day', async ({ page }) => {
@@ -519,45 +525,5 @@ test('selection image of the Team List: the B2B bracket only when both nights ar
   await check(page, 'selection-team-list-b2b', shot, ['logo', 'text', 'b2b']);
 });
 
-// Active day (round 4, item 10): the highlighted day's copy shows no highlight — the header text isn't accent blue and
-// the rows' left edge has no accent bar — and the live highlight is back after the copy.
-test('a single day: the active-day highlight is not in the image', async ({ page }) => {
-  await open(page, '?view=league&layout=list&date=2026-11-17');
-  const day = page.locator('.ck-lday[data-day="2026-11-17"]');
-  await expect(day).toHaveClass(/ck-active-day/);
-  await page.waitForTimeout(200); // the fade in is over
-  const v = await copyPart(page, day, 'copy-day');
-  writeFileSync(`${OUT}/day-league-list-active.png`, Buffer.from(v.png, 'base64'));
-  const geo = await day.evaluate((el) => {
-    const r0 = el.getBoundingClientRect();
-    const head = el.querySelector('.ck-lday-head')!;
-    const range = document.createRange();
-    range.selectNodeContents(head);
-    const t = range.getBoundingClientRect();
-    const cards = [...el.querySelectorAll('.ck-daylist > .ck-card')].map((c) => {
-      const b = c.getBoundingClientRect();
-      return { x: b.left - r0.left + 1.5, y: b.top - r0.top + b.height / 2 };
-    });
-    return { head: { x: t.left - r0.left, y: t.top - r0.top, w: t.width, h: t.height }, cards };
-  });
-  const r = await page.evaluate(
-    async ({ png, geo, ratio }) => {
-      const img = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
-      const c = new OffscreenCanvas(img.width, img.height);
-      const ctx = c.getContext('2d')!;
-      ctx.drawImage(img, 0, 0);
-      const px = (x: number, y: number) => [...ctx.getImageData(Math.round(x * ratio), Math.round(y * ratio), 1, 1).data];
-      const blue = (p: number[]) => p[2]! > p[0]! + 80 && p[2]! > 180; // the accent #4ea1ff, not white text or grey
-      let headBlue = 0;
-      for (let x = geo.head.x; x < geo.head.x + geo.head.w; x += 0.5) for (let y = geo.head.y; y < geo.head.y + geo.head.h; y += 0.5) if (blue(px(x, y))) headBlue++;
-      return { headBlue, barBlue: geo.cards.filter((k) => blue(px(k.x, k.y))).length, cards: geo.cards.length };
-    },
-    { png: v.png, geo, ratio: v.target.ratio },
-  );
-  console.log(`[copy] active day image: ${r.headBlue} blue header pixels, ${r.barBlue} of ${r.cards} rows with a blue left bar`);
-  expect(r.cards).toBeGreaterThan(2);
-  expect(r.headBlue).toBe(0);
-  expect(r.barBlue).toBe(0);
-  // live again
-  await expect(day).toHaveClass(/ck-active-day/);
-});
+// (Round 4's "active-day highlight not in the image" test for League List days left with the highlight in round 8; the
+// Team List row highlight is lifted the same way, covered by tests/activeday.test.tsx "copies".)

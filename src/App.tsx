@@ -20,7 +20,7 @@ export function openGameInRotationkit(gameId: string, open: (url: string) => voi
 export const appGameLink = isGameLinkConfigured() ? (g: Parameters<typeof gameLinkUrl>[0]) => gameLinkUrl(g) : undefined;
 
 /**
- * URL: ?view=league|team&layout=list|calendar|slate&team=&date=&weeks=2&span=1w|2w&tv=1 (weeks: League → Calendar rows; span:
+ * URL: ?view=league|team&layout=list|calendar|slate&team=&weeks=2&span=1w|2w&tv=1 (no date since round 8; weeks: League → Calendar rows; span:
  * Team → Calendar weeks, none = month). Links from before the List | Calendar switch have no layout: ?view=team opened the
  * team month grid (→ Calendar), ?view=league the day list (→ List). "Show rest days" is not in it (round 7, 2.2: on at
  * every load, unchecking lasts until a reload; an old link's `rest=` is ignored).
@@ -51,8 +51,8 @@ function writeUrlState(s: CalendarState) {
   const p = new URLSearchParams();
   p.set('view', s.mode);
   p.set('layout', s.layout);
+  // no `date=` (round 8): the page always opens on today (round 6) and the League List no longer scrolls across days
   if (s.mode === 'team') p.set('team', TEAM_BY_ID.get(s.teamId)?.tricode ?? '');
-  else p.set('date', s.date);
   if (s.weeks === 2) p.set('weeks', '2');
   if (s.tvOnly) p.set('tv', '1');
   if (s.teamSpan !== 'month') p.set('span', `${s.teamSpan}w`);
@@ -101,8 +101,8 @@ export function App() {
   const appRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const size = useContentSize(appRef, widgetRef);
-  // Round 6 (B2): the page always opens on today. The URL's `date=` (still written as you scroll) is never read back, so
-  // a bookmark or a reloaded tab doesn't pin an old day; view, layout, team, weeks and the toggles still come from it.
+  // Round 6 (B2): the page always opens on today. An old link's `date=` is never read back (and since round 8 never
+  // written), so a bookmark or a reloaded tab doesn't pin an old day; view, layout, team, weeks and the toggles still come from it.
   const [initial] = useState(() => ({ ...readUrlState(), date: e2eOpenDate() }));
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.

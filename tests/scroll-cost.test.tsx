@@ -48,11 +48,12 @@ describe('date/time formatters are reused', () => {
 });
 
 describe('League List scroll', () => {
-  it('a scroll that keeps the same days rendered re-renders none of them (no tip-off time or day heading formatted)', () => {
-    render(<CalendarView data={data} size={{ width: 1840, height: 1000 }} now={Date.parse('2026-11-15T15:00:00Z')} timeZone="UTC" initial={{ date: '2026-11-01' }} />);
+  // round 8: one day at a time; a scroll within a busy night re-renders nothing (the list has no scroll handler)
+  it('a scroll within the day re-renders nothing (no tip-off time or day heading formatted)', () => {
+    render(<CalendarView data={data} size={{ width: 1840, height: 1000 }} now={Date.parse('2026-11-15T15:00:00Z')} timeZone="UTC" initial={{ date: '2026-11-02' }} />);
     const list = screen.getByTestId('league-list');
     const before = [...list.querySelectorAll('[data-day]')].map((d) => d.getAttribute('data-day'));
-    expect(before.length).toBeGreaterThan(1);
+    expect(before).toEqual(['2026-11-02']);
     // every formatter, cached or not (spying on the prototype reaches instances made before this line too); format is
     // a getter, read on every call. Counted: tip-off times (hour) and day headings (month, no year) — what a day
     // section renders — and, since round 4, the week strip's dates (memo: it renders only when the top day changes).

@@ -35,6 +35,15 @@
 .ck-root-fill > .ck-team-header {
   flex: none;
 }
+/* Desktop League List (round 8): one day, left-aligned (the map takes the right), drawn at a zoom set inline with the
+   column width (leagueListStyle); rows at least --ck-row-h tall (LEAGUE_ROW_HEIGHT), content centered in them. */
+.ck-league-list.ck-league-side {
+  margin-left: 0;
+  margin-right: 0;
+}
+.ck-league-side .ck-daylist > .ck-card {
+  min-height: var(--ck-row-h);
+}
 /* Calendar layouts fill the widget's height (desktop/tablet): equal rows share it; the page scrolls only when
    the content needs more. */
 .ck-root-grow {
@@ -61,7 +70,6 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  overflow-anchor: none; /* the virtualizer keeps the top day in place itself */
   overscroll-behavior: contain;
 }
 .ck-lday {

@@ -12,6 +12,10 @@ const SIZES = [
   { width: 1280, height: 900 },
 ];
 
+/** Round 8: the desktop League List's zoom (LEAGUE_FONT_* ÷ 14) and its row height (LEAGUE_ROW_HEIGHT 40 × zoom): a one-line row. */
+const listZoom = (size: { width: number }) => (size.width >= 1920 ? 1.3 : 1);
+const listLine = (size: { width: number }) => 40 * listZoom(size) + 0.5;
+
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'sizes the window itself'));
 
 async function open(page: Page, size: { width: number; height: number }, search: string) {
@@ -79,8 +83,8 @@ for (const size of SIZES) {
         }),
       );
       expect(order.every(Boolean), date).toBe(true);
-      // one line per row (as before: 35 px; a few rows were already 36.5 px before round 5, e.g. Jan 7, 2027)
-      expect(out.height!.every((h) => +h <= 36.5), `${date} heights ${out.height}`).toBe(true);
+      // one line per row (round 8: LEAGUE_ROW_HEIGHT × zoom; before, 35 px — a few rows 36.5 px)
+      expect(out.height!.every((h) => +h <= listLine(size)), `${date} heights ${out.height}`).toBe(true);
     }
     // phones and tablets keep the tricode marks only (checked in unit tests); here: the list has no sideways scroll
     expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= innerWidth)).toBe(true);
@@ -244,6 +248,8 @@ for (const size of SIZES) {
       expect(await yellow('.ck-fm'), `${search}: yellow on a tricode`).toBe(0);
       await expect(legend).toHaveText(FX);
       expect(await legend.evaluate((l) => l.scrollWidth <= l.clientWidth), 'legend not cut off').toBe(true);
+      // round 8: in the narrower one-day list it takes two lines, none of it hidden (sub-pixel height: +1)
+      if (search.includes('layout=list')) expect(await legend.evaluate((l) => l.scrollHeight <= l.clientHeight + 1), 'legend lines all shown').toBe(true);
     }
     // the 2-week view has no component: the boxes stay, with their legend
     await open(page, size, '?view=league&layout=calendar&date=2026-11-01&weeks=2');
@@ -282,7 +288,7 @@ for (const size of SIZES) {
     const widths = await page.locator('.ck-lday[data-day="2027-02-04"] [data-testid="fatigue"]').evaluateAll((els) => [...new Set(els.map((e) => e.getBoundingClientRect().width.toFixed(2)))]);
     expect(widths, 'empty and full components: one width').toHaveLength(1);
     const heights = await page.locator('.ck-lday[data-day="2027-02-04"] .ck-card').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
-    expect(Math.max(...heights), 'one line per row').toBeLessThanOrEqual(36.5);
+    expect(Math.max(...heights), 'one line per row').toBeLessThanOrEqual(listLine(size));
     // the Team List: BOS's own column holds it
     await open(page, size, '?view=team&layout=list&team=BOS');
     chips = await fit('[data-testid="team-list"] .ck-card');

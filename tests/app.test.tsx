@@ -21,7 +21,7 @@ vi.mock('../src/config', async (importOriginal) => {
 
 const { App } = await import('../src/App');
 
-// Oct 21 games are long over at this time; the app opens on that day via the URL.
+// Oct 21 games are long over at this time; the app opens on that day through the e2e hook (the URL's date is ignored).
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 const PAST_DAY_GAMES = (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string }[] }[])
   .flatMap((d) => d.games)
@@ -34,15 +34,17 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/?view=league&date=2026-10-21');
 });
 afterEach(() => {
+  delete (window as { __ckOpenDate?: string }).__ckOpenDate;
   cleanup();
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
-// The list is continuous: count the Oct 21 section only.
+// The Oct 21 section (round 8: the only day the list shows).
 const pastDay = () => document.querySelector<HTMLElement>('[data-day="2026-10-21"]')!;
 const renderApp = async () => {
+  (window as { __ckOpenDate?: string }).__ckOpenDate = '2026-10-21';
   render(<App />);
   await screen.findAllByRole('article');
   expect(within(pastDay()).getAllByRole('article')).toHaveLength(PAST_DAY_GAMES.length);
@@ -106,7 +108,8 @@ describe('App: URL state for the List | Calendar switch', () => {
     await open('?view=league&layout=calendar&date=2026-12-01&weeks=2');
     fireEvent.click(screen.getByRole('tab', { name: 'List' }));
     expect(window.location.search).toMatch(/weeks=2/); // kept from the URL
-    expect(window.location.search).toMatch(/date=2026-10-23/); // today, not the URL's Dec 1
+    expect(screen.getByTestId('day-title').textContent).toMatch(/^Fri(day)?, Oct(ober)? 23, 2026$/); // today, not the URL's Dec 1
+    expect(window.location.search).not.toMatch(/date=/); // round 8: the day is never written to the URL
   });
 
   it('new links: ?view=team&layout=list and ?view=league&layout=calendar', async () => {

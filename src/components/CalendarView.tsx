@@ -14,7 +14,7 @@ import { CopyButton } from './CopyButton';
 import type { GameLink } from './GameCard';
 import { DatePickButton, DatePicker } from './DatePicker';
 import { WEEK_MIN_WIDTH } from './dayflow';
-import { LeagueListView, LeagueListWeek, listDays, listTitle, nearestDay } from './LeagueListView';
+import { leagueListStyle, LeagueListView, ListDaySection, listDays, listTitle, nearestDay } from './LeagueListView';
 import { LeagueWeekView, type WeekCount } from './LeagueWeekView';
 import { MonthNavigator } from './MonthNavigator';
 import { monthNav, PeriodNav, TodayButton, type PeriodNavProps } from './PeriodNav';
@@ -31,7 +31,7 @@ import { TeamPicker } from './TeamPicker';
 import { useTooltip } from './Tooltip';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
-import { fmtRange, isCompact, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
+import { fmtRange, isCompact, LEAGUE_LIST_COLUMN, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 import './calendar.css';
 
 // The widgets live in their own files; re-exported here so hosts and tests keep one entry point.
@@ -261,12 +261,14 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     else nav = { ...nav, onToday: () => setLeagueMonth(monthOf(def)), todayDisabled: leagueMonth === monthOf(def) };
   }
 
-  // Slate (round 7): the day changes only with ← / → — the top bar's arrows, or the arrow keys anywhere but in a field,
-  // a tab row or an open picker (they keep their own arrow keys). Scrolling the cards never changes the day.
+  // Slate (round 7) and the League List (round 8): the day changes with ← / → — the top bar's arrows, or the arrow keys
+  // anywhere but in a field, a tab row or an open picker (they keep their own arrow keys). Scrolling never changes the
+  // day. One listener for whichever of the two is on show, so the keys never act twice.
+  const dayKeys = slate || (!team && list);
   const navRef = useRef(nav);
   navRef.current = nav;
   useEffect(() => {
-    if (!slate) return;
+    if (!dayKeys) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || datePickOpen.current) return;
       if ((e.target as Element | null)?.closest?.('input, textarea, select, [contenteditable="true"], [role="tablist"], [role="listbox"], [role="grid"], [role="dialog"]')) return;
@@ -278,7 +280,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [slate]);
+  }, [dayKeys]);
 
   // Slate copies (whole day or a selection): the cards on a transparent page, in the column count that suits the page
   // (this window's shape — the whiteboard's page is the window), SLATE_COPY_GAP apart, sharp at 2× their fitted size.
@@ -319,8 +321,11 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           .finally(() => setCapture(undefined));
       }),
     );
-  const listWeek = weekOf(nearestDay(days, state.date));
-  const capturePeriod = team && list ? undefined : !team && list ? fmtRange(listWeek[0]!, listWeek[6]!) : nav?.title;
+  // League List copies (round 8): the day on show, its rows as on screen (same zoom and column); no week copy any more
+  const listDay = days.find((d) => d.date === nearestDay(days, state.date));
+  const listStyle = leagueListStyle(size.width);
+  const leagueListWidth = listStyle ? Math.ceil(LEAGUE_LIST_COLUMN * leagueZoom(size.width)) : Math.min(size.width, LIST_MAX_WIDTH);
+  const capturePeriod = team && list ? undefined : nav?.title;
   const fullHeight = { width: size.width, height: 1e6 };
 
   // Marquee selection of games (desktop/tablet, mouse): only to copy several games as one image. The selected ids live
@@ -487,7 +492,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         {selCapture && selKind && selKind !== 'league-slate' && (
           <CaptureStage
             onReady={selCapture.onReady}
-            width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : Math.max(selCapture.cellWidth ?? 0, 360)) + 2 * CAPTURE_PAD}
+            width={(list ? (team ? Math.min(size.width, TEAM_LIST_MAX_WIDTH) : leagueListWidth) : Math.max(selCapture.cellWidth ?? 0, 360)) + 2 * CAPTURE_PAD}
             className={list ? ' ck-root-fill' : ' ck-root-grow'}
           >
             <div className="ck-capture-head">
@@ -514,7 +519,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           </CaptureStage>
         )}
         {capture && (
-          <CaptureStage onReady={capture} width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : size.width) + 2 * CAPTURE_PAD} className={`${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`} minHeight={list || compact ? undefined : size.height}>
+          <CaptureStage onReady={capture} width={(list ? (team ? Math.min(size.width, TEAM_LIST_MAX_WIDTH) : leagueListWidth) : size.width) + 2 * CAPTURE_PAD} className={`${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`} minHeight={list || compact ? undefined : size.height}>
             <div className="ck-capture-head">
               {title && <span className="ck-title">{title}</span>}
               {capturePeriod && <span className="ck-capture-period">{capturePeriod}</span>}
@@ -529,7 +534,9 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
                 <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
               )
             ) : list ? (
-              <LeagueListWeek data={data} date={state.date} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} />
+              <section className={`ck-league-list${listStyle ? ' ck-league-side' : ''}`} aria-label="League schedule" style={listStyle}>
+                <div className="ck-llist">{listDay ? <ListDaySection day={listDay} data={data} compact={compact} fatigueSlots={size.width >= LIST_MAX_WIDTH} now={now} timeZone={timeZone} /> : <p className="ck-empty">No games.</p>}</div>
+              </section>
             ) : weekView ? (
               <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} />
             ) : (

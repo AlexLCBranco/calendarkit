@@ -37,7 +37,7 @@ test('league view and team view render without console errors', async ({ page },
   const day = page.locator(full ? '[data-testid="day-header"]:not([disabled])' : '.ck-count-cell:not([disabled])').last();
   const date = full ? await day.evaluate((b) => b.closest('[data-date]')!.getAttribute('data-date')) : await day.getAttribute('data-date');
   await day.click();
-  await expect(page).toHaveURL(new RegExp(`date=${date}`));
+  await expect(page.locator('[data-testid="league-list"] [data-day]')).toHaveAttribute('data-day', date!); // round 8: that day only, not in the URL
   await expect(page.locator('[data-game-id]').first()).toBeVisible();
 
   // Team view (month grid).

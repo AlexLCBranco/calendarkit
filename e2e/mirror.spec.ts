@@ -13,6 +13,7 @@ const NOW = new Date('2026-11-15T15:00:00Z');
 test('League List: mirrored matchup, one x per part down every day, one line per row', async ({ page }, info) => {
   test.setTimeout(120_000);
   const phone = info.project.name === 'phone';
+  const zoom = info.project.name === 'desktop-xl' ? 1.3 : 1; // round 8: the desktop League List's zoom (1 at 1280)
   let widest = 0;
   let maxGap = 0;
   // played days (Oct 21–27), today's mixed day and later ones
@@ -76,8 +77,8 @@ test('League List: mirrored matchup, one x per part down every day, one line per
     for (const seq of r.order) expect(['LTSSTL'.replace('SS', 'S@S'), 'LT@TL'], date).toContain(seq);
     // unplayed rows: "CHA @ WAS", the codes about an "@" apart (desktop/tablet: the "@" slot, 1.3 em, + 2 gaps ≈ 28 px; before
     // round 7 the two empty score slots added ~70 px); played rows keep the scores between them
-    for (const g of r.gaps) expect(g.gap, `${date} ${g.id} (${g.kind}): gap between the codes`).toBeLessThanOrEqual(g.kind === 'unplayed' ? 30 : 200);
-    for (const g of r.gaps) if (g.kind === 'played') expect(g.gap, `${date} ${g.id}: scores between the codes`).toBeGreaterThan(60);
+    for (const g of r.gaps) expect(g.gap, `${date} ${g.id} (${g.kind}): gap between the codes`).toBeLessThanOrEqual((g.kind === 'unplayed' ? 30 : 200) * zoom);
+    for (const g of r.gaps) if (g.kind === 'played') expect(g.gap, `${date} ${g.id}: scores between the codes`).toBeGreaterThan(60 * zoom);
     if (date === '2026-12-25') maxGap = Math.max(...r.gaps.map((g) => g.gap));
     if (!phone) for (const cols of r.cols) for (const [k, xs] of Object.entries(cols)) expect(new Set(xs).size, `${date} ${k}: ${[...new Set(xs)]}`).toBe(1);
     // records: the worst case "41-41" fits its slot

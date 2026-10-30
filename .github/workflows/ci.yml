@@ -1,6 +1,7 @@
 # Tests on every push and pull request. Round 8 (0.2): three kinds of job run side by side, so a push waits for the
 # slowest one instead of the sum — unit (version check, unit tests in both zones, typecheck + build), the functional
-# e2e split in two shards, and the perf guard on a runner of its own (nothing else runs on its machine, as before when
+# e2e in two jobs by project (desktop-xl, which has the copy tests, alone; Playwright's --shard split by file group gave
+# 7.1 vs 1.4 min), and the perf guard on a runner of its own (nothing else runs on its machine, as before when
 # it ran after the other projects). Every job runs on every push; nothing moved to nightly.
 name: CI
 
@@ -33,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        projects: ['--project=desktop-xl', '--project=desktop --project=tablet --project=phone']
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -42,11 +43,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test --project=desktop --project=desktop-xl --project=tablet --project=phone --shard=${{ matrix.shard }}/2
+      - run: npx playwright test ${{ matrix.projects }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screenshots-${{ matrix.shard }}
+          name: screenshots-${{ strategy.job-index }}
           path: e2e/screenshots/
           if-no-files-found: ignore
 
