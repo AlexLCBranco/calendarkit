@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25 # e2e ~9-12 min since round 6 (the perf scroll checks also run the reference build)
     steps:
       - uses: actions/checkout@v5
         with:

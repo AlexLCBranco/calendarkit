@@ -9,8 +9,8 @@ export default defineConfig({
   testDir: 'e2e',
   timeout: 60_000,
   // a run can never hang indefinitely (2026-10-29: a perf run piped into grep never returned); a full local run takes
-  // ~5 min, CI's slower runners more — 15 min is the ceiling for everything
-  globalTimeout: 15 * 60_000,
+  // ~5 min, CI's slower runners more (round 6: 9–12 min on CI with the perf reference runs) — 20 min is the ceiling
+  globalTimeout: 20 * 60_000,
   workers: 2,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: { baseURL, trace: 'off', timezoneId: 'America/Sao_Paulo' },
