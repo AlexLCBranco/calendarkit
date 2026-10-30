@@ -2,7 +2,7 @@
 // tricode at one x, both columns' labels left-aligned in their columns, the tag area at one x, one line, nothing
 // clipped, no sideways scroll; tooltips on hover and focus. Prints the widest content per column.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

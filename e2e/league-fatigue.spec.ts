@@ -3,7 +3,7 @@
 // "@" and the TV pill, the colours (yellow fill / ring, purple underline), the tooltip for that team on hover and
 // focus, and the legend under the week grid and the League List. Prints the line widths.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

@@ -4,7 +4,7 @@
 // of a day, played or not (fixed slots); every row one line. Phones: the same order, no scores (rows with long TV
 // names wrap there as before). Prints the widest row.
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

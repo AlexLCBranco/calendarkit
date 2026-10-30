@@ -2,7 +2,7 @@
 // (most national TV games) and ORL — no cell clipped (height or width), no page scroll, games per window = the
 // served snapshot, B2B bars on the cells' bottom edge. Prints the scale per mode.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

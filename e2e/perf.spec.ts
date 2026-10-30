@@ -7,7 +7,7 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createServer, type Server } from 'node:http';
 import { extname, join, resolve } from 'node:path';
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page } from './fixtures';
 import { buildPerfRef } from '../scripts/perf-ref';
 
 const NOW = new Date('2026-11-15T15:00:00Z');

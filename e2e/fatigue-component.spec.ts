@@ -4,7 +4,7 @@
 // moves the logos; the night icons are in time order (left = earlier) in every column; a known HA 2nd night shows a
 // faded house left of a solid plane. Runs once (desktop-xl), sizing the window itself.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [

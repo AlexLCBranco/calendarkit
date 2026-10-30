@@ -22,6 +22,8 @@ export interface LeagueListViewProps {
   tvOnly: boolean;
   size: WidgetSize;
   now: number;
+  /** Today's local date for the week strip (CalendarView passes the clock's, so it follows midnight); default: from `now`. */
+  today?: string;
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
   /** The "↗" on each game: raised with its id; the host opens the game's page. */
@@ -69,12 +71,12 @@ export const listTitle = (date: string, compact: boolean) => fmtDate(date, { wee
  * Only the days near the viewport are rendered; the rest are spacers sized from measured (or estimated) heights,
  * and the day at the top stays put while heights above it get measured. The week strip follows the day at the top.
  */
-export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, timeZone, onOpenGame, gameLink, nav = true }: LeagueListViewProps) {
+export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, today: todayProp, timeZone, onOpenGame, gameLink, nav = true }: LeagueListViewProps) {
   const compact = isCompact(size);
   const days = useMemo(() => listDays(data, tvOnly), [data, tvOnly]);
   const index = useMemo(() => new Map(days.map((d, i) => [d.date, i])), [days]);
   const counts = useMemo(() => new Map(days.map((d) => [d.date, d.games.length])), [days]);
-  const today = localDate(now, timeZone);
+  const today = todayProp ?? localDate(now, timeZone);
 
   // Measured day heights, keyed by date and game count; dropped when the width changes (cards rewrap).
   const heights = useRef({ width: size.width, map: new Map<string, number>() });

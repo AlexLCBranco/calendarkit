@@ -5,7 +5,7 @@
 // Desktop XL only (1920 × 1080): the week view needs a desktop width; the copy code is the same at every width.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const OUT = 'test-output/copy-images';

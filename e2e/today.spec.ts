@@ -1,7 +1,7 @@
 // "Today" button, in a real browser at the desktop widths (1280, 1920): every view returns to today's games with
 // one click, at once (no smooth scrolling), and the button is disabled once there. Clock: Nov 15, 2026 15:00 UTC.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const today = (page: Page) => page.getByTestId('today');

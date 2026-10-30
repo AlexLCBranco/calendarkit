@@ -1,7 +1,7 @@
 // Smoke test: the app loads, league and team views render, no console errors. Screenshots for review go to
 // e2e/screenshots/ (git-ignored).
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 import { isRotationkitConfigured } from '../src/config';
 
 function collectErrors(page: Page) {

@@ -29,11 +29,22 @@ export function useClock(fixed?: number): ValueStore<number> {
       timer = setTimeout(tick, 60_000 - (Date.now() % 60_000));
     };
     const now = () => store.set(Date.now());
+    // back from sleep, a background tab or the back/forward cache: read the time at once (timers may have been held
+    // back), so today's date — and with it the day on show (CalendarView, round 6) — is right before the next minute
+    const wake = () => {
+      if (document.visibilityState !== 'visible') return;
+      store.set(Date.now());
+      arm();
+    };
     arm();
     window.addEventListener(CLOCK_TICK_EVENT, now);
+    document.addEventListener('visibilitychange', wake);
+    window.addEventListener('pageshow', wake);
     return () => {
       clearTimeout(timer);
       window.removeEventListener(CLOCK_TICK_EVENT, now);
+      document.removeEventListener('visibilitychange', wake);
+      window.removeEventListener('pageshow', wake);
     };
   }, [fixed, store]);
   return store;

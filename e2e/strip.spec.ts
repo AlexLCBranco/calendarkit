@@ -3,7 +3,7 @@
 // changes no row (MutationObserver on the rows), a day click puts its row at the top, ‹ › weeks with a game, the top bar
 // stays one row at 1920.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const settle = (page: Page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));

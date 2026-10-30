@@ -2,7 +2,7 @@
 // accent, a band with a left bar over its rows) and moves it with the wheel; the Team List highlights the row at the
 // top. 150 ms fade (opacity only).
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const ACCENT = 'rgb(78, 161, 255)';

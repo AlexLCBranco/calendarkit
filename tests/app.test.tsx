@@ -93,10 +93,20 @@ describe('App: URL state for the List | Calendar switch', () => {
     expect(screen.getByRole('region', { name: 'Celtics schedule' })).toBeTruthy();
   });
 
-  it('old ?view=league links open League → List at the date', async () => {
+  it('old ?view=league links open League → List, on today: the date in the URL is ignored (round 6)', async () => {
     await open('?view=league&date=2026-11-14');
     expect(selected('League') && selected('List')).toBe(true);
-    expect(screen.getByTestId('day-title').textContent).toMatch(/^Sat(urday)?, Nov(ember)? 14, 2026$/); // jsdom has no width: compact title
+    expect(screen.getByTestId('day-title').textContent).toMatch(/^Fri(day)?, Oct(ober)? 23, 2026$/); // NOW; jsdom has no width: compact title
+  });
+
+  it('a bookmark with an old date opens on today, in the List and in the week view; the rest of the URL still counts', async () => {
+    await open('?view=league&layout=list&date=2026-10-22');
+    expect(screen.getByTestId('day-title').textContent).toMatch(/^Fri(day)?, Oct(ober)? 23, 2026$/);
+    cleanup();
+    await open('?view=league&layout=calendar&date=2026-12-01&weeks=2');
+    fireEvent.click(screen.getByRole('tab', { name: 'List' }));
+    expect(window.location.search).toMatch(/weeks=2/); // kept from the URL
+    expect(window.location.search).toMatch(/date=2026-10-23/); // today, not the URL's Dec 1
   });
 
   it('new links: ?view=team&layout=list and ?view=league&layout=calendar', async () => {

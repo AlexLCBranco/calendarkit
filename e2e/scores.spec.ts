@@ -3,7 +3,7 @@
 // straight), Team Calendar cells (every team with a final game). Prints the Team Calendar scale and the score
 // widths. Clock: Nov 15, 2026 (games from Oct 23 on are over but not final in the snapshot: unchanged).
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 type Side = { teamId: number; teamTricode: string; score: number };

@@ -1,7 +1,7 @@
 // Team Calendar cells (round 4, item 4): the short 3-in-4 chip "3in4·2nd" and one green "TV" pill, both with the full
 // text in the floating tooltip (hover and focus); the Team List keeps "3-in-4 · 2nd" and the names. Desktop widths.
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

@@ -2,7 +2,7 @@
 // The clock is fixed (Nov 15, 2026, 15:00 UTC) so the default day / next game are known. Screenshots of the four
 // views go to e2e/screenshots/<project>-<league|team>-<list|calendar>.png.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const DEFAULT_DAY = '2026-11-15'; // evening games not over at 15:00 UTC

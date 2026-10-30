@@ -4,7 +4,7 @@
 // ctrl-click and Enter open it in a new tab; a drag that starts on it selects games and opens nothing.
 // hoopsjunkie.io is stubbed here: only the URL is checked.
 
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

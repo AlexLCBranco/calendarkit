@@ -2,7 +2,7 @@
 // labels (1/2 outline, 2/2 fill) + bracket, Team Calendar bars + arrows, opponent dot and "2/2" label. The stale data
 // stamp has its own variable and stays orange. Computed colours in a real browser (desktop-xl).
 
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const YELLOW = 'rgb(245, 224, 66)'; // --ck-b2b

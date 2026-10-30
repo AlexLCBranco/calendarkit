@@ -3,7 +3,7 @@
 // click clears, Escape clears, a view change clears; dragging to the bottom edge of the Team List auto-scrolls and
 // selects rows beyond the first screen; the bar's Copy and Ctrl+C put a PNG on the clipboard.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

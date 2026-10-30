@@ -29,12 +29,24 @@ describe('Today button', () => {
     expect(today().disabled).toBe(true);
   });
 
-  it('League List opened on another date: Today goes to the default day (same rule as on load)', () => {
-    render(<CalendarView data={data} size={DESKTOP} now={Date.parse('2026-11-16T05:00:00Z')} timeZone="UTC" initial={{ date: '2027-01-10' }} />);
+  it('League List opened on another date: Today goes to today — the day strip\'s date, the rule the page opens with (round 6)', () => {
+    // 05:00 UTC Nov 16: Nov 15's late games are still on (the old "default day" rule kept Nov 15); today is Nov 16
+    const at = Date.parse('2026-11-16T05:00:00Z');
+    expect(defaultDay(data, at)).toBe('2026-11-15');
+    render(<CalendarView data={data} size={DESKTOP} now={at} timeZone="UTC" initial={{ date: '2027-01-10' }} />);
     expect(today().disabled).toBe(false);
     fireEvent.click(today());
-    const want = defaultDay(data, Date.parse('2026-11-16T05:00:00Z'))!; // the rule used on load (tested in model.test.ts)
-    expect(screen.getByTestId('day-title').textContent).toBe(new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${want}T12:00:00Z`)));
+    expect(screen.getByTestId('day-title').textContent).toBe('Monday, November 16, 2026');
+    expect(document.querySelector('.ck-strip-selected.ck-strip-today')).not.toBeNull(); // the strip's today is the day shown
+    expect(today().disabled).toBe(true);
+  });
+  it('opens on today without a date, and on a later date than the season → its last day', () => {
+    render(<CalendarView data={data} size={DESKTOP} now={Date.parse('2026-11-16T05:00:00Z')} timeZone="UTC" />);
+    expect(screen.getByTestId('day-title').textContent).toBe('Monday, November 16, 2026');
+    cleanup();
+    render(<CalendarView data={data} size={DESKTOP} now={Date.parse('2027-08-01T15:00:00Z')} timeZone="UTC" />);
+    expect(screen.getByTestId('day-title').textContent).toContain(String(new Date(`${data.dates.at(-1)}T12:00:00Z`).getUTCFullYear()));
+    expect(document.querySelector(`[data-day="${data.dates.at(-1)}"]`)).toBeTruthy();
   });
 
   it('League Calendar (week view, 1 and 2 weeks): jumps to the week of the default day', () => {

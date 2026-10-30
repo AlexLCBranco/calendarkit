@@ -4,7 +4,7 @@
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { addDays, dateFormat, defaultDay, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
+import { addDays, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
 import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
@@ -101,7 +101,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     mode: initial?.mode ?? 'league',
     layout: initial?.layout ?? 'list',
     teamId: initial?.teamId && TEAM_BY_ID.has(initial.teamId) ? initial.teamId : DEFAULT_TEAM,
-    date: initial?.date && /^\d{4}-\d{2}-\d{2}$/.test(initial.date) ? initial.date : (defaultDay(data, now) ?? localDate(now, timeZone)),
+    date: initial?.date && /^\d{4}-\d{2}-\d{2}$/.test(initial.date) ? initial.date : seasonDay(data, localDate(now, timeZone)),
     tvOnly: initial?.tvOnly ?? false,
     showRest: initial?.showRest ?? false,
     weeks: initial?.weeks === 2 ? 2 : 1,
@@ -144,6 +144,22 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const team = state.mode === 'team';
   // today's date from the clock: the view re-renders when the date changes (midnight), not every minute
   const today = useSyncExternalStore(clock.subscribe, () => todayAt(clock.get(), timeZone, localDate));
+  // Midnight with the tab open (round 6, B3; also on waking from sleep or coming back to the tab — the clock reads the
+  // time then): every view still showing the old today moves to the new one; a view moved to another day stays put.
+  const shownToday = useRef(today);
+  useEffect(() => {
+    const was = shownToday.current;
+    shownToday.current = today;
+    if (was === today) return;
+    const s = stateRef.current;
+    const old = seasonDay(data, was);
+    const all = listDays(data, s.tvOnly);
+    // the league date: the List's day at the top, or the week view's week
+    if (s.layout === 'list' ? nearestDay(all, s.date) === nearestDay(all, old) : weekOf(s.date)[0] === weekOf(old)[0]) update({ date: seasonDay(data, today) });
+    setLeagueMonth((m) => (m === monthOf(old) ? monthOf(seasonDay(data, today)) : m));
+    setTeamMonth((m) => (m === teamMonthOf(data, was) ? teamMonthOf(data, today) : m));
+    setTeamWeek((w) => (w === teamWeekOf(data, was) ? teamWeekOf(data, today) : w));
+  }, [today, data, update]);
   const weekView = !team && !list && size.width >= WEEK_MIN_WIDTH;
   // Team → Calendar week views (desktop/tablet; phones keep the month)
   const teamWeeks = team && !list && !compact && state.teamSpan !== 'month' ? state.teamSpan : undefined;
@@ -218,18 +234,15 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   } else if (!team) nav = monthNav(leagueMonth, seasonMonths(data), setLeagueMonth);
 
   // "Today" (desktop/tablet; phones have no room in the top bar): back to today's games in each view. League:
-  // the default day (same rule as on load); Team Calendar: the current month; Team List: the next game.
-  const def = defaultDay(data, now) ?? today;
+  // today (the day strip's today, kept inside the season — the rule the page opens with, round 6); Team Calendar: the
+  // current month; Team List: the next game.
+  const def = seasonDay(data, today);
   if (nav && !compact) {
     if (teamWeeks) {
-      const first = weekOf(data.dates[0] ?? today)[0]!;
-      const last = weekOf(data.dates.at(-1) ?? today)[0]!;
-      const w = weekOf(today)[0]! < first ? first : weekOf(today)[0]! > last ? last : weekOf(today)[0]!;
+      const w = teamWeekOf(data, today);
       nav = { ...nav, onToday: () => setTeamWeek(w), todayDisabled: teamWeek === w };
     } else if (team) {
-      const months = seasonMonths(data);
-      const cur = monthOf(today);
-      const m = months.length && cur < months[0]! ? months[0]! : months.length && cur > months.at(-1)! ? months.at(-1)! : cur;
+      const m = teamMonthOf(data, today);
       nav = { ...nav, onToday: () => setTeamMonth(m), todayDisabled: teamMonth === m };
     } else if (list) {
       const day = nearestDay(days, def);
@@ -394,7 +407,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
             <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
           )
         ) : list ? (
-          <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
+          <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
         ) : weekView ? (
           <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} gameLink={gameLink} />
         ) : (
@@ -463,6 +476,28 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
 }
 
 /** Team view opens on the month of the team's next game not over yet (else its last game). */
+/** The league views' day for the local date `today` (round 6, B2: the page always opens on it): today, kept inside the season. */
+export function seasonDay(data: CalendarData, today: string): string {
+  const first = data.dates[0];
+  const last = data.dates.at(-1);
+  return !first || !last ? today : today < first ? first : today > last ? last : today;
+}
+
+/** Team Calendar: the month with `today`, kept inside the season's months. */
+function teamMonthOf(data: CalendarData, today: string): string {
+  const months = seasonMonths(data);
+  const cur = monthOf(today);
+  return months.length && cur < months[0]! ? months[0]! : months.length && cur > months.at(-1)! ? months.at(-1)! : cur;
+}
+
+/** Team Calendar week views: the week (its Sunday) with `today`, kept inside the season's weeks. */
+function teamWeekOf(data: CalendarData, today: string): string {
+  const first = weekOf(data.dates[0] ?? today)[0]!;
+  const last = weekOf(data.dates.at(-1) ?? today)[0]!;
+  const w = weekOf(today)[0]!;
+  return w < first ? first : w > last ? last : w;
+}
+
 function teamDefaultDate(data: CalendarData, teamId: number, now: number): string | undefined {
   const games = teamGames(data, teamId);
   return (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.dateEt;

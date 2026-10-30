@@ -2,7 +2,7 @@
 // keyboard works (arrows move between days, Enter picks, Escape closes with the focus back on the icon), a pick jumps
 // there in both lists, the top bar stays one row at 1920.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

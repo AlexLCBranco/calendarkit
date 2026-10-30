@@ -3,7 +3,7 @@
 // started, the row keeps its width and one line, the minute timer moves it (and only the countdown texts change), the
 // time comes back after tip-off, and a copied image is taken with the plain time.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 

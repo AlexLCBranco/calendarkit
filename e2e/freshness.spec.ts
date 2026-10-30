@@ -2,7 +2,7 @@
 // viewer's zone (America/Sao_Paulo in this config), orange with a tooltip past 36 h (mocked clock), the top bar still
 // one row at 1920 px; "Try again" reloads after a failed first request.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
 

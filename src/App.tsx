@@ -41,6 +41,12 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
   };
 }
 
+/**
+ * End-to-end tests only: the day to open on, set by e2e/fixtures.ts before the page loads (`window.__ckOpenDate`), so a
+ * test can start on a given day although the URL's date is ignored. Nothing in the app sets it.
+ */
+const e2eOpenDate = () => (window as { __ckOpenDate?: unknown }).__ckOpenDate as string | undefined;
+
 function writeUrlState(s: CalendarState) {
   const p = new URLSearchParams();
   p.set('view', s.mode);
@@ -96,7 +102,9 @@ export function App() {
   const appRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const size = useContentSize(appRef, widgetRef);
-  const [initial] = useState(readUrlState);
+  // Round 6 (B2): the page always opens on today. The URL's `date=` (still written as you scroll) is never read back, so
+  // a bookmark or a reloaded tab doesn't pin an old day; view, layout, team, weeks and the toggles still come from it.
+  const [initial] = useState(() => ({ ...readUrlState(), date: e2eOpenDate() }));
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
   const onOpenGame = isRotationkitConfigured() ? (id: string) => openGameInRotationkit(id) : undefined;

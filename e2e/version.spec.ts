@@ -4,7 +4,7 @@
 
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('v<version> in the bottom-right corner = version.json = package.json', async ({ page, request }, info) => {
   const res = await request.get('/version.json');

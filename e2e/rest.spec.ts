@@ -1,7 +1,7 @@
 // Team List "Show rest days" (desktop widths): toggle and URL, row order and dates against the served snapshot,
 // rest rows about half a game row tall, nothing clipped, no sideways scroll, opens / Today at the next game.
 
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const BOS = 1610612738;
