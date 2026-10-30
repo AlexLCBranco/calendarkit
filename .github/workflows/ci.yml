@@ -1,4 +1,7 @@
-# Tests on every push and pull request: unit tests (incl. both time zones), typecheck + build, Playwright smoke.
+# Tests on every push and pull request. Round 8 (0.2): three kinds of job run side by side, so a push waits for the
+# slowest one instead of the sum — unit (version check, unit tests in both zones, typecheck + build), the functional
+# e2e split in two shards, and the perf guard on a runner of its own (nothing else runs on its machine, as before when
+# it ran after the other projects). Every job runs on every push; nothing moved to nightly.
 name: CI
 
 on:
@@ -7,9 +10,9 @@ on:
   pull_request: {}
 
 jobs:
-  test:
+  unit:
     runs-on: ubuntu-latest
-    timeout-minutes: 25 # e2e ~9-12 min since round 6 (the perf scroll checks also run the reference build)
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v5
         with:
@@ -23,11 +26,39 @@ jobs:
         if: github.event_name == 'push'
       - run: npm test
       - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: npm run e2e
+      - run: npx playwright test --project=desktop --project=desktop-xl --project=tablet --project=phone --shard=${{ matrix.shard }}/2
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screenshots
+          name: screenshots-${{ matrix.shard }}
           path: e2e/screenshots/
           if-no-files-found: ignore
+
+  perf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5 # scripts/perf-ref.ts fetches the reference commit itself
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test --project=perf --no-deps
