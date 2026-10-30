@@ -1,0 +1,120 @@
+/* League → Slate (round 7, SlateView.tsx): a day's games as cards, two columns in the lists' 960 px column; the cards
+   scroll inside the view. */
+.ck-slate {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.ck-slate-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
+}
+.ck-slate-grid {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 8px 0 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+/* One card: the head (time or "Final", labels, TV), then the away and the home team's rows. */
+.ck-slate-card {
+  --ck-logo: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--ck-surface-2);
+  border: 1px solid var(--ck-border);
+  border-radius: 10px;
+  color: var(--ck-text);
+}
+.ck-slate-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  min-height: 1.5em;
+}
+.ck-slate-status {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ck-slate-final .ck-slate-status {
+  color: var(--ck-muted);
+}
+.ck-slate-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.ck-slate-teams {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* a team row: "@" column, logo, full name, record going in, Fatigue component, score — fixed tracks, so the two rows'
+   parts line up */
+.ck-slate-row {
+  display: grid;
+  grid-template-columns: 1.1em var(--ck-logo) minmax(0, 1fr) 3.3em auto 2.1em;
+  align-items: center;
+  column-gap: 8px;
+  font-size: 16px;
+}
+.ck-slate-at {
+  color: var(--ck-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.ck-slate-card .ck-logo-backing,
+.ck-slate-card .ck-logo-empty {
+  width: var(--ck-logo);
+  height: var(--ck-logo);
+}
+.ck-slate-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-slate-rec {
+  font-size: 12px;
+  color: var(--ck-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.ck-slate-score {
+  font-size: 18px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ck-muted);
+}
+.ck-slate-score.ck-score-win {
+  color: var(--ck-text);
+  font-weight: 700;
+}
+.ck-slate-row.ck-loss .ck-slate-name {
+  color: var(--ck-muted);
+}
+/* The copied image (SlateCopy): the cards in their own column count, SLATE_COPY_GAP apart and half of it around them,
+   on a transparent page — no caption, no background. */
+.ck-capture.ck-slate-capture {
+  padding: 0;
+  background: transparent;
+}
+.ck-slate-copy {
+  display: grid;
+  grid-template-columns: repeat(var(--ck-slate-cols), var(--ck-slate-card));
+  gap: var(--ck-slate-gap);
+  padding: calc(var(--ck-slate-gap) / 2);
+  align-items: stretch;
+}

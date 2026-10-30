@@ -1,0 +1,283 @@
+// Slate view (round 7, part 3): a day of games as cards in two columns, the day changed only by ← / → (top bar and
+// keyboard), opening on today. Its copy: a transparent PNG where only the cards are opaque, SLATE_COPY_GAP apart, in a
+// column count that suits the page (1920 × 911 here), sharp at 2× its fitted size. Desktop widths.
+
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { test as plain } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
+
+const NOW = new Date('2026-11-15T15:00:00Z'); // 12:00 in São Paulo (the projects' zone): Nov 15 is today
+const OUT = 'test-output/copy-images';
+const PAGE = { width: 1920, height: 911 };
+
+test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
+plain.beforeEach(({}, info) => plain.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
+test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
+
+type RawTeam = { teamId: number; teamTricode: string; teamName: string; score: number; wins: number; losses: number };
+type RawGame = { gameId: string; gameDateEst: string; gameStatus: number; gameStatusText: string; awayTeam: RawTeam; homeTeam: RawTeam };
+
+/** The served snapshot's regular-season / Cup games by ET date (independent of the app's code). */
+const snapshot = (page: Page) =>
+  page.evaluate(async () => {
+    const raw = await (await fetch('/data/schedule.json')).json();
+    const out: Record<string, RawGame[]> = {};
+    for (const d of raw.leagueSchedule.gameDates as { games: RawGame[] }[])
+      for (const g of d.games) if (/^00[2456]/.test(g.gameId)) (out[g.gameDateEst.slice(0, 10)] ??= []).push(g);
+    return out;
+  });
+
+async function openSlate(page: Page, date?: string) {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.clock.setFixedTime(NOW);
+  await page.goto(`/?view=league&layout=slate${date ? `&date=${date}` : ''}`);
+  await expect(page.getByTestId('slate')).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+}
+
+const title = (page: Page) => page.getByTestId('day-title').textContent();
+const ids = (page: Page) => page.locator('[data-testid="slate"] .ck-slate-card').evaluateAll((cs) => cs.map((c) => c.getAttribute('data-game-id')));
+
+plain('opens on today (the clock), not on a date in the URL', async ({ page }) => {
+  await page.clock.setFixedTime(NOW);
+  await page.goto('/?view=league&layout=slate&date=2026-12-25');
+  await expect(page.getByTestId('slate')).toBeVisible();
+  expect(await page.getByTestId('day-title').textContent()).toBe('Sunday, November 15, 2026');
+  await expect(page.getByRole('tab', { name: 'Slate' })).toHaveAttribute('aria-selected', 'true');
+});
+
+test('two columns of cards; every game of the day, in order, with the League List row\'s facts', async ({ page }) => {
+  await openSlate(page, '2026-11-15');
+  const want = (await snapshot(page))['2026-11-15']!.map((g) => g.gameId);
+  expect((await ids(page)).sort()).toEqual([...want].sort());
+  // two columns: two distinct x, cards of equal width, none outside the view horizontally
+  const boxes = await page.locator('[data-testid="slate"] .ck-slate-card').evaluateAll((cs) => cs.map((c) => c.getBoundingClientRect().toJSON() as DOMRect));
+  expect(new Set(boxes.map((b) => Math.round(b.left))).size).toBe(2);
+  expect(new Set(boxes.map((b) => Math.round(b.width))).size).toBe(1);
+  expect(Math.max(...boxes.map((b) => b.right))).toBeLessThanOrEqual(await page.evaluate(() => document.documentElement.clientWidth));
+  // the same facts as the League List row of each game: time, records, Fatigue components, labels, TV
+  const facts = (sel: string) =>
+    page.locator(sel).evaluateAll((cards) =>
+      Object.fromEntries(
+        cards.map((c) => [
+          c.getAttribute('data-game-id'),
+          {
+            time: c.querySelector('[data-testid="tipoff"]')?.textContent?.trim(),
+            rec: [...c.querySelectorAll('.ck-rec, .ck-slate-rec')].map((r) => r.textContent),
+            fx: [...c.querySelectorAll('[data-testid="fatigue"]')].map((f) => `${f.getAttribute('data-night')}|${f.getAttribute('data-stretch')}|${f.getAttribute('data-code')}`),
+            tags: [...c.querySelectorAll('.ck-tag')].map((t) => t.className.replace(/\s+/g, ' ')).sort(),
+            tv: c.querySelector('[data-testid="tv-badge"]')?.textContent?.replace(/\s+/g, ' ').trim(),
+          },
+        ]),
+      ),
+    );
+  const slate = await facts('[data-testid="slate"] .ck-slate-card');
+  await page.getByRole('tab', { name: 'List', exact: true }).click();
+  await expect(page.getByTestId('day-title')).toHaveText('Sunday, November 15, 2026');
+  const list = await facts('.ck-lday[data-day="2026-11-15"] .ck-card');
+  for (const id of want) expect(slate[id], id).toEqual(list[id]);
+});
+
+test('cards: full team names, "@" before the home team, time or final score with OT', async ({ page }) => {
+  const all = await (async () => {
+    await openSlate(page);
+    return snapshot(page);
+  })();
+  // a played day with an overtime game, if the snapshot has one; else any played day
+  const played = Object.entries(all).filter(([, gs]) => gs.every((g) => g.gameStatus === 3));
+  const [date, games] = played.find(([, gs]) => gs.some((g) => /OT/.test(g.gameStatusText))) ?? played.at(-1)!;
+  await openSlate(page, date);
+  for (const g of games) {
+    const card = page.locator(`.ck-slate-card[data-game-id="${g.gameId}"]`);
+    const rows = card.locator('.ck-slate-row');
+    await expect(rows.nth(0).locator('.ck-slate-name')).toHaveText(g.awayTeam.teamName);
+    await expect(rows.nth(1).locator('.ck-slate-name')).toHaveText(g.homeTeam.teamName);
+    await expect(rows.nth(0).locator('.ck-slate-at')).toHaveText('');
+    await expect(rows.nth(1).locator('.ck-slate-at')).toHaveText('@');
+    await expect(rows.nth(0).locator('.ck-slate-score')).toHaveText(String(g.awayTeam.score));
+    await expect(rows.nth(1).locator('.ck-slate-score')).toHaveText(String(g.homeTeam.score));
+    const ot = g.gameStatusText.match(/(\d?OT)/)?.[1];
+    await expect(card.getByTestId('slate-status')).toHaveText(ot ? `Final ${ot}` : 'Final');
+    const win = g.awayTeam.score > g.homeTeam.score ? 0 : 1;
+    await expect(rows.nth(win).locator('.ck-slate-score')).toHaveClass(/ck-score-win/);
+  }
+  // an upcoming day: the start time as in the League List, no score, no countdown anywhere
+  await openSlate(page, '2026-11-20');
+  const card = page.locator('.ck-slate-card').first();
+  await expect(card.locator('.ck-slate-score').first()).toHaveText('');
+  await expect(card.getByTestId('tipoff')).toHaveText(/^\d\d:\d\d( \(\+1\))?$|^TBD$/);
+  expect(await page.locator('.ck-countdown').count()).toBe(0);
+});
+
+test('the day changes only with ← / → (keyboard and top bar), never by scrolling', async ({ page }) => {
+  await openSlate(page, '2026-11-15');
+  const all = await snapshot(page);
+  const days = Object.keys(all).sort();
+  const at = (d: string) => days.indexOf(d);
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByTestId('day-title')).toHaveText('Monday, November 16, 2026');
+  expect((await ids(page)).sort()).toEqual(all[days[at('2026-11-15') + 1]!]!.map((g) => g.gameId).sort());
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.getByTestId('day-title')).toHaveText('Saturday, November 14, 2026');
+  await page.getByLabel('Next day').click();
+  await expect(page.getByTestId('day-title')).toHaveText('Sunday, November 15, 2026');
+  // wheel over the cards (the busiest day scrolls inside the view): the day stays
+  const busiest = days.reduce((a, d) => (all[d]!.length > all[a]!.length ? d : a));
+  await openSlate(page, busiest);
+  const t = await title(page);
+  const box = (await page.getByTestId('slate').boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (let i = 0; i < 10; i++) await page.mouse.wheel(0, 400);
+  await page.waitForTimeout(300);
+  expect(await title(page)).toBe(t);
+  for (let i = 0; i < 10; i++) await page.mouse.wheel(0, -400);
+  await page.waitForTimeout(300);
+  expect(await title(page)).toBe(t);
+  // the arrow keys don't change the day while typing in a field or using the date picker
+  await page.getByTestId('date-pick').click();
+  await page.keyboard.press('ArrowRight'); // moves the picker's focus, not the slate
+  await page.keyboard.press('Escape');
+  expect(await title(page)).toBe(t);
+});
+
+/** Copies via `button`, returns the PNG's facts and the stage measured while it was on screen. */
+async function copySlate(page: Page, testId: 'copy-view' | 'copy-selection', name: string) {
+  await page.evaluate(() => {
+    const w = window as unknown as { __slate?: unknown };
+    w.__slate = undefined;
+    const obs = new MutationObserver(() => {
+      const root = document.querySelector<HTMLElement>('.ck-capture .ck-slate-copy');
+      if (root && !w.__slate) {
+        const r0 = root.getBoundingClientRect();
+        const card = root.querySelector('.ck-slate-name')!;
+        w.__slate = {
+          width: root.offsetWidth,
+          height: root.offsetHeight,
+          cols: getComputedStyle(root).gridTemplateColumns.split(' ').length,
+          nameFont: parseFloat(getComputedStyle(card).fontSize),
+          cards: [...root.querySelectorAll('.ck-slate-card')].map((c) => {
+            const r = c.getBoundingClientRect();
+            return { id: c.getAttribute('data-game-id'), x: r.left - r0.left, y: r.top - r0.top, w: r.width, h: r.height };
+          }),
+        };
+        obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  });
+  const button = page.getByTestId(testId);
+  await page.evaluate(() => navigator.clipboard.writeText(''));
+  const t0 = Date.now();
+  await button.click();
+  await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 });
+  const ms = Date.now() - t0;
+  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; cards: { id: string; x: number; y: number; w: number; h: number }[] };
+  const ratio = Number((await button.getAttribute('data-captured'))!.split('@')[1]);
+  const png = await page.evaluate(async () => {
+    const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;
+    const bytes = new Uint8Array(await (await item.getType('image/png')).arrayBuffer());
+    let s = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return btoa(s);
+  });
+  writeFileSync(`${OUT}/${name}.png`, Buffer.from(png, 'base64'));
+  // pixels: alpha 0 everywhere outside the cards (2 px margin for antialiased edges and rounded corners), opaque inside
+  const px = await page.evaluate(
+    async ({ png, stage, ratio }) => {
+      const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
+      const c = new OffscreenCanvas(bmp.width, bmp.height);
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(bmp, 0, 0);
+      const { data, width, height } = ctx.getImageData(0, 0, bmp.width, bmp.height);
+      const inCard = (x: number, y: number, m: number) => stage.cards.some((k) => x >= (k.x - m) * ratio && x < (k.x + k.w + m) * ratio && y >= (k.y - m) * ratio && y < (k.y + k.h + m) * ratio);
+      let outside = 0;
+      let outsideOpaque = 0;
+      let inside = 0;
+      let insideClear = 0;
+      for (let y = 0; y < height; y += 3)
+        for (let x = 0; x < width; x += 3) {
+          const a = data[(y * width + x) * 4 + 3]!;
+          if (!inCard(x, y, 2)) {
+            outside++;
+            if (a !== 0) outsideOpaque++;
+          } else if (inCard(x, y, -12)) {
+            inside++;
+            if (a !== 255) insideClear++;
+          }
+        }
+      return { width, height, outside, outsideOpaque, inside, insideClear };
+    },
+    { png, stage, ratio },
+  );
+  return { ms, stage, ratio, px };
+}
+
+/** The fitted scale of the image on the page and what it means for the text. */
+const fit = (s: { width: number; height: number }) => Math.min(PAGE.width / s.width, PAGE.height / s.height);
+
+test('copy: 1, 5, 12 and 15 games — transparent around the cards, page-shaped, readable and sharp on a 1920 × 911 page', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop-xl', 'once, at the whiteboard size');
+  test.setTimeout(180_000);
+  await page.setViewportSize(PAGE);
+  await openSlate(page);
+  const all = await snapshot(page);
+  for (const n of [1, 5, 12, 15]) {
+    const date = Object.keys(all).sort().find((d) => all[d]!.length === n);
+    expect(date, `a day with ${n} games`).toBeTruthy();
+    await openSlate(page, date);
+    expect(await page.locator('[data-testid="slate"] .ck-slate-card').count()).toBe(n);
+    const r = await copySlate(page, 'copy-view', `slate-${n}`);
+    const s = fit(r.stage);
+    console.log(`[slate] ${n} games (${date}): ${r.stage.cols} columns, ${r.stage.width}×${r.stage.height} CSS px × ${r.ratio} = ${r.px.width}×${r.px.height} px, fitted ×${s.toFixed(2)} (names ${(r.stage.nameFont * s).toFixed(1)} px), copied in ${r.ms} ms`);
+    expect(r.stage.cards).toHaveLength(n);
+    expect([r.px.width, r.px.height]).toEqual([Math.floor(r.stage.width * r.ratio), Math.floor(r.stage.height * r.ratio)]);
+    // transparent outside the cards (alpha 0), opaque cards
+    expect(r.px.outside).toBeGreaterThan(0);
+    expect(r.px.outsideOpaque, 'pixels outside the cards that are not fully transparent').toBe(0);
+    expect(r.px.insideClear, 'card pixels that are not opaque').toBe(0);
+    // fits the page and reads there: names at least 12 px when the image is scaled to fit 1920 × 911
+    expect(r.stage.nameFont * s, 'name size on the page').toBeGreaterThanOrEqual(12);
+    // sharp from 1/4 up to 2× its fitted size: at 2× the image still has a pixel per screen pixel
+    expect(r.ratio, 'pixels per CSS px ≥ 2 × the fitted scale').toBeGreaterThanOrEqual(2 * s);
+    // page-shaped: no other column count would show the cards larger
+    const [cw, ch] = [r.stage.cards[0]!.w, Math.max(...r.stage.cards.map((k) => k.h))];
+    const gap = r.stage.cards.length > 1 ? r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw : r.stage.cards[0]!.x * 2;
+    for (let c = 1; c <= n; c++) {
+      const rows = Math.ceil(n / c);
+      expect(fit({ width: c * (cw + gap), height: rows * (ch + gap) }), `${c} columns would be no larger`).toBeLessThanOrEqual(s + 1e-6);
+    }
+    if (n === 12) expect(r.stage.cols, '12 games: wide, not 2 × 6').toBeGreaterThan(2);
+  }
+});
+
+test('marquee in the Slate: 3 selected games copy by the same rule (2 + 1, not a column)', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop-xl', 'once, at the whiteboard size');
+  await page.setViewportSize(PAGE);
+  await openSlate(page, '2026-11-15');
+  const cards = page.locator('[data-testid="slate"] .ck-slate-card');
+  const a = (await cards.nth(0).boundingBox())!;
+  const b = (await cards.nth(1).boundingBox())!;
+  const c = (await cards.nth(2).boundingBox())!;
+  // a box over the first row (cards 1 and 2), then Shift + a box over the third card
+  const drag = async (x0: number, y0: number, x1: number, y1: number) => {
+    await page.mouse.move(x0, y0);
+    await page.mouse.down();
+    await page.mouse.move(x0 + 10, y0 + 10, { steps: 3 });
+    await page.mouse.move(x1, y1, { steps: 6 });
+    await page.mouse.up();
+  };
+  await drag(a.x + 20, a.y + 20, b.x + 30, b.y + 30);
+  await expect(page.getByTestId('selection-count')).toHaveText('2 games selected');
+  await page.keyboard.down('Shift');
+  await drag(c.x + 20, c.y + 20, c.x + 60, c.y + 50);
+  await page.keyboard.up('Shift');
+  await expect(page.getByTestId('selection-count')).toHaveText('3 games selected');
+  const r = await copySlate(page, 'copy-selection', 'slate-selection-3');
+  expect(r.stage.cards).toHaveLength(3);
+  // the same rule as the whole day (largest cards on the page; Alex, 2026-10-30): 3 cards come out 2 + 1, not a column
+  expect(r.stage.cols).toBe(2);
+  expect(new Set(r.stage.cards.map((k) => Math.round(k.y))).size).toBe(2);
+  expect(r.px.outsideOpaque).toBe(0);
+  console.log(`[slate] selection of 3: ${r.stage.width}×${r.stage.height} CSS px × ${r.ratio}, copied in ${r.ms} ms`);
+});

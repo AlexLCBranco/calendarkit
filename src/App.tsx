@@ -20,7 +20,7 @@ export function openGameInRotationkit(gameId: string, open: (url: string) => voi
 export const appGameLink = isGameLinkConfigured() ? (g: Parameters<typeof gameLinkUrl>[0]) => gameLinkUrl(g) : undefined;
 
 /**
- * URL: ?view=league|team&layout=list|calendar&team=&date=&weeks=2&span=1w|2w&tv=1 (weeks: League → Calendar rows; span:
+ * URL: ?view=league|team&layout=list|calendar|slate&team=&date=&weeks=2&span=1w|2w&tv=1 (weeks: League → Calendar rows; span:
  * Team → Calendar weeks, none = month). Links from before the List | Calendar switch have no layout: ?view=team opened the
  * team month grid (→ Calendar), ?view=league the day list (→ List). "Show rest days" is not in it (round 7, 2.2: on at
  * every load, unchecking lasts until a reload; an old link's `rest=` is ignored).
@@ -32,7 +32,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
   const layout = p.get('layout');
   return {
     mode: view === 'team' ? 'team' : view === 'league' ? 'league' : undefined,
-    layout: layout === 'list' || layout === 'calendar' ? layout : view === 'team' ? 'calendar' : undefined,
+    layout: layout === 'list' || layout === 'calendar' || layout === 'slate' ? layout : view === 'team' ? 'calendar' : undefined,
     teamId: team?.id,
     date: p.get('date') ?? undefined,
     tvOnly: p.get('tv') === '1' ? true : undefined,

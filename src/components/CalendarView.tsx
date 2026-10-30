@@ -7,7 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { addDays, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
-import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
+import type { ScheduleGame } from '../shared/nba-schedule/parse';
+import { capturePixelRatio, copyAsImage, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
 import { CLOCK_TICK_EVENT, ClockProvider, useClock, useClockValue } from './clock';
 import { CopyButton } from './CopyButton';
 import type { GameLink } from './GameCard';
@@ -21,6 +22,8 @@ import { Segmented } from './Segmented';
 import { createSelectionStore, useMarqueeSelection } from './selection';
 import { SelectionBar, SelectionStyle } from './SelectionBar';
 import { SelectionCapture, type SelectionKind } from './SelectionCapture';
+import { slateCopyColumns, slateImageSize, slatePixelRatio } from './slate';
+import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
 import { TeamHeader } from './TeamHeader';
 import { TeamListView, type TeamListHandle } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
@@ -43,13 +46,14 @@ export { TeamPicker } from './TeamPicker';
 export { COMPACT_WIDTH, fmtRange, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
 
 export type CalendarMode = 'team' | 'league';
-export type CalendarLayout = 'list' | 'calendar';
+/** List, Calendar, or (League, desktop) Slate: a day of games as cards (round 7). */
+export type CalendarLayout = 'list' | 'calendar' | 'slate';
 /** Team → Calendar: a month grid (default) or 1 or 2 week rows. */
 export type TeamSpan = 'month' | 1 | 2;
 
 export interface CalendarState {
   mode: CalendarMode;
-  /** List or Calendar; kept when switching League ↔ Team. */
+  /** List, Calendar or Slate; kept when switching League ↔ Team (Team shows its List while it is Slate). */
   layout: CalendarLayout;
   teamId: number;
   /** League views: the day at the top of the list; the week view shows this day's week. */
@@ -140,8 +144,12 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   };
   const onSelectDate = useCallback((date: string) => update({ date }), [update]);
   const openDay = (date: string) => update({ date, layout: 'list' });
-  const list = state.layout === 'list';
   const team = state.mode === 'team';
+  // League → Slate (round 7): desktop only. A Team view, or a widget too narrow for it, shows the List meanwhile (the
+  // state keeps "slate", so League comes back to it).
+  const slateFits = !compact && size.width >= SLATE_MIN_WIDTH;
+  const slate = !team && state.layout === 'slate' && slateFits;
+  const list = state.layout === 'list' || (state.layout === 'slate' && !slate);
   // today's date from the clock: the view re-renders when the date changes (midnight), not every minute
   const today = useSyncExternalStore(clock.subscribe, () => localDate(clock.get(), timeZone));
   // Midnight with the tab open (round 6, B3; also on waking from sleep or coming back to the tab — the clock reads the
@@ -155,12 +163,12 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     const old = seasonDay(data, was);
     const all = listDays(data, s.tvOnly);
     // the league date: the List's day at the top, or the week view's week
-    if (s.layout === 'list' ? nearestDay(all, s.date) === nearestDay(all, old) : weekOf(s.date)[0] === weekOf(old)[0]) update({ date: seasonDay(data, today) });
+    if (s.layout !== 'calendar' ? nearestDay(all, s.date) === nearestDay(all, old) : weekOf(s.date)[0] === weekOf(old)[0]) update({ date: seasonDay(data, today) });
     setLeagueMonth((m) => (m === monthOf(old) ? monthOf(seasonDay(data, today)) : m));
     setTeamMonth((m) => (m === teamMonthOf(data, was) ? teamMonthOf(data, today) : m));
     setTeamWeek((w) => (w === teamWeekOf(data, was) ? teamWeekOf(data, today) : w));
   }, [today, data, update]);
-  const weekView = !team && !list && size.width >= WEEK_MIN_WIDTH;
+  const weekView = !team && !list && !slate && size.width >= WEEK_MIN_WIDTH;
   // Team → Calendar week views (desktop/tablet; phones keep the month)
   const teamWeeks = team && !list && !compact && state.teamSpan !== 'month' ? state.teamSpan : undefined;
   // Month → week: the week of today if today is in the shown month, else the month's first week. Week → month: the
@@ -173,6 +181,8 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const teamList = useRef<TeamListHandle>(null);
   // the picker closes when the view changes; Escape puts the focus back on its icon
   useEffect(() => setDatePick(false), [state.mode, state.layout, state.teamId]);
+  const datePickOpen = useRef(false);
+  datePickOpen.current = datePick || picking;
   const closeDatePick = (keyboard: boolean) => {
     setDatePick(false);
     if (keyboard) root.current?.querySelector<HTMLElement>('[data-testid="date-pick"]')?.focus();
@@ -204,7 +214,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       nextDisabled: addDays(teamWeek, span) > (data.dates.at(-1) ?? teamWeek),
     };
   } else if (team && !list) nav = monthNav(teamMonth, seasonMonths(data), setTeamMonth);
-  else if (!team && list) {
+  else if (!team && (list || slate)) {
     const cur = nearestDay(days, state.date);
     const i = days.findIndex((d) => d.date === cur);
     nav = {
@@ -244,17 +254,63 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     } else if (team) {
       const m = teamMonthOf(data, today);
       nav = { ...nav, onToday: () => setTeamMonth(m), todayDisabled: teamMonth === m };
-    } else if (list) {
+    } else if (list || slate) {
       const day = nearestDay(days, def);
       nav = { ...nav, onToday: () => update({ date: day }), todayDisabled: nearestDay(days, state.date) === day };
     } else if (weekView) nav = { ...nav, onToday: () => update({ date: def }), todayDisabled: weekOf(state.date)[0] === weekOf(def)[0] };
     else nav = { ...nav, onToday: () => setLeagueMonth(monthOf(def)), todayDisabled: leagueMonth === monthOf(def) };
   }
 
+  // Slate (round 7): the day changes only with ← / → — the top bar's arrows, or the arrow keys anywhere but in a field,
+  // a tab row or an open picker (they keep their own arrow keys). Scrolling the cards never changes the day.
+  const navRef = useRef(nav);
+  navRef.current = nav;
+  useEffect(() => {
+    if (!slate) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || datePickOpen.current) return;
+      if ((e.target as Element | null)?.closest?.('input, textarea, select, [contenteditable="true"], [role="tablist"], [role="listbox"], [role="grid"], [role="dialog"]')) return;
+      const n = navRef.current;
+      if (!n) return;
+      e.preventDefault();
+      if (e.key === 'ArrowLeft' && !n.prevDisabled) n.onPrev();
+      if (e.key === 'ArrowRight' && !n.nextDisabled) n.onNext();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [slate]);
+
+  // Slate copies (whole day or a selection): the cards on a transparent page, in the column count that suits the page
+  // (this window's shape — the whiteboard's page is the window), SLATE_COPY_GAP apart, sharp at 2× their fitted size.
+  const [slateCapture, setSlateCapture] = useState<{ games: ScheduleGame[]; cols: number; card: { width: number; height: number }; onReady: (node: HTMLElement) => void }>();
+  const copySlate = (button: HTMLButtonElement, games: ScheduleGame[]) => {
+    const cards = [...(root.current?.querySelectorAll<HTMLElement>('[data-testid="slate"] .ck-slate-card') ?? [])];
+    if (!games.length || !cards.length) return Promise.reject(new Error('no games to copy'));
+    // the on-screen card size: same width, so the text wraps the same; rows as tall as the tallest card
+    const card = { width: cards[0]!.getBoundingClientRect().width, height: Math.max(...cards.map((c) => c.getBoundingClientRect().height)) };
+    const page = { width: window.innerWidth, height: window.innerHeight };
+    const cols = slateCopyColumns(games.length, card, page);
+    return new Promise<HTMLCanvasElement>((resolve, reject) =>
+      setSlateCapture({
+        games,
+        cols,
+        card,
+        onReady: (node) => {
+          const ratio = capturePixelRatio(node.scrollWidth, node.scrollHeight, slatePixelRatio(slateImageSize(games.length, cols, card), page));
+          button.dataset.captured = `${node.offsetWidth}x${node.offsetHeight}@${ratio}`;
+          copyAsImage(node, { pixelRatio: ratio, zoom: 1 }) // no background: transparent around the cards
+            .then(resolve, reject)
+            .finally(() => setSlateCapture(undefined));
+        },
+      }),
+    );
+  };
+
   // "Copy view as image": render the view off-screen (CaptureStage), copy it, remove it.
   const [capture, setCapture] = useState<(node: HTMLElement) => void>();
   // The button records the size copied (CSS px) and the pixel ratio used: data-captured="1840x1010@4".
   const copyView = (button: HTMLButtonElement) =>
+    slate ? copySlate(button, slateGames(data, nearestDay(days, state.date), state.tvOnly)) :
     new Promise<HTMLCanvasElement>((resolve, reject) =>
       setCapture(() => (node: HTMLElement) => {
         button.dataset.captured = `${node.offsetWidth}x${node.offsetHeight}@${capturePixelRatio(node.scrollWidth, node.scrollHeight, COPY_PIXEL_RATIO)}`;
@@ -272,13 +328,17 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const [selection] = useState(createSelectionStore);
   const marquee = useRef<HTMLDivElement>(null);
   const onMarquee = useMarqueeSelection(selection, marquee);
-  const selKind: SelectionKind | undefined = compact ? undefined : team ? (list ? 'team-list' : 'team-calendar') : list ? 'league-list' : weekView ? 'league-week' : undefined;
+  const selKind: SelectionKind | undefined = compact ? undefined : team ? (list ? 'team-list' : 'team-calendar') : slate ? 'league-slate' : list ? 'league-list' : weekView ? 'league-week' : undefined;
   // a new view, team, period, span or toggle clears it (scrolling the League List doesn't)
-  const viewKey = [state.mode, state.layout, state.teamId, state.tvOnly, state.showRest, state.weeks, state.teamSpan, teamMonth, teamWeek, leagueMonth, weekView ? weekOf(state.date)[0] : '', compact].join('|');
+  const viewKey = [state.mode, state.layout, state.teamId, state.tvOnly, state.showRest, state.weeks, state.teamSpan, teamMonth, teamWeek, leagueMonth, weekView ? weekOf(state.date)[0] : '', slate ? state.date : '', compact].join('|');
   useEffect(() => selection.clear(), [viewKey, selection]);
   const root = useRef<HTMLDivElement>(null);
   const [selCapture, setSelCapture] = useState<{ ids: ReadonlySet<string>; cellWidth?: number; teamScale?: number; weekStyle?: string; onReady: (node: HTMLElement) => void }>();
   const copySelection = (button: HTMLButtonElement) => {
+    if (slate) {
+      const ids = selection.get();
+      return copySlate(button, slateGames(data, nearestDay(days, state.date), state.tvOnly).filter((g) => ids.has(g.gameId)));
+    }
     const el = root.current!;
     const cell = el.querySelector('.ck-team-grid .ck-day-cell, .ck-week-grid .ck-month-cell');
     return new Promise<HTMLCanvasElement>((resolve, reject) =>
@@ -301,15 +361,15 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     <ClockProvider clock={clock}>
       <div
         ref={root}
-        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${list ? ' ck-root-fill' : ' ck-root-grow'}`}
+        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${list || slate ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={selKind ? onMarquee : undefined}
-        style={{ maxWidth: size.width, height: list ? size.height : undefined, minHeight: list || compact ? undefined : size.height }}
+        style={{ maxWidth: size.width, height: list || slate ? size.height : undefined, minHeight: list || slate || compact ? undefined : size.height }}
         {...tooltip.handlers}
       >
         <div className="ck-toolbar" data-testid="top-bar">
           {title && <h1 className={`ck-title${compact ? ' ck-sr' : ''}`}>{title}</h1>}
           <Segmented label="View" value={state.mode} options={[['league', 'League'], ['team', 'Team']]} onChange={(mode) => update({ mode })} />
-          <Segmented label="Layout" value={state.layout} options={[['list', 'List'], ['calendar', 'Calendar']]} onChange={setLayout} />
+          <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(team || !slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />
           {team && <TeamPicker teamId={state.teamId} onChange={pickTeam} compact={compact} />}
           {nav && (
             <div className="ck-period-wrap">
@@ -329,7 +389,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
                   onClose={() => setPicking(false)}
                 />
               )}
-              {datePick && !team && list && !compact && (
+              {datePick && !team && (list || slate) && !compact && (
                 <DatePicker
                   data={data}
                   date={nearestDay(days, state.date)}
@@ -406,6 +466,8 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           ) : (
             <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
           )
+        ) : slate ? (
+          <SlateView data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} />
         ) : list ? (
           <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
         ) : weekView ? (
@@ -417,7 +479,12 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         <div ref={marquee} className="ck-marquee" aria-hidden="true" data-testid="marquee" />
         <SelectionStyle store={selection} scope=".ck-select-area" />
         {selKind && <SelectionBar store={selection} copy={copySelection} />}
-        {selCapture && selKind && (
+        {slateCapture && (
+          <CaptureStage onReady={slateCapture.onReady} width={slateImageSize(slateCapture.games.length, slateCapture.cols, slateCapture.card).width} className=" ck-slate-capture">
+            <SlateCopy data={data} games={slateCapture.games} cols={slateCapture.cols} cardWidth={slateCapture.card.width} timeZone={timeZone} />
+          </CaptureStage>
+        )}
+        {selCapture && selKind && selKind !== 'league-slate' && (
           <CaptureStage
             onReady={selCapture.onReady}
             width={(list ? Math.min(size.width, team ? TEAM_LIST_MAX_WIDTH : LIST_MAX_WIDTH) : Math.max(selCapture.cellWidth ?? 0, 360)) + 2 * CAPTURE_PAD}

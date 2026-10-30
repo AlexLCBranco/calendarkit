@@ -29,7 +29,15 @@ where-to-watch info, embedding in gauntlet.
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
-## Current state / handoff (2026-10-30, after round 6)
+## Current state / handoff (2026-10-30, after round 7)
+Round 7 shipped v1.18.2 (leftovers: merged chip in Team Calendar cells, no opponent dot beside its component, home
+plane inside the line; tests: modified clicks open a real tab, Cup URLs checked against hoopsjunkie), v1.19.0 (today in
+the Team Calendar, rest days on by default and never stored, countdown removed with the minute tick, tight unplayed
+rows) and v1.20.0 (**Slate view** + transparent page-shaped copies). Details: "### Round 7 (2026-10-30)" under
+Decisions. Decisions recorded there, don't undo: no persistence for defaults until a settings page exists; countdown
+dropped for now; unplayed rows don't line up with played ones; Slate copy = largest-cards rule.
+
+## Previous handoff (2026-10-30, after round 6)
 State at v1.18.1 (live at https://calendarkit-brown.vercel.app). Rounds 1–6 are done. Details and measurements for
 each item are under "Decisions" ("### Round 6 (2026-10-30)", "### Round 5 (2026-10-29)", "### Round 4 (2026-10-28)").
 
@@ -72,12 +80,8 @@ each item are under "Decisions" ("### Round 6 (2026-10-30)", "### Round 5 (2026-
 **Decided:** the compact week-view chip shows the stretch without tonight's place ("7in11"): two full chips
 ("7in11 · 2nd") need ~166 px under a line whose day cell is 163 px at 1280 × 900. Alex chose to keep it (2026-10-30).
 
-**Open issues:**
-- Team views (Team Calendar cells, tablet/phone Team List) keep their own 3-in-4 chip ("3in4·2nd", sets in the
-  tooltip); not merged this round.
-- The Team List's opponent tricode keeps its yellow 2nd-night dot next to the components.
-- In 2-week mode the home team's plane still pokes over the line above (102 places) and the edge of the home logo's
-  disc (276), as before; only the away plane / label overlap was asked for and fixed.
+**Open issues** (round 7 resolved the first three: merged chip in cells — the tablet/phone Team List never had a chip,
+this note was wrong —, opponent dot removed beside its component, home plane fixed):
 - Team Calendar month view at 1280×900 stays at scale 0.8 (unchanged).
 
 **Don't break:** everything in round 5's list still holds. Also:
@@ -624,7 +628,8 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
 
 ### Round 3 (2026-10-24)
 - **Show rest days** (Team List, feature B): checkbox "Show rest days" in the top bar (Team List, desktop/tablet
-  only; off by default; `rest=1` in the URL, kept across team changes). On: one row per calendar day without a game
+  only; off by default; `rest=1` in the URL, kept across team changes — **round 7: on by default at every load, not in
+  the URL, never stored**). On: one row per calendar day without a game
   of the team between its first and last game (`teamRestDays` in model.ts: ET game dates, all games — never the TV
   filter, so a day with a non-TV game is neither a row nor rest when filtered). Row: the game rows' date column and
   format + muted italic "Rest", 17 px tall (game rows 35–36.5 px). Toggling re-opens the list at the next game.
@@ -1184,6 +1189,48 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
 - **Part 2 perf** (guard vs v1.17.1, same run): League scroll ×0.942, **Team List scroll ×1.155** (×1.039 before 2.2 — the
   rest rows, now on by default, are ~80 more rows; inside the ×1.25 limit), loads 292 / 332 / 291 ms, switches 34–73 ms,
   marquee p95 20–21 ms.
+- **Part 3, Slate view** (`SlateView.tsx`, `slate.ts`, `styles/slate.css`): League → **List | Calendar | Slate**, desktop
+  only (from a 960 px widget; tablets/phones don't offer it and show the List). A day of games as cards, **two columns**
+  in the lists' 960 px column (cards 474 px wide, 117 px tall), scrolling inside the view when they don't fit.
+  - **Day**: the same `date` as the League List (List ↔ Slate keep the day); changed only by ← / → — the top bar's
+    arrows (previous/next game day, TV filter respected) or the arrow keys anywhere except in a field, a tab row, a
+    listbox/grid, an open picker, or with a modifier. Scrolling never changes it. Opens on today (same `seasonDay` /
+    clock as everything else, midnight rollover included); Today and the date picker work as in the List. Team views
+    show their List while the layout is Slate (League comes back to it); URL `layout=slate`.
+  - **Card**: head = start time (`TipTime`, same format/zone) or "Final" + OT, then the Cup / play-off labels and the
+    national TV names; then the away row and the home row ("@" before the home team): logo (28 px), full team name
+    ("Wizards"), record going in, the Fatigue component (B2B badge with the leg dot, night icons, merged 3-in-4 chip),
+    score (winner bright). Same facts as the League List row (e2e compares them game by game). No countdown, no
+    thumbnails. The teams are the hoopsjunkie link (`MatchLink`); never link-styled in images.
+  - **Copy** (toolbar button, and the marquee selection bar): `SlateCopy` in `CaptureStage`, no caption, **transparent**
+    (no background fill: only the cards are opaque — e2e: every pixel outside the cards alpha 0, every pixel inside 255).
+    `SLATE_COPY_GAP` = **120 px** between cards and half of it around them (site: 12 px) — one constant to tune.
+    **Columns** (`slateCopyColumns`): the count whose image, fitted to the page (the window: `innerWidth × innerHeight`),
+    shows the cards largest — **Alex chose this "largest cards" rule (2026-10-30)** over "3 selected = one row of 3",
+    which only comes out with near-square cards. At 1920 × 911: 1 game 1 column, 3 → 2 + 1, 5 → 2/2/1, 12 → 3 × 4,
+    15 → 4 × 4. Marquee selections use the same rule. **Pixel ratio** (`slatePixelRatio`): 4, or 2 × the fitted scale
+    when that is more (one game: ×6.5), so the PNG still has a pixel per screen pixel at 2× its fitted size; ¼ of it is
+    a plain downscale of that.
+  - **Measured** (1920 × 911, e2e `slate.spec.ts`; fitted = scale to fit the page; names 16 px on the card):
+
+    | games | columns | image (CSS px × ratio) | fitted | names on the page | copy |
+    |---|---|---|---|---|---|
+    | 1 | 1 | 594 × 237 × 6.5 | ×3.23 | 51.7 px | 274 ms |
+    | 5 | 2 | 1188 × 711 × 4 | ×1.28 | 20.5 px | 530 ms |
+    | 12 | 3 | 1782 × 948 × 4 | ×0.96 | 15.4 px | 1 197 ms |
+    | 15 | 4 | 2376 × 948 × 4 | ×0.81 | 12.9 px | 1 254 ms |
+    | 3 selected | 2 | 1188 × 474 × 4 | — | — | 392 ms |
+
+    Existing copies in the same run: whole week view / Team Calendar 1.0–3.9 s, full Team List 5.8–6.3 s, parts
+    0.13–0.76 s — the Slate copies are in line (smaller images).
+  - Tests: `tests/slate.test.ts` (rule = best of every column count, gap, ratio), `tests/slateview.test.tsx` (desktop
+    only, ← / → and Today, Team shows List, URL), `e2e/slate.spec.ts` (opens on today ignoring a URL date, 2 columns,
+    every game, same facts as the League List, names/"@"/scores/OT vs the snapshot, keys + arrows + wheel, the four copy
+    sizes with transparency / fit / sharpness / column rule, marquee of 3). Readability "≥ 12 px names when fitted" is
+    the test's threshold; whether that reads well on the whiteboard is for Alex's eyes.
+  - Perf guard (vs v1.17.1, same run): League scroll ×0.975, Team List scroll ×1.015 (the ×1.155 after part 2 was run
+    noise — same code), loads 298 / 319 / 303 ms, switches 47–66 ms, marquee p95 18 ms. The Slate itself has no scroll
+    guard (a day is ≤ 15 cards, no virtualization involved).
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

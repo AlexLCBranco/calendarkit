@@ -35,7 +35,8 @@ describe('List | Calendar switch', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
     for (const mode of ['League', 'Team']) {
       fireEvent.click(tab(mode));
-      expect(within(screen.getByRole('tablist', { name: 'Layout' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['List', 'Calendar']);
+      // round 7: League adds Slate (desktop)
+      expect(within(screen.getByRole('tablist', { name: 'Layout' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(mode === 'League' ? ['List', 'Calendar', 'Slate'] : ['List', 'Calendar']);
       expect(selected('List')).toBe(true);
       expect(selected('Calendar')).toBe(false);
     }

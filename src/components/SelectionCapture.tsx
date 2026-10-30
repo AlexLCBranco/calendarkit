@@ -15,7 +15,8 @@ import { MonthGameLine } from './LeagueWeekView';
 import { TeamListView } from './TeamListView';
 import { fmtDate, plural, useTeamB2B, type WidgetSize } from './widget';
 
-export type SelectionKind = 'team-list' | 'league-list' | 'team-calendar' | 'league-week';
+/** League → Slate selections are copied by CalendarView itself (SlateCopy: transparent, its own layout). */
+export type SelectionKind = 'team-list' | 'league-list' | 'team-calendar' | 'league-week' | 'league-slate';
 
 export interface SelectionCaptureProps {
   kind: SelectionKind;
