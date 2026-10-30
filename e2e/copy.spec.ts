@@ -285,6 +285,9 @@ test('a single game: league list card, team list card with B2B and TV', async ({
 });
 
 test('final scores are in the images: week view (1 and 2 weeks), league list day, team calendar, team list', async ({ page }) => {
+  // seven copies, the last a full Team List (~4400 × 14000 px): ~45–60 s on CI runners, past the 60 s default once
+  // round 5's Fatigue components made each copy ~10 % slower (full Team List locally 5.2 → 5.7 s)
+  test.setTimeout(150_000);
   await open(page, '?view=league&layout=calendar&date=2026-10-20');
   // the snapshot's final games: Oct 20–22, 2026 (week of Oct 18)
   const finals = await page.evaluate(async () => {

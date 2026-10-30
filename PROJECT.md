@@ -76,6 +76,9 @@ each item are under "Decisions" (round 5: "### Round 5 (2026-10-29)", round 4: "
 - The rules stay: `timeout 300` on every command, output to a file, never pipe test output into grep.
 
 **Open issues:**
+- CI: copy.spec "final scores are in the images" (7 copies, one a full Team List) went past the 60 s per-test timeout on
+  the runner 3 times after round 5 (each copy ~10 % slower with the Fatigue components; full Team List locally 5.2 → 5.7
+  s). It now has a 150 s budget. Copying is slower, not broken.
 - Known flaky: `features.spec.ts` "team header and team picker". It failed once on tablet this round (picked Miami
   instead of Orlando) and passed 5/5 on rerun. Not investigated.
 - In the 2-week view, a tricode's small plane can overlap the time label above it. There are 42 cases on the stretches
