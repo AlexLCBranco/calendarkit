@@ -140,22 +140,35 @@ describe('App: URL state for the List | Calendar switch', () => {
     expect(window.location.search).toMatch(/tv=1/);
   });
 
-  it('rest=1 round-trips: read, written by the toggle, kept across team changes; old links stay off', async () => {
+  it('"Show rest days" is on at every load and never remembered: unchecking lasts until a reload (round 7, 2.2)', async () => {
     const { readUrlState } = await import('../src/App');
-    expect(readUrlState('?view=team&layout=list&team=BOS&rest=1').showRest).toBe(true);
-    expect(readUrlState('?view=team&layout=list&team=BOS').showRest).toBeUndefined();
+    // nothing in a link can force it either way (old links had rest=1; none had rest=0, but neither counts now)
+    for (const q of ['', '&rest=1', '&rest=0']) expect(readUrlState(`?view=team&layout=list&team=BOS${q}`).showRest).toBeUndefined();
     // desktop width (jsdom has no layout: the shell would measure 0 px and use the phone layout, which has no toggle)
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(1200);
+    const box = () => screen.getByLabelText('Show rest days') as HTMLInputElement;
+    for (const q of ['', '&rest=1', '&rest=0']) {
+      await open(`?view=team&layout=list&team=BOS${q}`);
+      expect(box().checked, `opened with "${q}"`).toBe(true);
+      expect(document.querySelectorAll('[data-rest]').length).toBeGreaterThan(60);
+      cleanup();
+    }
+    localStorage.clear();
+    sessionStorage.clear();
     await open('?view=team&layout=list&team=BOS');
-    expect((screen.getByLabelText('Show rest days') as HTMLInputElement).checked).toBe(false);
-    fireEvent.click(screen.getByLabelText('Show rest days'));
-    expect(window.location.search).toMatch(/rest=1/);
+    fireEvent.click(box());
+    expect(box().checked).toBe(false);
+    expect(document.querySelectorAll('[data-rest]')).toHaveLength(0);
+    // stays off while the page is open (another team too), and nothing is saved anywhere
     fireEvent.click(screen.getByTestId('team-picker'));
     fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
-    expect(window.location.search).toMatch(/team=MIA.*rest=1/);
+    expect(box().checked).toBe(false);
+    expect(window.location.search).not.toMatch(/rest/);
+    expect([localStorage.length, sessionStorage.length, document.cookie]).toEqual([0, 0, '']);
+    // a reload (the same URL) brings it back on
+    const url = window.location.search;
     cleanup();
-    await open('?view=team&layout=list&team=MIA&rest=1');
-    expect((screen.getByLabelText('Show rest days') as HTMLInputElement).checked).toBe(true);
-    expect(document.querySelectorAll('[data-rest]').length).toBeGreaterThan(60);
+    await open(url);
+    expect(box().checked).toBe(true);
   });
 });

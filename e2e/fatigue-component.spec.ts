@@ -92,7 +92,12 @@ for (const size of SIZES) {
       const { out, bad, rows } = await columns(page, '[data-testid="team-list"] .ck-card', ['.ck-logo-backing', '.ck-vsat']);
       expect(rows, team).toBeGreaterThan(60);
       expect(bad, team).toEqual([]);
-      for (const k of ['fx0.left', 'fx0.width', 'fx1.left', 'fx1.width', 'fx0.b', 'fx1.b', 'fx0.n1', 'fx1.n2', 'fx0.c', 'fx1.c', '.ck-logo-backing#0', '.ck-logo-backing#1']) expect(out[k], `${team} ${k}: one value`).toHaveLength(1);
+      for (const k of ['fx0.left', 'fx0.width', 'fx1.left', 'fx1.width', 'fx0.b', 'fx1.b', 'fx0.n1', 'fx1.n2', 'fx0.c', 'fx1.c', '.ck-logo-backing#0']) expect(out[k], `${team} ${k}: one value`).toHaveLength(1);
+      // the opponent's logo: one x on played rows and one on unplayed rows (round 7, 2.4: no score slots without a score)
+      for (const kind of [':has(.ck-score)', ':not(:has(.ck-score))']) {
+        const r = await columns(page, `[data-testid="team-list"] .ck-card${kind}`, ['.ck-logo-backing']);
+        expect(r.out['.ck-logo-backing#1'], `${team} ${kind} opponent logo: one value`).toHaveLength(1);
+      }
     }
   });
 

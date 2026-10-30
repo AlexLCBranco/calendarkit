@@ -59,11 +59,16 @@ export interface TeamMonthGridProps {
   /** Week views: show `weeks` week rows from `start` (a Sunday) instead of `month`. */
   weeks?: 1 | 2;
   start?: string;
+  /**
+   * Local date of today, highlighted like the league week view's today (round 7, 2.1). CalendarView passes the clock's —
+   * the day strip's and the Today buttons' today — so it moves at midnight, also after sleep or a tab switch.
+   */
+  today?: string;
 }
 
 type Bar = { kind: 'full' | 'start' | 'end'; i: number; pair: B2BPair };
 
-export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, gameLink, tvOnly = false, nav = true, weeks: weekRows, start }: TeamMonthGridProps) {
+export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, gameLink, tvOnly = false, nav = true, weeks: weekRows, start, today }: TeamMonthGridProps) {
   const compact = isCompact(size);
   const byDate = useMemo(() => new Map(teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)).map((g) => [g.dateEt, g])), [data, teamId, tvOnly]);
   const b2b = useTeamB2B(data, teamId);
@@ -160,7 +165,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
           if (!date) return <div key={`x${i}`} className="ck-cell ck-cell-empty" style={place(i)} />;
           const g = byDate.get(date);
           const nights = g && b2b.byGame.get(g.gameId);
-          const cls = `ck-cell ck-day-cell${g ? ' ck-cell-game' : ''}${g && isOver(g, now) ? ' ck-cell-past' : ''}${selected === date ? ' ck-cell-selected' : ''}`;
+          const cls = `ck-cell ck-day-cell${g ? ' ck-cell-game' : ''}${g && isOver(g, now) ? ' ck-cell-past' : ''}${selected === date ? ' ck-cell-selected' : ''}${today === date ? ' ck-cell-today' : ''}`;
           return (
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               {/* week views can cross a month: the 1st says which */}

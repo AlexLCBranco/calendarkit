@@ -50,10 +50,10 @@ describe('teamRestDays', () => {
 });
 
 describe('Team List rest rows', () => {
-  it('off by default: no toggle checked, no rest rows', () => {
+  it('on by default (round 7, 2.2): toggle checked, rest rows shown', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
-    expect((screen.getByLabelText('Show rest days') as HTMLInputElement).checked).toBe(false);
-    expect(restRows()).toEqual([]);
+    expect((screen.getByLabelText('Show rest days') as HTMLInputElement).checked).toBe(true);
+    expect(restRows()).toEqual(expectedRest(TEAM.BOS));
   });
 
   it('on: one row per gap day in date order among the game rows ("Wed 21/10" + "Rest"), for 5 teams', () => {
@@ -90,7 +90,7 @@ describe('Team List rest rows', () => {
   });
 
   it('the toggle turns the rows on and off; kept across team changes; only in Team List and not on phones', () => {
-    render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
+    render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS, showRest: false }} />);
     fireEvent.click(screen.getByLabelText('Show rest days'));
     expect(restRows()).toEqual(expectedRest(TEAM.BOS));
     fireEvent.click(screen.getByTestId('team-picker'));
@@ -109,7 +109,7 @@ describe('Team List rest rows', () => {
   });
 
   it('next game, B2B brackets and game numbers unchanged with rest rows on', () => {
-    const off = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.DEN }} />);
+    const off = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.DEN, showRest: false }} />);
     const snap = () =>
       [...document.querySelectorAll('[data-game-id]')].map((e) => [e.getAttribute('data-game-id'), e.getAttribute('data-next'), e.getAttribute('data-b2b'), e.querySelector('.ck-season')?.textContent ?? ''].join('|'));
     const before = snap();

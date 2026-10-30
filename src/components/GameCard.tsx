@@ -3,8 +3,7 @@
 
 import { Fragment, type ReactNode } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { finalScore, isOver, localDate, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord, type Tipoff } from '../data/model';
-import { countdownLabel, todayAt, useClockValue } from './clock';
+import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord, type Tipoff } from '../data/model';
 import { mergedChip, mergedDays, mergedTip, type ThreeInFour } from '../data/scheduleTags';
 import { teamLogo } from '../data/teams';
 import { CopyButton } from './CopyButton';
@@ -113,23 +112,14 @@ export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
 }
 
 /**
- * Tip-off time, or on today's games (viewer's zone) before tip-off the countdown "in 2h 35m" in its place (round 4).
- * Reads the widget clock: a tick re-renders this text only. The plain time stays in the DOM, hidden, for images
- * (`.ck-capturing` shows it, copyAsImage) and the title.
+ * Tip-off time, the same on every day, today included (round 7, 2.3: round 4's countdown "in 2h 35m" on today's games
+ * was dropped for now, on purpose — PROJECT.md).
  */
-function TipTime({ start, tip, timeZone, now }: { start?: number; tip: Tipoff; timeZone?: string; now: number }) {
-  const label = useClockValue((n) => (start !== undefined && todayAt(n, timeZone, localDate) === localDate(start, timeZone) ? countdownLabel(start, n) : undefined), now);
+export function TipTime({ tip }: { tip: Tipoff }) {
   return (
     <>
-      {label && (
-        <span className="ck-countdown" title={`Tip-off ${tip.label}`}>
-          {label}
-        </span>
-      )}
-      <span className={`ck-time-plain${label ? ' ck-time-hidden' : ''}`}>
-        {tip.time}
-        {tip.dayOffset !== 0 && <span className="ck-dayoff" title="Local calendar day after the NBA game date">{` (${tip.dayOffset > 0 ? '+' : ''}${tip.dayOffset})`}</span>}
-      </span>
+      {tip.time}
+      {tip.dayOffset !== 0 && <span className="ck-dayoff" title="Local calendar day after the NBA game date">{` (${tip.dayOffset > 0 ? '+' : ''}${tip.dayOffset})`}</span>}
     </>
   );
 }
@@ -200,15 +190,17 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   // final score from the shown side: the selected team (team views) or the away team (league views)
   const result = scores ? finalScore(game, teamId ?? game.awayTeam.teamId) : undefined;
   // Fixed slots (desktop/tablet League List, desktop Team List with its fatigue columns): every tricode, score and
-  // "@"/"vs" in a fixed-width slot, the score slots empty on games without a score, so the tricodes, logos and "@" sit
-  // at one x on every row. Elsewhere (phones, calendar cells) the parts take their natural width.
+  // "@"/"vs" in a fixed-width slot, so the tricodes, logos and "@" sit at one x on every row. Round 7 (2.4, Alex's
+  // trade-off): a row without a score has no score slots — "CHA @ WAS", the tricodes against the "@" — so on a day mixing
+  // played and unplayed games the columns no longer line up between the two kinds (they still do within each).
+  // Elsewhere (phones, calendar cells) the parts take their natural width.
   const slots = size === 'regular' && !!logos && (side ? fatigueColumns : true);
   // the spaces keep textContent readable ("BOS 113 @ 121 DET"); inline-flex drops them
   const score = (n: number | undefined, win: boolean) =>
     n !== undefined ? (
       <span className={`ck-score${win ? ' ck-score-win' : ''}`}>{n}</span>
     ) : (
-      slots && <span className="ck-score-slot" aria-hidden="true" />
+      slots && !!result && <span className="ck-score-slot" aria-hidden="true" />
     );
   const ot = result && overtime(game);
   const otMark = ot && (
@@ -250,7 +242,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         </MatchLink>
       </span>
     ) : (
-      <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}`}>
+      <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}${slots && !result ? ' ck-noscore' : ''}`}>
         {!side && rec(first)}
         {fx && <Fatigue f={fatigue!.get(first.teamId)} team={teamLabel(first)} badge="right" />}
         {(records || fx) && ' '}
@@ -305,7 +297,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
       {copyable && <CopyButton hover label="Copy game as image" of=".ck-card" testId="copy-game" />}
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
       <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
-        <TipTime start={game.startTimeUtc ? Date.parse(game.startTimeUtc) : undefined} tip={tip} timeZone={timeZone} now={now} />
+        <TipTime tip={tip} />
       </span>
       {cols && (
         <span className="ck-fat ck-fat-team" data-testid="fatigue-team">

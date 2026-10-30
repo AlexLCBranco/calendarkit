@@ -67,7 +67,7 @@ function fakeLayout() {
 describe('Team List', () => {
   it('the row at the top has the class; scrolling moves it without re-rendering rows', async () => {
     fakeLayout();
-    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL }} />);
+    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const games = teamGames(data, LAL);
     const next = games.find((g) => Date.parse(g.startTimeUtc!) + 3 * 3_600_000 > NOW)!;
     expect(active()).toEqual([next.dateEt]);

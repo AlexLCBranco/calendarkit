@@ -1160,6 +1160,30 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   left of its letters (above the home score's digits). Over the stretches walked (`two-week-fit.spec.ts`, both sizes):
   plane on the line above 102 → 0, on a logo disc 276 → 0, on a time label 0 → 0; `test-output/m7/planecheck.mjs`
   also finds no plane on scores, letters or "@". The test fails on the old CSS (378 overlaps).
+- **2.1, today in the Team Calendar** (Month, 1 week, 2 weeks): today's cell gets the league week view's highlight
+  (`.ck-cell-today`: accent border + inset ring, accent day number). `today` is CalendarView's — the clock's local date,
+  the same the day strip and the Today buttons use — so it moves at midnight and after sleep / a tab switch. The league
+  week view already had it (since round 1). Whole-view copies show it, as the week view's do.
+- **2.2, "Show rest days" is on by default, on every load, and never remembered**: unchecking lasts until a reload (it
+  stays off across team changes while the page is open). The app shell no longer reads or writes `rest=` (an old link's
+  `rest=1` — or `rest=0` — changes nothing); nothing in the app uses localStorage, sessionStorage, cookies or IndexedDB
+  (checked in e2e after unchecking). **Defaults like this will move to a future settings page; don't add persistence
+  before that exists.**
+- **2.3, countdown dropped "for now", on purpose**: today's games show their start time in the same format and zone as
+  every other day. Removed entirely: `countdownLabel`, `TipTime`'s clock read, the hidden-time CSS, the countdown unit/e2e
+  tests and the perf guard's "while the countdown ticks" scroll check (and its baselines). **The clock has no minute tick
+  any more**: one timeout to the next local midnight (`nextMidnight`, bisection in the widget's zone, right on 23/25-hour
+  DST days), plus visibilitychange / pageshow; the stale-data stamp sets one timeout for the 36 h mark. Unit test: no
+  `Date.now()` call during an hour before midnight, today moves at midnight; the old clock fails it.
+- **2.4, no empty score gap on unplayed rows** (lists only — Alex, 2026-10-30: the week view keeps its aligned score
+  columns): a League List / Team List row without a score has no score slots and its tricodes stand against the "@"
+  (`ck-noscore`): **"CHA @ WAS", 28.2 px between the codes' letters** (desktop, "@" slot 1.3 em + two 5 px gaps; before: ~100 px, worked out from the
+  slot widths — two empty 2 em score slots, two more gaps and the tricode slots' padding — not measured). Played rows keep "[logo] BOS 113 @ 121 DET [logo]". **Deliberate trade-off
+  (Alex): on a day mixing played and unplayed games (today), the columns don't line up between the two kinds** — they
+  still do within each kind (e2e checks one x per part per kind). Don't "fix" it back. No alignment test across kinds.
+- **Part 2 perf** (guard vs v1.17.1, same run): League scroll ×0.942, **Team List scroll ×1.155** (×1.039 before 2.2 — the
+  rest rows, now on by default, are ~80 more rows; inside the ×1.25 limit), loads 292 / 332 / 291 ms, switches 34–73 ms,
+  marquee p95 20–21 ms.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

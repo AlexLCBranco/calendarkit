@@ -219,6 +219,14 @@
   width: 1.3em;
   text-align: center;
 }
+/* round 7 (2.4): a row without a score has no score slots and its tricodes stand against the "@" ("CHA @ WAS"); the
+   tricode slots stay, so unplayed rows line up among themselves, not with played ones (Alex's trade-off) */
+.ck-slots.ck-noscore .ck-team {
+  text-align: right;
+}
+.ck-slots.ck-noscore .ck-side + .ck-side .ck-team {
+  text-align: left;
+}
 /* League List: records going in, small and muted, on the outside of each logo; in fixed slots (fit "41-41") so the
    logos stay at one x, the away record against its logo, the home record against its own. */
 .ck-rec {
@@ -235,19 +243,4 @@
 }
 .ck-slots .ck-rec-home {
   text-align: left;
-}
-/* Countdown on today's games before tip-off (round 4): "in 2h 35m" in place of the time, same size (the widest,
-   "in 23h 59m", is 66.1 of the column's 77 px); the time itself stays, hidden, and comes back in images. */
-.ck-countdown {
-  color: var(--ck-accent);
-  white-space: nowrap;
-}
-.ck-time-hidden {
-  display: none;
-}
-.ck-capturing .ck-countdown {
-  display: none !important;
-}
-.ck-capturing .ck-time-hidden {
-  display: inline !important;
 }

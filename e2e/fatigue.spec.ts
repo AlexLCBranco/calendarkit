@@ -18,7 +18,7 @@ const TRICODES = ['ATL', 'BKN', 'BOS', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET',
 
 test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing clipped', async ({ page }, info) => {
   test.setTimeout(240_000);
-  const xs = { self: new Set<number>(), oppCol: new Set<number>(), tags: new Set<number>(), teamCol: new Set<number>(), logo1: new Set<number>(), vsat: new Set<number>(), oppRight: new Set<number>(), logo2: new Set<number>() };
+  const xs = { self: new Set<number>(), oppCol: new Set<number>(), tags: new Set<number>(), teamCol: new Set<number>(), logo1: new Set<string>(), vsat: new Set<string>(), oppRight: new Set<string>(), logo2: new Set<string>() };
   const bad: string[] = [];
   let rows = 0;
   let widest = { team: 0, opp: 0 };
@@ -28,7 +28,7 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
     const r = await page.evaluate(() => {
       const round = (n: number) => Math.round(n * 10) / 10;
       const root = document.querySelector('.ck-root')!.getBoundingClientRect();
-      const out = { rows: 0, self: [] as number[], oppCol: [] as number[], tags: [] as number[], teamCol: [] as number[], logo1: [] as number[], vsat: [] as number[], oppRight: [] as number[], logo2: [] as number[], bad: [] as string[], widestTeam: 0, widestOpp: 0, restCols: 0 };
+      const out = { rows: 0, self: [] as number[], oppCol: [] as number[], tags: [] as number[], teamCol: [] as number[], logo1: [] as string[], vsat: [] as string[], oppRight: [] as string[], logo2: [] as string[], bad: [] as string[], widestTeam: 0, widestOpp: 0, restCols: 0 };
       for (const c of document.querySelectorAll<HTMLElement>('.ck-team-rows > .ck-card')) {
         out.rows++;
         const name = c.getAttribute('aria-label')!.slice(0, 40);
@@ -41,12 +41,14 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
         }
         out.self.push(round(box('.ck-self').left));
         // mirrored matchup (round 4): "[logo] BOS 113 vs 121 CHI [logo]" — logos, "vs"/"@" and the opponent's tricode
-        // (right edge, it sits against its logo) at one x on every row, played or not; the slot holds it all
-        const logos = [...c.querySelectorAll('.ck-matchup .ck-logo-backing, .ck-matchup .ck-logo-empty')].map((l) => round(l.getBoundingClientRect().left));
+        // (right edge, it sits against its logo) at one x on every played row, and on every unplayed row (round 7, 2.4: no
+        // score slots there, so the two kinds differ — Alex's trade-off); the slot holds it all
+        const kind = c.querySelector('.ck-matchup .ck-score') ? 'played|' : 'unplayed|';
+        const logos = [...c.querySelectorAll('.ck-matchup .ck-logo-backing, .ck-matchup .ck-logo-empty')].map((l) => kind + round(l.getBoundingClientRect().left));
         out.logo1.push(logos[0]!);
         out.logo2.push(logos[1]!);
-        out.vsat.push(round(box('.ck-matchup .ck-vsat').left));
-        out.oppRight.push(round(box('.ck-matchup .ck-opp').right));
+        out.vsat.push(kind + round(box('.ck-matchup .ck-vsat').left));
+        out.oppRight.push(kind + round(box('.ck-matchup .ck-opp').right));
         const m = c.querySelector('.ck-matchup')!;
         if (m.scrollWidth > m.clientWidth) out.bad.push(`${name}: matchup overflows its slot`);
         out.tags.push(round(box('.ck-tags').left));
@@ -98,7 +100,8 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
   expect([...xs.teamCol]).toHaveLength(1);
   expect([...xs.oppCol]).toHaveLength(1);
   expect([...xs.tags]).toHaveLength(1);
-  for (const k of ['logo1', 'vsat', 'oppRight', 'logo2'] as const) expect([...xs[k]], k).toHaveLength(1);
+  for (const k of ['logo1', 'vsat', 'oppRight', 'logo2'] as const)
+    for (const kind of ['played', 'unplayed']) expect([...xs[k]].filter((x) => x.startsWith(`${kind}|`)), `${k} on ${kind} rows`).toHaveLength(1);
   expect(sideways).toBeLessThanOrEqual(0);
 });
 
@@ -132,6 +135,9 @@ test('fatigue tooltips on hover and focus (round 5: on the Fatigue components): 
   await expect(tip).toHaveCount(0);
   const opp = page.locator('[data-testid="fatigue-opp"] [data-testid="fatigue"][data-night="2"]').first();
   await opp.scrollIntoViewIfNeeded();
+  // the tooltip closes on scroll: let the scroll's event pass first (round 7: with rest rows on by default the row is
+  // further down, and the late scroll event closed the tooltip opened by the focus — 2 of 3 runs)
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   await opp.focus();
   await expect(tip).toHaveText(/^[A-Z]{3} — 2\/2 · [HA]{2} \(2nd night of a back-to-back\)/);
 });

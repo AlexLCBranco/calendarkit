@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Scores next to each other, logos mirrored (round 4, item 2): "[logo] BOS 113 @ 121 DET [logo]" in the League List,
 // Team List (desktop, tablet, phone) and Team Calendar; team views keep the selected team first ("BOS 113 vs 121 CHI").
-// Lists on desktop/tablet put every part in a fixed slot (empty score slots on games without a score).
+// Lists on desktop/tablet put every part in a fixed slot; round 7 (2.4): a game without a score has no score slots and
+// its tricodes stand against the "@" (class ck-noscore).
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
@@ -26,16 +27,17 @@ const upcoming = game({ date: '2026-11-25', utc: '2026-11-26T00:00:00Z', away: T
 const data = dataOf([played, upcoming]);
 
 describe('League List', () => {
-  it('desktop and tablet: [logo] AWAY a @ h HOME [logo], scores in their slots (empty when not played)', () => {
+  it('desktop and tablet: [logo] AWAY a @ h HOME [logo], scores in their slots; no score slots when not played', () => {
     for (const size of [XL, TABLET]) {
       for (const [g, want] of [
         [played, ['[BOS]', 'BOS', '113', '@', '121', 'NYK', '[NYK]']],
-        [upcoming, ['[LAL]', 'LAL', '_', '@', '_', 'BOS', '[BOS]']],
+        [upcoming, ['[LAL]', 'LAL', '@', 'BOS', '[BOS]']],
       ] as const) {
         const el = render(<CalendarView data={data} size={size} now={NOW} timeZone="UTC" initial={{ date: g.dateEt }} />).container;
         const m = el.querySelector(`.ck-card[data-game-id="${g.gameId}"] .ck-matchup`)!;
         expect(parts(m), `${size.width} ${g.gameId}`).toEqual(want);
         expect(m.classList.contains('ck-slots')).toBe(true);
+        expect(m.classList.contains('ck-noscore'), 'tight around the "@"').toBe(g === upcoming);
         cleanup();
       }
     }
@@ -59,8 +61,9 @@ describe('team views', () => {
     expect(parts(at(XL, 'list', TEAM.NYK, played.gameId))).toEqual(['[NYK]', 'NYK', '121', 'vs', '113', 'BOS', '[BOS]']);
     cleanup();
     const m = at(XL, 'list', TEAM.BOS, upcoming.gameId);
-    expect(parts(m)).toEqual(['[BOS]', 'BOS', '_', 'vs', '_', 'LAL', '[LAL]']);
+    expect(parts(m)).toEqual(['[BOS]', 'BOS', 'vs', 'LAL', '[LAL]']);
     expect(m.classList.contains('ck-slots')).toBe(true);
+    expect(m.classList.contains('ck-noscore')).toBe(true);
   });
 
   it('Team List tablet and phone, Team Calendar: same order, natural widths', () => {

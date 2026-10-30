@@ -8,7 +8,7 @@ import { addDays, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonM
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
 import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
-import { ClockProvider, todayAt, useClock, useClockValue } from './clock';
+import { CLOCK_TICK_EVENT, ClockProvider, useClock, useClockValue } from './clock';
 import { CopyButton } from './CopyButton';
 import type { GameLink } from './GameCard';
 import { DatePickButton, DatePicker } from './DatePicker';
@@ -55,7 +55,7 @@ export interface CalendarState {
   /** League views: the day at the top of the list; the week view shows this day's week. */
   date: string;
   tvOnly: boolean;
-  /** Team → List: a quiet row for each day without a game. */
+  /** Team → List: a quiet row for each day without a game. On by default (round 7, 2.2); the app shell never stores it. */
   showRest: boolean;
   /** League → Calendar: 1 or 2 week rows. */
   weeks: WeekCount;
@@ -91,9 +91,9 @@ const DEFAULT_TEAM = TEAMS[0]!.id;
 
 
 export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt }: CalendarViewProps) {
-  // The clock (round 4): one minute-aligned timer; what shows the time of day reads it. `now` (the default day, the
-  // next game, games over) is the time the widget opened — a tick no longer re-renders the view.
-  const clock = useClock(fixedNow);
+  // The clock (round 7: moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
+  // `now` (the default day, the next game, games over) is the time the widget opened.
+  const clock = useClock(fixedNow, timeZone, localDate);
   const [openedAt] = useState(() => clock.get());
   const now = fixedNow ?? openedAt;
   const compact = isCompact(size);
@@ -103,7 +103,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     teamId: initial?.teamId && TEAM_BY_ID.has(initial.teamId) ? initial.teamId : DEFAULT_TEAM,
     date: initial?.date && /^\d{4}-\d{2}-\d{2}$/.test(initial.date) ? initial.date : seasonDay(data, localDate(now, timeZone)),
     tvOnly: initial?.tvOnly ?? false,
-    showRest: initial?.showRest ?? false,
+    showRest: initial?.showRest ?? true,
     weeks: initial?.weeks === 2 ? 2 : 1,
     teamSpan: initial?.teamSpan === 1 || initial?.teamSpan === 2 ? initial.teamSpan : 'month',
   }));
@@ -143,7 +143,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const list = state.layout === 'list';
   const team = state.mode === 'team';
   // today's date from the clock: the view re-renders when the date changes (midnight), not every minute
-  const today = useSyncExternalStore(clock.subscribe, () => todayAt(clock.get(), timeZone, localDate));
+  const today = useSyncExternalStore(clock.subscribe, () => localDate(clock.get(), timeZone));
   // Midnight with the tab open (round 6, B3; also on waking from sleep or coming back to the tab — the clock reads the
   // time then): every view still showing the old today moves to the new one; a view moved to another day stays put.
   const shownToday = useRef(today);
@@ -404,7 +404,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           list ? (
             <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
           ) : (
-            <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
+            <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
           )
         ) : list ? (
           <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
@@ -459,7 +459,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
               list ? (
                 <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} />
               ) : (
-                <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
+                <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
               )
             ) : list ? (
               <LeagueListWeek data={data} date={state.date} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} />
@@ -507,7 +507,14 @@ function teamDefaultDate(data: CalendarData, teamId: number, now: number): strin
 function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: number; timeZone?: string }) {
   const t = Date.parse(updatedAt);
   if (Number.isNaN(t)) return null;
-  const stale = useClockValue((n) => n - t > STALE_AFTER_MS, now); // turns orange on the tick that crosses 36 h
+  const stale = useClockValue((n) => n - t > STALE_AFTER_MS, now);
+  // turns orange when it crosses 36 h: one timeout makes the clock read the time then (it has no minute tick, round 7)
+  useEffect(() => {
+    const left = t + STALE_AFTER_MS - Date.now();
+    if (stale || left <= 0 || left > 2 ** 31 - 1) return;
+    const id = setTimeout(() => window.dispatchEvent(new Event(CLOCK_TICK_EVENT)), left + 50);
+    return () => clearTimeout(id);
+  }, [t, stale]);
   const when = dateFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
   const tip = stale ? 'Data is more than 36 hours old: the daily update may have failed.' : undefined;
   return (

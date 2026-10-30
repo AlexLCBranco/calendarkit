@@ -214,6 +214,7 @@ test('whole view: team calendar and the full team list', async ({ page }, info) 
   if (info.project.name !== 'desktop-xl') return;
 
   await page.getByRole('tab', { name: 'List', exact: true }).click();
+  await page.getByLabel('Show rest days').uncheck(); // on by default since round 7: first the games only
   const shown = await page.locator('.ck-team-rows > .ck-card').count();
   const view = await copyView(page);
   // every game, not just the rows scrolled into view: 2 logos per row, + the team header's

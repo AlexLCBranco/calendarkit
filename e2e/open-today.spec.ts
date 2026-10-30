@@ -3,7 +3,7 @@
 // browser does. In both zones the app is used from (America/New_York, America/Sao_Paulo), at 1920 px.
 //  - B2: an old date in the URL (a bookmark like "?view=league&layout=list&date=2026-10-22") and a reload after moving
 //    to another day both open on today, in the League List and the week view.
-//  - B3: Playwright's clock crosses local midnight (the app's minute timer fires): on today the view moves to the new
+//  - B3: Playwright's clock crosses local midnight (the app's midnight timer fires; round 7: it has no minute tick): on today the view moves to the new
 //    day (the week view to the new week); on another day it stays. After a sleep (no timer ran), coming back to the tab
 //    (visibilitychange) moves it too.
 
@@ -55,7 +55,7 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
       await ready(page);
       await expect(title(page)).toHaveText('Saturday, November 21, 2026');
       await expect(page.locator('.ck-strip-selected.ck-strip-today')).toHaveCount(1);
-      await page.clock.runFor('03:00'); // the minute timer fires at 23:59, 00:00, 00:01
+      await page.clock.runFor('03:00'); // the midnight timer fires at 00:00
       await expect(title(page)).toHaveText('Sunday, November 22, 2026');
       await expect(page.locator('.ck-strip-selected.ck-strip-today')).toHaveCount(1); // the strip's today followed
       await expect(page.getByTestId('today')).toBeDisabled();

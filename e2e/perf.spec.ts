@@ -224,48 +224,7 @@ test('wheel-scrolling the League List through a month: frame times, main-thread 
   expect(await page.evaluate(() => document.querySelector<HTMLElement>('.ck-active-day')?.dataset.day)).toBe(await page.evaluate(() => document.querySelector<HTMLElement>('[aria-label="Week"] [aria-selected="true"]')?.dataset.date));
 });
 
-// Countdown (round 4, item 11): the same gesture from a day with countdowns on screen (Nov 15, 15:00 UTC; the clock is
-// Playwright's, fixed), the clock moved a minute and ticked (CLOCK_TICK_EVENT) after every piece — the first piece
-// short, so today's countdowns are still on screen at the first tick. A tick must update the countdown texts only.
-// Own frame baseline: Playwright's fixed clock alone puts the frame p95 at ~33 ms (with or without ticks), so it was
-// measured with this exact gesture on the build before the countdown (51e7704, 8 interleaved runs: p95 33.0, mean 17.4).
-test('wheel-scrolling the League List while the countdown ticks', async ({ page, browser }) => {
-  test.setTimeout(240_000);
-  const T0 = Date.parse('2026-11-15T15:00:00Z');
-  const ref = await refPage(browser);
-  const arm = (name: string, p: Page, base: string): Arm => {
-    let t = T0;
-    const tick = async () => {
-      t += 60_000;
-      await p.clock.setFixedTime(t);
-      await p.evaluate(() => window.dispatchEvent(new Event('ck-clock-tick')));
-    };
-    return {
-      name,
-      page: p,
-      reset: async () => {
-        t = T0;
-        await p.clock.setFixedTime(t);
-        await p.goto(`${base}/?view=league&layout=list&date=2026-11-15`);
-        await expect(p.getByTestId('day-title')).toContainText('November 15');
-        await p.waitForFunction(() => [...document.images].every((i) => i.complete));
-        await expect(p.locator('.ck-countdown').first()).toBeVisible();
-      },
-      gesture: async () => {
-        await wheel(p, 'league-list', -600);
-        const before = await p.locator('.ck-countdown').first().textContent();
-        await tick();
-        await expect(p.locator('.ck-countdown').first()).not.toHaveText(before!); // ticked while on screen
-        for (let i = 0; i < 10 && !/December (1[5-9]|[23][0-9])/.test((await p.getByTestId('day-title').textContent()) ?? ''); i++) {
-          await wheel(p, 'league-list', -4000);
-          await tick();
-        }
-      },
-    };
-  };
-  checkScroll('scroll-countdown', await scrollRunsAB('scroll-countdown', [arm('current', page, ''), arm('reference', ref, refBase)]));
-  await ref.close();
-});
+// (round 7, 2.3: the countdown and its "while the countdown ticks" scroll check are gone with it)
 
 // Team List (2026-10-28, round 4): LAL's whole season (~82 rows), wheel down from the first game to the last and back
 // up.

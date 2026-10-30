@@ -85,7 +85,7 @@ function fakeLayout() {
 describe('Team List', () => {
   it('opponent on game days; a game day jumps to its row; a day without a game goes to the next game', () => {
     fakeLayout();
-    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL }} />);
+    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const games = teamGames(data, LAL);
     expect(screen.getByTestId('team-day-title').nextElementSibling).toBe(screen.getByRole('button', { name: 'Pick a date' }));
     open();

@@ -80,7 +80,7 @@ const scrollTo = async (y: number) => {
 describe('Team List strip and title', () => {
   it('desktop: title and strip on the row at the top; opponents under game days; other days disabled', async () => {
     fakeLayout();
-    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL }} />);
+    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const games = teamGames(data, LAL);
     // opens at the next game not over (Nov 15 15:00 UTC)
     const next = games.find((g) => Date.parse(g.startTimeUtc!) + 3 * 3_600_000 > NOW)!;
@@ -100,7 +100,7 @@ describe('Team List strip and title', () => {
 
   it('a day click scrolls its row to the top; ‹ › go to the previous / next week with a game', async () => {
     fakeLayout();
-    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL }} />);
+    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const games = teamGames(data, LAL);
     await scrollTo(10 * 40);
     const target = days().find((d) => !(d as HTMLButtonElement).disabled && d.getAttribute('aria-selected') !== 'true')!;
@@ -126,7 +126,7 @@ describe('Team List strip and title', () => {
 
   it('scrolling re-renders no row: a scroll that changes the top row formats no tip-off time', async () => {
     fakeLayout();
-    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL }} />);
+    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const real = Object.getOwnPropertyDescriptor(Intl.DateTimeFormat.prototype, 'format')!.get!;
     let tipoffs = 0;
     vi.spyOn(Intl.DateTimeFormat.prototype as unknown as Record<'format', unknown>, 'format', 'get').mockImplementation(function (this: Intl.DateTimeFormat) {

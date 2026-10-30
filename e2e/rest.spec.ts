@@ -1,4 +1,4 @@
-// Team List "Show rest days" (desktop widths): toggle and URL, row order and dates against the served snapshot,
+// Team List "Show rest days" (desktop widths): on at every load, never saved (round 7, 2.2), row order and dates against the served snapshot,
 // rest rows about half a game row tall, nothing clipped, no sideways scroll, opens / Today at the next game.
 
 import { expect, test, type Page } from './fixtures';
@@ -54,13 +54,11 @@ const rowsOnPage = (page: Page) =>
 const nextOffset = (page: Page) =>
   page.getByTestId('team-list').evaluate((el) => el.querySelector('[data-next]')!.getBoundingClientRect().top - el.getBoundingClientRect().top);
 
-test('show rest days: toggle + URL, order and dates vs snapshot, half-height rows, nothing clipped, next game', async ({ page }, info) => {
+test('show rest days: on by default, order and dates vs snapshot, half-height rows, nothing clipped, next game', async ({ page }, info) => {
   await open(page, '?view=team&layout=list&team=BOS');
   const toggle = page.getByLabel('Show rest days');
-  await expect(toggle).not.toBeChecked();
-  await expect(page.locator('.ck-rest-row')).toHaveCount(0);
-  await toggle.check();
-  await expect(page).toHaveURL(/rest=1/);
+  await expect(toggle).toBeChecked();
+  await expect(page).not.toHaveURL(/rest=/);
   const expected = await expectedRows(page, BOS);
   const rows = await rowsOnPage(page);
   expect(rows.map((r) => r.key)).toEqual(expected.map((e) => e.key));
@@ -85,13 +83,17 @@ test('show rest days: toggle + URL, order and dates vs snapshot, half-height row
   await expect.poll(() => nextOffset(page)).toBeGreaterThan(100);
   await page.getByRole('button', { name: 'Today' }).click();
   await expect.poll(() => nextOffset(page).then(Math.abs)).toBeLessThan(1.5);
-  // reload keeps it; next game at the top on load
+  // off: lasts until a reload, and nothing is stored (URL, localStorage, sessionStorage, cookies, IndexedDB)
+  await page.getByLabel('Show rest days').uncheck();
+  await expect(page.locator('.ck-rest-row')).toHaveCount(0);
+  await expect(page).not.toHaveURL(/rest=/);
+  const stored = await page.evaluate(async () => ({ local: localStorage.length, session: sessionStorage.length, cookie: document.cookie, idb: (await indexedDB.databases()).length }));
+  expect(stored).toEqual({ local: 0, session: 0, cookie: '', idb: 0 });
   await page.reload();
   await expect(page.getByTestId('team-list').locator('.ck-rest-row').first()).toBeAttached();
   await expect(page.getByLabel('Show rest days')).toBeChecked();
   expect(Math.abs(await nextOffset(page))).toBeLessThan(1.5);
-  // off again
-  await page.getByLabel('Show rest days').uncheck();
-  await expect(page.locator('.ck-rest-row')).toHaveCount(0);
-  await expect(page).not.toHaveURL(/rest=1/);
+  // an old link with rest=1 (or a made-up rest=0) changes nothing
+  await open(page, '?view=team&layout=list&team=BOS&rest=0');
+  await expect(page.getByLabel('Show rest days')).toBeChecked();
 });
