@@ -1048,6 +1048,17 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     gameLink), `tests/selection.test.tsx` (drag from a game link selects, its closing click is cancelled, a plain click
     isn't), e2e `gamelink.spec.ts` (all four views: href, idle vs hover look, capture class, click / Enter / middle /
     ctrl, Tab reaches the link and the copy button still copies, a drag from a link selects 3 rows and opens nothing).
+- **Flaky "continuous days" test fixed** (item 3, test only): reproduced in a loop (`test-output/flaky/loop.sh`, all four
+  projects per run): 1 failure in 30 runs (120 executions, phone), then 2 in 15 runs (180 executions; desktop and phone)
+  with the step instrumented. **Cause: the test, not the app.** The "no jumps when scrolling up" step set `scrollTop` from
+  2 % to 60 % of the list (≈ 27 000–33 000 px) and waited two animation frames; the virtualized list re-renders from the
+  scroll event in a later task, and on a busy machine that hadn't happened yet — captured state: scrolled to 33 499 px
+  while still rendering Oct 21–26 (the previous position), so no card was found. The week strip / active day were never
+  involved (their assertions passed in every failing run), and the list caught up on the next steps. **Fix**: the test
+  waits for the real condition — the rendered days cover the list's viewport (`covered()` in `e2e/lists.spec.ts`,
+  checked every frame, 5 s cap with the rendered ranges in the error) — after each fast jump and each 200 px step; no
+  retries, no longer sleeps. **After: 30 runs, 120/120 executions passed.** (A blank frame or two after a 30 000 px jump
+  is how the virtualized list behaves; rendering synchronously in the scroll handler would cost every scroll frame.)
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

@@ -29,6 +29,25 @@ async function pickTeam(page: Page, name: string) {
 /** League → Calendar is the week view where 7 columns fit a game line (desktop widths), else the count grid. */
 const weekView = (project: string) => project === 'desktop' || project === 'desktop-xl';
 const settle = (page: Page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+/**
+ * In the page: resolves once the League List's rendered days cover its whole viewport (the virtualized list re-renders
+ * after the scroll event, in a later task; after a long programmatic jump that can take more than two frames on a busy
+ * machine — the cause of this test's old flake). Checked every frame; rejects after 5 s with what was rendered.
+ */
+function covered(el: Element): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const t0 = performance.now();
+    const check = () => {
+      const b = el.getBoundingClientRect();
+      const secs = [...el.querySelectorAll('[data-day]')].map((s) => s.getBoundingClientRect());
+      const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+      if (secs.length && secs[0]!.top <= b.top + 1 && (atEnd || secs.at(-1)!.bottom >= b.bottom - 1)) return resolve(true);
+      if (performance.now() - t0 > 5000) return reject(new Error(`rendered days never covered the list: scrollTop ${el.scrollTop}, days ${secs.map((s) => `${Math.round(s.top - b.top)}..${Math.round(s.bottom - b.top)}`).join(' ')}`));
+      requestAnimationFrame(check);
+    };
+    check();
+  });
+}
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
@@ -223,26 +242,27 @@ test('league list: continuous days with sticky headers, week strip follows, boun
   const total = await list.evaluate((el) => el.scrollHeight);
   for (const f of [0.9, 0.1, 0.55, 0.3, 0.75, 0.02]) {
     await list.evaluate((el, y) => (el.scrollTop = y), total * f);
-    await settle(page);
-    await settle(page);
+    await list.evaluate(covered);
     t = await topOf();
     expect(t.rendered).toBeLessThanOrEqual(12);
     expect(t.headAtTop).toBe(true);
   }
-  const jumps = await list.evaluate(async (el) => {
+  const jumps = await list.evaluate(async (el, src) => {
     const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const rendered = new Function(`return ${src}`)() as (el: Element) => Promise<boolean>; // covered(), in the page
     el.scrollTop = el.scrollHeight * 0.6;
-    await frame();
+    await rendered(el);
     let bad = 0;
     for (let k = 0; k < 60; k++) {
       const card = [...el.querySelectorAll('article')].find((a) => a.getBoundingClientRect().top > el.getBoundingClientRect().top + 100)!;
       const before = card.getBoundingClientRect().top;
       el.scrollTop -= 200;
       await frame();
+      await rendered(el);
       if (!card.isConnected || Math.abs(card.getBoundingClientRect().top - before - 200) > 1.5) bad++;
     }
     return bad;
-  });
+  }, covered.toString());
   expect(jumps).toBe(0);
   const days = await page.evaluate(async () => {
     const raw = await (await fetch('/data/schedule.json')).json();
