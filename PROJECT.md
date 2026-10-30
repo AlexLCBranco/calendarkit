@@ -29,68 +29,57 @@ where-to-watch info, embedding in gauntlet.
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
-## Current state / handoff (2026-10-29, after round 5)
-State at v1.17.1 (live at https://calendarkit-brown.vercel.app). Rounds 1–5 are done. Details and measurements for
-each item are under "Decisions" (round 5: "### Round 5 (2026-10-29)", round 4: "### Round 4 (2026-10-28)").
+## Current state / handoff (2026-10-30, after round 6)
+State at v1.18.0 (live at https://calendarkit-brown.vercel.app). Rounds 1–6 are done. Details and measurements for
+each item are under "Decisions" ("### Round 6 (2026-10-30)", "### Round 5 (2026-10-29)", "### Round 4 (2026-10-28)").
 
-**Round 5 shipped (one commit per item):**
-- v1.16.0: **Fatigue component** (`src/components/Fatigue.tsx`, `styles/fatigue.css`). It shows a yellow "B2B" badge,
-  then house/plane icons for the two nights (always in time order; tonight's is solid, the other faded), then a "3in4"
-  chip. When there's nothing to show it renders an empty slot of the same width. Where it appears:
-  - League List on desktop: mirrored around the matchup.
-  - Team List: in the team's and the opponent's columns.
-  - Week view, 1 week only: a compact second row under the line. Because of that row, the 1-week scale at 1920×911
-    went from 1.25 to 1.1.
-  The tricodes keep their yellow marks. The pop-up now holds details only. Copies and selection images include the
-  component.
-- v1.17.0: **the matchup is the game link.** `MatchLink` in GameCard.tsx wraps it in an `<a target=_blank>` in all four
-  views. The widget API is now `gameLink(game) → url` (it was `onOpenGameLink`). The hover "↗" is gone. A drag that
-  starts on a link still makes a marquee selection (`selection.ts`).
-- Test only: the flaky League List "continuous days" e2e is fixed. The cause was in the test, not the app: it measured
-  two frames after a ~30 000 px programmatic jump, before the virtualized list had re-rendered. It now waits until the
-  rendered days cover the list. Before the fix: 1 failure in 30 runs. After: 30/30 runs, 120/120 executions.
-- v1.17.1: **the two-week view fits** 1920×911 and 1280×900 with no page scroll. Only vertical spacing changed
-  (`TWO_WEEK_SPACING` in dayflow.ts plus 2-week cell CSS); game text keeps its size.
-- Test only: the link date comes from the feed's ET date across the Nov 1, 2026 DST change
-  (`tests/gamelink.tz.test.tsx`, run in both zones).
+**Round 6 shipped:**
+- v1.17.2: **copies ~25 % faster.** html-to-image wrote all ~480 computed properties into every cloned node; the
+  browser drawing that SVG is most of a copy. `CAPTURE_SKIP_STYLE` (copyAsImage.ts) leaves out logical duplicates and
+  what a still image never shows; images pixel-identical. The seven-copy test budget is 90 s (was 150 s).
+- Test only: **perf guard** — the scroll checks' main-thread time is compared with v1.17.1 built and run in the same
+  run, interleaved (`scripts/perf-ref.ts`, `REFERENCE` / `REF_RATIO` 1.25 / `AB_RUNS` 7 in perf.spec.ts); no absolute
+  main-thread baselines any more.
+- Test only: **NBA Cup knockout links** checked on a fixture in the feed's format (`tests/fixtures/cup-knockout-2025.json`).
+- v1.17.3: **team picker** — a resting pointer no longer overrides the keyboard choice (the flaky "Miami instead of
+  Orlando" was a real bug).
+- v1.17.4: **2-week view** — the away tricode's plane sits inside the line; it no longer overlaps time labels.
+- v1.17.5: **the page always opens on today** (the URL's `date=` is ignored on load) and follows midnight while on
+  today, also after sleep / tab switch.
+- v1.18.0: **Fatigue component** — leg dot in the B2B badge (left = 1st night, right = 2nd), merged 3-in-4 stretches
+  ("4in6 · 2nd"; compact: "4in6"), pop-up with the stretch and a day strip; no yellow tricode boxes where the component
+  is shown (League List desktop, 1-week view); legends follow.
 
-**Where things live:** same as round 4, plus:
-- `Fatigue.tsx`: the component.
-- `MatchLink` / `GameLink` in `GameCard.tsx`.
-- `.ck-mline`: the week line's link, a CSS subgrid over the line's columns.
-- `appGameLink` in `App.tsx`.
-- The B2B colour is still `--ck-b2b: #f5e042`. The icons are data-URI SVGs with that colour written into them.
+**Where things live (new):** `e2e/fixtures.ts` (the e2e `test`: hands a URL's `date=` to the app's test hook
+`window.__ckOpenDate`, App.tsx); `seasonDay` / `teamMonthOf` / `teamWeekOf` and the midnight effect in CalendarView.tsx;
+`B2BBadge` in Fatigue.tsx; `MergedThreeInFour`, `mergedChip`, `mergedDays`, `ordinal` in scheduleTags.ts; the pop-up's
+`DayStrip` in Tooltip.tsx (`data-tip-days`); `scripts/perf-ref.ts`.
 
 **Tests:**
-- Commands: `npm test` (Vitest, 323 tests) and `npm run e2e` (Playwright). Run the e2e projects one at a time so each
-  run fits `timeout 300`: `--project=desktop` (~1.6 min), `--project=desktop-xl` (~2.2 min),
-  `--project=tablet --project=phone` (~40 s), `--project=perf --no-deps` (~1.8 min).
-- New e2e specs: `fatigue-component.spec.ts` and `two-week-fit.spec.ts` (both size the window to 1920×911 and
-  1280×900 themselves, and run on desktop-xl only). `gamelink.spec.ts` was rewritten.
-- A/B scripts for 1920×911 are in `test-output/m5/` (`abn.mjs`, `abt.mjs`; set `VH` to change the height).
-  `test-output/flaky/` has the loop scripts and logs from item 3.
-- **Headless Chromium opens no tab for a middle-click**, even on a bare link, and opens one unreliably for ctrl-click.
-  The e2e test checks those two at the event level instead.
-- **Perf guard:** the League List scroll's main thread was 2786–2873 ms across round 5, against a limit of 2913 ms on
-  Windows. The margin is thin. A/B runs showed no regression, but the guard could flake.
+- Commands: `npm test` (Vitest, 348 tests) and `npm run e2e` (Playwright). Run the e2e projects one at a time so each
+  run fits `timeout 300`: `--project=desktop` (~1.7 min), `--project=desktop-xl` (~2.4 min),
+  `--project=tablet --project=phone` (~45 s), and the perf project in pieces (`--project=perf --no-deps -g "<name>"`:
+  each scroll check ~1–1.7 min with the reference runs). CI: e2e 9–12 min (job limit 25 min).
+- e2e specs import `test` from `./fixtures`, not `@playwright/test` — except `open-today.spec.ts` (and the perf spec's
+  reference pages), which must see what a person's browser does.
+- New e2e: `open-today.spec.ts`; round-6 blocks in `fatigue-component.spec.ts` (leg dot, yellow boxes vs views,
+  widest chip); plane/label overlap in `two-week-fit.spec.ts`; the picker race in `features.spec.ts`.
 - The rules stay: `timeout 300` on every command, output to a file, never pipe test output into grep.
 
 **Open issues:**
-- CI: copy.spec "final scores are in the images" (7 copies, one a full Team List) went past the 60 s per-test timeout on
-  the runner 3 times after round 5 (each copy ~10 % slower with the Fatigue components; full Team List locally 5.2 → 5.7
-  s). It now has a 150 s budget. Copying is slower, not broken.
-- Known flaky: `features.spec.ts` "team header and team picker". It failed once on tablet this round (picked Miami
-  instead of Orlando) and passed 5/5 on rerun. Not investigated.
-- In the 2-week view, a tricode's small plane can overlap the time label above it. There are 42 cases on the stretches
-  walked at 1280; there were 42 before round 5 too.
+- The compact week-view chip shows the stretch without tonight's place ("7in11"): two full chips ("7in11 · 2nd") need
+  ~166 px under a line whose day cell is 163 px at 1280 × 900. Waiting on Alex's choice.
+- Team views (Team Calendar cells, tablet/phone Team List) keep their own 3-in-4 chip ("3in4·2nd", sets in the
+  tooltip); not merged this round.
+- The Team List's opponent tricode keeps its yellow 2nd-night dot next to the components.
+- In 2-week mode the home team's plane still pokes over the line above (102 places) and the edge of the home logo's
+  disc (276), as before; only the away plane / label overlap was asked for and fixed.
 - Team Calendar month view at 1280×900 stays at scale 0.8 (unchanged).
-- Last season's NBA Cup knockout games (neutral site) weren't in any data reachable from here. The URL order for them
-  is still unverified. See round 5, item 5.
 
-**Don't break:** everything in round 4's list still holds. Also:
-- Game links must stay real `<a>`s with no hover-only elements.
-- `.ck-capturing` must keep removing link styling from copies.
-- The Fatigue component must keep a fixed width, empty or not.
+**Don't break:** everything in round 5's list still holds. Also:
+- The league views open on today on every load (never the URL's date); e2e opens other days only via `__ckOpenDate`.
+- The leg dot never flips with the column; the badge keeps its width.
+- The Fatigue component's width stays fixed, empty or not (10.25 em; compact 8.35 em).
 
 ## Probe (2026-10-23)
 
@@ -1072,6 +1061,67 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     and getting past that wasn't attempted. hoopsjunkie's pages also need a browser that passes its bot check (Alex's
     Chrome). So no knockout game was checked.
 
+### Round 6 (2026-10-30)
+- **A1, copy time** (v1.17.2): stage timing of a full ORL Team List copy (`test-output/m6/copyprof.mjs`, medians of 3):
+  v1.15.0 total 4 965 ms, SVG 16.8 MB, browser drawing it 3 730 ms; v1.17.1 5 475 ms, 19.3 MB, 4 471 ms (+~290 cloned
+  nodes from the Fatigue components, each with all ~480 computed properties inlined). So the extra ~0.5 s was the
+  browser parsing/drawing the bigger SVG, not cloning or PNG encoding. Fix: `includeStyleProperties` = the browser's
+  list minus `CAPTURE_SKIP_STYLE` (logical duplicates, animation/transition, scroll, anchoring, pointer/caret, paging,
+  multi-column rules, ruby, math). `overscroll-behavior-x/y` must stay (bisected: leaving it out changed ~500 pixel
+  channels of a League List image). After: 4 038 ms, 13.0 MB. Six whole-view kinds pixel-identical (copydiff.mjs; two
+  runs of one build are also identical, so the comparison is exact). The seven-copy test: 18.7 s locally, 19.6 s on CI
+  after the change (23.7 s before) → budget 90 s. Round 5's CI failures were one stalled copy (full Team List still
+  "idle" after 40+ s), not a 10 % slower test. Copy timings are now printed (`[copy] … copied in N ms`).
+- **A2, perf guard**: identical builds vary ~10 % in median main-thread time between sessions on the Windows PC (v1.17.1:
+  2 434 – 2 733 ms), which more runs can't remove; interleaving two builds in one run cancels it (v1.17.1 against itself:
+  ×0.985, ×1.089, ×1.023). So the three scroll checks run the current build and v1.17.1 (`REFERENCE`, built once by
+  `scripts/perf-ref.ts` from a git worktree into `test-output/perf-ref/<commit>/`, served with today's snapshot), ABBA,
+  7 counted runs each, and fail when current ÷ reference > 1.25. Frame checks keep their baselines; the main-thread
+  baselines were removed. Sensitivity: 3 ms busy-wait per game-card render → ×1.15 (caught by frame p95 instead); the
+  ratio catches ≥ ~+25 %. CI: ×0.93 – 0.98; the e2e job went to 9–12 min (limits raised: job 25 min, Playwright 20 min).
+  Move `REFERENCE` forward only on purpose.
+- **A3, team picker** (v1.17.3): reproduced with an event log — when the list opens under a resting pointer, Chrome sends
+  that option mouseover/mouseenter with movement 0,0, sometimes after the key that moved the highlight; the picker's
+  `onMouseEnter` then took it ("Miami" under the pointer after "o" chose Orlando). App bug. Fix: only `mousemove` with
+  movement highlights. New e2e (pointer resting where Atlanta will be, Enter after the browser's hover lands): 9 of 9
+  fail on the old build; unit test fails on the old code.
+- **A4, Cup knockout links**: `tests/fixtures/cup-knockout-2025.json` (built by `make-cup-knockout-2025.mjs` from real
+  game objects): QFs Dec 9–10 at home sites, SFs Dec 13 and the final Dec 16 (006…) neutral (Las Vegas), one QF at
+  11:30 pm ET (04:30 UTC next day). Expected `https://hoopsjunkie.io/games/<gameDateEst date>/<away>-vs-<home>`, the feed's
+  away/home even at a neutral site (the only order the feed gives, and the rule verified on regular games). Building
+  the date from the UTC tip-off fails 10 of 12 checks. Still unverified against hoopsjunkie's real neutral-site pages.
+- **A5, 2-week plane** (v1.17.4): the planes that hit labels were all away tricodes under long labels ("00:00 (+1)",
+  52 px); home planes are past any label. The away plane in 2-week mode now sits inside the line (0.5 em, just right of
+  the letters, above the score digits). `two-week-fit.spec.ts` checks every plane against the labels' text on all 26
+  stretches at both sizes: 84 hits (the 42 places, each week walked twice) on the old build, 0 now; no new collision
+  with scores, letters or "@" (planecheck.mjs). Left as they were: home planes over the line above (102) and the home
+  logo disc's edge (276).
+- **B, open on today** (v1.17.5): cause — the shell wrote the top day into the URL (`date=`) while scrolling and read it
+  back on load; there is no other saved state. Now App drops the URL date (`e2eOpenDate` test hook only); the league
+  views open on `seasonDay(data, today)`: the clock's local date (the day strip's today), kept inside the season.
+  League Today goes there too (it used `defaultDay`, which kept last night's games until they ended). Midnight: when the
+  clock's date changes (minute timer, or visibilitychange/pageshow after sleep), every view still on the old today
+  moves (List day, week, Team Calendar month/week); a view moved elsewhere stays. The League List strip takes the
+  clock's today (it used the open time, so its marker stayed on yesterday). e2e `open-today.spec.ts` (New York and São
+  Paulo): 8/8, all fail on the old build.
+- **C/D/E, Fatigue component** (v1.18.0):
+  - Leg dot: a 0.32 em dark dot inside the badge, before "B2B" on a 1st night, after it on a 2nd; the badge keeps its
+    2.6 em (text 2.0 em). Same in every column, view and size.
+  - Merged 3-in-4: sets of consecutive games overlap iff their first games are ≤ 2 apart; runs chain into a stretch
+    (`ThreeInFour.merged`). Season: 152 × 3in4, 171 × 4in6, 14 × 6in9, 23 × 7in11 (widest chip "7in11 · 2nd", 4.6 em).
+    Chip track 4.75 em (component 8 → 10.25 em; League and Team List rows stay one line, checked). Compact: the stretch
+    only ("7in11", track 3 em, component 8.35 em): two full chips need ~166 px, the 1280 × 900 day cell is 163 px.
+  - Pop-up: one line "4in6 · 2nd: 4 games in 6 days (Oct 28 – Nov 2), tonight the 2nd" instead of a line per set, then
+    a day strip (`data-tip-days`, Tooltip.tsx): cells filled on game days, empty on rest days, tonight yellow-ringed,
+    the date under each cell (month on the first and the 1st).
+  - No yellow fill/outline on tricodes beside the component (`FatigueMark component`); kept in the 2-week view and the
+    narrow League List. Legends follow the view.
+  - Copies: League List week 3 936 × 10 064 px, selections 3 936 × 1 196 / 1 536 × 1 440 px — the same as before (×4);
+    every badge's dot and merged chip pixel-checked (`leg` region in copy.spec).
+  - Perf (1920 × 911, `test-output/m6/abf.mjs`, 8 interleaved runs, v1.17.1 → v1.18.0): League List main thread median
+    2 559 → 2 809 ms (v1.17.1's runs spread 1 114 – 2 862), frame p95 16.8 → 16.8 ms; Team List 443 → 281 ms, p95 16.7 →
+    16.7 ms. Perf guard (1920 × 1080, vs v1.17.1 in the same run): League ×0.883, countdown ×0.959, Team ×0.889.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip
@@ -1094,7 +1144,7 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
 ## Open questions / items
 - **Flaky under load**: `features.spec.ts` "team header and team picker" (tablet) failed once in a full run on
   2026-10-24 (`toHaveText`), then passed 3/3 alone and in the next full run; seen after a change that touched no app
-  code. Watch it.
+  code. **Resolved in round 6 (A3):** a real picker bug (a resting pointer's synthetic hover overrode the keyboard).
 - **Today mid-scroll**: clicking Today within the same frames as a fast wheel burst (only a script can) lets Chrome's
   wheel animation carry the list on after the jump (title and button follow wherever it ends). Seen in ~3 % of e2e
   runs after the scroll fix, 0 % before (the old, slower renders let the wheel finish first); the e2e now waits for
