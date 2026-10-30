@@ -30,7 +30,7 @@ where-to-watch info, embedding in gauntlet.
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
 ## Current state / handoff (2026-10-30, after round 6)
-State at v1.18.0 (live at https://calendarkit-brown.vercel.app). Rounds 1–6 are done. Details and measurements for
+State at v1.18.1 (live at https://calendarkit-brown.vercel.app). Rounds 1–6 are done. Details and measurements for
 each item are under "Decisions" ("### Round 6 (2026-10-30)", "### Round 5 (2026-10-29)", "### Round 4 (2026-10-28)").
 
 **Round 6 shipped:**
@@ -49,6 +49,9 @@ each item are under "Decisions" ("### Round 6 (2026-10-30)", "### Round 5 (2026-
 - v1.18.0: **Fatigue component** — leg dot in the B2B badge (left = 1st night, right = 2nd), merged 3-in-4 stretches
   ("4in6 · 2nd"; compact: "4in6"), pop-up with the stretch and a day strip; no yellow tricode boxes where the component
   is shown (League List desktop, 1-week view); legends follow.
+- v1.18.1: **copies can no longer hang.** html-to-image's image loader ignored a rejected `img.decode()`, so a copy whose
+  SVG Chrome refused to decode (CI, full Team List) never finished — the real cause of round 5's CI "timeouts".
+  `loadImage` (copyAsImage.ts) replaces it: a rejected decode is ignored, a load error shows "!".
 
 **Where things live (new):** `e2e/fixtures.ts` (the e2e `test`: hands a URL's `date=` to the app's test hook
 `window.__ckOpenDate`, App.tsx); `seasonDay` / `teamMonthOf` / `teamWeekOf` and the midnight effect in CalendarView.tsx;
@@ -1072,6 +1075,11 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   runs of one build are also identical, so the comparison is exact). The seven-copy test: 18.7 s locally, 19.6 s on CI
   after the change (23.7 s before) → budget 90 s. Round 5's CI failures were one stalled copy (full Team List still
   "idle" after 40+ s), not a 10 % slower test. Copy timings are now printed (`[copy] … copied in N ms`).
+  The stall came back once on CI after the trim (run 41034246143) and was traced (v1.18.1): html-to-image's
+  `createImage` runs `img.decode().then(…)` with no rejection handler, so a rejected decode (an `EncodingError`,
+  reproduced with a stand-in image) leaves the copy pending forever. `renderToCanvas` now does html-to-image's
+  toCanvas itself with its own `loadImage`; images pixel-identical. CI after it: the seven copies 30.1 s, full Team
+  List copies 8–9.6 s.
 - **A2, perf guard**: identical builds vary ~10 % in median main-thread time between sessions on the Windows PC (v1.17.1:
   2 434 – 2 733 ms), which more runs can't remove; interleaving two builds in one run cancels it (v1.17.1 against itself:
   ×0.985, ×1.089, ×1.023). So the three scroll checks run the current build and v1.17.1 (`REFERENCE`, built once by
