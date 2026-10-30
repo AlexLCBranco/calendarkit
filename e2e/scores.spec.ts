@@ -168,9 +168,9 @@ test('overtime marker: League List, Team List (worst case in its slot), week vie
       const o = line.querySelector('.ck-tv-slot .ck-ot')!;
       const range = document.createRange();
       range.selectNodeContents(o);
-      // the line's own parts (the "↗" hangs right of the line on purpose)
+      // the line's own parts
       const lb = line.getBoundingClientRect();
-      return { text: o.textContent, ot: range.getBoundingClientRect().right, slot: o.parentElement!.getBoundingClientRect().right, overflow: [...line.children].filter((k) => !k.matches('[data-testid="open-link"]') && k.getBoundingClientRect().right > lb.right + 0.5).length };
+      return { text: o.textContent, ot: range.getBoundingClientRect().right, slot: o.parentElement!.getBoundingClientRect().right, overflow: [...line.children].filter((k) => k.getBoundingClientRect().right > lb.right + 0.5).length };
     });
     expect(w.text).toBe(g.ot);
     expect(w.ot).toBeLessThanOrEqual(w.slot + 0.01);

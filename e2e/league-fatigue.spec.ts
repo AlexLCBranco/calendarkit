@@ -30,9 +30,9 @@ const geometry = (page: Page, lineSel: string) =>
     let marks = 0;
     for (const line of document.querySelectorAll<HTMLElement>(lineSel)) {
       widths.add(line.getBoundingClientRect().width.toFixed(2));
-      // the line's own parts (the "↗" hangs right of the line on purpose; e2e/gamelink.spec.ts keeps it in the cell)
+      // the line's own parts
       const lb = line.getBoundingClientRect();
-      if ([...line.children].some((k) => !k.matches('[data-testid="open-link"]') && k.getBoundingClientRect().right > lb.right + 0.5)) bad.push(`${line.dataset.gameId}: line overflows`);
+      if ([...line.children].some((k) => k.getBoundingClientRect().right > lb.right + 0.5)) bad.push(`${line.dataset.gameId}: line overflows`);
       for (const m of line.querySelectorAll<HTMLElement>('.ck-fm')) {
         marks++;
         const col = m.closest('.ck-mtri, .ck-team')!.getBoundingClientRect();

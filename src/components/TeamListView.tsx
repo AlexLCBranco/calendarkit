@@ -5,7 +5,7 @@ import { hasNationalTv, isOver, opponentSecondNight, sideLabel, teamGames, teamR
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import { TEAM_BY_ID } from '../data/teams';
-import { GameCard } from './GameCard';
+import { GameCard, type GameLink } from './GameCard';
 import { useActiveHighlight } from './ActiveHighlight';
 import { ACTIVE_DAY } from './copyAsImage';
 import type { ValueStore } from './valueStore';
@@ -25,7 +25,7 @@ export interface TeamListViewProps {
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
   /** The "↗" on each game: raised with its id; the host opens the game's page. */
-  onOpenGameLink?: (gameId: string) => void;
+  gameLink?: GameLink;
   /** Set to a handle that scrolls back to the next game (the host's "Today" button). */
   handle?: RefObject<TeamListHandle | null>;
   /** Told whether the next game is at the top (true after opening and after `toNext`, false once scrolled away). */
@@ -58,7 +58,7 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
  * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
  */
-export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, onOpenGameLink, handle, onAtNext, topStore, today }: TeamListViewProps) {
+export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, onAtNext, topStore, today }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
@@ -215,7 +215,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
                 timeZone={timeZone}
                 size={compact ? 'compact' : 'regular'}
                 onOpenGame={onOpenGame}
-                onOpenGameLink={onOpenGameLink}
+                gameLink={gameLink}
                 logos
                 dateLabel={rowDate(g.dateEt)}
                 next={g.gameId === next}

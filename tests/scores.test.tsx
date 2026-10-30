@@ -92,7 +92,7 @@ describe('League week view (1 and 2 weeks)', () => {
       for (const g of finals) {
         const line = el.querySelector(`.ck-month-game[data-game-id="${g.gameId}"]`)!;
         expect([...line.querySelectorAll('img')].map((i) => i.getAttribute('src')), g.gameId).toEqual([`/logos/${g.awayTeam.teamTricode}.svg`, `/logos/${g.homeTeam.teamTricode}.svg`]);
-        expect([...line.children].filter((c) => !c.classList.contains('ck-mfx')).map((c) => c.textContent!.trim())).toEqual(['', g.awayTeam.teamTricode, String(g.awayTeam.score), '@', String(g.homeTeam.score), g.homeTeam.teamTricode, '', '']);
+        expect([...line.querySelector('.ck-mline')!.children, line.querySelector('.ck-tv-slot')!].map((c) => c.textContent!.trim())).toEqual(['', g.awayTeam.teamTricode, String(g.awayTeam.score), '@', String(g.homeTeam.score), g.homeTeam.teamTricode, '', '']);
         expect([...line.querySelectorAll('.ck-mscore')].map((s) => s.classList.contains('ck-score-win'))).toEqual([won(g, 'away'), won(g, 'home')]);
         expect([...line.querySelectorAll('.ck-mtri')].map((s) => s.classList.contains('ck-loss'))).toEqual([!won(g, 'away'), !won(g, 'home')]);
         expect(line.querySelector('.ck-tv-pill')).toBeNull();

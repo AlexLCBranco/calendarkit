@@ -2,12 +2,12 @@
 // Game page link (round 4, item 12): hoopsjunkie.io game pages (injury report, win probability, box score). URL
 // verified on the live site 2026-10-29 (Alex's Chrome): /games/<NBA ET date>/<away>-vs-<home>, lowercase tricodes —
 // the ET date also for games after midnight (POR @ LAL, ET Oct 27, 03:00 UTC Oct 28: 2026-10-27/por-vs-lal loads,
-// 2026-10-28/por-vs-lal redirects to that day's scores). Widgets never open it: a "↗" raises onOpenGameLink(gameId) and
-// the shell opens the URL in a new tab. Undecided teams: no link.
+// 2026-10-28/por-vs-lal redirects to that day's scores). Round 5: the matchup is an <a> to it (new tab), the URL rule
+// from the shell (gameLink). Undecided teams: no link.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render } from '@testing-library/react';
-import { openGameLink } from '../src/App';
+import { appGameLink } from '../src/App';
 import { CalendarView } from '../src/components/CalendarView';
 import { gameLinkUrl, HOOPSJUNKIE_BASE_URL, isGameLinkConfigured } from '../src/config';
 import { dataOf, game, TEAM } from './synthetic';
@@ -34,17 +34,13 @@ describe('URL (shell)', () => {
     expect(gameLinkUrl(tbd)).toBeUndefined();
   });
 
-  it('the shell opens it in a new tab, noopener', () => {
-    const open = vi.fn();
-    openGameLink(data, late.gameId, open);
-    expect(open).toHaveBeenCalledWith('https://hoopsjunkie.io/games/2026-11-10/lal-vs-den');
-    const win = vi.spyOn(window, 'open').mockImplementation(() => null);
-    openGameLink(data, early.gameId);
-    expect(win).toHaveBeenCalledWith('https://hoopsjunkie.io/games/2026-11-10/bos-vs-nyk', '_blank', 'noopener');
+  it('the shell gives the widgets that rule (none when no base URL is configured)', () => {
+    expect(appGameLink?.(late)).toBe('https://hoopsjunkie.io/games/2026-11-10/lal-vs-den');
+    expect(appGameLink?.(tbd)).toBeUndefined();
   });
 });
 
-describe('widgets: a "↗" that raises onOpenGameLink, never opens anything itself', () => {
+describe('widgets: the matchup is a real <a> to the game page (round 5; replaced the hover "↗")', () => {
   for (const [name, initial, sel] of [
     ['League List', { date: '2026-11-10' }, '.ck-card'],
     ['Team List', { mode: 'team', layout: 'list', teamId: TEAM.LAL }, '.ck-card'],
@@ -52,24 +48,31 @@ describe('widgets: a "↗" that raises onOpenGameLink, never opens anything itse
     ['week view', { layout: 'calendar', date: '2026-11-10' }, '.ck-month-game'],
   ] as const) {
     it(name, () => {
-      const onOpenGameLink = vi.fn();
       const win = vi.spyOn(window, 'open').mockImplementation(() => null);
-      const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={initial} onOpenGameLink={onOpenGameLink} />).container;
-      const host = [...el.querySelectorAll<HTMLElement>(sel)].find((h) => h.querySelector('[data-game-id]') ?? h.dataset.gameId) ?? el.querySelector<HTMLElement>(`${sel}[data-game-id="${late.gameId}"]`)!;
-      const target = el.querySelector(`${sel}[data-game-id="${late.gameId}"], ${sel}:has([data-game-id="${late.gameId}"])`) ?? host;
-      const link = target.querySelector<HTMLElement>('[data-testid="open-link"]')!;
-      expect(link.getAttribute('data-capture-exclude')).toBe('true'); // never in an image
-      expect(link.getAttribute('aria-label')).toBe('Open the game page');
-      fireEvent.click(link);
-      expect(onOpenGameLink).toHaveBeenCalledWith(late.gameId);
-      expect(win).not.toHaveBeenCalled();
+      const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={initial} gameLink={appGameLink} />).container;
+      const target = el.querySelector(`${sel}[data-game-id="${late.gameId}"], ${sel}:has([data-game-id="${late.gameId}"])`)!;
+      const links = target.querySelectorAll<HTMLAnchorElement>('a[data-testid="game-link"]');
+      expect(links).toHaveLength(1);
+      const a = links[0]!;
+      expect(a.getAttribute('href')).toBe('https://hoopsjunkie.io/games/2026-11-10/lal-vs-den');
+      expect(a.target).toBe('_blank');
+      expect(a.rel.split(' ')).toContain('noopener');
+      expect(a.draggable).toBe(false);
+      // the link is the matchup: both tricodes (or the opponent, in a narrow calendar cell), nothing hover-only
+      expect(a.textContent).toMatch(/DEN/);
+      expect(el.querySelector('[data-testid="open-link"], .ck-open-link')).toBeNull();
+      // the copy button, fatigue components and records are not inside it
+      expect(a.querySelector('button, [data-testid="fatigue"], .ck-rec')).toBeNull();
+      fireEvent.click(a);
+      expect(win).not.toHaveBeenCalled(); // the browser follows the link; the widget opens nothing itself
       // undecided teams: no link
       const t = el.querySelector(`[data-game-id="${tbd.gameId}"]`);
-      if (t) expect((t.closest(sel) ?? t).querySelector('[data-testid="open-link"]')).toBeNull();
+      if (t) expect((t.closest(sel) ?? t).querySelector('a')).toBeNull();
       cleanup();
-      // no handler: no link
+      // no gameLink: no link, the same matchup as a span
       const plain = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={initial} />).container;
-      expect(plain.querySelector('[data-testid="open-link"]')).toBeNull();
+      expect(plain.querySelector('a[data-testid="game-link"]')).toBeNull();
+      expect(plain.querySelector('.ck-teams, .ck-mline, .ck-matchup .ck-side')).not.toBeNull();
     });
   }
 });

@@ -1,7 +1,7 @@
 // Standalone app shell: loads the schedule, sizes the widget to the window, keeps view state in the URL, and
-// handles onOpenGame by opening rotationkit and onOpenGameLink by opening the game's hoopsjunkie page. Everything else lives in the self-contained components.
+// handles onOpenGame by opening rotationkit and gives the widgets the game-page URL rule (gameLink: hoopsjunkie). Everything else lives in the self-contained components.
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { CalendarView, type CalendarState } from './components/CalendarView';
 import { gameLinkUrl, isGameLinkConfigured, isRotationkitConfigured } from './config';
 import { BUILD_INFO } from './build-info';
@@ -16,12 +16,8 @@ export function openGameInRotationkit(gameId: string, open: (url: string) => voi
   open(rotationkitUrl(gameId));
 }
 
-/** Shell's handling of the widgets' "↗" (onOpenGameLink): the game's hoopsjunkie page in a new tab. */
-export function openGameLink(data: CalendarData, gameId: string, open: (url: string) => void = (url) => window.open(url, '_blank', 'noopener')) {
-  const g = data.games.find((x) => x.gameId === gameId);
-  const url = g && gameLinkUrl(g);
-  if (url) open(url);
-}
+/** The widgets' game links (round 5: the matchup is an <a>): the hoopsjunkie URL rule, or none when not configured. */
+export const appGameLink = isGameLinkConfigured() ? (g: Parameters<typeof gameLinkUrl>[0]) => gameLinkUrl(g) : undefined;
 
 /**
  * URL: ?view=league|team&layout=list|calendar&team=&date=&weeks=2&span=1w|2w&tv=1&rest=1 (weeks: League → Calendar rows;
@@ -104,9 +100,6 @@ export function App() {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
   const onOpenGame = isRotationkitConfigured() ? (id: string) => openGameInRotationkit(id) : undefined;
-  // stable: the League List's day sections are memo'd on their props
-  const openLink = useCallback((id: string) => data && openGameLink(data, id), [data]);
-  const onOpenGameLink = isGameLinkConfigured() ? openLink : undefined;
 
   const load = () => {
     setError(undefined);
@@ -132,7 +125,7 @@ export function App() {
             size={size}
             initial={initial}
             onOpenGame={onOpenGame}
-            onOpenGameLink={onOpenGameLink}
+            gameLink={appGameLink}
             onStateChange={writeUrlState}
             title={`NBA schedule ${data.seasonYear}`}
             note={`Times in your time zone (${timeZone})`}

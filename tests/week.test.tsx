@@ -84,7 +84,9 @@ describe('week view: structure', () => {
       const g = games.find((x) => x.gameId === l.getAttribute('data-game-id'))!;
       expect(tris(l)).toEqual([g.awayTeam.teamTricode, g.homeTeam.teamTricode]);
       expect(l.textContent).toBe(`${g.awayTeam.teamTricode}@${g.homeTeam.teamTricode}`);
-      expect([...l.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-logo-backing', 'ck-mtri', 'ck-mscore', 'ck-at', 'ck-mscore', 'ck-mtri', 'ck-logo-backing', 'ck-tv-slot']);
+      // round 5: the parts up to the home logo are the game link's (a subgrid on the same columns)
+      expect([...l.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-mline', 'ck-tv-slot']);
+      expect([...l.querySelector('.ck-mline')!.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-logo-backing', 'ck-mtri', 'ck-mscore', 'ck-at', 'ck-mscore', 'ck-mtri', 'ck-logo-backing']);
       expect([...l.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([`/logos/${g.awayTeam.teamTricode}.svg`, `/logos/${g.homeTeam.teamTricode}.svg`]);
     }
     expect(screen.queryByTestId('month-legend')).toBeNull();

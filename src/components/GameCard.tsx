@@ -1,7 +1,7 @@
 // One game. Self-contained widget: inputs are the game, a few precomputed facts and a size; it never opens URLs.
 // "Open" actions are raised through onOpenGame(gameId) and the host decides what that means.
 
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { finalScore, isOver, localDate, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord, type Tipoff } from '../data/model';
 import { countdownLabel, todayAt, useClockValue } from './clock';
@@ -78,27 +78,29 @@ export interface GameCardProps {
   records?: ReadonlyMap<number, TeamRecord>;
   /** Team List: the row's date (data-row-date), which the week strip follows while scrolling. */
   rowDate?: string;
-  /** A "↗" on hover that raises this with the game id (the host opens the game's page); never shown for undecided teams. */
-  onOpenGameLink?: (gameId: string) => void;
+  /** The game page URL: the matchup (teams + scores) links to it in a new tab; no link when it returns undefined. */
+  gameLink?: GameLink;
 }
 
-/** The "↗" to a game's page (round 4): a hover button that only raises the event; never part of an image. The glyph is
- * CSS content, so it adds no text to rows and lines. */
-export const GameLinkButton = ({ game, onOpen }: { game: ScheduleGame; onOpen: (gameId: string) => void }) =>
-  game.awayTeam.teamId && game.homeTeam.teamId ? (
-    <button
-      type="button"
-      className="ck-open-link"
-      data-testid="open-link"
-      data-capture-exclude="true"
-      aria-label="Open the game page"
-      title="Game page: injury report, win probability, box score"
-      onClick={(e) => {
-        e.stopPropagation();
-        onOpen(game.gameId);
-      }}
-    />
-  ) : null;
+/** The host's game-page URL for a game (hoopsjunkie, config.ts gameLinkUrl), or undefined (no link: undecided teams). */
+export type GameLink = (game: ScheduleGame) => string | undefined;
+
+/**
+ * The matchup as a real link to the game's page (round 5, replaces round 4's hover "↗"): an `<a>` in a new tab, so
+ * middle- and ctrl-click work and it adds no hover-only element. Looks like text until hovered (pointer, underline);
+ * never link-styled in images (`.ck-capturing`). Not draggable, so a press on it can start a marquee selection
+ * (selection.ts swallows the click that ends a drag). Without a URL it is a plain `<span>` with the same class.
+ */
+export function MatchLink({ game, gameLink, className, children }: { game: ScheduleGame; gameLink?: GameLink; className: string; children: ReactNode }) {
+  const url = gameLink?.(game);
+  return url ? (
+    <a className={`${className} ck-mlink`} href={url} target="_blank" rel="noopener noreferrer" draggable={false} title="Game page: injury report, win probability, box score" data-testid="game-link" onClick={(e) => e.stopPropagation()}>
+      {children}
+    </a>
+  ) : (
+    <span className={className}>{children}</span>
+  );
+}
 
 /** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
 export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
@@ -187,7 +189,7 @@ export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeI
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, onOpenGameLink }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -233,7 +235,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   const matchup =
     side && !teamFirst ? (
       <span className="ck-matchup">
-        <span className="ck-side">
+        <MatchLink game={game} gameLink={gameLink} className="ck-side">
           <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}
           <span className={`ck-team ck-opp${loss(false)}`}>
             {teamLabel(side.opponent)}
@@ -242,14 +244,14 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
           {result && ' '}
           {result && score(result.oppScore, !result.win)}
           {otMark}
-        </span>
+        </MatchLink>
       </span>
     ) : (
       <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}`}>
         {!side && rec(first)}
         {fx && <Fatigue f={fatigue!.get(first.teamId)} team={teamLabel(first)} badge="right" />}
         {(records || fx) && ' '}
-        <span className="ck-teams">
+        <MatchLink game={game} gameLink={gameLink} className="ck-teams">
           <span className="ck-side">
             {logos && <TeamLogo team={first} />}
             <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} plane={!fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</span>
@@ -266,7 +268,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
             </span>{' '}
             {logos && <TeamLogo team={second} />}
           </span>
-        </span>
+        </MatchLink>
         {(records || fx) && ' '}
         {fx && <Fatigue f={fatigue!.get(second.teamId)} team={teamLabel(second)} />}
         {!side && rec(second, true)}
@@ -298,7 +300,6 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
     >
       {/* first, so the season block stays the last part; positioned in the corner */}
       {copyable && <CopyButton hover label="Copy game as image" of=".ck-card" testId="copy-game" />}
-      {onOpenGameLink && <GameLinkButton game={game} onOpen={onOpenGameLink} />}
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
       <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
         <TipTime start={game.startTimeUtc ? Date.parse(game.startTimeUtc) : undefined} tip={tip} timeZone={timeZone} now={now} />

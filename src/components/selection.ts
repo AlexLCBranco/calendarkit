@@ -48,6 +48,8 @@ export const SCROLL_EDGE = 48;
 export const MAX_SCROLL_STEP = 28;
 
 /** A press on any of these keeps doing its own job instead of starting a marquee. */
+/** The matchup links (GameCard MatchLink): a press on one is a click or the start of a marquee. */
+const GAME_LINK = '.ck-mlink';
 const INTERACTIVE = 'button, a, input, label, select, textarea, [role="tab"], [role="option"], [role="listbox"], [data-capture-exclude="true"], .ck-toolbar';
 /** Selectable items: games (list rows, week-view lines, the game in a team calendar cell). Never days or rest rows. */
 export const ITEM = '[data-game-id]';
@@ -109,7 +111,10 @@ export function useMarqueeSelection(store: SelectionStore, box: RefObject<HTMLDi
     const boxEl = box.current;
     const target = event.target;
     if (!boxEl || event.button !== 0 || !event.isPrimary || event.pointerType !== 'mouse') return;
-    if (!(target instanceof Element) || !area.contains(target) || target.closest(INTERACTIVE)) return;
+    if (!(target instanceof Element) || !area.contains(target)) return;
+    // a game link (the matchup, round 5) may start a marquee; other controls don't
+    const control = target.closest(INTERACTIVE);
+    if (control && !control.matches(GAME_LINK)) return;
     const scroller = target.closest<HTMLElement>(SCROLLER) ?? undefined;
     if (scroller) {
       // a press on the list's own scrollbar scrolls it
@@ -137,8 +142,6 @@ export function useMarqueeSelection(store: SelectionStore, box: RefObject<HTMLDi
     const previousUserSelect = document.body.style.userSelect;
     let drawing = false;
     let frame = 0;
-
-    area.setPointerCapture(event.pointerId);
 
     // One update per frame: auto-scroll, hit-test (all reads), then draw the box (writes).
     function update() {
@@ -175,6 +178,8 @@ export function useMarqueeSelection(store: SelectionStore, box: RefObject<HTMLDi
       if (!drawing) {
         if (Math.hypot(pointer.x - start.x, pointer.y - start.y) < MARQUEE_THRESHOLD) return;
         drawing = true;
+        // captured only once it is a drag: a plain click on a game link must reach the link
+        area.setPointerCapture(event.pointerId);
         document.body.style.userSelect = 'none'; // no text highlight under the box
         window.getSelection()?.removeAllRanges();
         boxEl!.style.display = 'block';
@@ -204,6 +209,17 @@ export function useMarqueeSelection(store: SelectionStore, box: RefObject<HTMLDi
         update(); // the last position counts
       }
       finish();
+      if (drawing && pressed.closest(GAME_LINK)) {
+        // the click that ends a drag started on a game link must not open it (only that click: the listener goes
+        // after this task)
+        const swallow = (e: MouseEvent) => {
+          if (!(e.target instanceof Node) || !area.contains(e.target)) return;
+          e.preventDefault();
+          e.stopPropagation();
+        };
+        window.addEventListener('click', swallow, { capture: true, once: true });
+        setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 0);
+      }
       if (!drawing && !additive) store.clear();
     }
 

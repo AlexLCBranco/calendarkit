@@ -102,7 +102,11 @@ function Host({ store }: { store: SelectionStore }) {
       <article data-game-id="a" data-r="10,10,300,30">
         <span data-testid="in-a" data-r="20,15,50,20">BOS</span>
       </article>
-      <article data-game-id="b" data-r="10,50,300,30" />
+      <article data-game-id="b" data-r="10,50,300,30">
+        <a className="ck-mlink" href="#game-b" data-testid="link-b" data-r="20,55,50,20">
+          CHI
+        </a>
+      </article>
       <article data-game-id="c" data-r="10,90,300,30" />
       <div data-rest="x" data-r="10,125,300,15" />
       <button type="button" data-testid="btn" data-r="400,10,40,20" />
@@ -155,6 +159,24 @@ describe('the gesture', () => {
     pointer('pointerdown', area, 500, 500);
     pointer('pointermove', area, 502, 501);
     pointer('pointerup', area, 502, 501);
+    expect(store.get().size).toBe(0);
+  });
+
+  it('a game link (the matchup, round 5): a drag from it selects and its closing click is swallowed; a plain click goes through', async () => {
+    const { store, area } = setup();
+    const link = screen.getByTestId('link-b');
+    await drag(area, link, [30, 60], [60, 140]);
+    expect([...store.get()]).toEqual(['b', 'c']);
+    const after = new MouseEvent('click', { bubbles: true, cancelable: true });
+    link.dispatchEvent(after);
+    expect(after.defaultPrevented).toBe(true); // the drag doesn't open the game page
+    await act(() => new Promise((r) => setTimeout(r, 0)));
+    // a click (no drag): the link works, the selection clears as for any plain click
+    pointer('pointerdown', link, 30, 60);
+    pointer('pointerup', link, 30, 60);
+    const plain = new MouseEvent('click', { bubbles: true, cancelable: true });
+    link.dispatchEvent(plain);
+    expect(plain.defaultPrevented).toBe(false);
     expect(store.get().size).toBe(0);
   });
 

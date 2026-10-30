@@ -8,7 +8,7 @@ import { busiestDayHeight, flowDay, scoreFontFor, lineWidth, MONTH_COL_GAP, mont
 import { hasFatigue, leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { Fatigue } from './Fatigue';
 import { FATIGUE_LEGEND_H, FatigueLegend, FatigueMark } from './FatigueMark';
-import { GameLinkButton, TeamLogo } from './GameCard';
+import { MatchLink, TeamLogo, type GameLink } from './GameCard';
 import { fmtDate, plural, type WidgetSize } from './widget';
 
 export type WeekCount = 1 | 2;
@@ -27,7 +27,7 @@ export interface LeagueWeekViewProps {
   /** Raised when a day header is clicked (the host opens that day in the list). */
   onSelectDate: (date: string) => void;
   /** The "↗" on each game line: raised with its id; the host opens the game's page. */
-  onOpenGameLink?: (gameId: string) => void;
+  gameLink?: GameLink;
 }
 
 /** A team's tricode (fatigue marks on it; winner bold, loser muted once final). */
@@ -46,7 +46,7 @@ function MonthTri({ team, fatigue, score, plane }: { team: ScheduleGame['homeTea
 const MonthScore = ({ score }: { score?: { n: number; win: boolean } }) => <span className={`ck-mscore${score?.win ? ' ck-score-win' : ''}`}>{score?.n}</span>;
 
 /** `fxRow` (1-week mode): a second row with each team's compact Fatigue component under its side, when either has any. */
-export function MonthGameLine({ data, game, onOpenGameLink, fxRow = false }: { data: CalendarData; game: ScheduleGame; onOpenGameLink?: (gameId: string) => void; fxRow?: boolean }) {
+export function MonthGameLine({ data, game, gameLink, fxRow = false }: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fxRow?: boolean }) {
   const tv = nationalTv(game);
   const fat = leagueFatigue(data).get(game.gameId); // once per data set
   // final: the scores fill their slots and the TV pill is dropped (its column stays: OT goes there)
@@ -62,13 +62,16 @@ export function MonthGameLine({ data, game, onOpenGameLink, fxRow = false }: { d
       data-game-id={game.gameId}
       aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}${ot ? ` (${ot})` : ''}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
     >
-      <TeamLogo team={game.awayTeam} />
-      <MonthTri team={game.awayTeam} fatigue={away} plane={!fxRow} score={fin && { n: fin.score, win: fin.win }} />
-      <MonthScore score={fin && { n: fin.score, win: fin.win }} />
-      <span className="ck-at">@</span>
-      <MonthScore score={fin && { n: fin.oppScore, win: !fin.win }} />
-      <MonthTri team={game.homeTeam} fatigue={home} plane={!fxRow} score={fin && { n: fin.oppScore, win: !fin.win }} />
-      <TeamLogo team={game.homeTeam} />
+      {/* logos, tricodes, scores and "@": the link to the game page (a subgrid on the line's columns, round 5) */}
+      <MatchLink game={game} gameLink={gameLink} className="ck-mline">
+        <TeamLogo team={game.awayTeam} />
+        <MonthTri team={game.awayTeam} fatigue={away} plane={!fxRow} score={fin && { n: fin.score, win: fin.win }} />
+        <MonthScore score={fin && { n: fin.score, win: fin.win }} />
+        <span className="ck-at">@</span>
+        <MonthScore score={fin && { n: fin.oppScore, win: !fin.win }} />
+        <MonthTri team={game.homeTeam} fatigue={home} plane={!fxRow} score={fin && { n: fin.oppScore, win: !fin.win }} />
+        <TeamLogo team={game.homeTeam} />
+      </MatchLink>
       <span className="ck-tv-slot">
         {ot && (
           <span className="ck-ot" title="Overtime">
@@ -81,8 +84,6 @@ export function MonthGameLine({ data, game, onOpenGameLink, fxRow = false }: { d
           </span>
         )}
       </span>
-      {/* in the room right of the line (≥ 9.9 px at 1280), so it covers nothing */}
-      {onOpenGameLink && <GameLinkButton game={game} onOpen={onOpenGameLink} />}
       {fx && (
         <span className="ck-mfx">
           <Fatigue f={away} team={teamLabel(game.awayTeam)} size="compact" />
@@ -99,7 +100,7 @@ export function MonthGameLine({ data, game, onOpenGameLink, fxRow = false }: { d
  * of games per day; 2 weeks: the day flows into as many columns as fit (see flowDay). Rows are equal and fill the
  * height they're given. A day header opens that day in the list.
  */
-export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZone, onSelectDate, onOpenGameLink }: LeagueWeekViewProps) {
+export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZone, onSelectDate, gameLink }: LeagueWeekViewProps) {
   const cols = weeks === 1 ? 1 : monthColumns(size.width);
   // 1 week: lines scaled to the day cell (see weekScale). The cell's width is pure maths; its height is the widget
   // height below the grid's top (measured; it doesn't depend on the scale, so no feedback loop).
@@ -182,7 +183,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
                           </div>
                           <ul className="ck-tgames">
                             {grp.games.map((g) => (
-                              <MonthGameLine key={g.gameId} data={data} game={g} onOpenGameLink={onOpenGameLink} fxRow={weeks === 1} />
+                              <MonthGameLine key={g.gameId} data={data} game={g} gameLink={gameLink} fxRow={weeks === 1} />
                             ))}
                           </ul>
                         </div>

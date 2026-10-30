@@ -1027,6 +1027,27 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     rows under the logos, no page scroll; HA 2nd night MIA @ CHA Oct 24: faded house left of a solid plane). A team on an
     HA 2nd night is always the away team, so the home (mirrored) column is checked with AH 2nd night (WAS @ CHI) and HA
     1st night (CHI @ MIL); likewise HH only occurs in home columns and AA only in away columns.
+- **Matchup = game link** (item 2, v1.17.0): round 4's hover "↗" (`GameLinkButton`, `.ck-open-link`) is gone. `MatchLink`
+  (GameCard.tsx) wraps the teams + scores — League List / Team List rows (`.ck-teams`), Team Calendar cells (desktop), the
+  week view's line (`.ck-mline`, a CSS subgrid over the line's columns 1–11, so alignment is unchanged) — in a real
+  `<a href target="_blank" rel="noopener noreferrer" draggable=false>`; records, Fatigue components, OT and the copy button
+  stay outside it. Widget API: `gameLink?: (game) => url | undefined` (was `onOpenGameLink(gameId)`); the shell passes
+  `appGameLink` (App.tsx → `gameLinkUrl`, unchanged rule: feed `dateEt`, no link while a team is undecided). Styling:
+  text colour as before, pointer + underline on hover, accent ring on keyboard focus; `.ck-capturing` drops underline
+  and ring, so images never show link styling.
+  - **Marquee vs click** (`selection.ts`): a press on a game link may start a box (other links/controls still can't);
+    pointer capture is taken only once the press becomes a drag (4 px), so a plain click reaches the link; the click
+    that ends a drag started on a link is swallowed (one click, listener removed after that task).
+  - Headless Chromium opens no tab on a middle-click (not even for a bare `<a target="_blank">`) and not reliably on
+    ctrl-click, so e2e checks those at the event level (a real middle / ctrl click on the `<a>`, the auxclick / click
+    reaches the window uncancelled); click and Enter open the expected URL in a new tab.
+  - Perf (A/B item 1 vs item 2, 1920 × 911): League List 2938 → 2767 ms (−6 %), Team List 231 → 262 ms (both builds swing
+    between ~200 and ~800 ms run to run). Perf guard passed (League scroll main thread 2873 ms of the 2913 limit — the
+    limit is close on this PC; frames unchanged).
+  - Tests: `tests/gamelink.test.tsx` (an `<a>` with the URL in all four views, nothing hover-only, none for TBD / without
+    gameLink), `tests/selection.test.tsx` (drag from a game link selects, its closing click is cancelled, a plain click
+    isn't), e2e `gamelink.spec.ts` (all four views: href, idle vs hover look, capture class, click / Enter / middle /
+    ctrl, Tab reaches the link and the copy button still copies, a drag from a link selects 3 rows and opens nothing).
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

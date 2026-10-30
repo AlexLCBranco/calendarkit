@@ -102,7 +102,7 @@ for (const size of SIZES) {
           const fx = [...l.querySelectorAll('.ck-mfx .ck-fx')];
           if (!fx.length) continue;
           n++;
-          const logos = [...l.querySelectorAll(':scope > .ck-logo-backing, :scope > .ck-logo-empty')].map((e) => e.getBoundingClientRect());
+          const logos = [...l.querySelectorAll('.ck-mline > .ck-logo-backing, .ck-mline > .ck-logo-empty')].map((e) => e.getBoundingClientRect());
           const [a, h] = fx.map((e) => e.getBoundingClientRect());
           fx.forEach((e) => widths.add(e.getBoundingClientRect().width.toFixed(2)));
           // the away component starts under the away logo, the home one ends under the home logo; they don't touch

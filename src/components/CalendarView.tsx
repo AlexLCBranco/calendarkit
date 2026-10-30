@@ -10,6 +10,7 @@ import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
 import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
 import { ClockProvider, todayAt, useClock, useClockValue } from './clock';
 import { CopyButton } from './CopyButton';
+import type { GameLink } from './GameCard';
 import { DatePickButton, DatePicker } from './DatePicker';
 import { WEEK_MIN_WIDTH } from './dayflow';
 import { LeagueListView, LeagueListWeek, listDays, listTitle, nearestDay } from './LeagueListView';
@@ -71,8 +72,8 @@ export interface CalendarViewProps {
   now?: number;
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
-  /** A "↗" on every game (lists, calendar cells, week lines) raises this with its id; the host opens the game's page. */
-  onOpenGameLink?: (gameId: string) => void;
+  /** The game page URL for a game (or undefined): every matchup (lists, calendar cells, week lines) links to it, new tab. */
+  gameLink?: GameLink;
   /** Told whenever the user changes mode, layout, team, day, weeks or the TV filter (e.g. to sync a URL). */
   onStateChange?: (state: CalendarState) => void;
   /** Shown first in the top bar (e.g. "NBA schedule 2026-27"). */
@@ -89,7 +90,7 @@ export const STALE_AFTER_MS = 36 * 3_600_000;
 const DEFAULT_TEAM = TEAMS[0]!.id;
 
 
-export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, onOpenGameLink, onStateChange, title, note, updatedAt }: CalendarViewProps) {
+export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt }: CalendarViewProps) {
   // The clock (round 4): one minute-aligned timer; what shows the time of day reads it. `now` (the default day, the
   // next game, games over) is the time the widget opened — a tick no longer re-renders the view.
   const clock = useClock(fixedNow);
@@ -388,14 +389,14 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         {team && <TeamHeader teamId={state.teamId} compact={compact} />}
         {team ? (
           list ? (
-            <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} onOpenGameLink={onOpenGameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
+            <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
           ) : (
-            <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} onOpenGameLink={onOpenGameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
+            <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} />
           )
         ) : list ? (
-          <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} onOpenGameLink={onOpenGameLink} nav={false} />
+          <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
         ) : weekView ? (
-          <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} onOpenGameLink={onOpenGameLink} />
+          <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} gameLink={gameLink} />
         ) : (
           <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
         )}

@@ -6,7 +6,7 @@ import { addDays, hasNationalTv, isOver, monthCells, nationalTv, opponentSecondN
 import { teamThreeInFour, type ThreeInFour } from '../data/scheduleTags';
 import { TEAM_BY_ID } from '../data/teams';
 import { CopyButton } from './CopyButton';
-import { GameCard, GameLinkButton } from './GameCard';
+import { GameCard, type GameLink } from './GameCard';
 import { monthNav, PeriodNav } from './PeriodNav';
 import { fmtDate, isCompact, useTeamB2B, WEEKDAYS, type WidgetSize } from './widget';
 
@@ -51,7 +51,7 @@ export interface TeamMonthGridProps {
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
   /** The "↗" on each game cell: raised with its id; the host opens the game's page. */
-  onOpenGameLink?: (gameId: string) => void;
+  gameLink?: GameLink;
   /** National TV games only. */
   tvOnly?: boolean;
   /** Own month header (default); off when the host shows the navigation (CalendarView's top bar). */
@@ -63,7 +63,7 @@ export interface TeamMonthGridProps {
 
 type Bar = { kind: 'full' | 'start' | 'end'; i: number; pair: B2BPair };
 
-export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, onOpenGameLink, tvOnly = false, nav = true, weeks: weekRows, start }: TeamMonthGridProps) {
+export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, gameLink, tvOnly = false, nav = true, weeks: weekRows, start }: TeamMonthGridProps) {
   const compact = isCompact(size);
   const byDate = useMemo(() => new Map(teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g)).map((g) => [g.dateEt, g])), [data, teamId, tvOnly]);
   const b2b = useTeamB2B(data, teamId);
@@ -165,9 +165,8 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               {/* week views can cross a month: the 1st says which */}
               <span className="ck-daynum">{weekView && date.endsWith('-01') ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
-              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} shortTif tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} />}
+              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} shortTif tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} gameLink={compact ? undefined : gameLink} />}
               {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
-              {g && onOpenGameLink && !compact && <GameLinkButton game={g} onOpen={onOpenGameLink} />}
             </div>
           );
         })}
