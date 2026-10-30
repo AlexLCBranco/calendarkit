@@ -69,9 +69,10 @@ each item are under "Decisions" ("### Round 6 (2026-10-30)", "### Round 5 (2026-
   widest chip); plane/label overlap in `two-week-fit.spec.ts`; the picker race in `features.spec.ts`.
 - The rules stay: `timeout 300` on every command, output to a file, never pipe test output into grep.
 
+**Decided:** the compact week-view chip shows the stretch without tonight's place ("7in11"): two full chips
+("7in11 · 2nd") need ~166 px under a line whose day cell is 163 px at 1280 × 900. Alex chose to keep it (2026-10-30).
+
 **Open issues:**
-- The compact week-view chip shows the stretch without tonight's place ("7in11"): two full chips ("7in11 · 2nd") need
-  ~166 px under a line whose day cell is 163 px at 1280 × 900. Waiting on Alex's choice.
 - Team views (Team Calendar cells, tablet/phone Team List) keep their own 3-in-4 chip ("3in4·2nd", sets in the
   tooltip); not merged this round.
 - The Team List's opponent tricode keeps its yellow 2nd-night dot next to the components.
