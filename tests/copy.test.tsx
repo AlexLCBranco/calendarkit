@@ -5,7 +5,7 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as htmlToImage from 'html-to-image';
-import { CAPTURE_SKIP_STYLE, captureStyleProperties, capturePixelRatio, COPY_PIXEL_RATIO, keepInCapture, MAX_CANVAS_SIDE, renderToCanvas, slackWrappingRows, WRAP_SLACK } from '../src/components/copyAsImage';
+import { CAPTURE_SKIP_STYLE, captureStyleProperties, capturePixelRatio, COPY_PIXEL_RATIO, keepInCapture, loadImage, MAX_CANVAS_SIDE, renderToCanvas, slackWrappingRows, WRAP_SLACK } from '../src/components/copyAsImage';
 import { COPY_FEEDBACK_MS, CopyButton } from '../src/components/CopyButton';
 
 afterEach(() => {
@@ -36,10 +36,35 @@ describe('style properties copied into clones (round 6: copies ~25 % faster)', (
   });
   it('renderToCanvas hands html-to-image that list (not every computed property)', async () => {
     const seen: { includeStyleProperties?: string[] }[] = [];
-    vi.spyOn(htmlToImage, 'toCanvas').mockImplementation(async (_n, o) => (seen.push(o as never), document.createElement('canvas')));
-    await renderToCanvas(document.createElement('div'), { pixelRatio: 1 });
+    vi.spyOn(htmlToImage, 'toSvg').mockImplementation(async (_n, o) => (seen.push(o as never), 'data:image/svg+xml,'));
+    void renderToCanvas(document.createElement('div'), { pixelRatio: 1 }).catch(() => undefined); // jsdom loads no images: only the SVG step matters here
+    await vi.waitFor(() => expect(seen).toHaveLength(1));
     expect(seen[0]!.includeStyleProperties).toEqual(captureStyleProperties());
     expect(seen[0]!.includeStyleProperties!.some((p) => CAPTURE_SKIP_STYLE.test(p))).toBe(false);
+  });
+});
+
+describe('loadImage (round 6: a copy that never finished on CI)', () => {
+  /** An <img> stand-in: loads (or fails) right after src is set; decode() resolves or rejects as told. */
+  const fakeImage = (decode: 'ok' | 'reject', load: 'ok' | 'error' = 'ok') =>
+    class {
+      onload?: () => void;
+      onerror?: () => void;
+      decoding = '';
+      decode = () => (decode === 'ok' ? Promise.resolve() : Promise.reject(new DOMException('The source image cannot be decoded.', 'EncodingError')));
+      set src(_: string) {
+        setTimeout(() => (load === 'ok' ? this.onload?.() : this.onerror?.()), 0);
+      }
+    } as unknown as new () => HTMLImageElement;
+
+  it('a decode() that rejects (Chrome, a very large SVG) still gives the loaded image — html-to-image waited forever', async () => {
+    const img = await Promise.race([loadImage('data:image/svg+xml,', fakeImage('reject')), new Promise((r) => setTimeout(() => r('hung'), 1000))]);
+    expect(img).not.toBe('hung');
+    expect(img).toBeTruthy();
+  });
+  it('a normal decode resolves; an image that fails to load rejects (the button then shows "!")', async () => {
+    await expect(loadImage('data:image/svg+xml,', fakeImage('ok'))).resolves.toBeTruthy();
+    await expect(loadImage('data:image/svg+xml,', fakeImage('ok', 'error'))).rejects.toThrow(/did not load/);
   });
 });
 

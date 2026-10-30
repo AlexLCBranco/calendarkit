@@ -3,7 +3,7 @@
 // every copy is laid over the app's dark background (never transparent corners), and the ratio cap is a pure
 // function so it can be unit-tested.
 
-import { toCanvas } from 'html-to-image';
+import { toSvg } from 'html-to-image';
 
 /**
  * Browsers cap canvas size (Chrome: 16384 px on a side), and a blank or failed export is the result of exceeding
@@ -78,17 +78,55 @@ export async function renderToCanvas(node: HTMLElement, options: RenderOptions):
   const restore = slackWrappingRows(node);
   const unsuspend = suspendForCapture(node);
   try {
-    return await toCanvas(node, {
-      pixelRatio,
+    // html-to-image's toCanvas, except loading the image (loadImage): the node's size as it measures it, its SVG, drawn
+    // at the pixel ratio
+    const px = (p: string) => parseFloat(getComputedStyle(node).getPropertyValue(p)) || 0;
+    const width = node.clientWidth + px('border-left-width') + px('border-right-width');
+    const height = node.clientHeight + px('border-top-width') + px('border-bottom-width');
+    const svg = await toSvg(node, {
+      width,
+      height,
       filter: keepInCapture,
       includeStyleProperties: captureStyleProperties(),
       ...(options.zoom !== undefined ? { style: { zoom: String(options.zoom) } } : {}),
-      ...(options.backgroundColor !== undefined ? { backgroundColor: options.backgroundColor } : {}),
     });
+    const img = await loadImage(svg);
+    const canvas = document.createElement('canvas');
+    canvas.width = width * pixelRatio;
+    canvas.height = height * pixelRatio;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('no 2d context');
+    if (options.backgroundColor !== undefined) {
+      ctx.fillStyle = options.backgroundColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas;
   } finally {
     unsuspend();
     restore();
   }
+}
+
+/**
+ * Loads the copy's SVG as an image. html-to-image's own loader waits on `img.decode()` and has no handler for its
+ * rejection, so when Chrome rejects the decode of a very large SVG (seen on CI: a full Team List, ~13 MB) the copy
+ * never finished and the button stayed idle forever (round 6). Here a rejected decode is only a missed head start: the
+ * image has loaded, and drawImage decodes it. A load error rejects (the button shows "!").
+ */
+export function loadImage(url: string, ImageCtor: new () => HTMLImageElement = Image): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new ImageCtor();
+    img.onload = () => {
+      img
+        .decode()
+        .catch(() => undefined)
+        .then(() => requestAnimationFrame(() => resolve(img)));
+    };
+    img.onerror = () => reject(new Error('the copy\'s image did not load'));
+    img.decoding = 'async';
+    img.src = url;
+  });
 }
 
 /** Extra width (CSS px) a wrapping flex row gets while it's cloned. */

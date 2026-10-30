@@ -39,7 +39,7 @@ const MEASURE = `(root) => {
   add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp, .ck-fm-n2, .ck-fx-b2b:not(:empty)'); // round 5: the Fatigue component's badge
   add('b2b', '.ck-fm-n1', 1); // league views' 1st night: the yellow ring around the tricode (round 4)
   add('tif', '.ck-tif, .ck-fx-chip');
-  add('leg', '.ck-fx-leg'); // round 6: the badge's leg dot
+  add('leg', '.ck-fx .ck-fx-leg'); // round 6: the badges' leg dots (not the legend's: 3 px, read too faintly on Linux)
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
   add('rest', '.ck-rest-row .ck-date, .ck-rest');
   return { width: root.offsetWidth, height: root.offsetHeight, regions: out };
