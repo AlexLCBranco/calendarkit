@@ -16,7 +16,6 @@ afterEach(cleanup);
 const DESKTOP = { width: 1200, height: 800 };
 const NARROW = { width: 1000, height: 800 }; // tablet-ish: below the 1080 px Team List column
 const NOW = Date.parse('2026-10-23T15:00:00Z');
-const ORD = ['', '1st', '2nd', '3rd'];
 const day = (d: string) => Date.parse(`${d}T00:00:00Z`) / 86_400_000;
 
 /** A team's shown games straight from the parsed feed (game types by ID prefix), by ET date. */
@@ -128,8 +127,8 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
         const o = checkFatigue(opp[0]!, opponentOf(g, teamId).teamId, g, `${label} opp`);
         // the old labels and chips are gone from the row (not among the tags either)
         expect(row.querySelectorAll('.ck-b2b-label, .ck-tif, .ck-b2b-opp'), label).toHaveLength(0);
-        // the existing dot on the opponent's tricode stays on its 2nd night
-        expect(!!row.querySelector('.ck-opp .ck-b2b-mark'), `${label} dot`).toBe(o.night === '2');
+        // round 7 (1.4): no dot on the opponent's tricode (its component says it), also on its 2nd night
+        expect(row.querySelector('.ck-opp .ck-b2b-mark'), `${label} dot`).toBeNull();
         counts.n1 += +(t.night === '1'); counts.n2 += +(t.night === '2'); counts.tif += +!!t.pos; counts.empty += +(!t.night && !t.pos);
         counts.oppN1 += +(o.night === '1'); counts.oppN2 += +(o.night === '2'); counts.oppTif += +!!o.pos; counts.oppEmpty += +(!o.night && !o.pos);
       }
@@ -171,6 +170,8 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
       render(<CalendarView data={data} size={size} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
       expect(document.querySelectorAll('.ck-fat, .ck-fx, .ck-tif, .ck-b2b-opp')).toHaveLength(0);
       expect(document.querySelectorAll('.ck-tags .ck-b2b-label').length).toBeGreaterThan(5);
+      // no opponent component here, so the opponent's 2nd night keeps its dot (round 7, 1.4)
+      expect(document.querySelectorAll('.ck-opp .ck-b2b-mark').length).toBeGreaterThan(5);
       cleanup();
     }
   });
@@ -188,12 +189,13 @@ describe('Team Calendar: 3-in-4 chip next to the B2B label', () => {
     for (const m of months) {
       for (const cell of document.querySelectorAll<HTMLElement>('.ck-team-grid [data-date]')) {
         const g = byDate.get(cell.dataset.date!);
-        const [pos] = (g && own.get(g.gameId)) ?? [0];
+        const want = g ? expected(TEAM.LAL, g).chip : '';
         const chip = cell.querySelector('[data-testid="tif"]');
-        // short chip in cells (round 4): "3in4·2nd"; the full text stays in the tooltip and aria-label
-        expect(chip?.textContent ?? '', `${cell.dataset.date}`).toBe(pos ? `3in4·${ORD[pos]}` : '');
+        // round 7 (1.3): the merged chip "4in6 · 2nd", as in the Fatigue component (was the short "3in4·2nd")
+        expect(chip?.textContent ?? '', `${cell.dataset.date}`).toBe(want);
         if (chip) {
-          expect(chip.getAttribute('data-tip')).toMatch(/^3 games in 4 days — (set|\d sets):\n/);
+          expect(chip.getAttribute('data-tip')).toMatch(new RegExp(`^${want}: \\d+ games in \\d+ days \\(.+\\), tonight the \\d+(st|nd|rd|th)$`));
+          expect(chip.getAttribute('data-tip-days')).toMatch(/^(\d{4}-\d\d-\d\d:[grt] ?)+$/);
           expect(chip.getAttribute('aria-label')).toBe(chip.getAttribute('data-tip'));
           seen++;
           const tags = [...chip.parentElement!.children];
@@ -210,7 +212,7 @@ describe('Team Calendar: 3-in-4 chip next to the B2B label', () => {
     expect(document.querySelectorAll('.ck-tif')).toHaveLength(0);
   });
 
-  it('the scale probe holds the widest chip ("3in4·3rd", the cells\' short chip)', () => {
+  it('the scale probe holds the widest merged chip of the season ("7in11 · 2nd")', () => {
     // the probe renders only while measuring; jsdom measures 0-size boxes, so check what it renders on first layout
     const seen: string[] = [];
     const orig = Element.prototype.getBoundingClientRect;
@@ -223,7 +225,10 @@ describe('Team Calendar: 3-in-4 chip next to the B2B label', () => {
     } finally {
       Element.prototype.getBoundingClientRect = orig;
     }
-    expect(new Set(seen)).toEqual(new Set(['3in4·3rd']));
+    expect(new Set(seen)).toEqual(new Set(['7in11 · 2nd']));
+    // and that is the longest chip of the season (every stretch of all 30 teams)
+    const all = [...TEAM_BY_ID.keys()].flatMap((t) => [...stretchOf(t).values()].map(([n, d, k]) => `${n}in${d} · ${ord(k)}`));
+    expect(Math.max(...all.map((c) => c.length))).toBe('7in11 · 2nd'.length);
     expect(TEAM_BY_ID.size).toBe(30);
   });
 });

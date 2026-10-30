@@ -1131,6 +1131,36 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     2 559 → 2 809 ms (v1.17.1's runs spread 1 114 – 2 862), frame p95 16.8 → 16.8 ms; Team List 443 → 281 ms, p95 16.7 →
     16.7 ms. Perf guard (1920 × 1080, vs v1.17.1 in the same run): League ×0.883, countdown ×0.959, Team ×0.889.
 
+### Round 7 (2026-10-30)
+- **1.1, middle- / ctrl-click on a matchup, automated** (test only): headless Chromium 156 *does* open a tab for both,
+  but the tab never reaches the test: a bare cross-origin `<a target="_blank">` on a localhost page opens a tab the
+  context's `page` event never reports (same-origin links and about:blank pages do get it), and a `context.route` for
+  that host holds the tab's request forever. So `gamelink.spec.ts` watches the browser's own target list (CDP
+  `Target.setDiscoverTargets`, `tabOpenedBy`), takes the stub route off before the modified clicks, and maps
+  hoopsjunkie.io to a closed local port (`--host-resolver-rules`) so the tab stays offline. Each view: middle and ctrl
+  open a tab with the expected URL, and the auxclick / ctrl-click reaches the window uncancelled. 36/36 over 3 repeats
+  at both sizes; a build whose link cancels auxclick and ctrl-clicks fails it. No manual step left.
+- **1.2, Cup knockout URLs checked against hoopsjunkie.io** (test only): plain requests get Cloudflare's 403 "Checking
+  your browser"; checked from Alex's Chrome (the page check passes on its own there, no click), with a script fetching
+  each URL same-origin and reading where it lands. All 7 games (Dec 9–16, 2025) have a page at `<ET date>/<away>-vs-<home>`,
+  every page names its first team "Away" — neutral sites included (SAS–OKC, NYK–ORL, SAS–NYK final). The wrong order
+  redirects to the day's scores (HTTP 200, no 404 anywhere). **The rule was right; the A4 fixture wasn't**: its
+  matchups were "illustrative" and two had the sides swapped (real: NYK @ TOR in the QF; NYK the designated away team vs
+  ORL in the SF), PHX scored 89 not 125. Fixture fixed from the real pages (tip-off times still illustrative).
+- **1.3, merged chip in Team Calendar cells** (and their selection images): `TifChip` shows `mergedChip` ("4in6 · 2nd",
+  purple, 3rd+ stronger), tooltip "4in6 · 2nd: 4 games in 6 days (…), tonight the 2nd" + the day strip. The probe holds
+  the season's longest chip, "7in11 · 2nd" (unit test checks it is the longest over all 30 teams). **Scales unchanged**:
+  month 1.2 (1920 × 1080) / 0.8 (1280 × 900), weeks 2.5 / 1.6; every team × month walk unclipped. **The tablet/phone
+  Team List has no 3-in-4 chip at all** (never had since round 3; round 6's handoff said otherwise — wrong). Alex
+  (2026-10-30): leave it that way.
+- **1.4, opponent dot**: gone from the opponent's tricode where its Fatigue component is shown (desktop Team List), as
+  round 6 did with the yellow tricode boxes. Kept where nothing else marks the opponent's 2nd night: tablet/phone Team
+  List and Team Calendar cells. No legend mentioned it.
+- **1.5, home plane in the 2-week view**: the away fix carried over mirrored — the home plane sits inside the line just
+  left of its letters (above the home score's digits). Over the stretches walked (`two-week-fit.spec.ts`, both sizes):
+  plane on the line above 102 → 0, on a logo disc 276 → 0, on a time label 0 → 0; `test-output/m7/planecheck.mjs`
+  also finds no plane on scores, letters or "@". The test fails on the old CSS (378 overlaps).
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

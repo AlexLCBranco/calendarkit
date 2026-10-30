@@ -287,7 +287,8 @@ test('a single game: league list card, team list card with B2B and TV', async ({
   await check(page, 'game-league-list', await copyPart(page, card, 'copy-game'), ['logo', 'text', 'tv']);
 
   await open(page, '?view=team&layout=list&team=ORL');
-  const row = page.locator('.ck-team-rows > .ck-card:has(.ck-fx-b2b:not(:empty)):has(.ck-b2b-mark)').first();
+  // both teams' B2B badges (round 7: the opponent's dot is gone beside its component)
+  const row = page.locator('.ck-team-rows > .ck-card:has(.ck-fat-team .ck-fx-b2b:not(:empty)):has(.ck-fat-opp .ck-fx-b2b:not(:empty))').first();
   await check(page, 'game-team-list', await copyPart(page, row, 'copy-game'), ['logo', 'text', 'b2b']);
 });
 

@@ -36,9 +36,9 @@ function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefin
   // final with 3-digit scores (tabular digits: any 3 are as wide) in triple overtime, so a cell with a score fits too
   const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', statusText: 'Final/3OT', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
   const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
-  // and the 3rd game of a 3-in-4 ("3in4·3rd", the cells' short chip: the widest chip text)
-  const tif: ThreeInFour = { position: 3, sets: [], merged: { ids: [], dates: [], days: 4, position: 3 } };
-  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, shortTif: true, tvPill: true, size: 'compact' };
+  // and in the widest 3-in-4 chip of the season: "7in11 · 2nd" (round 7: cells show the merged chip)
+  const tif: ThreeInFour = { position: 3, sets: [], merged: { ids: Array(7).fill(''), dates: Array(7).fill('2026-11-01'), days: 11, position: 2 } };
+  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, tvPill: true, size: 'compact' };
 }
 
 export interface TeamMonthGridProps {
@@ -165,7 +165,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               {/* week views can cross a month: the 1st says which */}
               <span className="ck-daynum">{weekView && date.endsWith('-01') ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
-              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} shortTif tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} gameLink={compact ? undefined : gameLink} />}
+              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} gameLink={compact ? undefined : gameLink} />}
               {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
             </div>
           );

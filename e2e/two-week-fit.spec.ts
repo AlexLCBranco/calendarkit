@@ -14,7 +14,7 @@ for (const size of [
   { width: 1920, height: 911 },
   { width: 1280, height: 900 },
 ]) {
-  test(`two weeks at ${size.width}×${size.height}: no page scroll on any stretch of the season, text at full size, no plane on a time label`, async ({ page }) => {
+  test(`two weeks at ${size.width}×${size.height}: no page scroll on any stretch of the season, text at full size, no plane on a time label, the line above or a logo`, async ({ page }) => {
     test.setTimeout(120_000);
     await page.setViewportSize(size);
     await page.clock.setFixedTime(NOW);
@@ -55,10 +55,21 @@ for (const size of [
         const labels = [...document.querySelectorAll('.ck-week-view .ck-tlabel')].map((l) => ({ text: l.textContent!, r: ink(l) }));
         const planes = [...document.querySelectorAll('.ck-week-view .ck-fm-plane')];
         const overlaps: string[] = [];
+        const hit = (p: DOMRect, r: DOMRect) => p.left < r.right - 0.5 && r.left < p.right - 0.5 && p.top < r.bottom - 0.5 && r.top < p.bottom - 0.5;
         for (const pl of planes) {
           const p = pl.getBoundingClientRect();
-          for (const { text, r } of labels)
-            if (p.left < r.right - 0.5 && r.left < p.right - 0.5 && p.top < r.bottom - 0.5 && r.top < p.bottom - 0.5) overlaps.push(`${pl.closest<HTMLElement>('[data-game-id]')!.dataset.gameId} under "${text}"`);
+          const li = pl.closest<HTMLElement>('[data-game-id]')!;
+          const id = li.dataset.gameId;
+          for (const { text, r } of labels) if (hit(p, r)) overlaps.push(`${id} under "${text}"`);
+          // round 7 (1.5): nor over the line above (home planes over their tricode's corner: 102 places) or a logo's
+          // disc (the home logo: 276), on either team's side
+          const above = li.previousElementSibling;
+          if (above?.matches('li') && hit(p, above.getBoundingClientRect())) overlaps.push(`${id} over the line above`);
+          for (const l of li.querySelectorAll('.ck-logo-backing')) {
+            const q = l.getBoundingClientRect();
+            const [cx, cy, rr] = [(q.left + q.right) / 2, (q.top + q.bottom) / 2, q.width / 2];
+            if (Math.hypot(Math.max(p.left, Math.min(cx, p.right)) - cx, Math.max(p.top, Math.min(cy, p.bottom)) - cy) < rr - 0.5) overlaps.push(`${id} on a logo`);
+          }
         }
         return { start: cells[0]!.dataset.date!, scroll: se.scrollHeight - se.clientHeight, outside, spare, font: getComputedStyle(tri).fontSize, lineH: line.height, legendIn: legend.bottom <= innerHeight, planes: planes.length, overlaps };
       });
@@ -77,8 +88,8 @@ for (const size of [
     }
     console.log(`[two-week fit] ${size.width}×${size.height}: ${stretches} stretches, tightest cell ${tightest.date} with ${tightest.spare.toFixed(1)} px spare`);
     expect(stretches).toBeGreaterThan(24);
-    console.log(`[two-week fit] ${size.width}×${size.height}: ${planes} planes, ${overlaps.length} on a time label${overlaps.length ? ` (${overlaps.slice(0, 3).join('; ')} …)` : ''}`);
+    console.log(`[two-week fit] ${size.width}×${size.height}: ${planes} planes, ${overlaps.length} on a time label, the line above or a logo${overlaps.length ? ` (${overlaps.slice(0, 3).join('; ')} …)` : ''}`);
     expect(planes, 'planes checked').toBeGreaterThan(100);
-    expect(overlaps, 'a plane on a time label').toEqual([]);
+    expect(overlaps, "a plane on a time label, the line above or a logo").toEqual([]);
   });
 }

@@ -32,10 +32,12 @@ test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   expect(await css('.ck-fat-team .ck-fx-b2b:not(:empty)', 'background-color')).toBe(YELLOW);
   expect(await css('.ck-fat-opp .ck-fx-b2b:not(:empty)', 'background-color')).toBe(YELLOW);
   expect(await css('.ck-card[data-b2b]', 'border-left-color', '::before')).toBe(YELLOW);
-  expect(await css('.ck-matchup .ck-b2b-mark', 'background-color')).toBe(YELLOW);
+  // round 7 (1.4): no opponent dot beside its component on desktop; the Team Calendar cells keep it
+  expect(await page.locator('.ck-team-rows .ck-matchup .ck-b2b-mark').count()).toBe(0);
   // Team Calendar: bars and the arrows of week-break halves
   await page.goto('/?view=team&layout=calendar&team=ORL');
   expect(await css('.ck-b2b-bar', 'background-color')).toBe(YELLOW);
+  expect(await css('.ck-day-cell .ck-opp .ck-b2b-mark', 'background-color')).toBe(YELLOW);
   for (const month of ['November 2026', 'December 2026', 'January 2027', 'February 2027', 'March 2027']) {
     if ((await page.locator('.ck-b2b-bar-start').count()) || (await page.locator('.ck-b2b-bar-end').count())) break;
     await page.getByLabel('Next month').click();

@@ -5,7 +5,7 @@ import { Fragment, type ReactNode } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { finalScore, isOver, localDate, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord, type Tipoff } from '../data/model';
 import { countdownLabel, todayAt, useClockValue } from './clock';
-import { threeInFourLabel, threeInFourTip, type ThreeInFour } from '../data/scheduleTags';
+import { mergedChip, mergedDays, mergedTip, type ThreeInFour } from '../data/scheduleTags';
 import { teamLogo } from '../data/teams';
 import { CopyButton } from './CopyButton';
 import { FatigueMark } from './FatigueMark';
@@ -41,10 +41,8 @@ export interface GameCardProps {
   shortB2B?: boolean;
   /** Team view: tooltip when the opponent is on the 2nd night of a back-to-back (yellow dot on its tricode). */
   opponentB2B?: string;
-  /** Team view: the selected team's 3-in-4 position and sets for this game ("3-in-4 · 2nd" chip). */
+  /** Team view (calendar cells): the selected team's 3-in-4 stretch for this game, as the merged chip "4in6 · 2nd". */
   tif?: ThreeInFour;
-  /** Team view: the short chip "3in4·2nd" (calendar cells). */
-  shortTif?: boolean;
   /** National TV as one "TV" pill with the network names in its tooltip (calendar cells), instead of the names. */
   tvPill?: boolean;
   /**
@@ -165,23 +163,25 @@ export function B2BLabel({ night, short = false }: { night: B2BNight; short?: bo
 }
 
 /**
- * "3-in-4 · 2nd" (purple; the 3rd game stronger); tooltip lists every set. `opp`: the opponent's, lighter. `short`:
- * "3in4·2nd" (calendar cells; the full text stays in the tooltip).
+ * The merged 3-in-4 chip "4in6 · 2nd" (round 7, 1.3: the same chip as the Fatigue component; was "3in4·2nd" with a line
+ * per set): purple, the 3rd game on stronger. Tooltip: the stretch in words and its day strip.
  */
-export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeInFour; team?: string; opp?: boolean; short?: boolean }) {
-  const tip = threeInFourTip(tif, opp ? team : undefined);
+export function TifChip({ tif }: { tif: ThreeInFour }) {
+  const m = tif.merged;
+  const tip = `${mergedChip(m)}: ${mergedTip(m)}`;
   return (
     <span
-      className={`ck-tif ck-tif-pos-${tif.position}${opp ? ' ck-tif-opp' : ''}`}
-      data-testid={opp ? 'tif-opp' : 'tif'}
-      data-position={tif.position}
+      className={`ck-tif ck-tif-pos-${Math.min(3, m.position)}`}
+      data-testid="tif"
+      data-position={m.position}
       data-sets={tif.sets.length}
       data-tip={tip}
+      data-tip-days={mergedDays(m)}
       aria-label={tip}
       role="img"
       tabIndex={0}
     >
-      {threeInFourLabel(tif, short)}
+      {mergedChip(m)}
     </span>
   );
 }
@@ -189,7 +189,7 @@ export function TifChip({ tif, team, opp = false, short = false }: { tif: ThreeI
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, shortTif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -232,6 +232,9 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   // the other team, logos on the outside. Each side wraps as one unit in narrow cells.
   const [first, second] = side ? [side.team, side.opponent] : [game.awayTeam, game.homeTeam];
   const fx = !side && fatigueSlots && !!fatigue;
+  // round 7 (1.4): no dot on the opponent's tricode where its Fatigue component is shown (desktop Team List columns), as
+  // round 6 dropped the yellow tricode boxes beside the component; elsewhere it is the only mark of the opponent's 2nd night
+  const oppDot = !fatigueColumns && opponentB2B;
   const matchup =
     side && !teamFirst ? (
       <span className="ck-matchup">
@@ -239,7 +242,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
           <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}
           <span className={`ck-team ck-opp${loss(false)}`}>
             {teamLabel(side.opponent)}
-            {opponentB2B && <B2BDot tip={opponentB2B} />}
+            {oppDot && <B2BDot tip={oppDot} />}
           </span>
           {result && ' '}
           {result && score(result.oppScore, !result.win)}
@@ -264,7 +267,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
             {result && ' '}
             <span className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
               {fatigue ? <FatigueMark f={fatigue.get(second.teamId)} component={fx}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
-              {side && opponentB2B && <B2BDot tip={opponentB2B} />}
+              {side && oppDot && <B2BDot tip={oppDot} />}
             </span>{' '}
             {logos && <TeamLogo team={second} />}
           </span>
@@ -287,7 +290,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   const bracket = side && nights.length ? nights.join(' ') : undefined;
   const cols = fatigueColumns && !!side;
   const b2bLabels = side && b2b.map((n) => <B2BLabel key={n.night} night={n} short={shortB2B} />);
-  const tifChip = side && tif && <TifChip tif={tif} short={shortTif} />;
+  const tifChip = side && tif && <TifChip tif={tif} />;
 
   return (
     <article
