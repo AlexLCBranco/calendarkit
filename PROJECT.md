@@ -1737,11 +1737,17 @@ same from a gauntlet page. calendarkit's `SlateView` = its scroller + notes tool
 - **Tests.** e2e `slate-same.spec.ts` (new): v1.27.0 built and served in the same run (`e2e/refbuild.ts`); Slate on screen
   and its copied images **pixel for pixel equal** at 1280 × 900 and 1920 × 1080, nights of 1, 5, 12 and 15 games, with
   notes (all three slots on show, a long note), with no notes, with "Hide all notes" — 48 screen + copy comparisons,
-  all identical. Shown to catch a change: a 1 % opacity on the streak text fails it (2 508 px). The screen comparison
-  retakes its screenshots (reload before the last of 3 tries): on CI once in 24, 7 px of one logo came out a level apart
-  between two page loads of identical markup. e2e `slate-part.spec.ts`: slate.html's cards = calendarkit's (masked logos,
-  compared by address and size instead; the card's outer 3 px and 10 px corners left out — they blend with what is behind
-  the card, by design different), nothing drawn between the cards, its requests (own files, the snapshot once for 3
+  all identical, locally byte for byte (48 / 48 screens over 2 runs at both sizes). Shown to catch a change: a 1 % opacity
+  on the streak text fails it (2 508 px, also with the retries below). Rasterization noise, found and handled (the copies
+  never had any): the screen comparison retakes its screenshots (reload before the last of 3 tries) — on CI, once in 24,
+  7 px came out a level apart between two loads of identical markup; when still not identical, only the 10 × 10 px
+  rounded corners of cards and note boxes may differ (they blend with the backdrop; 7–17 px, ≤ 2 levels, seen against the
+  live site), every other pixel must match; **against the live site** (E2E_BASE_URL) the logo discs are masked and the
+  logos compared by file and size — there the current build's logos come over the network and the reference's from a
+  local server, and every card's logo came out up to 38 levels apart at 1280 (same files: the copies embedding them are
+  byte-identical). e2e `slate-part.spec.ts`: slate.html's cards = calendarkit's (logo discs masked, logos compared by
+  address and size instead; the card's outer 3 px and 10 px corners left out — they blend with what is behind the card,
+  by design different), nothing drawn between the cards, its requests (own files, the snapshot once for 3
   widgets, logos, font — nothing else, nothing at rest), no timer / frame at rest (3 s) and after typing (only the debounce),
   a note typed in calendarkit shows in the widget and back. Unit `slatepart.test.tsx`: imports (only slate / data / shared
   + React), no html/body CSS, a host's own store, **one storage listener for 3 widgets**, every widget of a page in sync,
@@ -1832,7 +1838,15 @@ stale-data stamp and the midnight timeout are the app shell's, not the part's).
 scroll ×0.15, day-nav ×0.74, Team List scroll ×0.46 vs v1.17.1. **`team-month-nav` failed locally** (×1.44, then ×1.39,
 ×1.31, ×1.02 on reruns) — and failed the same way with **v1.27.0 served in its place** (×0.98, ×1.09, ×1.98): both arms are
 bimodal per run on this PC (≈250–310 or ≈415–680 ms), the reference included. Not this round's code; the guard was not
-loosened. CI's perf job (its own runner) passed it on v1.27.1.
+loosened. CI's perf job (its own runner) passed it on v1.27.1 and v1.28.0.
+**At the new address** (v1.28.0, built under /calendar/): Windows PC loads 338 / 283 ms (week view, Team Calendar), League
+scroll ×0.25, day-nav ×0.81, Team List scroll ×0.90, switches 23–59 ms, marquee p95 17–18 ms (month-nav ×1.37: the noise
+above); **CI (v1.28.0): loads 230 / 320 / 241 ms, scroll ×0.18, day-nav ×0.58, Team List ×0.64, month-nav ×1.10, switches
+15–31 ms — all inside the limits.** The perf guard runs on a local build only (a deployed site adds network time), so "at
+the new address" = the build served under /calendar/. **The whole e2e suite also ran against the live site**
+(E2E_BASE_URL=https://gauntlet-home.vercel.app, 2026-10-31): desktop-xl 89 + 45 + 8 + 10, desktop 109 + the 3 Slate
+pixel checks, tablet + phone 55 — all pass (after the live-site handling of the Slate pixel checks above). App bundle
+341.5 KB (111.0 KB gz), +4.8 KB for the hand-off.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
