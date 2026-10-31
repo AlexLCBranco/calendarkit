@@ -50,7 +50,7 @@ describe('team header', () => {
       const h = screen.getByTestId('team-header');
       expect(within(h).getByRole('heading').textContent).toBe('Boston Celtics');
       const img = h.querySelector('img')!;
-      expect(img.getAttribute('src')).toBe('/logos/BOS.svg');
+      expect(img.getAttribute('src')).toBe('/calendar/logos/BOS.svg');
       expect(img.getAttribute('width')).toBe(String(px));
       expect(img.parentElement!.classList).toContain('ck-logo-backing');
     });
@@ -67,7 +67,7 @@ describe('team picker', () => {
     team(TEAM.BOS, 'list');
     const btn = screen.getByTestId('team-picker');
     expect(btn.textContent).toMatch(/Boston Celtics/);
-    expect(imgs(btn)).toEqual(['/logos/BOS.svg']);
+    expect(imgs(btn)).toEqual(['/calendar/logos/BOS.svg']);
     expect(btn.getAttribute('aria-haspopup')).toBe('listbox');
     expect(screen.getByRole('button', { name: /^Team Boston Celtics/ })).toBe(btn);
     fireEvent.click(btn);
@@ -81,7 +81,7 @@ describe('team picker', () => {
     for (const o of options) {
       const t = TEAM_BY_ID.get(Number(o.getAttribute('data-team-id')))!;
       expect(o.textContent).toBe(`${t.city} ${t.name}`);
-      expect(imgs(o)).toEqual([`/logos/${t.tricode}.svg`]);
+      expect(imgs(o)).toEqual([`/calendar/logos/${t.tricode}.svg`]);
     }
     expect(options.find((o) => o.getAttribute('aria-selected') === 'true')!.textContent).toBe('Boston Celtics');
     cleanup();
@@ -183,7 +183,7 @@ describe('selected team first, both logos', () => {
         const self = home ? g.homeTeam : g.awayTeam;
         const [s, o] = g.status === 'final' ? [` ${self.score}`, ` ${opp.score}`] : ['', ''];
         expect(row.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim(), g.gameId).toBe(`${tri}${s} ${home ? 'vs' : '@'}${o} ${opp.teamTricode}`);
-        expect(imgs(row), g.gameId).toEqual([`/logos/${tri}.svg`, `/logos/${opp.teamTricode}.svg`]);
+        expect(imgs(row), g.gameId).toEqual([`/calendar/logos/${tri}.svg`, `/calendar/logos/${opp.teamTricode}.svg`]);
         expect(row.querySelector('.ck-matchup > :first-child .ck-self')!.textContent).toBe(tri); // always first
       }
       });
@@ -201,7 +201,7 @@ describe('selected team first, both logos', () => {
           const self = home ? g.homeTeam : g.awayTeam;
           const [sc, o] = g.status === 'final' ? [` ${self.score}`, ` ${opp.score}`] : ['', '']; // final scores (scores.test.tsx)
           expect(cell.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`${tri}${sc} ${home ? 'vs' : '@'}${o} ${opp.teamTricode}`);
-          expect(imgs(cell)).toEqual([`/logos/${tri}.svg`, `/logos/${opp.teamTricode}.svg`]);
+          expect(imgs(cell)).toEqual([`/calendar/logos/${tri}.svg`, `/calendar/logos/${opp.teamTricode}.svg`]);
           n++;
         }
         if (i < months.length - 1) fireEvent.click(screen.getByLabelText('Next month'));

@@ -21,7 +21,7 @@ type RawGame = { gameId: string; gameDateEst: string; gameStatus: number; gameSt
 /** The served snapshot's regular-season / Cup games by ET date (independent of the app's code). */
 const snapshot = (page: Page) =>
   page.evaluate(async () => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const out: Record<string, RawGame[]> = {};
     for (const d of raw.leagueSchedule.gameDates as { games: RawGame[] }[])
       for (const g of d.games) if (/^00[2456]/.test(g.gameId)) (out[g.gameDateEst.slice(0, 10)] ??= []).push(g);
@@ -31,7 +31,7 @@ const snapshot = (page: Page) =>
 async function openSlate(page: Page, date?: string) {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/?view=league&layout=slate${date ? `&date=${date}` : ''}`);
+  await page.goto(`/calendar/?view=league&layout=slate${date ? `&date=${date}` : ''}`);
   await expect(page.getByTestId('slate')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }
@@ -41,7 +41,7 @@ const ids = (page: Page) => page.locator('[data-testid="slate"] .ck-slate-card')
 
 plain('opens on today (the clock), not on a date in the URL', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
-  await page.goto('/?view=league&layout=slate&date=2026-12-25');
+  await page.goto('/calendar/?view=league&layout=slate&date=2026-12-25');
   await expect(page.getByTestId('slate')).toBeVisible();
   expect(await page.getByTestId('day-title').textContent()).toBe('Sunday, November 15, 2026');
   await expect(page.getByRole('tab', { name: 'Slate' })).toHaveAttribute('aria-selected', 'true');

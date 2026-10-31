@@ -87,7 +87,7 @@ describe('week view: structure', () => {
       // round 5: the parts up to the home logo are the game link's (a subgrid on the same columns)
       expect([...l.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-mline', 'ck-tv-slot']);
       expect([...l.querySelector('.ck-mline')!.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-logo-backing', 'ck-mtri', 'ck-mscore', 'ck-at', 'ck-mscore', 'ck-mtri', 'ck-logo-backing']);
-      expect([...l.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([`/logos/${g.awayTeam.teamTricode}.svg`, `/logos/${g.homeTeam.teamTricode}.svg`]);
+      expect([...l.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([`/calendar/logos/${g.awayTeam.teamTricode}.svg`, `/calendar/logos/${g.homeTeam.teamTricode}.svg`]);
     }
     expect(screen.queryByTestId('month-legend')).toBeNull();
     expect(cellOf(el.container, '2026-11-10').querySelector('[data-testid="tipoff"], [data-testid="tv-badge"], [data-testid="open-game"], .ck-tag')).toBeNull();

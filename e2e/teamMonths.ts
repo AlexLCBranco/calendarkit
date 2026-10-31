@@ -16,7 +16,7 @@ export const monthOfTitle = (title: string) => {
 export const teamMonths = (page: Page, tri: string) =>
   page.evaluate(async (tri) => {
     type G = { gameId: string; gameDateEst: string; homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } };
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const dates = (raw.leagueSchedule.gameDates as { games: G[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId) && (g.homeTeam.teamTricode === tri || g.awayTeam.teamTricode === tri)).map((g) => g.gameDateEst.slice(0, 7));
     const out: string[] = [];
     const last = dates.sort().at(-1)!;

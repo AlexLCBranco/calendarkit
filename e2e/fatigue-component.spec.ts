@@ -30,7 +30,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'siz
 async function open(page: Page, size: { width: number; height: number }, search: string) {
   await page.setViewportSize(size);
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await page.waitForFunction(() => [...document.images].every((i) => i.complete) && !!document.querySelector('[data-game-id]'));
   await page.evaluate(() => document.fonts.ready);
 }
@@ -269,7 +269,7 @@ for (const size of SIZES) {
     await expect(legend).toHaveText(MARKS);
     // the League List narrower than the component needs (tablets): boxes and their legend
     await page.setViewportSize({ width: 900, height: size.height });
-    await page.goto('/?view=league&layout=list&date=2026-10-24');
+    await page.goto('/calendar/?view=league&layout=list&date=2026-10-24');
     await page.waitForSelector('[data-game-id]');
     expect(await page.locator('.ck-fx').count()).toBe(0);
     expect(await page.locator('.ck-fm-n2, .ck-fm-n1').count()).toBeGreaterThan(3);

@@ -41,7 +41,7 @@ describe('verifyDeploy', () => {
     expect(urls).toHaveLength(TRIES);
     expect(sleeps.reduce((a, b) => a + b, 0)).toBe((TRIES - 1) * INTERVAL_MS);
     expect((TRIES * INTERVAL_MS) / 60_000).toBe(10);
-    expect(urls[0]).toMatch(/^https:\/\/calendarkit-brown\.vercel\.app\/data\/schedule\.json\?/);
+    expect(urls[0]).toMatch(/^https:\/\/gauntlet-home\.vercel\.app\/calendar\/data\/schedule\.json\?/);
   });
 });
 

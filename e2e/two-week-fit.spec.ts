@@ -26,7 +26,7 @@ for (const size of [
     for (const first of ['2026-10-18', '2026-10-25'])
     for (let guard = 0, opened = false; guard < 20; guard++) {
       if (!opened) {
-        await page.goto(`/?view=league&layout=calendar&weeks=2&date=${first}`);
+        await page.goto(`/calendar/?view=league&layout=calendar&weeks=2&date=${first}`);
         await page.waitForSelector('.ck-month-game');
         await page.evaluate(() => document.fonts.ready);
         opened = true;

@@ -6,7 +6,8 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-export const LIVE_URL = 'https://calendarkit-brown.vercel.app/data/schedule.json';
+// round 10: calendarkit lives under the gauntlet's address (the old one only redirects browsers)
+export const LIVE_URL = 'https://gauntlet-home.vercel.app/calendar/data/schedule.json';
 export const TRIES = 20;
 export const INTERVAL_MS = 30_000;
 

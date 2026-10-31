@@ -4,6 +4,11 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/calendar", "destination": "/index.html" },
+    { "source": "/calendar/", "destination": "/index.html" },
+    { "source": "/calendar/:path+", "destination": "/:path+" }
+  ],
   "headers": [
     {
       "source": "/data/(.*)",
@@ -15,7 +20,25 @@
       ]
     },
     {
+      "source": "/calendar/data/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
       "source": "/version.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/calendar/version.json",
       "headers": [
         {
           "key": "Cache-Control",

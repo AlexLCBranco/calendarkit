@@ -8,7 +8,7 @@ test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info
 
 const H = 3_600_000;
 const metaTime = async (page: Page) => {
-  await page.goto('/data/schedule.json');
+  await page.goto('/calendar/data/schedule.json');
   return (JSON.parse(await page.locator('body').innerText()) as { meta: { time: string } }).meta.time;
 };
 /** Expected text, worked out here (not with the app's code). */
@@ -18,7 +18,7 @@ const expected = (iso: string) =>
 test('stamp in the viewer\'s zone, muted while fresh; orange with a tooltip after 36 h', async ({ page }, info) => {
   const time = await metaTime(page);
   await page.clock.setFixedTime(Date.parse(time) + 2 * H);
-  await page.goto('/');
+  await page.goto('/calendar/');
   const stamp = page.getByTestId('data-updated');
   await expect(stamp).toHaveText(expected(time));
   await expect(stamp).toHaveCSS('color', 'rgb(139, 147, 163)'); // --ck-muted
@@ -32,7 +32,7 @@ test('stamp in the viewer\'s zone, muted while fresh; orange with a tooltip afte
   expect(s!.y + s!.height).toBeLessThanOrEqual(bar.y + bar.height + 0.5);
 
   await page.clock.setFixedTime(Date.parse(time) + 37 * H);
-  await page.goto('/');
+  await page.goto('/calendar/');
   await expect(stamp).toHaveCSS('color', 'rgb(224, 138, 60)'); // --ck-stale orange (B2B is yellow since round 4)
   await stamp.hover();
   await expect(page.getByTestId('tooltip')).toContainText('daily update may have failed');
@@ -41,7 +41,7 @@ test('stamp in the viewer\'s zone, muted while fresh; orange with a tooltip afte
 test('Try again: the first request fails, the retry loads the schedule', async ({ page }) => {
   let n = 0;
   await page.route('**/data/schedule.json', (route) => (++n === 1 ? route.fulfill({ status: 503, body: 'down' }) : route.continue()));
-  await page.goto('/');
+  await page.goto('/calendar/');
   await expect(page.getByRole('alert')).toContainText('HTTP 503');
   await page.getByRole('button', { name: 'Try again' }).click();
   await expect(page.getByTestId('top-bar')).toBeVisible();

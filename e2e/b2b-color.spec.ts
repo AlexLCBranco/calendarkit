@@ -14,7 +14,7 @@ test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   const css = (sel: string, prop: string, pseudo?: string) => page.locator(sel).first().evaluate((e, [p, ps]) => getComputedStyle(e, ps || null).getPropertyValue(p!), [prop, pseudo]);
   // League List: the Fatigue components' badges (round 6: the tricodes beside them lost their yellow marks)
-  await page.goto('/?view=league&layout=list&date=2026-10-24');
+  await page.goto('/calendar/?view=league&layout=list&date=2026-10-24');
   await expect(page.locator('.ck-card .ck-fx-b2b').first()).toBeVisible();
   expect(await css('.ck-card .ck-fx-b2b', 'background-color')).toBe(YELLOW);
   expect(await page.locator('.ck-card .ck-fm-n1, .ck-card .ck-fm-n2').count()).toBe(0);
@@ -22,11 +22,11 @@ test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   expect(await css('[data-testid="data-updated"]', 'color')).toBe(ORANGE);
   expect(await page.locator('.ck-root').evaluate((e) => getComputedStyle(e).getPropertyValue('--ck-stale').trim())).toBe('#e08a3c');
   // week view, 2 weeks (no component): the 2nd night's tricode filled, the 1st ringed (round 4, item 6)
-  await page.goto('/?view=league&layout=calendar&date=2026-11-15&weeks=2');
+  await page.goto('/calendar/?view=league&layout=calendar&date=2026-11-15&weeks=2');
   expect(await css('.ck-month-game .ck-fm-n2', 'background-color')).toBe(YELLOW);
   expect(await css('.ck-month-game .ck-fm-n1', 'outline-color')).toBe(YELLOW);
   // Team List: labels, bracket, opponent dot and "2/2"
-  await page.goto('/?view=team&layout=list&team=ORL');
+  await page.goto('/calendar/?view=team&layout=list&team=ORL');
   // (round 5: the Fatigue component's badge and night icons in the columns, both teams)
   await expect(page.locator('.ck-fx-b2b:not(:empty)').first()).toBeAttached();
   expect(await css('.ck-fat-team .ck-fx-b2b:not(:empty)', 'background-color')).toBe(YELLOW);
@@ -35,7 +35,7 @@ test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   // round 7 (1.4): no opponent dot beside its component on desktop; the Team Calendar cells keep it
   expect(await page.locator('.ck-team-rows .ck-matchup .ck-b2b-mark').count()).toBe(0);
   // Team Calendar: bars and the arrows of week-break halves
-  await page.goto('/?view=team&layout=calendar&team=ORL');
+  await page.goto('/calendar/?view=team&layout=calendar&team=ORL');
   expect(await css('.ck-b2b-bar', 'background-color')).toBe(YELLOW);
   expect(await css('.ck-day-cell .ck-opp .ck-b2b-mark', 'background-color')).toBe(YELLOW);
   for (const month of ['November 2026', 'December 2026', 'January 2027', 'February 2027', 'March 2027']) {

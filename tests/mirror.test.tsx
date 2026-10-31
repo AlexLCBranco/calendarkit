@@ -19,7 +19,7 @@ const text = (el: Element) => el.textContent!.replace(/\s+/g, ' ').trim();
 /** The matchup's parts in document order: logo file names, tricodes, scores, "@"/"vs". */
 const parts = (m: Element) =>
   [...m.querySelectorAll('img, .ck-team, .ck-score, .ck-score-slot, .ck-vsat')].map((e) =>
-    e.tagName === 'IMG' ? `[${e.getAttribute('src')!.slice(7, 10)}]` : e.classList.contains('ck-score-slot') ? '_' : e.classList.contains('ck-score') ? e.textContent : e.firstChild?.textContent ?? '',
+    e.tagName === 'IMG' ? `[${e.getAttribute('src')!.match(/logos\/(\w+)\.svg/)![1]}]` : e.classList.contains('ck-score-slot') ? '_' : e.classList.contains('ck-score') ? e.textContent : e.firstChild?.textContent ?? '',
   );
 
 const played = game({ date: '2026-11-10', utc: '2026-11-11T00:00:00Z', away: TEAM.BOS, home: TEAM.NYK, final: [113, 121] });

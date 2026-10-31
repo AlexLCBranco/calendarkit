@@ -10,7 +10,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop' && info.
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await expect(page.locator('.ck-team-grid')).toBeVisible();
 }
 
@@ -18,7 +18,7 @@ async function open(page: Page, search: string) {
 const feedDates = (page: Page, tri: string) =>
   page.evaluate(async (tri) => {
     type G = { gameId: string; gameDateEst: string; homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } };
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     return (raw.leagueSchedule.gameDates as { games: G[] }[])
       .flatMap((d) => d.games)
       .filter((g) => /^00[2456]/.test(g.gameId) && (g.homeTeam.teamTricode === tri || g.awayTeam.teamTricode === tri))

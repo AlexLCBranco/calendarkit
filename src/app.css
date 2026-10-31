@@ -56,3 +56,33 @@ body {
   font-variant-numeric: tabular-nums;
   cursor: default;
 }
+/* round 10: the old address's page when its notes could not be moved (HandoffFailed.tsx) */
+.handoff {
+  max-width: 640px;
+  margin: 64px auto;
+  padding: 0 16px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.handoff h1 {
+  font-size: 22px;
+}
+.handoff a {
+  color: #4ea1ff;
+}
+.handoff-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.handoff button {
+  background: #171a21;
+  color: #e6e8ec;
+  border: 1px solid #2a2f3a;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}

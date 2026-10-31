@@ -18,7 +18,7 @@ type RawGame = { gameId: string; gameDateEst: string; gameDateTimeUTC: string; g
 /** The snapshot's games (regular season, Cup, play-in, playoffs), every team's streak going into each, and TV. */
 const snapshot = (page: Page) =>
   page.evaluate(async () => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const games = (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
     games.sort((a, b) => a.gameDateTimeUTC.localeCompare(b.gameDateTimeUTC));
     // streak going in, per game and team: regular-season games (002) only, while every earlier one is final
@@ -50,7 +50,7 @@ const snapshot = (page: Page) =>
 async function openSlate(page: Page, date?: string) {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/?view=league&layout=slate${date ? `&date=${date}` : ''}`);
+  await page.goto(`/calendar/?view=league&layout=slate${date ? `&date=${date}` : ''}`);
   await expect(page.getByTestId('slate')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }
@@ -168,7 +168,7 @@ test('the link is a "↗" after the time: tooltip, no underline (brightens), cli
   const card = cards(page).first();
   const id = (await card.getAttribute('data-game-id'))!;
   const want = await page.evaluate(async (id) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const g = (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).find((x) => x.gameId === id)!;
     return `https://hoopsjunkie.io/games/${g.gameDateEst.slice(0, 10)}/${g.awayTeam.teamTricode.toLowerCase()}-vs-${g.homeTeam.teamTricode.toLowerCase()}`;
   }, id);

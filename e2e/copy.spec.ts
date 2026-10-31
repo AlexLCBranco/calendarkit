@@ -54,7 +54,7 @@ const MEASURE = `(root) => {
 async function open(page: Page, search: string) {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await expect(page.getByRole('tablist', { name: 'Layout' })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }
@@ -277,7 +277,7 @@ test('whole view: league list copies the day on show, at its on-screen size', as
   expect(view.target.regions.filter((r) => r.kind === 'leg').length).toBe(badges);
   // Nov 18 only: every game of the day (2 logos each), no other day
   const day = await page.evaluate(async () => {
-    const feed = await (await fetch('/data/schedule.json')).json();
+    const feed = await (await fetch('/calendar/data/schedule.json')).json();
     return feed.leagueSchedule.gameDates.flatMap((d: { games: { gameId: string; gameDateEst: string }[] }) => d.games).filter((g: { gameId: string; gameDateEst: string }) => g.gameId.startsWith('002') && g.gameDateEst.startsWith('2026-11-18')).length;
   });
   expect(day).toBe(12);
@@ -321,7 +321,7 @@ test('final scores are in the images: week view (1 and 2 weeks), league list day
   await open(page, '?view=league&layout=calendar&date=2026-10-20');
   // the snapshot's final games: Oct 20–22, 2026 (week of Oct 18)
   const finals = await page.evaluate(async () => {
-    const feed = await (await fetch('/data/schedule.json')).json();
+    const feed = await (await fetch('/calendar/data/schedule.json')).json();
     return feed.leagueSchedule.gameDates
       .flatMap((d: { games: { gameId: string; gameStatus: number; gameDateEst: string }[] }) => d.games)
       .filter((g: { gameId: string; gameStatus: number }) => /^00[2456]/.test(g.gameId) && g.gameStatus === 3)

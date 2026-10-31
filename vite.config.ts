@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { CALENDARKIT_BASE } from './src/data/address';
 
 // Site version: package.json's "version" (MAJOR.MINOR.PATCH, bumped with every app change; scripts/check-version.ts
 // enforces it in CI), shown in the page's bottom-right corner, plus the commit it was built from (Vercel and GitHub
@@ -23,6 +24,8 @@ const TIME_ZONES = ['America/New_York', 'America/Sao_Paulo'];
 const TZ_TESTS = ['tests/**/*.tz.test.ts', 'tests/**/*.tz.test.tsx'];
 
 export default defineConfig({
+  // round 10: served under the gauntlet's address, gauntlet-home.vercel.app/calendar/ (src/data/address.ts)
+  base: CALENDARKIT_BASE,
   plugins: [react(), { name: 'version-json', generateBundle() { this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify(BUILD) }); } }],
   define: { __APP_VERSION__: JSON.stringify(BUILD.version), __APP_COMMIT__: JSON.stringify(BUILD.commit), __BUILT_AT__: JSON.stringify(BUILD.builtAt) },
   test: {

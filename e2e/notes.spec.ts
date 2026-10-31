@@ -17,7 +17,7 @@ test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info
 async function openSlate(page: Page, date = '2026-11-15', now = NOW) {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.clock.setFixedTime(now);
-  await page.goto(`/?view=league&layout=slate&date=${date}`);
+  await page.goto(`/calendar/?view=league&layout=slate&date=${date}`);
   await expect(page.getByTestId('slate')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }
@@ -89,7 +89,7 @@ test('three slots: all texts kept through switching; the slot left on show comes
   await expect(card(page, 0).getByTestId('note-text')).toHaveValue('post text');
   // the clock past tip-off and past "over": still POST (nothing switches by itself)
   const tip = await page.evaluate(async (id) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     return Date.parse((raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateTimeUTC: string }[] }[]).flatMap((d) => d.games).find((g) => g.gameId === id)!.gameDateTimeUTC);
   }, id);
   for (const at of [tip + 60_000, tip + 4 * 3_600_000]) {
@@ -116,7 +116,7 @@ test('two tabs: typing and switching in one shows up in the other; the typing ta
   await openSlate(page);
   const other = await context.newPage();
   await other.clock.setFixedTime(NOW);
-  await other.goto('/?view=league&layout=slate&date=2026-11-15');
+  await other.goto('/calendar/?view=league&layout=slate&date=2026-11-15');
   await expect(other.getByTestId('slate')).toBeVisible();
   const id = (await card(page, 0).getAttribute('data-game-id'))!;
   const box = page.locator(`.ck-slate-card[data-game-id="${id}"] [data-testid="note-text"]`);
@@ -242,7 +242,7 @@ test('copy: each card with its box — the shown slot\'s label and text, no ⇄;
 test('typing on a 15-game night: no other card\'s DOM changes; keystroke → next frame timed and guarded', async ({ page }, info) => {
   await openSlate(page);
   const busy = await page.evaluate(async () => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const n = new Map<string, number>();
     for (const g of (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string }[] }[]).flatMap((d) => d.games)) if (/^00[2456]/.test(g.gameId)) n.set(g.gameDateEst.slice(0, 10), (n.get(g.gameDateEst.slice(0, 10)) ?? 0) + 1);
     return [...n].find(([, c]) => c === 15)![0];

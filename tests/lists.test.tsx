@@ -210,7 +210,7 @@ describe('league list: one day at a time (round 8)', () => {
     const card = el.container.querySelector('[data-day="2026-10-23"] article')!;
     const g = data.byDate.get('2026-10-23')![0]!;
     const imgs = [...card.querySelectorAll('img')];
-    expect(imgs.map((i) => i.getAttribute('src'))).toEqual([`/logos/${g.awayTeam.teamTricode}.svg`, `/logos/${g.homeTeam.teamTricode}.svg`]);
+    expect(imgs.map((i) => i.getAttribute('src'))).toEqual([`/calendar/logos/${g.awayTeam.teamTricode}.svg`, `/calendar/logos/${g.homeTeam.teamTricode}.svg`]);
     for (const i of imgs) expect(i.parentElement!.classList).toContain('ck-logo-backing');
     expect(card.textContent).toMatch(new RegExp(`${g.awayTeam.teamTricode}.*@.*${g.homeTeam.teamTricode}`));
   });
@@ -238,7 +238,7 @@ describe('team list', () => {
     expect(row.querySelector('[data-testid="tipoff"]')!.textContent).toBe('23:30');
     expect(row.textContent).toMatch(/LAL\s*@\s*LAC/);
     const imgs = [...row.querySelectorAll('img')];
-    expect(imgs.map((i) => i.getAttribute('src'))).toEqual(['/logos/LAL.svg', '/logos/LAC.svg']);
+    expect(imgs.map((i) => i.getAttribute('src'))).toEqual(['/calendar/logos/LAL.svg', '/calendar/logos/LAC.svg']);
     for (const i of imgs) expect(i.parentElement!.classList).toContain('ck-logo-backing');
   });
 

@@ -11,7 +11,7 @@ test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await page.waitForFunction(() => [...document.images].every((i) => i.complete) && !!document.querySelector('[data-game-id]'));
   await page.evaluate(() => document.fonts.ready);
 }

@@ -63,3 +63,23 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --project=perf --no-deps
+
+  # Round 10: the live site at its new address (gauntlet-home.vercel.app/calendar/, through the gauntlet's rewrite) once
+  # Vercel has deployed this push: the old address's redirect and notes hand-off, the gauntlet page's access to the data
+  # and notes, the smoke test and the version file. Pushes to main only (that's what deploys).
+  live:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npx tsx scripts/wait-live.ts ${{ github.sha }}
+      - run: npx playwright test --project=desktop-xl e2e/move.spec.ts e2e/smoke.spec.ts e2e/version.spec.ts
+        env:
+          E2E_BASE_URL: https://gauntlet-home.vercel.app

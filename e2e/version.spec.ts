@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures';
 
 test('v<version> in the bottom-right corner = version.json = package.json', async ({ page, request }, info) => {
-  const res = await request.get('/version.json');
+  const res = await request.get('/calendar/version.json');
   expect(res.ok()).toBe(true);
   const v = (await res.json()) as { version: string; commit: string; builtAt: string };
   expect(v.version).toMatch(/^\d+\.\d+\.\d+$/);
@@ -16,7 +16,7 @@ test('v<version> in the bottom-right corner = version.json = package.json', asyn
     expect(v.version).toBe(JSON.parse(readFileSync('package.json', 'utf8')).version);
     expect(v.commit.replace('+', '')).toBe(execSync('git rev-parse --short=7 HEAD').toString().trim());
   } else expect(res.headers()['cache-control'] ?? '').toContain('no-cache');
-  for (const search of ['/', '/?view=team&layout=list&team=BOS', '/?view=team&layout=calendar&team=BOS']) {
+  for (const search of ['/calendar/', '/calendar/?view=team&layout=list&team=BOS', '/calendar/?view=team&layout=calendar&team=BOS']) {
     await page.goto(search);
     const label = page.getByTestId('site-version');
     await expect(label).toHaveText(`v${v.version}`);

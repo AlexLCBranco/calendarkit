@@ -10,7 +10,7 @@ test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await expect(page.getByRole('tablist', { name: 'Layout' })).toBeVisible();
   await page.waitForFunction(() => [...document.images].every((i) => i.complete));
 }

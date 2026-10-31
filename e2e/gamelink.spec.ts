@@ -41,14 +41,14 @@ async function tabOpenedBy(browser: Browser, act: () => Promise<unknown>): Promi
 async function open(page: Page, context: BrowserContext, search: string) {
   await context.route('https://hoopsjunkie.io/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'stub' }));
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await page.waitForFunction(() => !!document.querySelector('[data-game-id]'));
 }
 
 /** The expected URL of a game, from the served snapshot (independent of the app's code). */
 const wantUrl = (page: Page, id: string) =>
   page.evaluate(async (id) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const gm = (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string; awayTeam: { teamTricode: string }; homeTeam: { teamTricode: string } }[] }[]).flatMap((d) => d.games).find((x) => x.gameId === id)!;
     return `https://hoopsjunkie.io/games/${gm.gameDateEst.slice(0, 10)}/${gm.awayTeam.teamTricode.toLowerCase()}-vs-${gm.homeTeam.teamTricode.toLowerCase()}`;
   }, id);

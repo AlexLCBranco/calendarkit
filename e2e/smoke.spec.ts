@@ -18,7 +18,7 @@ const shot = (page: Page, name: string, project: string) => page.screenshot({ pa
 
 test('league view and team view render without console errors', async ({ page }, info) => {
   const errors = collectErrors(page);
-  await page.goto('/');
+  await page.goto('/calendar/');
 
   // League → List (default): game days with games, week strip, TV filter.
   await expect(page.getByTestId('day-title')).toBeVisible();
@@ -56,7 +56,7 @@ test('league week view: every game listed with local logos, no broken images, no
   const errors = collectErrors(page);
   const cdn: string[] = [];
   page.on('request', (r) => r.url().includes('cdn.nba.com') && cdn.push(r.url()));
-  await page.goto('/?view=league&date=2026-11-02'); // Nov 2: 15 games
+  await page.goto('/calendar/?view=league&date=2026-11-02'); // Nov 2: 15 games
   await page.getByRole('tab', { name: 'Calendar' }).click();
   const project = info.project.name;
 
@@ -68,7 +68,7 @@ test('league week view: every game listed with local logos, no broken images, no
     await expect(page.getByRole('region', { name: 'League week' })).toBeVisible();
     await expect(page.locator('[data-date="2026-11-02"] .ck-month-game')).toHaveCount(15);
     // two weeks around Nov 15 (9 games in many time groups): the day flow across columns
-    await page.goto('/?view=league&layout=calendar&date=2026-11-15&weeks=2');
+    await page.goto('/calendar/?view=league&layout=calendar&date=2026-11-15&weeks=2');
     await expect(page.locator('[data-date="2026-11-15"] .ck-month-game')).toHaveCount(9);
     await page.waitForFunction(() => [...document.images].every((i) => i.complete));
     expect(await page.evaluate(async () => (await document.fonts.ready, document.fonts.check('600 11px "Inter ck"')))).toBe(true);
@@ -166,7 +166,7 @@ test('league week view: every game listed with local logos, no broken images, no
 
 test('Rotations action on a finished day only when ROTATIONKIT_BASE_URL is set', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto('/?view=league&date=2026-10-21'); // opening night week: long over
+  await page.goto('/calendar/?view=league&date=2026-10-21'); // opening night week: long over
   const day = page.locator('[data-day="2026-10-21"]');
   await expect(day.locator('[data-game-id]').first()).toBeVisible();
   const games = await day.locator('[data-game-id]').count();
@@ -177,7 +177,7 @@ test('Rotations action on a finished day only when ROTATIONKIT_BASE_URL is set',
 
 test('deep link opens the team view for a team', async ({ page }) => {
   const errors = collectErrors(page);
-  await page.goto('/?view=team&team=BOS');
+  await page.goto('/calendar/?view=team&team=BOS');
   await expect(page.getByTestId('team-picker')).toHaveAttribute('data-team-id', '1610612738');
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   expect(errors).toEqual([]);

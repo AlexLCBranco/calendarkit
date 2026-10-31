@@ -10,7 +10,7 @@ const NOW = new Date('2026-11-15T15:00:00Z');
 
 async function open(page: Page, team: string, extra = '') {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/?view=team&layout=list&team=${team}${extra}`);
+  await page.goto(`/calendar/?view=team&layout=list&team=${team}${extra}`);
   await page.waitForFunction(() => !!document.querySelector('[data-testid="team-list"] [data-game-id]'));
 }
 
@@ -19,7 +19,7 @@ type Snap = Record<string, { games: { id: string; date: string; tv: boolean }[];
 const snapshot = (page: Page) =>
   page.evaluate(async () => {
     type G = { gameId: string; gameDateEst: string; gameDateTimeUTC: string; homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string }; broadcasters: { nationalBroadcasters?: { broadcasterDisplay: string }[] } };
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const games = (raw.leagueSchedule.gameDates as { games: G[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
     const out: Record<string, { games: { id: string; date: string; tv: boolean }[]; rest: string[] }> = {};
     for (const g of games)
@@ -53,7 +53,7 @@ test('every team × every month: the rows are exactly that month’s games (+ re
   let checked = 0;
   for (const tri of Object.keys(snap).sort()) {
     await page.getByTestId('team-picker').click();
-    await page.getByRole('option').filter({ has: page.locator(`img[src="/logos/${tri}.svg"]`) }).first().click();
+    await page.getByRole('option').filter({ has: page.locator(`img[src="/calendar/logos/${tri}.svg"]`) }).first().click();
     const { games, rest } = snap[tri]!;
     for (const m of monthsOf(games.map((g) => g.date))) {
       await showMonth(page, m);
@@ -204,7 +204,7 @@ test('a B2B split across a month edge: badge and chips on both nights, no bracke
   expect(split.length).toBeGreaterThan(0);
   for (const [tri, first] of split.slice(0, 6)) {
     await page.getByTestId('team-picker').click();
-    await page.getByRole('option').filter({ has: page.locator(`img[src="/logos/${tri}.svg"]`) }).first().click();
+    await page.getByRole('option').filter({ has: page.locator(`img[src="/calendar/logos/${tri}.svg"]`) }).first().click();
     const n = new Date(`${first}T00:00:00Z`);
     n.setUTCDate(n.getUTCDate() + 1);
     for (const [date, night] of [[first, '1'], [n.toISOString().slice(0, 10), '2']] as const) {
@@ -235,7 +235,7 @@ test.describe('Team map (1920): a stop in another month', () => {
     // before its first game, so it is the current trip the map shows
     const trip = await page.evaluate(async () => {
       type G = { gameId: string; gameDateEst: string; gameDateTimeUTC: string; arenaName: string; arenaCity: string; homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } };
-      const raw = await (await fetch('/data/schedule.json')).json();
+      const raw = await (await fetch('/calendar/data/schedule.json')).json();
       const all = (raw.leagueSchedule.gameDates as { games: G[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
       const metro = (c: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' })[c] ?? c;
       for (const tri of [...new Set(all.map((g) => g.homeTeam.teamTricode))].filter(Boolean).sort()) {
@@ -258,7 +258,7 @@ test.describe('Team map (1920): a stop in another month', () => {
     });
     expect(trip, 'a road trip across a month edge in the snapshot').toBeTruthy();
     await page.clock.setFixedTime(new Date(Date.parse(trip!.start) - 3_600_000));
-    await page.goto(`/?view=team&layout=list&team=${trip!.tri}`);
+    await page.goto(`/calendar/?view=team&layout=list&team=${trip!.tri}`);
     const map = page.getByTestId('team-map');
     await expect(map.locator('.ck-map-svg')).toBeVisible();
     await page.getByTestId('team-list').evaluate((el) => (el.scrollTop = el.scrollHeight)); // the trip's rows off screen

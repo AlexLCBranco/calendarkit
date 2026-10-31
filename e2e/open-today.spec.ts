@@ -29,7 +29,7 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
 
     test('an old date in the URL, or a reload after moving, opens on today (List and week view)', async ({ page }) => {
       await page.clock.setFixedTime(local(zone, '2026-11-15T10:00:00'));
-      await page.goto('/?view=league&layout=list&date=2026-10-22'); // Alex's bookmark, as saved
+      await page.goto('/calendar/?view=league&layout=list&date=2026-10-22'); // Alex's bookmark, as saved
       await ready(page);
       await expect(title(page)).toHaveText('Sunday, November 15, 2026');
       await expect(page.getByTestId('today')).toBeDisabled();
@@ -41,17 +41,17 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
       await ready(page);
       await expect(title(page)).toHaveText('Sunday, November 15, 2026');
       // the week view: the week of today, whatever the URL says
-      await page.goto('/?view=league&layout=calendar&date=2026-10-22');
+      await page.goto('/calendar/?view=league&layout=calendar&date=2026-10-22');
       await ready(page);
       await expect(period(page)).toHaveText(/^Nov 15 – 21, 2026/);
-      await page.goto('/?view=league&layout=calendar&weeks=2&date=2027-02-01');
+      await page.goto('/calendar/?view=league&layout=calendar&weeks=2&date=2027-02-01');
       await ready(page);
       await expect(period(page)).toHaveText(/^Nov 15 – 28, 2026/);
     });
 
     test('midnight while on today: the List moves to the new day, the week view to the new week', async ({ page }) => {
       await page.clock.install({ time: local(zone, '2026-11-21T23:58:00') }); // Saturday
-      await page.goto('/?view=league&layout=list');
+      await page.goto('/calendar/?view=league&layout=list');
       await ready(page);
       await expect(title(page)).toHaveText('Saturday, November 21, 2026');
       await expect(page.locator('.ck-strip-selected.ck-strip-today')).toHaveCount(1);
@@ -61,7 +61,7 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
       await expect(page.getByTestId('today')).toBeDisabled();
 
       await page.clock.setSystemTime(local(zone, '2026-11-21T23:58:00'));
-      await page.goto('/?view=league&layout=calendar');
+      await page.goto('/calendar/?view=league&layout=calendar');
       await ready(page);
       await expect(period(page)).toHaveText(/^Nov 15 – 21, 2026/);
       await page.clock.runFor('03:00');
@@ -71,7 +71,7 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
 
     test('midnight while on another day: it stays', async ({ page }) => {
       await page.clock.install({ time: local(zone, '2026-11-21T23:58:00') });
-      await page.goto('/?view=league&layout=list');
+      await page.goto('/calendar/?view=league&layout=list');
       await ready(page);
       await page.getByLabel('Previous day').click();
       await expect(title(page)).toHaveText('Friday, November 20, 2026');
@@ -83,7 +83,7 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
 
       // the week view moved to another week stays there too
       await page.clock.setSystemTime(local(zone, '2026-11-21T23:58:00'));
-      await page.goto('/?view=league&layout=calendar');
+      await page.goto('/calendar/?view=league&layout=calendar');
       await ready(page);
       await page.getByLabel('Previous week').click();
       await expect(period(page)).toHaveText(/^Nov 8 – 14, 2026/);
@@ -95,7 +95,7 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
 
     test('asleep past midnight (no timer ran), then back to the tab: on today it moves', async ({ page }) => {
       await page.clock.install({ time: local(zone, '2026-11-21T23:58:00') });
-      await page.goto('/?view=league&layout=list');
+      await page.goto('/calendar/?view=league&layout=list');
       await ready(page);
       await expect(title(page)).toHaveText('Saturday, November 21, 2026');
       await page.clock.pauseAt(local(zone, '2026-11-21T23:58:30')); // time stops; no timer is due yet

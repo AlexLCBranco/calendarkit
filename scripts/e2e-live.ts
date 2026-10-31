@@ -1,5 +1,5 @@
 // Run the Playwright smoke test against a deployed site (cross-platform; no shell env prefix).
-// Usage: npm run e2e:live -- https://calendarkit-brown.vercel.app [extra playwright args, e.g. -g Rotations]
+// Usage: npm run e2e:live -- https://gauntlet-home.vercel.app [extra playwright args, e.g. -g Rotations]
 import { spawnSync } from 'node:child_process';
 
 const url = process.argv[2];

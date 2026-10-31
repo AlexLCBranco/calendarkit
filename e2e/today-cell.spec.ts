@@ -18,7 +18,7 @@ const highlighted = (page: Page) =>
 test('Month, 1 week, 2 weeks: only today\'s cell, in the accent', async ({ page }) => {
   // 15:00 UTC = 12:00 in São Paulo (the projects' zone)
   await page.clock.setFixedTime(new Date('2026-11-15T15:00:00Z'));
-  await page.goto('/?view=team&layout=calendar&team=LAL');
+  await page.goto('/calendar/?view=team&layout=calendar&team=LAL');
   await expect(page.locator('.ck-team-grid[data-scale]')).toBeVisible();
   expect(await highlighted(page)).toEqual(['2026-11-15']);
   expect(await page.locator('.ck-cell-today').evaluate((c) => getComputedStyle(c).boxShadow)).toContain(ACCENT);
@@ -35,7 +35,7 @@ test('Month, 1 week, 2 weeks: only today\'s cell, in the accent', async ({ page 
 test('moves at midnight with the page open, in Month and 1 week', async ({ page }) => {
   // 23:58 in São Paulo on Saturday Nov 14 (02:58 UTC Nov 15)
   await page.clock.install({ time: new Date('2026-11-15T02:58:00Z') });
-  await page.goto('/?view=team&layout=calendar&team=LAL');
+  await page.goto('/calendar/?view=team&layout=calendar&team=LAL');
   await expect(page.locator('.ck-team-grid[data-scale]')).toBeVisible();
   expect(await highlighted(page)).toEqual(['2026-11-14']);
   await page.clock.runFor('03:00'); // the midnight timer fires at 00:00

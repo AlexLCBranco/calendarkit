@@ -11,7 +11,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop' && info.
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await expect(page.getByTestId('team-list').locator('article').first()).toBeAttached();
   await page.waitForFunction(() => [...document.images].every((i) => i.complete));
 }
@@ -20,7 +20,7 @@ async function open(page: Page, search: string) {
 async function expectedRows(page: Page, teamId: number) {
   return page.evaluate(async (teamId) => {
     type G = { gameId: string; gameDateEst: string; homeTeam: { teamId: number }; awayTeam: { teamId: number } };
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const games = (raw.leagueSchedule.gameDates as { games: G[] }[])
       .flatMap((d) => d.games)
       .filter((g) => /^00[2456]/.test(g.gameId) && (g.homeTeam.teamId === teamId || g.awayTeam.teamId === teamId))

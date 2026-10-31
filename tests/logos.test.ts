@@ -24,8 +24,8 @@ describe('team logos', () => {
     expect(ids.size).toBe(30);
     for (const id of ids) {
       const src = teamLogo(id);
-      expect(src, String(id)).toMatch(/^\/logos\/[A-Z]{3}\.svg$/);
-      expect(existsSync(join(dir, src!.slice('/logos/'.length))), src).toBe(true);
+      expect(src, String(id)).toMatch(/^\/calendar\/logos\/[A-Z]{3}\.svg$/);
+      expect(existsSync(join(dir, src!.slice('/calendar/logos/'.length))), src).toBe(true);
     }
     expect(teamLogo(0)).toBeUndefined();
   });

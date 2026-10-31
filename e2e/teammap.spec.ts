@@ -9,7 +9,7 @@ const NOW = new Date('2026-11-15T15:00:00Z');
 
 async function open(page: Page, team: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/?view=team&layout=list&team=${team}`);
+  await page.goto(`/calendar/?view=team&layout=list&team=${team}`);
   await page.waitForFunction(() => !!document.querySelector('[data-testid="team-list"] [data-game-id]'));
 }
 const map = (page: Page) => page.getByTestId('team-map');
@@ -18,7 +18,7 @@ type FeedGame = { gameId: string; gameDateEst: string; gameDateTimeUTC: string; 
 /** The team's road trips from the served snapshot, worked out here: runs of games outside its home metro. */
 const feedTrips = (page: Page, tri: string) =>
   page.evaluate(async (tri) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const games = (raw.leagueSchedule.gameDates as { games: FeedGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId) && (g.homeTeam.teamTricode === tri || g.awayTeam.teamTricode === tri));
     games.sort((a, b) => a.gameDateTimeUTC.localeCompare(b.gameDateTimeUTC));
     const metro = (c: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' })[c] ?? c;

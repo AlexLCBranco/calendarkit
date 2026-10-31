@@ -11,7 +11,7 @@ test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop' && info.
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await expect(page.getByTestId('team-list').locator('article').first()).toBeAttached();
 }
 

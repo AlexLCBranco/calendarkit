@@ -25,11 +25,24 @@ where-to-watch info, embedding in gauntlet.
   "Round 3" in Decisions.
 - [x] Round 2 (2026-10-23/24): perf guard, file split, Today button, final scores everywhere, data freshness +
   Try again, daily deploy check, shared-module drift check (`npm run check-shared`). See the sections below.
-- [x] Deploy — live URL: **https://calendarkit-brown.vercel.app** (Vercel project `calendarkit`, imported
-  2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
-  The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
+- [x] Deploy — live URL: **https://gauntlet-home.vercel.app/calendar/** since round 10 (v1.28.0): the gauntlet's
+  `vercel.json` rewrites `/calendar` to this repo's Vercel project `calendarkit` (deployment calendarkit-brown.vercel.app,
+  imported 2026-10-23; push to `main` deploys), which serves the build under `/calendar/`. The old address
+  calendarkit-brown.vercel.app sends browsers on (notes handed over first) — see "### Round 10". Smoke test against the
+  live site: `npm run e2e:live -- https://gauntlet-home.vercel.app`. The snapshot is served brotli-compressed: ~110 KB
+  over the wire for the 4 MB file.
+- [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
+  under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-10-31, after round 9)
+## Current state / handoff (2026-10-31, after round 10)
+Round 10 = phase 1 of 5 of the gauntlet Slate widget. v1.27.1: the Slate's cards, note boxes and their pieces are a
+self-contained part, `src/slate/` (inputs: the schedule data, a date, a time zone, a notes store), and calendarkit's Slate
+uses it — pixel-identical to v1.27.0 on screen and in copies. v1.28.0: calendarkit lives at
+**https://gauntlet-home.vercel.app/calendar/** (the gauntlet's rewrite, like /boardkit and /linkkit); the old address hands
+its notes over once and redirects. Details: "### Round 10"; the gauntlet's guide: "## Using Slate in the gauntlet".
+**Waiting on Alex: how the gauntlet gets the part's code** (options under "### Round 10", 1.6) — phase 2 starts from that.
+
+## Previous handoff (2026-10-31, after round 9)
 Round 9: Part 1 (v1.25.0: the Team List shows one calendar month), Part 2 (v1.26.0: Slate streaks, national TV cards in green, ↗ link icon), Part 3 (v1.27.0: Slate wide layout + a note box per game, notes in localStorage `ck:notes:v1` — format under "### Round 9", Part 3; the gauntlet Slate widget will read it). Details: "### Round 9". Decided this round: `SLATE_COPY_GAP` 120 → 24 px (wider cards). Don't undo: notes are stored (content), defaults still aren't (Hide all notes, rest days).
 
 ## Previous handoff (2026-10-30, after round 8)
@@ -159,6 +172,98 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
   **SAS** (black spurs), **MEM** and **NOP** (navy), **UTA** (dark purple); borderline — **CHA** (navy/purple) and
   **PHI** (blue "76"). All others are clear. → Solved without editing the files: all logos now sit on a light
   circular backing in the month view (see Decisions).
+
+## Using Slate in the gauntlet
+
+For the gauntlet's Slate widget (phases 2–5, written in round 10). Self-contained: an assistant in the gauntlet repo can
+follow it without reading calendarkit's code. Code: `src/slate/` in this repo (entry `src/slate/index.ts`, styles
+`src/slate/slate.css`); a working example page: **https://gauntlet-home.vercel.app/calendar/slate.html**
+(`src/slate/demo.tsx`; `?date=YYYY-MM-DD&width=<px>&n=<widgets>`). How the gauntlet gets the code is Alex's choice (round
+10, 1.6) — until then, don't copy it.
+
+**One origin.** calendarkit is served at gauntlet-home.vercel.app/calendar/ through the gauntlet's own `vercel.json`
+rewrites (`/calendar`, `/calendar/`, `/calendar/:path+` → calendarkit-brown.vercel.app/calendar/…). So the whiteboard,
+/boardkit, /linkkit and /calendar share one origin: one localStorage, `storage` events between all their tabs, no CORS.
+
+**Inputs** (`SlateDay` props; nothing else is read — no URL, no app state, no page layout, no clock):
+- `data: CalendarData` — from `loadCalendarData()` (fetches `/calendar/data/schedule.json` once per page, cached in
+  memory; every widget of the page shares the one promise). Parse errors reject; call it again to retry.
+- `date: string` — the NBA game date, `YYYY-MM-DD` (US Eastern date, the feed's `gameDateEst`). A date without games
+  renders "No games."
+- `timeZone?: string` — IANA zone for the tip-off times (default: the browser's). A game after local midnight shows
+  "(+1)".
+- `notes?: SlateNotes` — the notes store (below). Leave it out for info-only cards (round 7's, no note boxes).
+- `width?: number` — the CSS width the grid fills (default 1840); decides one or two columns.
+- `gameLink?: GameLink` — pass `hoopsjunkieLink` for the "↗" icon after each time (opens the game's hoopsjunkie.io
+  page in a new tab); leave it out for no icon.
+- `tvOnly?: boolean` — only national-TV games (calendarkit's TV filter).
+
+**The notes store** (`SlateNotes`, what a note box needs):
+`get(gameId) → { pre, live, post, shown }` (must return the same object until that game's note changes — React's
+`useSyncExternalStore`; `EMPTY_NOTE` for none), `set(gameId, patch, now?)` (saved after 400 ms of no typing, at once
+with `now`), `flush()` (a box calls it on blur), `subscribe(gameId | '*', fn) → unsubscribe`, optional `listen() →
+undo` (a grid calls it while shown). **Pass `localNotesStore()`** — the default, the same one calendarkit uses: one
+store per page shared by every widget (a note typed in one widget shows in the others at once), localStorage
+`ck:notes:v1`, following other tabs (calendarkit's included) through the `storage` event with **one listener per page**,
+however many widgets. Never write a second store on the same key.
+
+**Notes design (round 9, final — don't re-decide):** each card = the game's info on the left + a note box on the right,
+always shown (an empty box is the space Alex writes or draws over on the whiteboard). Three slots, PRE / LIVE / POST,
+switched with ⇄ (PRE → LIVE → POST → PRE); the slot on show is saved with the note; **nothing switches it but Alex**
+(not tip-off, not the game ending). A note belongs to the **game** (its gameId), not to a widget, board or view: the same
+note shows and is editable everywhere that game appears. Format, `localStorage["ck:notes:v1"]`:
+`{ "<10-digit NBA gameId>": { "pre": string, "live": string, "post": string, "shown": "pre" | "live" | "post" } }`; a
+game whose note is empty and on PRE is removed; the key is removed when no note is left. A save writes only the games
+changed in that tab onto what is stored then (another tab's notes on other games survive); last edit wins; a tab's own
+unsaved typing is never replaced by another tab's save. Notes live in that browser on that PC only (Export / Import in
+calendarkit's Slate toolbar is the backup).
+
+**What it renders:** `<SlateDay>` = "No games." on an empty day, else `<div class="ck-slate-grid">` of
+`<article class="ck-slate-card" data-game-id>` in tip-off order. Card: head (start time or "Final" + OT, the ↗ icon, Cup /
+play-off labels, national TV names), the away row and the home row ("@" before the home team): logo (28 px), team name,
+record and streak going in, the Fatigue component (B2B badge with the leg dot, the two nights as house / plane, merged
+3-in-4 chip "4in6 · 2nd"), score (winner bright). National TV games: green outline and tint. Then the note box. Wrap
+the grid in an element with class `ck-root` (the colours and font are variables on it) and `ck-slate-widget` (no
+background: nothing is drawn between or around the cards, only the cards are opaque); import `src/slate/slate.css` once
+(calendarkit's widget stylesheet, every rule scoped to `.ck-*`, no html/body rules; 35.7 KB, 7.6 KB gz). Tooltips
+(records, streaks, fatigue — with the day strip): `useTooltip()` gives `handlers` to spread on the wrapper and a
+`node` to render inside it (as slate.html does). `SlateCopy` is the copied image's layout (no controls, the note box as
+static text) if the widget ever copies.
+
+**Size:** a card = the info (444 px of content, `SLATE_INFO_WIDTH`) + a 14 px gap + the note box; 14 px padding and a 1 px
+border; cards 12 px apart (`SLATE_GRID_GAP`). **Two columns while each note box keeps 300 px (`SLATE_NOTE_MIN`), i.e. a
+width ≥ 1588 px; else one column, cards as wide as the width.** (Measured in calendarkit: 1920 window → 2 columns, cards
+914 px, note box 426 px; 1280 → 1 column, card 1233 px, box 745 px.) Info-only cards (no store): 2 columns of 474 px in
+a 960 px grid. A card is ≥ 117 px tall; a long note grows its box, its card and its row (no inner scrollbar, the font
+never shrinks). The widget's height = rows × card height + gaps + the grid's 8 px top / 16 px bottom padding — it grows
+with the day's games and the notes; scaling by the corners (phase 2) should scale this whole layout (a CSS transform),
+not change `width`, so the columns stay put. Copies (calendarkit) use `SLATE_COPY_GAP` = 24 px between cards and half of it
+around them, transparent; their columns follow the largest-cards rule (`slateCopyColumns`). No virtualization: a day is
+at most 15 games.
+
+**Pinned date (decided):** a widget stores its own date. Inserting one defaults to today (the viewer's local date, as
+calendarkit's "today"); after that it stays on that date until Alex changes it with ← / → — it never follows "today" by
+itself (sketches around the games must stay with that night). In calendarkit ← / → go to the previous / next day with
+games (`nearestDay` / `listDays` in LeagueListView.tsx); phase 3 decides what the widget's arrows do and how they share
+the keys with the whiteboard's nudge.
+
+**Data:** `https://gauntlet-home.vercel.app/calendar/data/schedule.json` (from a gauntlet page: `/calendar/data/schedule.json`,
+same origin, no CORS — e2e `move.spec.ts` fetches it from a gauntlet page). The NBA's own schedule feed (cdn.nba.com),
+snapshotted daily at 11:00 UTC by this repo's GitHub Action (`.github/workflows/schedule-update.yml`; GitHub may start it
+hours late), committed to `public/data/schedule.json`, deployed by Vercel; the action then waits until the live file is
+the committed one (`scripts/verify-deploy.ts`, polling the address above). Final scores therefore appear the morning
+after (live scores would need another source — phase 5). 4.1 MB, ~110 KB brotli; `Cache-Control: public, max-age=300,
+stale-while-revalidate=86400`.
+
+**Must know:**
+- At rest the part starts no timer and asks for no animation frame, and its only requests are the snapshot (once per
+  page) and the 30 team logos (`/calendar/logos/<TRI>.svg`, images); the font is `/calendar/fonts/…`. Typing starts only
+  the 400 ms save debounce. Tested (unit `slatepart.test.tsx`, e2e `slate-part.spec.ts`) — keep it so: the widget may be
+  on a board many times.
+- Everything it needs is under `/calendar/`: logos, font, data. Don't serve copies of them from the gauntlet.
+- `src/slate/` imports only `src/slate`, `src/data`, `src/shared` and React (unit test). calendarkit's Slate is built from
+  it, so a card change in calendarkit is a change here — one source of truth.
+- `ck:notes:handoff:v1` (old origin only) and the `#ck-handoff=` fragment are round 10's one-time move; ignore them.
 
 ## Tests
 `npm test` (Vitest, 224 tests) · `npm run e2e` (Playwright, desktop 1280 px, desktop-xl 1920 px, tablet 768 px, phone 390 px, then the **perf** guard — see Performance) · CI: `.github/workflows/ci.yml` (runs on `main` and `claude/**` branches, so layout changes can be checked on Linux before they reach production).
@@ -1595,6 +1700,139 @@ Ground rules as every round (desktop first, nothing slower, every check automate
   tests fail and the other 6 test the new `notes.ts` / constants, which don't exist there.
 
 **Round 9 perf** (Windows PC, v1.27.0 build): loads 246 / 356 / 290 ms (week view 356 vs baseline 253, limit 403: the week view has no round 9 code — run noise), switches 28–65 ms (Team List 28, was ~80), marquee p95 22–23 ms; Team List checks after Part 1: scroll ×0.31, month-nav ×0.97 vs v1.17.1. Local e2e after Part 3: 298 / 298, unit 414 / 414.
+
+### Round 10 (2026-10-31)
+Phase 1 of 5 of the gauntlet Slate widget: prepare the Slate for the gauntlet and move calendarkit under its address.
+Ground rules as every round. Live and repo matched at the start (v1.27.0, b99390c); nothing from round 9 was open.
+
+**Part 0: the week view's load time.** Round 9 reported 356 ms against a 253 ms baseline and called it run noise. Measured
+now: v1.24.0 and v1.27.0 built the same way (`scripts/perf-ref.ts`), the same snapshot, loads interleaved A B B A … in one
+run (`test-output/r10/load-ab.mjs`, 15 counted loads each after a warm-up, 1920 × 1080). Two runs, the order swapped:
+
+| load (median ms) | v1.24.0 | v1.27.0 | v1.24.0 (run 2) | v1.27.0 (run 2) |
+|---|---|---|---|---|
+| League List | 254 | 253 | 262 | 241 |
+| week view | 325 | 331 | 335 | 332 |
+| Team Calendar | 286 | 293 | 293 | 294 |
+
+**v1.27.0 is not slower** (week view +6 ms in one run, −3 ms in the other). The week view has measured 320–380 ms since
+round 7 (PROJECT.md's own numbers); the 253 ms baseline is older than that. Nothing to fix; baseline left as it is.
+
+**1.2–1.4: the Slate's self-contained part (v1.27.1).** `src/slate/`: `SlateCard.tsx` (`SlateDay` = the grid, `SlateCard`,
+`SlateCopy`, `slateGames`), `NoteBox.tsx`, `notes.ts` (format, store), `layout.ts` (was components/slate.ts), `Fatigue.tsx`,
+`tooltip.tsx` (+ `clampX`), `parts.tsx` (TeamLogo, TipTime, seasonTip — from GameCard), `links.ts` (the hoopsjunkie rule —
+from config.ts), `styles/slate.css` + `styles/notes.css`, `slate.css` (the stylesheet for a host), `index.ts`, `demo.tsx`
+(slate.html). The old module paths re-export the moved code, so every round 9 test ran unchanged (414 / 414). The logo
+and data addresses come from `src/data/address.ts` (`CALENDARKIT_BASE`), not from Vite's `BASE_URL`, so they resolve the
+same from a gauntlet page. calendarkit's `SlateView` = its scroller + notes toolbar around `SlateDay`.
+- **Notes store as an input**: `SlateNotes` (get / set / flush / subscribe, optional listen); `NotesStore` adds the toolbar's
+  showAll / all / importNotes. `localNotesStore()` = the page's one default store; `createNotesStore().listen()` is
+  ref-counted (one set of window listeners however many grids listen; each undo saves). CalendarView uses
+  `localNotesStore()`; the unit tests reset it between tests (`tests/setup.ts`).
+- **slate.html** is built by its own Vite config (`vite.slate.config.ts`, after the app's build, same dist/): with both
+  pages in one build Rollup split the app's bundle in two (main 88 KB + shared 248 KB), which would change how the app
+  loads. **The app's bundle is the same as before** (336.7 KB, v1.27.0: 336.3 KB; +0.4 KB: the store's ref count).
+- **Size of the part**: 31.3 KB (10.5 KB gz) without React (a library build of `src/slate/index.ts`, React external) +
+  its stylesheet 35.7 KB (7.6 KB gz); slate.html's whole bundle with React: 246 KB (78.4 KB gz).
+- **Tests.** e2e `slate-same.spec.ts` (new): v1.27.0 built and served in the same run (`e2e/refbuild.ts`); Slate on screen
+  and its copied images **pixel for pixel equal** at 1280 × 900 and 1920 × 1080, nights of 1, 5, 12 and 15 games, with
+  notes (all three slots on show, a long note), with no notes, with "Hide all notes" — 48 screen + copy comparisons,
+  all identical. Shown to catch a change: a 1 % opacity on the streak text fails it (2 508 px). The screen comparison
+  retakes its screenshots (reload before the last of 3 tries): on CI once in 24, 7 px of one logo came out a level apart
+  between two page loads of identical markup. e2e `slate-part.spec.ts`: slate.html's cards = calendarkit's (masked logos,
+  compared by address and size instead; the card's outer 3 px and 10 px corners left out — they blend with what is behind
+  the card, by design different), nothing drawn between the cards, its requests (own files, the snapshot once for 3
+  widgets, logos, font — nothing else, nothing at rest), no timer / frame at rest (3 s) and after typing (only the debounce),
+  a note typed in calendarkit shows in the widget and back. Unit `slatepart.test.tsx`: imports (only slate / data / shared
+  + React), no html/body CSS, a host's own store, **one storage listener for 3 widgets**, every widget of a page in sync,
+  no timer / fetch / rAF / interval with 5 widgets mounted.
+
+**1.1: the move (v1.28.0).** **Same method as /boardkit and /linkkit** (gauntlet's GAUNTLET-PLAN.md "Serving: one origin"):
+Vite `base: '/calendar/'`, this repo's `vercel.json` rewrites `/calendar`, `/calendar/` → index.html and `/calendar/:path+` →
+the file (dist stays at the deployment's root), and the gauntlet's `vercel.json` proxies `/calendar`, `/calendar/`,
+`/calendar/:path+` to calendarkit-brown.vercel.app/calendar/…. Headers for `/calendar/data/*` and `/calendar/version.json`
+added (kept for the old paths).
+- **Changed in the gauntlet-home repo** (f105d8a, nothing else): `vercel.json` (the 3 rewrites); `scripts/dev-proxy.mjs`
+  (its local stand-in for calendarkit-brown: `CALENDARKIT_DEV`, default http://localhost:4180 — without one the proxy
+  refuses to start); `scripts/local-e2e.mjs` (passes that target); `scripts/dev-proxy.test.mjs` (the /calendar rules and
+  forwarding). Its unit tests 110 + 19 pass, lint clean, its canvas e2e 233 of 234 (the one real-data test timed out under
+  the full run and passed alone, 3/3).
+- **No redirect loop, by construction**: the redirect is in the page's script, on the exact host calendarkit-brown.vercel.app
+  only. Vercel's rewrite fetches the files from that host without running them; in the browser the page is on
+  gauntlet-home, where nothing redirects. Previews and localhost run the app.
+- **Notes hand-off** (`src/handoff.ts`, `HandoffFailed.tsx`): on the old address, if `ck:notes:v1` holds notes and
+  `ck:notes:handoff:v1` isn't set: old page → `gauntlet-home/calendar/#ck-handoff=<base64url {v, nonce, notes}>` → the new
+  page takes them out of its address at once (replaceState), checks `document.referrer` is the old origin, merges them
+  with round 9's import rule (a slot the old side has text for wins, an empty one never overwrites, the old side's
+  shown slot wins, games only at the new address kept), reads them back, → `old/calendar/?ck-handoff=done&nonce=…` → the
+  old page checks the referrer is the new origin and the nonce is its own (sessionStorage), sets `ck:notes:handoff:v1`
+  ({to, at, games}) and goes to the new address, path (under /calendar/) and query kept. Later visits go straight on —
+  never a second hand-off, so notes edited since at the new address stay. The old side's copy is left as it was.
+  **Not the "page that postMessages" first suggested**: vercel.app is a public suffix, so the two hosts are different
+  sites — an iframe of the other gets partitioned storage (not its real localStorage), and a pop-up opened without a
+  click is blocked. A top-level navigation with the notes in the fragment (never sent to a server, out of the address
+  bar at once) does it with no click; origin checks on both sides as with postMessage. Over 1.5 MB of address (≈ 1.1 MB
+  of notes; Chrome's limit is 2 MB) it doesn't try.
+- **Failure is never silent**: storage full or blocked at the new address, an answer from elsewhere, notes the old page
+  can't read, too many → the old page stays, says why ("…could not be moved there: the browser storage at the new address
+  is full."), **Export notes** (round 9's file), Try again, and a link to go on without them. Nothing is marked, so the
+  next visit tries again.
+- **Browser storage** (checked: `src/` uses localStorage only in `slate/notes.ts` and `handoff.ts`; no cookies, IndexedDB,
+  caches or service worker): `ck:notes:v1` (round 9), and new: `ck:notes:handoff:v1` (old origin only) and sessionStorage
+  `ck:handoff:pending` (old origin, during a hand-off). Round 7's "nothing" + round 9's notes is otherwise still true.
+- **Everything else at /calendar/**: deep links (`?view=&layout=&team=&tv=`: the shell keeps `location.pathname`), assets and
+  the font (Vite writes /calendar/…), logos and data (address.ts), the maps' lazy chunks, copy-as-image, hoopsjunkie links,
+  `/calendar/version.json`, every view — the whole e2e suite runs at /calendar/ (local preview, port **4180**: 4174 was held
+  by a stray `vite preview` of this folder with the old base). The daily deploy check polls
+  gauntlet-home.vercel.app/calendar/data/schedule.json.
+- **CI**: the e2e and perf jobs test the build at /calendar/; a new `live` job (pushes to main) waits until
+  gauntlet-home.vercel.app/calendar/version.json names the pushed commit (`scripts/wait-live.ts`), then runs
+  `move.spec.ts`, `smoke.spec.ts` and `version.spec.ts` against the live site (old address included).
+- **Tests**: unit `handoff.test.ts` (both origins' storages, the URLs passed as the browser would: every slot + shown
+  handed over, the fragment leaves the address, second visit, merge with notes already there, nothing to move, storage
+  full, forged referrer / nonce, unreadable notes, previews and localhost run, 700 KB of notes, too many). e2e
+  `move.spec.ts`: both real hostnames routed to the local build as Vercel serves them (calendarkit's and the gauntlet's
+  rules) — /calendar through the rewrite with every asset under /calendar/; the old address → new, path and query kept,
+  **exactly 2 navigations, no loop**; notes handed over (the exact 4-step chain), shown in the Slate, a second visit no
+  hand-off; merge; failure page + Export file; a gauntlet page reads /calendar/data/ (`type: basic`, same origin) and the
+  notes calendarkit stored. With `E2E_BASE_URL=https://gauntlet-home.vercel.app` the same tests run on the live sites.
+
+**1.5: data.** Lives in this repo, `public/data/schedule.json` (the NBA feed, cdn.nba.com), updated daily (11:00 UTC GitHub
+Action, commit → Vercel deploy). The gauntlet reads it at **/calendar/data/schedule.json** (same origin: no CORS setup —
+e2e fetches it from a gauntlet page and reads the response type `basic`). Details: "## Using Slate in the gauntlet".
+
+**1.6: sharing code with the gauntlet — options (Alex decides; nothing set up in the gauntlet).**
+- **A. Pinned package from GitHub** — what the gauntlet already does for Boardkit and Linkkit (`package.json`:
+  `"boardkit": "https://codeload.github.com/AlexLCBranco/boardkit/tar.gz/<commit>"`): calendarkit's package.json would export
+  `./slate` (`src/slate/index.ts` + `slate.css`), the gauntlet's Vite compiles it. A card change reaches the gauntlet when
+  its pin moves to a newer commit (a one-line change, scriptable like `sync-boardkit.mjs`); the gauntlet's CI tests that pin
+  before it goes live. Can break: **calendarkit's repo is private, so Vercel can't download the tarball** — it needs the repo
+  public (the standard for these projects; Alex's yes) or a token in the gauntlet's Vercel project; the gauntlet runs the
+  pinned cards while calendarkit runs newer ones (same notes format, so harmless unless `ck:notes:v1` changes — it must
+  stay compatible or move to v2 with a reader for v1). Caught by: calendarkit's own tests of the part, a gauntlet e2e
+  comparing its widget's cards with /calendar/slate.html. Notes store: the gauntlet imports `localNotesStore` from the
+  package — its own copy of the code on its pages, the same key and format.
+- **B. The gauntlet loads a built bundle from /calendar/ at run time** (e.g. `/calendar/slate-widget.js` exporting
+  `mount(el, { date, width, timeZone })`, React inside or shared): a card change reaches every widget with calendarkit's
+  next deploy, nothing to do in the gauntlet. Can break: the mount contract (a calendarkit deploy can break the whiteboard
+  with no gauntlet test before it — only calendarkit's contract tests and a live e2e after); two copies of React on the
+  page unless shared; the widget's first frame waits for a script (tldraw shapes render synchronously); file names need a
+  manifest. Notes store: one module instance per page → one store, one listener (the best fit).
+- **C. A shared package of its own** (`src/slate` + `src/data` + `src/shared` moved into a third repo or a workspace,
+  published to GitHub Packages or npm, both apps depending on it): cleanest boundary, but a third thing to version and
+  publish for every card change, and calendarkit's own Slate would follow the same release step. Tests in that package +
+  both apps. Notes store: as A.
+- **Recommendation: A**, the gauntlet's existing pattern, with its CI between a card change and the live whiteboard; it
+  needs the calendarkit repo made public (or a token). If Alex prefers no visibility change and automatic updates, B.
+
+**1.7: no timers, no requests at rest** — see 1.2–1.4's tests; the part has none of its own (calendarkit's clock, the
+stale-data stamp and the midnight timeout are the app shell's, not the part's).
+
+**Round 10 perf** (Windows PC, v1.27.1 build): loads 260 / 350 / 318 ms, switches 33–66 ms, marquee p95 18–20 ms; League
+scroll ×0.15, day-nav ×0.74, Team List scroll ×0.46 vs v1.17.1. **`team-month-nav` failed locally** (×1.44, then ×1.39,
+×1.31, ×1.02 on reruns) — and failed the same way with **v1.27.0 served in its place** (×0.98, ×1.09, ×1.98): both arms are
+bimodal per run on this PC (≈250–310 or ≈415–680 ms), the reference included. Not this round's code; the guard was not
+loosened. CI's perf job (its own runner) passed it on v1.27.1.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

@@ -19,7 +19,7 @@ test('League List: mirrored matchup, one x per part down every day, one line per
   // played days (Oct 21–27), today's mixed day and later ones
   for (const date of ['2026-10-21', '2026-10-24', '2026-10-27', '2026-11-15', '2026-12-25', '2027-02-26']) {
     await page.clock.setFixedTime(NOW);
-    await page.goto(`/?view=league&layout=list&date=${date}`);
+    await page.goto(`/calendar/?view=league&layout=list&date=${date}`);
     await page.waitForFunction(() => [...document.images].every((i) => i.complete) && !!document.querySelector('[data-testid="league-list"] [data-game-id]'));
     const r = await page.evaluate((phone) => {
       const round = (n: number) => Math.round(n * 10) / 10;

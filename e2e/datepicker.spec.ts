@@ -10,7 +10,7 @@ test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await page.waitForFunction(() => !!document.querySelector('[data-game-id]'));
 }
 const focused = (page: Page) => page.evaluate(() => (document.activeElement as HTMLElement | null)?.dataset.date ?? document.activeElement?.getAttribute('aria-label'));

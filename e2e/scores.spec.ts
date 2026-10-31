@@ -14,7 +14,7 @@ test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await expect(page.getByRole('tablist', { name: 'Layout' })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   await page.waitForFunction(() => [...document.images].every((i) => i.complete));
@@ -22,7 +22,7 @@ async function open(page: Page, search: string) {
 /** Final games straight from the served snapshot (independent of the app's code). */
 const finals = (page: Page): Promise<Final[]> =>
   page.evaluate(async () => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     type G = { gameId: string; gameStatus: number; gameStatusText: string; gameDateEst: string; homeTeam: Side; awayTeam: Side };
     return (raw.leagueSchedule.gameDates as { games: G[] }[])
       .flatMap((d) => d.games)

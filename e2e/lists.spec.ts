@@ -32,7 +32,7 @@ const weekView = (project: string) => project === 'desktop' || project === 'desk
 const settle = (page: Page) => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await expect(page.getByRole('tablist', { name: 'Layout' })).toBeVisible();
 }
 
@@ -60,7 +60,7 @@ async function layoutChecks(page: Page) {
 type FeedGame = { gameId: string; gameDateEst: string; gameDateTimeUTC: string; homeTeam: { teamId: number }; awayTeam: { teamId: number } };
 async function feedTeamGames(page: Page, teamId: number) {
   return page.evaluate(async (teamId) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const games = (raw.leagueSchedule.gameDates as { games: FeedGame[] }[]).flatMap((d) => d.games);
     return games
       .filter((g) => /^00[2456]/.test(g.gameId) && (g.homeTeam.teamId === teamId || g.awayTeam.teamId === teamId))
@@ -146,7 +146,7 @@ test('old ?view= links open the matching view', async ({ page }) => {
 /** The day's games straight from the served snapshot (independent of the app's code), in feed order. */
 const feedDay = (page: Page, date: string) =>
   page.evaluate(async (date) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     return (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string }[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId) && g.gameDateEst.startsWith(date)).map((g) => g.gameId);
   }, date);
 /** What the League List shows: its day sections and the game ids in them. */
@@ -355,7 +355,7 @@ test('team list season line: game number + record + streak going in on the right
   // feed's own W-L on the previous game once that game is Final (gameStatus 3)
   const want = await page.evaluate(async () => {
     const BOS = 1610612738;
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     type T = { teamId: number; teamTricode: string; score: number; wins: number; losses: number };
     const games = (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string; gameStatus: number; homeTeam: T; awayTeam: T }[] }[])
       .flatMap((d) => d.games)

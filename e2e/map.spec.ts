@@ -10,7 +10,7 @@ const desktop = (p: string) => p === 'desktop' || p === 'desktop-xl';
 
 async function open(page: Page, date: string, extra = '') {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/?view=league&layout=list&date=${date}${extra}`);
+  await page.goto(`/calendar/?view=league&layout=list&date=${date}${extra}`);
   await page.waitForFunction(() => !!document.querySelector('[data-testid="league-list"] [data-game-id]'));
 }
 const map = (page: Page) => page.getByTestId('league-map');
@@ -18,7 +18,7 @@ const map = (page: Page) => page.getByTestId('league-map');
 type FeedGame = { gameId: string; gameDateEst: string; arenaName: string; arenaCity: string; arenaState: string; homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } };
 const feedDay = (page: Page, date: string) =>
   page.evaluate(async (date) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     return (raw.leagueSchedule.gameDates as { games: FeedGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId) && g.gameDateEst.startsWith(date));
   }, date);
 
@@ -110,7 +110,7 @@ test('places off the map: an edge marker with the place and its direction; no ar
   // Cup knockout games the feed hasn't placed yet (no arena; Dec 4–8 in the snapshot of round 8): listed as unknown,
   // never guessed. The day comes from the served snapshot; once the NBA places them, the unit test (fixture) still covers it.
   const day = await page.evaluate(async () => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     return (raw.leagueSchedule.gameDates as { games: FeedGame[] }[]).flatMap((d) => d.games).find((g) => /^00[2456]/.test(g.gameId) && !g.arenaName)?.gameDateEst.slice(0, 10);
   });
   test.skip(!day, 'every game in the served snapshot has an arena');
@@ -124,7 +124,7 @@ test('places off the map: an edge marker with the place and its direction; no ar
 test('every game in the served season resolves to a place on the map, an edge marker, or "unknown" only without an arena', async ({ page }) => {
   await open(page, '2026-11-02');
   const feed = await page.evaluate(async () => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     return (raw.leagueSchedule.gameDates as { games: FeedGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId)).map((g) => [g.arenaName, g.arenaCity] as const);
   });
   const { ARENAS } = await import('../src/map/arenas');
@@ -150,7 +150,7 @@ test('the map is in no copy: the view copy and a day are the list only', async (
 
 test('no map in the Slate', async ({ page }) => {
   await open(page, '2026-11-02', '&layout=slate');
-  await page.goto('/?view=league&layout=slate');
+  await page.goto('/calendar/?view=league&layout=slate');
   await expect(page.getByTestId('slate')).toBeVisible();
   await expect(map(page)).toHaveCount(0);
 });
@@ -167,7 +167,7 @@ test('no map on tablets and phones (the list keeps the width)', async ({ page },
 /** Each game of `date` with its teams' back-to-back ends, from the served snapshot (independent of the app). */
 const feedAround = (page: Page, date: string) =>
   page.evaluate(async (date) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const games = (raw.leagueSchedule.gameDates as { games: FeedGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
     const day = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
     const on = (tri: string, d: string) => games.find((g) => g.gameDateEst.startsWith(d) && (g.awayTeam.teamTricode === tri || g.homeTeam.teamTricode === tri));

@@ -29,6 +29,8 @@ const REF_RATIO = 1.25;
 /** Counted runs per build in the interleaved scroll checks (single runs of one build vary by up to ±30 %). */
 const AB_RUNS = 7;
 let refBase = '';
+/** The current build's path on the test site (round 10: under /calendar/; the reference build is at its server's root). */
+const CURRENT = '/calendar';
 let refServer: Server | undefined;
 const PERF_RATIO = 1.5;
 /** Absolute slack (ms) per metric: small numbers are noisy, so a ratio alone would flake. */
@@ -64,7 +66,7 @@ async function loadTime(page: Page, search: string) {
     obs.observe(document, { childList: true, subtree: true });
   });
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await page.waitForFunction(() => (window as unknown as { __ckFirst?: number }).__ckFirst !== undefined);
   return page.evaluate(() => (window as unknown as { __ckFirst: number }).__ckFirst);
 }
@@ -207,7 +209,7 @@ const refPage = (browser: Browser, viewport = { width: 1920, height: 1080 }) => 
  */
 const BUSY_NIGHT = '2026-11-02';
 const SHORT = { width: 1920, height: 700 };
-async function openBusyNight(page: Page, base = '') {
+async function openBusyNight(page: Page, base = CURRENT) {
   await page.goto(`${base}/?view=league&layout=list&date=${BUSY_NIGHT}`);
   await expect(page.getByTestId('day-title')).toContainText('November 2');
   await page.waitForFunction(() => [...document.images].every((i) => i.complete));
@@ -230,7 +232,7 @@ test('wheel-scrolling the League List within a busy night: frame times, main-thr
       await wheel(p, 'league-list', 1500);
     },
   });
-  checkScroll('scroll', await scrollRunsAB('scroll', [arm('current', page, ''), arm('reference', ref, refBase)]));
+  checkScroll('scroll', await scrollRunsAB('scroll', [arm('current', page, CURRENT), arm('reference', ref, refBase)]));
   await ref.close();
   // the current build's day overflowed (so the gesture scrolled) and stayed put
   await openBusyNight(page);
@@ -253,12 +255,12 @@ test('League List day by day: 20 × "Next day", frame times and main-thread time
       }
     },
   });
-  const runs = await scrollRunsAB('day-nav', [arm('current', page, ''), arm('reference', ref, refBase)]);
+  const runs = await scrollRunsAB('day-nav', [arm('current', page, CURRENT), arm('reference', ref, refBase)]);
   await ref.close();
   checkScroll('day-nav', runs);
   // 20 game days on from Nov 2 (from the served snapshot: Nov 23, 2026)
   const want = await page.evaluate(async (from) => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const days = [...new Set((raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string }[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId)).map((g) => g.gameDateEst.slice(0, 10)))].sort();
     return days[days.indexOf(from) + 20]!;
   }, BUSY_NIGHT);
@@ -301,10 +303,10 @@ test('wheel-scrolling the Team List (a month; the reference: the season from its
       await wheel(p, 'team-list', 1500);
     },
   });
-  checkScroll('team-scroll', await scrollRunsAB('team-scroll', [arm('current', page, ''), arm('reference', ref, refBase)]));
+  checkScroll('team-scroll', await scrollRunsAB('team-scroll', [arm('current', page, CURRENT), arm('reference', ref, refBase)]));
   await ref.close();
   // the current build's month overflowed the window (so the gesture scrolled)
-  await openTeamList(page, '');
+  await openTeamList(page, CURRENT);
   expect(await page.getByTestId('team-list').evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(300);
 });
 
@@ -324,11 +326,11 @@ test('Team List week by week across months: 12 × the strip’s "Next week", fra
       }
     },
   });
-  const runs = await scrollRunsAB('team-month-nav', [arm('current', page, ''), arm('reference', ref, refBase)]);
+  const runs = await scrollRunsAB('team-month-nav', [arm('current', page, CURRENT), arm('reference', ref, refBase)]);
   await ref.close();
   checkScroll('team-month-nav', runs);
   // the current build crossed two month edges
-  await openTeamList(page, '');
+  await openTeamList(page, CURRENT);
   await expect(page.getByTestId('team-month')).toHaveText('November 2026');
   for (let i = 0; i < 12; i++) await page.getByLabel('Next week').click();
   await expect(page.getByTestId('team-month')).toHaveText(/January 2027|February 2027/);
@@ -336,7 +338,7 @@ test('Team List week by week across months: 12 × the strip’s "Next week", fra
 
 test('switching views: click → next frame', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
-  await page.goto('/?view=league&layout=list&team=BOS');
+  await page.goto('/calendar/?view=league&layout=list&team=BOS');
   await expect(page.getByTestId('day-title')).toBeVisible();
   // League List → League Calendar (week view) → Team Calendar → Team List → League List
   const steps: [string, string, string][] = [
@@ -373,7 +375,7 @@ test('switching views: click → next frame', async ({ page }) => {
 test('marquee drag across busy views: frame times and long tasks', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   const gesture = async (search: string, from: [number, number], to: [number, number], hold = 0) => {
-    await page.goto(`/${search}`);
+    await page.goto(`/calendar/${search}`);
     await page.waitForFunction(() => [...document.images].every((i) => i.complete) && !!document.querySelector('[data-game-id]'));
     await page.evaluate(() => {
       const w = window as unknown as { __ck: { frames: number[]; long: number; stop: boolean } };

@@ -21,7 +21,7 @@ const imagesLoaded = (page: Page) => page.waitForFunction(() => [...document.ima
 
 async function open(page: Page, search: string) {
   await page.clock.setFixedTime(NOW);
-  await page.goto(`/${search}`);
+  await page.goto(`/calendar/${search}`);
   await expect(page.getByRole('tablist', { name: 'Layout' })).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
 }
@@ -30,7 +30,7 @@ type RawGame = { gameId: string; gameDateEst: string; arenaCity: string; homeTea
 /** Shown games straight from the served snapshot (independent of the app's code). */
 async function feed(page: Page): Promise<RawGame[]> {
   return page.evaluate(async () => {
-    const raw = await (await fetch('/data/schedule.json')).json();
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
     return (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
   });
 }
@@ -102,7 +102,7 @@ test('team header and team picker: logos, mouse and keyboard, team change', asyn
   expect(h.font).toBeGreaterThan(h.biggestOther); // the most prominent text above the content
   // picker: logo on the button, all 30 with loaded logos in the list, inside the viewport
   const btn = page.getByTestId('team-picker');
-  await expect(btn.locator('img')).toHaveAttribute('src', '/logos/BOS.svg');
+  await expect(btn.locator('img')).toHaveAttribute('src', '/calendar/logos/BOS.svg');
   await btn.click();
   const list = page.getByRole('listbox', { name: 'Teams' });
   await expect(list.getByRole('option')).toHaveCount(30);

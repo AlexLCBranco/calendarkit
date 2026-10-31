@@ -10,7 +10,7 @@ test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info
 
 test('Team Calendar: merged "4in6 · 2nd" chip and "TV" pill with full-text tooltips; Team List unchanged', async ({ page }, info) => {
   await page.clock.setFixedTime(NOW);
-  await page.goto('/?view=team&layout=calendar&team=LAL');
+  await page.goto('/calendar/?view=team&layout=calendar&team=LAL');
   await expect(page.locator('.ck-team-grid[data-scale]')).toBeVisible();
   console.log(`[cells] ${info.project.name} team calendar scale ${await page.locator('.ck-team-grid').getAttribute('data-scale')}`);
   const tip = page.getByTestId('tooltip');
@@ -25,7 +25,7 @@ test('Team Calendar: merged "4in6 · 2nd" chip and "TV" pill with full-text tool
   await chip.focus();
   await expect(tip).toContainText(/^\d+in\d+ · \d+(st|nd|rd|th): \d+ games in \d+ days \(/);
   await expect(page.getByTestId('tip-days')).toBeVisible();
-  await page.goto('/?view=team&layout=list&team=LAL');
+  await page.goto('/calendar/?view=team&layout=list&team=LAL');
   await expect(page.locator('[data-testid="team-list"] .ck-fx-chip').first()).toHaveText(/^\d+in\d+ · \d+(st|nd|rd|th)$/); // the Fatigue component's chip (round 6: the merged stretch)
   await expect(page.locator('[data-testid="team-list"] .ck-tv-name').first()).toBeAttached();
 });
