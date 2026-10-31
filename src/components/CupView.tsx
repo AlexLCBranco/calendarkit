@@ -123,19 +123,21 @@ function Rules() {
   return (
     <div className="ck-cup-panel" data-testid="cup-rules">
       <h3>Who advances</h3>
-      <p>The six group winners and one wild card per conference (the 2nd-place team with the best group record) go to the quarterfinals.</p>
-      <p>Teams are ranked by record (games over .500, then win %; no games counts as .500). Ties are broken in this order:</p>
-      <ol>
-        <li>Head-to-head record among the tied teams (group games only).</li>
-        <li>Point differential in group games.</li>
-        <li>Points scored in group games.</li>
-        <li>2025-26 regular-season record.</li>
-        <li>Still tied: shown in a fixed order and marked “tied”.</li>
-      </ol>
-      <p>If a rule settles only part of a tie, the teams still level start again from rule 1. Wild-card ties use the same list without head-to-head; group ties are settled first.</p>
-      <p className="ck-cup-ot" data-testid="cup-ot-note">
-        Overtime points should not count in rules 2 and 3, but the schedule only has final scores, so OT games are counted with their final score.
-      </p>
+      <div className="ck-cup-rules-text">
+        <p>The six group winners and one wild card per conference (the 2nd-place team with the best group record) go to the quarterfinals.</p>
+        <p>Teams are ranked by record (games over .500, then win %; no games counts as .500). Ties are broken in this order:</p>
+        <ol>
+          <li>Head-to-head record among the tied teams (group games only).</li>
+          <li>Point differential in group games.</li>
+          <li>Points scored in group games.</li>
+          <li>2025-26 regular-season record.</li>
+          <li>Still tied: shown in a fixed order and marked “tied”.</li>
+        </ol>
+        <p>If a rule settles only part of a tie, the teams still level start again from rule 1. Wild-card ties use the same list without head-to-head; group ties are settled first.</p>
+        <p className="ck-cup-ot" data-testid="cup-ot-note">
+          Overtime points should not count in rules 2 and 3, but the schedule only has final scores, so OT games are counted with their final score.
+        </p>
+      </div>
     </div>
   );
 }
@@ -144,24 +146,25 @@ function WildCards({ races }: { races: WildCardRace[] }) {
   return (
     <div className="ck-cup-panel" data-testid="cup-wildcards">
       <h3>Wild card race</h3>
-      {races.map((r) => (
-        <div key={r.conference} className="ck-cup-race" data-conference={r.conference}>
-          <h4>{r.conference}</h4>
-          {r.teams.map((t, i) => (
-            <div key={t.teamId} className={`ck-cup-race-row${i === 0 ? ' ck-cup-holder' : ''}`} data-team={t.tricode} title={t.wcTied ? 'Tied: no tiebreaker separates them yet' : t.wcTiebreak ? `Placed by ${TIEBREAK_TEXT[t.wcTiebreak]}` : undefined}>
-              <span className="ck-cup-mark">{i === 0 ? 'WC' : ''}</span>
-              <Logo teamId={t.teamId} />
-              <span className="ck-cup-name">
-                {t.tricode} <span className="ck-cup-sub">2nd, {t.group.replace(' Group ', ' ')}</span>
-              </span>
-              <span className="ck-cup-rec">
-                {t.w}-{t.l}
-              </span>
-              <DiffChip diff={t.diff} />
-            </div>
-          ))}
-        </div>
-      ))}
+      <div className="ck-cup-races">
+        {races.map((r) => (
+          <div key={r.conference} className="ck-cup-race" data-conference={r.conference}>
+            <h4>{r.conference}</h4>
+            {r.teams.map((t, i) => (
+              <div key={t.teamId} className={`ck-cup-race-row${i === 0 ? ' ck-cup-holder' : ''}`} data-team={t.tricode} title={t.wcTied ? 'Tied: no tiebreaker separates them yet' : t.wcTiebreak ? `Placed by ${TIEBREAK_TEXT[t.wcTiebreak]}` : undefined}>
+                <span className="ck-cup-mark">{i === 0 ? 'WC' : ''}</span>
+                <Logo teamId={t.teamId} />
+                <span className="ck-cup-tri">{t.tricode}</span>
+                <span className="ck-cup-sub">2nd, {t.group.replace(' Group ', ' ')}</span>
+                <span className="ck-cup-rec">
+                  {t.w}-{t.l}
+                </span>
+                <DiffChip diff={t.diff} />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

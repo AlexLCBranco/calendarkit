@@ -1,8 +1,13 @@
-/* Cup view (round 11): the 3 × 2 group cards, team pills in the team's color, the rules and wild-card panels. */
+/* Cup view (round 11): the 3 × 2 group cards, team pills in the team's color, the rules and wild-card panels. Round 11b:
+   the whole view fits the window without scrolling (1920 × 950, 1600 × 1000; e2e/cup.spec.ts) — height won back from
+   pill height, gaps and paddings and the two-column wild-card panel, never from smaller text — and it is at most
+   1320 px wide, centered, so a team's numbers sit close to its name. */
 .ck-cupview {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
+  max-width: 1320px;
+  margin: 0 auto;
 }
 .ck-cup-capture {
   background: var(--ck-bg);
@@ -12,7 +17,7 @@
   display: flex;
   align-items: baseline;
   gap: 14px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .ck-cup-title {
   margin: 0;
@@ -30,16 +35,16 @@
 .ck-cup-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
 }
 .ck-cup-card {
   background: var(--ck-surface);
   border: 1px solid var(--ck-border);
   border-radius: 12px;
-  padding: 10px 10px 12px;
+  padding: 8px 8px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 /* one grid for the header and every pill, so W, L and DIFF line up */
 .ck-cup-row {
@@ -73,8 +78,8 @@
 }
 .ck-cup-pill {
   --ck-logo: 24px;
-  height: 38px;
-  border-radius: 19px;
+  height: 32px;
+  border-radius: 16px;
   background: linear-gradient(90deg, var(--ck-team), color-mix(in srgb, var(--ck-team) 55%, #0f1115));
   color: #fff;
   font-weight: 600;
@@ -138,15 +143,16 @@
 }
 .ck-cup-panels {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
 }
 .ck-cup-panel {
   --ck-logo: 20px;
   background: var(--ck-surface);
   border: 1px solid var(--ck-border);
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   font-size: 13px;
   line-height: 1.5;
 }
@@ -161,29 +167,44 @@
 .ck-cup-panel ol {
   padding-left: 20px;
 }
+/* the rules flow into two columns: half the panel's height */
+.ck-cup-rules-text {
+  columns: 2;
+  column-gap: 24px;
+}
+.ck-cup-rules-text p,
+.ck-cup-rules-text li {
+  break-inside: avoid;
+}
 .ck-cup-ot {
   color: var(--ck-muted);
   font-size: 12px;
+}
+/* West | East side by side */
+.ck-cup-races {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 20px;
 }
 .ck-cup-race {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 8px;
 }
 .ck-cup-race h4 {
-  margin: 4px 0 0;
+  margin: 0;
   color: var(--ck-muted);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+/* one compact unit: fixed columns, nothing stretches, so the record and DIFF sit right after the team */
 .ck-cup-race-row {
   display: grid;
-  grid-template-columns: 26px 20px minmax(0, 1fr) 40px 54px;
+  grid-template-columns: 24px 20px 34px max-content 30px 46px;
   align-items: center;
-  column-gap: 8px;
+  column-gap: 6px;
   padding: 3px 8px;
   border: 1px solid transparent;
   border-radius: 8px;
@@ -197,10 +218,13 @@
   border-color: var(--ck-cup);
   background: rgb(217 165 33 / 0.1);
 }
+.ck-cup-tri {
+  font-weight: 600;
+}
 .ck-cup-sub {
   color: var(--ck-muted);
   font-size: 12px;
-  margin-left: 4px;
+  white-space: nowrap;
 }
 .ck-cup-rec {
   text-align: center;

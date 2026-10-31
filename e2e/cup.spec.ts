@@ -182,6 +182,86 @@ test.describe('Cup view', () => {
   });
 });
 
+// Round 11b: the whole view fits the window — no page scroll, nothing clipped — with the real snapshot and with a
+// worst case where all 60 group games are final (some in OT), so it can't pass only while most teams are 0-0.
+test.describe('Cup view fits the window', () => {
+  test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'fixed window sizes: one desktop project is enough'));
+
+  /** Every Cup group game final: varied margins, every 5th game in OT. */
+  async function allPlayed(page: Page) {
+    await page.route('**/data/schedule.json', async (route) => {
+      const raw = await (await route.fetch()).json();
+      let k = 0;
+      for (const d of raw.leagueSchedule.gameDates as { games: (RawGame & { gameStatusText: string })[] }[])
+        for (const g of d.games) {
+          if (g.gameSubtype !== 'in-season') continue;
+          k++;
+          g.gameStatus = 3;
+          g.gameStatusText = k % 5 ? 'Final' : 'Final/OT';
+          g.homeTeam.score = 95 + ((k * 7) % 31);
+          g.awayTeam.score = 95 + ((k * 13) % 29);
+          if (g.homeTeam.score === g.awayTeam.score) g.homeTeam.score++;
+        }
+      await route.fulfill({ json: raw });
+    });
+  }
+
+  for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }])
+    for (const data of ['real', 'all played'] as const)
+      test(`${size.width}×${size.height}, ${data} data: no page scroll, nothing clipped, rows compact`, async ({ page }) => {
+        await page.setViewportSize(size);
+        if (data === 'all played') await allPlayed(page);
+        await page.goto(`${APP}?view=cup`);
+        await expect(page.getByTestId('cup-group')).toHaveCount(6);
+        await page.evaluate(() => document.fonts.ready);
+        if (data === 'all played') {
+          // 4 games each: every team has played them all
+          const played = await page.locator('.ck-cup-pill').evaluateAll((els) => els.map((e) => [...e.querySelectorAll('.ck-cup-num')].reduce((n, x) => n + Number(x.textContent), 0)));
+          expect(played).toEqual(Array(30).fill(4));
+        }
+        const r = await page.evaluate(() => {
+          const view = document.querySelector<HTMLElement>('[data-testid="cup"]')!;
+          const out: string[] = [];
+          const box = (e: Element) => e.getBoundingClientRect();
+          // nothing below the window; no box spills out of its card / panel; no text cut off sideways or downwards
+          for (const e of view.querySelectorAll<HTMLElement>('*')) {
+            const b = box(e);
+            if (!b.width && !b.height) continue;
+            if (b.bottom > innerHeight + 0.5) out.push(`below the window: ${e.className || e.tagName} (${b.bottom.toFixed(0)})`);
+            const frame = e.parentElement?.closest('.ck-cup-card, .ck-cup-panel');
+            if (frame) {
+              const f = box(frame);
+              if (b.left < f.left - 0.5 || b.right > f.right + 0.5 || b.top < f.top - 0.5 || b.bottom > f.bottom + 0.5) out.push(`outside its frame: ${e.className || e.tagName}`);
+            }
+            if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX !== 'visible') out.push(`cut off: ${e.className} "${e.textContent}"`);
+            if (e.scrollHeight > e.clientHeight + 1 && getComputedStyle(e).overflowY !== 'visible') out.push(`cut off (height): ${e.className}`);
+          }
+          // the wild-card rows: one compact unit — the record starts within 16 px of the group label; West left of East
+          const gaps = [...document.querySelectorAll('.ck-cup-race-row')].map((row) => box(row.querySelector('.ck-cup-rec')!).left - box(row.querySelector('.ck-cup-sub')!).right);
+          const races = [...document.querySelectorAll('.ck-cup-race')].map((e) => ({ c: e.getAttribute('data-conference'), x: box(e).left, y: box(e).top }));
+          // group pills: the W column starts within 90 px of the end of the longest name's text
+          const nameGaps = [...document.querySelectorAll('.ck-cup-pill')].map((p) => {
+            const range = document.createRange();
+            range.selectNodeContents(p.querySelector('.ck-cup-name')!);
+            return box(p.querySelectorAll('.ck-cup-num')[0]!).left - range.getBoundingClientRect().right;
+          });
+          return { scroll: document.documentElement.scrollHeight, win: innerHeight, out, gaps, races, minNameGap: Math.min(...nameGaps), fontSizes: [...new Set([...view.querySelectorAll('.ck-cup-name, .ck-cup-panel p, .ck-cup-panel li')].map((e) => getComputedStyle(e).fontSize))] };
+        });
+        await page.screenshot({ path: `test-output/cup-${size.width}x${size.height}-${data.replace(' ', '-')}.png` });
+        console.log(`[cup fit] ${size.width}×${size.height} ${data}: scroll height ${r.scroll} / window ${r.win}`);
+        expect(r.scroll, 'page scrolls vertically').toBeLessThanOrEqual(r.win);
+        expect(r.out).toEqual([]);
+        expect(r.gaps).toHaveLength(6);
+        for (const g of r.gaps) expect(g).toBeLessThanOrEqual(16);
+        expect(r.races.map((x) => x.c)).toEqual(['West', 'East']);
+        expect(r.races[0]!.y).toBe(r.races[1]!.y);
+        expect(r.races[0]!.x).toBeLessThan(r.races[1]!.x);
+        expect(r.minNameGap).toBeLessThanOrEqual(90);
+        // text kept its size (the height came from layout, not smaller text)
+        expect(r.fontSizes.sort()).toEqual(['12px', '13px', '14px']);
+      });
+});
+
 test('no Cup view on tablets and phones; a Cup link shows the League view there', async ({ page }, info) => {
   test.skip(desktop(info.project.name), 'tablet and phone only');
   await page.goto(`${APP}?view=cup`);

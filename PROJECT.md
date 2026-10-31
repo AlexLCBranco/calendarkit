@@ -1876,6 +1876,12 @@ pixel checks, tablet + phone 55 — all pass (after the live-site handling of th
   panels). Team pill colors: `TEAM_COLOR` in CupView.tsx (main colors, lifted where near black or too light).
 - **Top bar:** with the third tab, Team → Calendar no longer fit one row at 1920 (46 px over): gaps 12 → 8 px and the View
   tabs' padding 14 → 10 px.
+- **v1.29.1 — fits the window:** at 1920 × 950 the view was 20 px too tall. Won back from layout only (text sizes
+  unchanged): view at most 1320 px wide and centered (numbers close to the names), pills 38 → 32 px, card/grid/panel gaps
+  and paddings smaller, wild-card race in two columns (West | East) with fixed compact columns, rules text in two
+  columns. Now 163 px spare at 1920 × 950. Test: "Cup view fits the window" in `e2e/cup.spec.ts` (1920 × 950 and
+  1600 × 1000, real data and every group game final; no page scroll, nothing clipped or outside its card/panel,
+  compact rows, text sizes 12/13/14 px); its 4 cases fail on v1.29.0. Screenshots go to `test-output/cup-*.png`.
 - **Tests:** `tests/cup.test.ts` (21: ties by head-to-head, 3-way, partial split + restart, differential, points, last
   season, unbreakable tie, wild cards, OT, what counts, the Oct 30 results as listed and from the real feed
   `tests/fixtures/cup-2026-10-31.json`, feed groups = the list). `e2e/cup.spec.ts` (desktop widths: grid layout, every
