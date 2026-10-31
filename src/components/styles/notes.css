@@ -1,0 +1,93 @@
+/* Slate notes (round 9, Part 3): the game's info on the left at its old size, the note box on the right taking the rest
+   of the card — a dark rounded box with a light outline (Alex's hand-made boards), text inside. */
+.ck-slate-card.ck-with-note {
+  display: grid;
+  grid-template-columns: var(--ck-slate-info) minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: stretch;
+}
+.ck-slate-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.ck-gnote {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--ck-note-bg);
+  border: 1px solid var(--ck-note-line);
+  border-radius: 8px;
+}
+/* the slot label and the switch, in the box's top right corner */
+.ck-gnote-head {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 1;
+}
+.ck-gnote-slot {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ck-muted);
+}
+.ck-gnote-switch {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+  color: var(--ck-muted);
+  background: transparent;
+  border: 1px solid var(--ck-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.ck-gnote-switch:hover,
+.ck-gnote-switch:focus-visible {
+  color: var(--ck-text);
+  border-color: var(--ck-muted);
+}
+/* the box grows with its text: a hidden copy of the text (::after) and the field share one grid cell */
+.ck-gnote-grow {
+  flex: 1;
+  display: grid;
+}
+.ck-gnote-grow::after,
+.ck-gnote-text {
+  grid-area: 1 / 1;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.35;
+  padding: 8px 64px 8px 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-height: 0;
+}
+.ck-gnote-grow::after {
+  content: attr(data-text);
+  visibility: hidden;
+}
+.ck-gnote-text {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  resize: none;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  color: var(--ck-text);
+  outline: none;
+}
+.ck-gnote:focus-within {
+  border-color: var(--ck-note-focus);
+}
+.ck-capturing .ck-gnote,
+.ck-slate-copy .ck-gnote {
+  border-color: var(--ck-note-line);
+}

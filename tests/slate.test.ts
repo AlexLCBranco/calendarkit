@@ -19,11 +19,19 @@ describe('slate copy layout', () => {
     }
   });
 
-  it('wide on a wide page: 12 games are not 2 × 6; 3 games are not a column (Alex chose largest cards: 2 + 1)', () => {
-    expect(slateCopyColumns(12, CARD)).toBeGreaterThanOrEqual(3);
-    expect(slateCopyColumns(3, CARD)).toBe(2);
-    const img = slateImageSize(12, slateCopyColumns(12, CARD), CARD);
-    expect(img.width / img.height).toBeGreaterThan(1);
+  it('round 7 cards (474 × 120, 120 px apart) came out wide on a wide page: 12 games not 2 × 6, 3 games 2 + 1', () => {
+    expect(slateCopyColumns(12, CARD, SLATE_PAGE, 120)).toBeGreaterThanOrEqual(3);
+    expect(slateCopyColumns(3, CARD, SLATE_PAGE, 120)).toBe(2);
+  });
+
+  it('round 9 cards with their note boxes (914 × 117 at 1920), SLATE_COPY_GAP apart: the column table, names ≥ 12 px fitted', () => {
+    const wide = { width: 914, height: 117 };
+    const table = [1, 3, 5, 12, 15].map((n) => [n, slateCopyColumns(n, wide)]);
+    expect(table).toEqual([[1, 1], [3, 1], [5, 1], [12, 2], [15, 2]]);
+    // team names are 16 px on the card: fitted to the page, at least 12 px up to the season's busiest night (15 games)
+    for (const n of [1, 5, 12, 15]) expect(16 * fitScale(slateImageSize(n, slateCopyColumns(n, wide), wide), SLATE_PAGE), `${n} games`).toBeGreaterThanOrEqual(12);
+    // with round 7's 120 px gap they would not be
+    expect(16 * fitScale(slateImageSize(15, slateCopyColumns(15, wide, SLATE_PAGE, 120), wide, 120), SLATE_PAGE)).toBeLessThan(12);
   });
 
   it('a tall page gets fewer columns', () => {

@@ -27,6 +27,10 @@
   --ck-tv: #3fb68b;
   /* the Slate's TV-game tint (round 9): --ck-tv at 9 % */
   --ck-tv-tint: rgb(63 182 139 / 0.09);
+  /* Slate note boxes (round 9): a dark box with a light outline, as on Alex's hand-made boards */
+  --ck-note-bg: #12151b;
+  --ck-note-line: #c9ced8;
+  --ck-note-focus: #5ec8ff;
   /* back-to-back: lemon yellow (hue 53°), apart from the Cup's gold (43°); contrast 14.1:1 on --ck-bg, 11.7:1 on surface-2 */
   --ck-b2b: #f5e042;
   /* stale data stamp: orange (was --ck-b2b before B2B turned yellow) */

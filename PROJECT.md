@@ -29,8 +29,8 @@ where-to-watch info, embedding in gauntlet.
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
-## Current state / handoff (2026-10-31, round 9 in progress)
-Round 9: Part 1 (v1.25.0: the Team List shows one calendar month), Part 2 (v1.26.0: Slate streaks, TV cards green, ↗ link icon). Details: "### Round 9".
+## Current state / handoff (2026-10-31, after round 9)
+Round 9: Part 1 (v1.25.0: the Team List shows one calendar month), Part 2 (v1.26.0: Slate streaks, national TV cards in green, ↗ link icon), Part 3 (v1.27.0: Slate wide layout + a note box per game, notes in localStorage `ck:notes:v1` — format under "### Round 9", Part 3; the gauntlet Slate widget will read it). Details: "### Round 9". Decided this round: `SLATE_COPY_GAP` 120 → 24 px (wider cards). Don't undo: notes are stored (content), defaults still aren't (Hide all notes, rest days).
 
 ## Previous handoff (2026-10-30, after round 8)
 Round 8: Part 0 (Cup fixture from the feed, CI split into parallel jobs, ck-old removed, audit clean), Part 1
@@ -1529,6 +1529,72 @@ Ground rules as every round (desktop first, nothing slower, every check automate
   tooltip, place, no underline, brighter on hover, click / middle / ctrl-click open the game URL in a new tab (gamelink.spec's
   CDP target watch), names no link, the icon's spot in the copy = the card's background). Copy helpers moved to
   `e2e/slatecopy.ts` (`copySlate`, `readPng`). **Against v1.25.0**: all 6 new unit and all 3 new e2e tests fail.
+
+**Part 3, Slate: wide layout + a note box per game** (v1.27.0)
+- **Layout** (`slate.ts`: `SLATE_INFO_WIDTH` 444, `slateColumns`, `slateNoteWidth`): each card = the game's info at its
+  round 7 size (444 px content) on the left + a note box taking the rest of the card. The Slate starts at the page's left
+  edge and fills the widget: **two columns while each note box keeps `SLATE_NOTE_MIN` (300 px), else one**. Measured:
+  **1920 → 2 columns, cards 914 px, note box 426 px; 1280 → 1 column, card 1233 px, note box 745 px**. "Hide all notes"
+  shows the round 7 info-only cards (two 474 px columns, left-aligned).
+- **The box** (`NoteBox.tsx`, `styles/notes.css`): a dark rounded box with a light outline (`--ck-note-bg` / `--ck-note-line`),
+  a textarea typed into directly; 15 px text, wraps, grows with its text (a hidden copy of the text sizes the grid cell
+  the field fills: no inner scrollbar, the font never shrinks); at least as tall as the card's info (the card row
+  stretches), so a long note grows its card and its row.
+- **Three slots** — PRE / LIVE / POST: the box's top right corner shows the slot on show and [⇄] (PRE → LIVE → POST → PRE).
+  Each slot keeps its own text. The slot on show is saved with the note; **nothing switches it but Alex** (not tip-off, not
+  "over"). A game without a note starts on PRE. Toolbar above the cards (`NotesTools`, never copied): **Switch all**
+  PRE / LIVE / POST (every card of the day, saved like a card's own switch), **Hide all notes** (a view toggle — not
+  stored: the defaults rule), **Export notes**, **Import notes** (+ a status line).
+- **Storage — one key, for the gauntlet Slate widget to read later** (after calendarkit moves to
+  gauntlet-home.vercel.app/calendar; not this round): `localStorage["ck:notes:v1"]` =
+  `{ "<NBA gameId>": { "pre": string, "live": string, "post": string, "shown": "pre" | "live" | "post" } }`
+  (`notes.ts`: `NOTES_KEY`, `parseNotes`). A game whose note is empty and on PRE is removed; the key is removed when no
+  note is left. The note belongs to the **game** (its gameId), not to a card or view. Typing is saved 400 ms after the
+  last key (`SAVE_DELAY_MS`), a switch / Switch all / import at once, and on blur, page hide and leaving. A save writes
+  only the games changed in this tab onto what is stored then, so another tab's notes on other games survive. Notes are
+  content, not a default: PROJECT.md's "no persistence until a settings page" rule (round 7, 2.2) is about defaults and
+  still holds for them (rest days, Hide all notes). localStorage is per origin: **notes don't follow the site to a new
+  domain — Export / Import is how they move** (and the backup).
+- **Live sync between open tabs** (`storage` event): a note typed or a slot switched in one tab appears in the others
+  without a reload; last edit wins. A tab's own unsaved typing is never replaced by an incoming save (the typed slot is
+  kept, its caret stays; saving it then makes it the last edit).
+- **Export**: `calendarkit-notes-YYYY-MM-DD.json` = `{ "format": "ck:notes:v1", "exported": ISO time, "notes": {…the
+  key's value…} }`. **Import** (an export file or a bare notes map): merged — for a game in both, each slot the file has
+  text for wins, an empty slot in the file keeps ours, the file's shown slot wins; games only on one side kept. "Imported
+  notes for N games." A malformed file (not JSON, not a notes map, a bad gameId / slot / format) is refused with the
+  reason ("Not imported: … Nothing was changed.") and storage isn't touched.
+- **Copies** (toolbar, marquee): each card with its box — the shown slot's text and label; no [⇄], no field (the copy
+  renders `NoteCopy`, static text in the same box); an empty box is copied as an empty dark opaque box (the space written
+  over on the whiteboard). Transparent page and the largest-cards column rule as in round 7; Hide all notes → info-only
+  cards in the copy too. **`SLATE_COPY_GAP`: 120 → 24 px** — the cards are ~2× wider now and carry their own writing
+  space; with 120 px a 12- or 15-game night fitted to 1920 × 911 showed the team names at ~10 px (the readability bar is
+  12 px). Column table at 1920 × 911 (cards 914 × 117 CSS px, no long notes; e2e `slate.spec.ts`):
+
+  | games | columns | image (CSS px × ratio) | fitted | names on the page | copy |
+  |---|---|---|---|---|---|
+  | 1 | 1 | 938 × 141 × 4.25 | ×2.05 | 32.8 px | 327 ms |
+  | 3 selected | 1 | 938 × 423 × 4.25 | — | — | 513 ms |
+  | 5 | 1 | 938 × 705 × 4 | ×1.29 | 20.7 px | 758 ms |
+  | 12 | 2 | 1876 × 846 × 4 | ×1.02 | 16.4 px | 1 406 ms |
+  | 15 | 2 | 1876 × 1128 × 4 | ×0.81 | 12.9 px | 1 642 ms |
+
+  (Round 7 had 3 selected → 2 + 1 and 12 → 3 × 4; the same rule gives fewer columns with the wider cards.)
+- **Performance**: typing re-renders only that card's box (`useSyncExternalStore` on its own game; `SlateCard` is memoized
+  and never re-renders for a note). On a 15-game night: **keystroke → next frame median 13 ms (1920) / 16 ms (1280), p95
+  21 / 28 ms**; other cards' DOM: 0 mutations (MutationObserver) — guarded (0 mutations, median < 34 ms).
+- Tests: unit `tests/notes.test.tsx` (format, parse, merge, rejected files; store: debounced save, switch at once, empty
+  note removed, another tab's save arriving with this tab's unsaved typing kept and other games surviving, Switch all,
+  import count; cards: three slots through switching, saved and back, the clock never switching, the note on the same
+  game reached another way, Switch all + Hide all, typing re-rendering no other card, export / import / bad file;
+  columns at 1840 / 1233), `tests/slate.test.ts` (column table and ≥ 12 px names with 24 px; < 12 px with 120);
+  e2e `e2e/notes.spec.ts` (left edge + 2 / 1 columns + boxes ≥ 300 px at 1920 / 1280; reload; same game via another day;
+  slots, reload, clock past tip-off and over, Switch all kept, Hide all reset, nothing else stored; two pages in one
+  context incl. the caret; long note: card and row grow, no inner scroll, same font, box ≥ the info's height; export →
+  clear → import identical, merge, malformed refused; copy: boxes, label, text pixels, no controls, empty box dark and
+  opaque, transparent outside, rule; typing on 15 games). **Against v1.26.0**: all 8 new e2e fail; 8 of the 14 new unit
+  tests fail and the other 6 test the new `notes.ts` / constants, which don't exist there.
+
+**Round 9 perf** (Windows PC, v1.27.0 build): loads 246 / 356 / 290 ms (week view 356 vs baseline 253, limit 403: the week view has no round 9 code — run noise), switches 28–65 ms (Team List 28, was ~80), marquee p95 22–23 ms; Team List checks after Part 1: scroll ×0.31, month-nav ×0.97 vs v1.17.1. Local e2e after Part 3: 298 / 298, unit 414 / 414.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

@@ -14,11 +14,17 @@
 }
 .ck-slate-grid {
   max-width: 960px;
-  margin: 0 auto;
+  margin: 0; /* round 9: from the page's left edge, like the League List */
   padding: 8px 0 16px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+/* Round 9 (Part 3): with the note boxes, the grid fills the widget in 1 or 2 columns (slateColumns) */
+.ck-slate-grid.ck-slate-wide {
+  max-width: none;
+  grid-template-columns: repeat(var(--ck-slate-cols), minmax(0, 1fr));
+  gap: var(--ck-slate-grid-gap);
 }
 /* One card: the head (time or "Final", labels, TV), then the away and the home team's rows. */
 .ck-slate-card {
@@ -151,4 +157,59 @@
   gap: var(--ck-slate-gap);
   padding: calc(var(--ck-slate-gap) / 2);
   align-items: stretch;
+}
+
+/* the notes toolbar above the cards (round 9): Switch all, Hide all notes, Export / Import; never in a copy */
+.ck-slate-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 2px 0 6px;
+  font-size: 13px;
+  color: var(--ck-muted);
+}
+.ck-slate-tools-label {
+  font-weight: 700;
+  color: var(--ck-text);
+}
+.ck-slate-switch-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ck-slate-tools-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.ck-tool {
+  height: 28px;
+  padding: 0 10px;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 7px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ck-tool:hover:not(:disabled),
+.ck-tool:focus-visible {
+  border-color: var(--ck-accent);
+}
+.ck-tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.ck-tool[aria-pressed='true'] {
+  border-color: var(--ck-accent);
+}
+.ck-slate-tools-msg {
+  min-width: 0;
+}
+.ck-slate-tools-msg.ck-error {
+  color: var(--ck-playoffs);
 }

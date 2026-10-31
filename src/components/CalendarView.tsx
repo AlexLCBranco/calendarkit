@@ -25,6 +25,7 @@ import { SelectionBar, SelectionStyle } from './SelectionBar';
 import { SelectionCapture, type SelectionKind } from './SelectionCapture';
 import { slateCopyColumns, slateImageSize, slatePixelRatio } from './slate';
 import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
+import { createNotesStore } from './notes';
 import { TeamHeader } from './TeamHeader';
 import { TeamListView, type TeamListHandle } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
@@ -129,6 +130,10 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const stateRef = useRef(state);
   stateRef.current = state;
   const tooltip = useTooltip();
+  // Slate notes (round 9): the games' notes, saved in localStorage (notes.ts); "Hide all notes" is a view toggle, never stored
+  const [notes] = useState(createNotesStore);
+  useEffect(() => notes.listen(), [notes]);
+  const [hideNotes, setHideNotes] = useState(false);
 
   const update = useCallback(
     (patch: Partial<CalendarState>) => {
@@ -507,7 +512,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
             <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
           )
         ) : slate ? (
-          <SlateView data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} />
+          <SlateView data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} width={size.width} notes={notes} hideNotes={hideNotes} onHideNotes={setHideNotes} />
         ) : list && leagueSideBySide(size.width) ? (
           // round 8: the map beside the list (desktop); it stays put while a busy night scrolls
           <div className="ck-league-split" {...hoverHandlers(mapHover)}>
@@ -533,7 +538,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         {selKind && <SelectionBar store={selection} copy={copySelection} />}
         {slateCapture && (
           <CaptureStage onReady={slateCapture.onReady} width={slateImageSize(slateCapture.games.length, slateCapture.cols, slateCapture.card).width} className=" ck-slate-capture">
-            <SlateCopy data={data} games={slateCapture.games} cols={slateCapture.cols} cardWidth={slateCapture.card.width} timeZone={timeZone} />
+            <SlateCopy data={data} games={slateCapture.games} cols={slateCapture.cols} cardWidth={slateCapture.card.width} timeZone={timeZone} notes={hideNotes ? undefined : notes} />
           </CaptureStage>
         )}
         {selCapture && selKind && selKind !== 'league-slate' && (

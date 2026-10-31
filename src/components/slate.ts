@@ -2,9 +2,11 @@
 
 /**
  * Sketching space (CSS px) between the cards of a copied slate, and half of it around them: everything there is
- * transparent, for drawing on the whiteboard. The site's own gap is 12 px. One constant, to tune.
+ * transparent, for drawing on the whiteboard. The site's own gap is 12 px. One constant, to tune. Round 7: 120 px. Round 9:
+ * 24 px — each card now carries its own note box (the space written over on the whiteboard) and is ~2× wider, and with
+ * 120 px a 12- or 15-game night fitted to a 1920 × 911 page showed the team names at ~10 px (24 px: ≥ 12.9 px).
  */
-export const SLATE_COPY_GAP = 120;
+export const SLATE_COPY_GAP = 24;
 
 /** The page the image goes onto when no window is measured (Alex's whiteboard window). */
 export const SLATE_PAGE = { width: 1920, height: 911 };
@@ -42,3 +44,23 @@ export function slateCopyColumns(n: number, card: { width: number; height: numbe
  * a quarter of its pixels — so it stays sharp up to 2× its fitted size (one card fills a page at ~2.5×).
  */
 export const slatePixelRatio = (img: { width: number; height: number }, page = SLATE_PAGE) => Math.max(4, Math.ceil(2 * fitScale(img, page) * 4) / 4);
+
+/**
+ * Round 9 (Part 3): each card is the game's info at its old size (the round 7 card's content width) beside a note box
+ * that takes the rest of the card. The grid starts at the page's left edge and fills the widget: two columns while each
+ * card's note box keeps SLATE_NOTE_MIN, else one.
+ */
+export const SLATE_INFO_WIDTH = 444;
+/** Card padding and border, the gap between the info and the note box, and the gap between cards (CSS px). */
+export const SLATE_CARD_PAD = 14;
+export const SLATE_CARD_BORDER = 1;
+export const SLATE_NOTE_GAP = 14;
+export const SLATE_GRID_GAP = 12;
+/** The narrowest note box worth writing in (Alex: "~300 px"). */
+export const SLATE_NOTE_MIN = 300;
+
+/** The note box's width in a card `card` px wide. */
+export const slateNoteWidth = (card: number) => card - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - SLATE_INFO_WIDTH - SLATE_NOTE_GAP;
+
+/** Columns of cards for a widget `width` px wide: 2 when each card's note box keeps SLATE_NOTE_MIN, else 1. */
+export const slateColumns = (width: number) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2) >= SLATE_NOTE_MIN ? 2 : 1);

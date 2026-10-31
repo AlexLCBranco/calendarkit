@@ -23,7 +23,11 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
           nameFont: parseFloat(getComputedStyle(card).fontSize),
           cards: [...root.querySelectorAll('.ck-slate-card')].map((c) => {
             const r = c.getBoundingClientRect();
-            return { id: c.getAttribute('data-game-id'), x: r.left - r0.left, y: r.top - r0.top, w: r.width, h: r.height };
+            // round 9: the note box (its rect in the image, the slot label, its text, controls left in it)
+            const n = c.querySelector('.ck-gnote');
+            const nr = n?.getBoundingClientRect();
+            const note = n && nr ? { x: nr.left - r0.left, y: nr.top - r0.top, w: nr.width, h: nr.height, slot: n.querySelector('.ck-gnote-slot')?.textContent ?? '', text: n.querySelector('.ck-gnote-text')?.textContent ?? '', controls: n.querySelectorAll('button, textarea, [data-testid="note-switch"]').length } : null;
+            return { id: c.getAttribute('data-game-id'), x: r.left - r0.left, y: r.top - r0.top, w: r.width, h: r.height, note };
           }),
         };
         obs.disconnect();
@@ -37,7 +41,7 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
   await button.click();
   await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 });
   const ms = Date.now() - t0;
-  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; cards: { id: string; x: number; y: number; w: number; h: number }[] };
+  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number } | null }[] };
   const ratio = Number((await button.getAttribute('data-captured'))!.split('@')[1]);
   const png = await page.evaluate(async () => {
     const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;

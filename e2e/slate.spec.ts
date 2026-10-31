@@ -47,13 +47,13 @@ plain('opens on today (the clock), not on a date in the URL', async ({ page }) =
   await expect(page.getByRole('tab', { name: 'Slate' })).toHaveAttribute('aria-selected', 'true');
 });
 
-test('two columns of cards; every game of the day, in order, with the League List row\'s facts', async ({ page }) => {
+test('columns of cards (round 9: 2 at 1920, 1 at 1280 — notes.spec.ts); every game of the day, in order, with the League List row\'s facts', async ({ page }) => {
   await openSlate(page, '2026-11-15');
   const want = (await snapshot(page))['2026-11-15']!.map((g) => g.gameId);
   expect((await ids(page)).sort()).toEqual([...want].sort());
-  // two columns: two distinct x, cards of equal width, none outside the view horizontally
+  // round 9: two columns at 1920, one at 1280 (the note box needs 300 px); cards of equal width, none outside the view
   const boxes = await page.locator('[data-testid="slate"] .ck-slate-card').evaluateAll((cs) => cs.map((c) => c.getBoundingClientRect().toJSON() as DOMRect));
-  expect(new Set(boxes.map((b) => Math.round(b.left))).size).toBe(2);
+  expect(new Set(boxes.map((b) => Math.round(b.left))).size).toBe(page.viewportSize()!.width >= 1920 ? 2 : 1);
   expect(new Set(boxes.map((b) => Math.round(b.width))).size).toBe(1);
   expect(Math.max(...boxes.map((b) => b.right))).toBeLessThanOrEqual(await page.evaluate(() => document.documentElement.clientWidth));
   // the same facts as the League List row of each game: time, records, Fatigue components, labels, TV
@@ -176,11 +176,10 @@ test('copy: 1, 5, 12 and 15 games — transparent around the cards, page-shaped,
       const rows = Math.ceil(n / c);
       expect(fit({ width: c * (cw + gap), height: rows * (ch + gap) }), `${c} columns would be no larger`).toBeLessThanOrEqual(s + 1e-6);
     }
-    if (n === 12) expect(r.stage.cols, '12 games: wide, not 2 × 6').toBeGreaterThan(2);
   }
 });
 
-test('marquee in the Slate: 3 selected games copy by the same rule (2 + 1, not a column)', async ({ page }, info) => {
+test('marquee in the Slate: 3 selected games copy by the same rule as the whole day', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop-xl', 'once, at the whiteboard size');
   await page.setViewportSize(PAGE);
   await openSlate(page, '2026-11-15');
@@ -204,9 +203,12 @@ test('marquee in the Slate: 3 selected games copy by the same rule (2 + 1, not a
   await expect(page.getByTestId('selection-count')).toHaveText('3 games selected');
   const r = await copySlate(page, 'copy-selection', 'slate-selection-3');
   expect(r.stage.cards).toHaveLength(3);
-  // the same rule as the whole day (largest cards on the page; Alex, 2026-10-30): 3 cards come out 2 + 1, not a column
-  expect(r.stage.cols).toBe(2);
-  expect(new Set(r.stage.cards.map((k) => Math.round(k.y))).size).toBe(2);
+  // the same rule as the whole day (largest cards on the page; Alex, 2026-10-30): no other column count shows them larger
+  // (round 7's narrow cards came out 2 + 1; round 9's wide cards with their note boxes come out one column)
+  const [cw, ch] = [r.stage.cards[0]!.w, Math.max(...r.stage.cards.map((k) => k.h))];
+  const gap = r.stage.cards.length > 1 ? Math.max(r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw, r.stage.cards[1]!.y - r.stage.cards[0]!.y - ch) : 0;
+  for (let c = 1; c <= 3; c++) expect(fit({ width: c * (cw + gap), height: Math.ceil(3 / c) * (ch + gap) }), `${c} columns would be no larger`).toBeLessThanOrEqual(fit(r.stage) + 1e-6);
+  console.log(`[slate] selection of 3: ${r.stage.cols} column(s)`);
   expect(r.px.outsideOpaque).toBe(0);
   console.log(`[slate] selection of 3: ${r.stage.width}×${r.stage.height} CSS px × ${r.ratio}, copied in ${r.ms} ms`);
 });
