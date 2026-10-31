@@ -34,7 +34,11 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-10-31, after round 10)
+## Current state / handoff (2026-10-31, after round 11)
+Round 11 (v1.29.0): **Cup view** — League | Team | **Cup** (desktop, same widths as the Slate), the NBA Cup group standings
+"if group play ended today", worked out from the loaded schedule. Details: "### Round 11".
+
+## Previous handoff (2026-10-31, after round 10)
 Round 10 = phase 1 of 5 of the gauntlet Slate widget. v1.27.1: the Slate's cards, note boxes and their pieces are a
 self-contained part, `src/slate/` (inputs: the schedule data, a date, a time zone, a notes store), and calendarkit's Slate
 uses it — pixel-identical to v1.27.0 on screen and in copies. v1.28.0: calendarkit lives at
@@ -1854,6 +1858,29 @@ the new address" = the build served under /calendar/. **The whole e2e suite also
 (E2E_BASE_URL=https://gauntlet-home.vercel.app, 2026-10-31): desktop-xl 89 + 45 + 8 + 10, desktop 109 + the 3 Slate
 pixel checks, tablet + phone 55 — all pass (after the live-site handling of the Slate pixel checks above). App bundle
 341.5 KB (111.0 KB gz), +4.8 KB for the hand-off.
+
+### Round 11 (2026-10-31): Cup view
+- **Feed (checked on the live feed 2026-10-31):** group games: `gameSubtype: "in-season"`, `gameLabel: "Emirates NBA Cup"`,
+  `gameSubLabel: "West Group A"` … `"East Group C"` (same groups as Alex's list; 60 games, Oct 30 – Nov 27). Knockout:
+  `"in-season-knockout"` (Quarterfinal / Semifinal / Championship). **No period scores** — only `score` per team and
+  `gameStatusText` "Final/OT", "Final/2OT"; so OT points can't be left out: OT games count with their final score
+  and the view says so.
+- **Logic:** `src/data/cup.ts` (pure). Record order = games over .500, then win % (1-0 above 2-1; 0-0 counts as .500,
+  level with 1-1). Tiebreakers: head-to-head among the tied teams (W−L in group games between them), point differential,
+  points scored, 2025-26 wins (`LAST_SEASON_WINS`, from stats.nba.com leaguestandingsv3, all 30, sum 1230), then a
+  stable tricode order marked tied. A rule that splits a tie only in part restarts from rule 1 for the teams still level.
+  Wild card per conference: the three 2nd-place teams (after group tiebreakers), same list without head-to-head. Groups
+  come from the feed; a group the feed doesn't fully label falls back to `CUP_GROUP_TEAMS`.
+- **View:** `src/components/CupView.tsx` + `styles/cup.css`, a lazy chunk (~9 KB) loaded and computed only when Cup is
+  opened. URL `?view=cup`; narrower widgets show League. "Copy view as image" copies the heading + 3 × 2 grid (not the
+  panels). Team pill colors: `TEAM_COLOR` in CupView.tsx (main colors, lifted where near black or too light).
+- **Top bar:** with the third tab, Team → Calendar no longer fit one row at 1920 (46 px over): gaps 12 → 8 px and the View
+  tabs' padding 14 → 10 px.
+- **Tests:** `tests/cup.test.ts` (21: ties by head-to-head, 3-way, partial split + restart, differential, points, last
+  season, unbreakable tie, wild cards, OT, what counts, the Oct 30 results as listed and from the real feed
+  `tests/fixtures/cup-2026-10-31.json`, feed groups = the list). `e2e/cup.spec.ts` (desktop widths: grid layout, every
+  W/L/DIFF vs sums from the served snapshot, markers, panels, copy read back from the clipboard, chunk loaded only on
+  opening; tablet/phone: no Cup tab).
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

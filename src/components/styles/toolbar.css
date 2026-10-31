@@ -3,7 +3,8 @@
 .ck-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 12px;
+  /* 8 px apart (12 before round 11): with the Cup tab, Team → Calendar's row still fits 1920 px */
+  gap: 8px;
   align-items: center;
   margin-bottom: 12px;
   min-width: 0;
@@ -36,6 +37,10 @@
   font: inherit;
   cursor: pointer;
   white-space: nowrap;
+}
+.ck-tabs-view .ck-tab {
+  /* League | Team | Cup: narrower tabs (round 11), for the same reason */
+  padding: 7px 10px;
 }
 .ck-tab-selected {
   background: var(--ck-accent);

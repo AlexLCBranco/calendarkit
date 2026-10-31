@@ -1,0 +1,208 @@
+/* Cup view (round 11): the 3 × 2 group cards, team pills in the team's color, the rules and wild-card panels. */
+.ck-cupview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ck-cup-capture {
+  background: var(--ck-bg);
+  padding: 4px 0;
+}
+.ck-cup-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.ck-cup-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+.ck-cup-through {
+  color: var(--ck-text);
+  font-size: 13px;
+}
+.ck-cup-ifended {
+  color: var(--ck-muted);
+  font-size: 12px;
+}
+.ck-cup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.ck-cup-card {
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 12px;
+  padding: 10px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* one grid for the header and every pill, so W, L and DIFF line up */
+.ck-cup-row {
+  display: grid;
+  grid-template-columns: 26px 24px minmax(0, 1fr) 22px 22px 50px;
+  align-items: center;
+  column-gap: 6px;
+  padding: 0 8px;
+}
+.ck-cup-cols {
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding-bottom: 2px;
+}
+.ck-cup-group-name {
+  grid-column: 1 / 4;
+  color: var(--ck-cup);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.ck-cup-num {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.ck-cup-diff-col {
+  display: flex;
+  justify-content: center;
+}
+.ck-cup-pill {
+  --ck-logo: 24px;
+  height: 38px;
+  border-radius: 19px;
+  background: linear-gradient(90deg, var(--ck-team), color-mix(in srgb, var(--ck-team) 55%, #0f1115));
+  color: #fff;
+  font-weight: 600;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
+}
+.ck-cup-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ck-cup-tied {
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.ck-cup-mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 22px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.ck-cup-star {
+  color: var(--ck-cup);
+  font-size: 17px;
+  text-shadow: 0 0 2px rgb(0 0 0 / 0.6);
+}
+.ck-cup-wc {
+  border-radius: 6px;
+  background: var(--ck-cup);
+  color: #1a1405;
+  font-size: 10px;
+  font-weight: 800;
+  text-shadow: none;
+}
+.ck-cup-chip {
+  min-width: 44px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-shadow: none;
+}
+.ck-cup-pos {
+  background: #1f8f5f;
+  color: #fff;
+}
+.ck-cup-neg {
+  background: #c2413b;
+  color: #fff;
+}
+.ck-cup-zero {
+  background: #4a505c;
+  color: #e6e8ec;
+}
+.ck-cup-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 14px;
+}
+.ck-cup-panel {
+  --ck-logo: 20px;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ck-cup-panel h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.ck-cup-panel p,
+.ck-cup-panel ol {
+  margin: 0 0 6px;
+}
+.ck-cup-panel ol {
+  padding-left: 20px;
+}
+.ck-cup-ot {
+  color: var(--ck-muted);
+  font-size: 12px;
+}
+.ck-cup-race {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.ck-cup-race h4 {
+  margin: 4px 0 0;
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ck-cup-race-row {
+  display: grid;
+  grid-template-columns: 26px 20px minmax(0, 1fr) 40px 54px;
+  align-items: center;
+  column-gap: 8px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+.ck-cup-race-row .ck-cup-mark {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--ck-cup);
+}
+.ck-cup-holder {
+  border-color: var(--ck-cup);
+  background: rgb(217 165 33 / 0.1);
+}
+.ck-cup-sub {
+  color: var(--ck-muted);
+  font-size: 12px;
+  margin-left: 4px;
+}
+.ck-cup-rec {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
