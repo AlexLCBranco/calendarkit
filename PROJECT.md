@@ -40,7 +40,9 @@ self-contained part, `src/slate/` (inputs: the schedule data, a date, a time zon
 uses it — pixel-identical to v1.27.0 on screen and in copies. v1.28.0: calendarkit lives at
 **https://gauntlet-home.vercel.app/calendar/** (the gauntlet's rewrite, like /boardkit and /linkkit); the old address hands
 its notes over once and redirects. Details: "### Round 10"; the gauntlet's guide: "## Using Slate in the gauntlet".
-**Waiting on Alex: how the gauntlet gets the part's code** (options under "### Round 10", 1.6) — phase 2 starts from that.
+**Decided (Alex, 2026-10-31): option A** — the gauntlet installs this repo as a package pinned to a commit, as it does
+Boardkit and Linkkit (options under "### Round 10", 1.6). Set up in phase 2. Still open: the repo is private, so either
+make it public or give the gauntlet's Vercel project a token.
 
 ## Previous handoff (2026-10-31, after round 9)
 Round 9: Part 1 (v1.25.0: the Team List shows one calendar month), Part 2 (v1.26.0: Slate streaks, national TV cards in green, ↗ link icon), Part 3 (v1.27.0: Slate wide layout + a note box per game, notes in localStorage `ck:notes:v1` — format under "### Round 9", Part 3; the gauntlet Slate widget will read it). Details: "### Round 9". Decided this round: `SLATE_COPY_GAP` 120 → 24 px (wider cards). Don't undo: notes are stored (content), defaults still aren't (Hide all notes, rest days).
@@ -178,8 +180,11 @@ NBC, Peacock, NBC Sports Network, Telemundo, ESPN, ESPN2, ABC, Prime Video, NBA 
 For the gauntlet's Slate widget (phases 2–5, written in round 10). Self-contained: an assistant in the gauntlet repo can
 follow it without reading calendarkit's code. Code: `src/slate/` in this repo (entry `src/slate/index.ts`, styles
 `src/slate/slate.css`); a working example page: **https://gauntlet-home.vercel.app/calendar/slate.html**
-(`src/slate/demo.tsx`; `?date=YYYY-MM-DD&width=<px>&n=<widgets>`). How the gauntlet gets the code is Alex's choice (round
-10, 1.6) — until then, don't copy it.
+(`src/slate/demo.tsx`; `?date=YYYY-MM-DD&width=<px>&n=<widgets>`). **How the gauntlet gets the code (decided, Alex
+2026-10-31): option A** — a package pinned to a calendarkit commit, like Boardkit and Linkkit
+(`"calendarkit": "https://codeload.github.com/AlexLCBranco/calendarkit/tar.gz/<commit>"`); a card change reaches the
+gauntlet when the pin moves. Don't copy the code. calendarkit's repo is private: the tarball needs it public (Alex's yes)
+or a token in the gauntlet's Vercel project.
 
 **One origin.** calendarkit is served at gauntlet-home.vercel.app/calendar/ through the gauntlet's own `vercel.json`
 rewrites (`/calendar`, `/calendar/`, `/calendar/:path+` → calendarkit-brown.vercel.app/calendar/…). So the whiteboard,
@@ -1830,7 +1835,7 @@ e2e fetches it from a gauntlet page and reads the response type `basic`). Detail
   published to GitHub Packages or npm, both apps depending on it): cleanest boundary, but a third thing to version and
   publish for every card change, and calendarkit's own Slate would follow the same release step. Tests in that package +
   both apps. Notes store: as A.
-- **Recommendation: A**, the gauntlet's existing pattern, with its CI between a card change and the live whiteboard; it
+- **Decided: A** (Alex, 2026-10-31; set up in phase 2). Recommended as the gauntlet's existing pattern, with its CI between a card change and the live whiteboard; it
   needs the calendarkit repo made public (or a token). If Alex prefers no visibility change and automatic updates, B.
 
 **1.7: no timers, no requests at rest** — see 1.2–1.4's tests; the part has none of its own (calendarkit's clock, the
