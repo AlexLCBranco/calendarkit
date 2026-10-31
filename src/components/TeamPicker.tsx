@@ -12,20 +12,21 @@ const PICKER_ORDER: Team[] = DIVISIONS.flatMap(({ division }) => TEAMS.filter((t
  * Team picker with logos: a button (logo + name; tricode on phones) opening a listbox grouped by conference and
  * division. Keyboard: Enter/Space/↓ open; arrows move (←/→ jump a division), Home/End, a letter jumps to the next
  * team starting with it, Enter selects, Escape closes; focus returns to the button.
+ * Without a team (the Cup Team list, round 12: nothing picked yet) the button reads "Pick a team" and has no logo.
  */
-export function TeamPicker({ teamId, onChange, compact = false }: { teamId: number; onChange: (teamId: number) => void; compact?: boolean }) {
+export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: number; onChange: (teamId: number) => void; compact?: boolean }) {
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState(teamId);
+  const [active, setActive] = useState(teamId ?? PICKER_ORDER[0]!.id);
   const [pos, setPos] = useState({ left: 0, top: 0 });
   const btn = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
-  const team = TEAM_BY_ID.get(teamId)!;
+  const team = teamId === undefined ? undefined : TEAM_BY_ID.get(teamId);
   const id = `ck-team-${useId()}`;
 
   const openList = () => {
     const r = btn.current!.getBoundingClientRect();
     setPos({ left: r.left, top: r.bottom + 4 });
-    setActive(teamId);
+    setActive(teamId ?? PICKER_ORDER[0]!.id);
     setOpen(true);
   };
   const close = (focus = true) => {
@@ -104,8 +105,8 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId: numb
           }
         }}
       >
-        <TeamLogo team={{ teamId } as ScheduleGame['homeTeam']} />
-        <span className="ck-picker-name">{compact ? team.tricode : fullName(team)}</span>
+        {team && <TeamLogo team={{ teamId } as ScheduleGame['homeTeam']} />}
+        <span className="ck-picker-name">{!team ? 'Pick a team' : compact ? team.tricode : fullName(team)}</span>
         <span className="ck-caret" aria-hidden="true">
           ▾
         </span>

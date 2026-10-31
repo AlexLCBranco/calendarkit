@@ -77,6 +77,8 @@ export interface GameCardProps {
   rowDate?: string;
   /** The game page URL: the matchup (teams + scores) links to it in a new tab; no link when it returns undefined. */
   gameLink?: GameLink;
+  /** Cup schedule (round 12): the Cup tag's text instead of "NBA Cup · West Group A" ("West A", "Quarterfinal"). */
+  cupTag?: string;
 }
 
 /** The host's game-page URL for a game (hoopsjunkie, config.ts gameLinkUrl), or undefined (no link: undecided teams). */
@@ -158,7 +160,7 @@ export function TifChip({ tif }: { tif: ThreeInFour }) {
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink, cupTag }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -292,7 +294,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         {!cols && tifChip}
         {marks.map((m) => (
           <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
-            {size === 'compact' ? m.short : m.long}
+            {size === 'compact' ? m.short : cupTag && (m.kind === 'cup' || m.kind === 'cup-final') ? cupTag : m.long}
           </span>
         ))}
         {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}

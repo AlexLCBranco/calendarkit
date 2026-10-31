@@ -44,6 +44,10 @@ export interface TeamListViewProps {
   month?: string;
   /** The strip, the picker or "Today" asked for a row in another month: the host shows that month (then the row is put at the top). */
   onMonthChange?: (month: string) => void;
+  /** Mark the next game not over (accent border; default). The Cup Team list's "Played" section has none to mark. */
+  markNext?: boolean;
+  /** Cup schedule (round 12): the Cup tag's text per game ("Group play · West A"). */
+  cupTag?: (g: ScheduleGame) => string | undefined;
 }
 
 export interface TeamListHandle {
@@ -65,7 +69,7 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
  * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
  */
-export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, onAtNext, topStore, today, month, onMonthChange }: TeamListViewProps) {
+export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, onAtNext, topStore, today, month, onMonthChange, markNext = true, cupTag }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
@@ -263,7 +267,8 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
                 gameLink={gameLink}
                 logos
                 dateLabel={rowDate(g.dateEt)}
-                next={g.gameId === next}
+                next={markNext && g.gameId === next}
+                cupTag={cupTag?.(g)}
                 season={season.get(g.gameId)}
                 copyable
                 rowDate={g.dateEt}

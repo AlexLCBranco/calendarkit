@@ -27,19 +27,22 @@ export interface WeekStripProps {
   onNext: () => void;
   prevDisabled: boolean;
   nextDisabled: boolean;
+  /** What ‹ › step by and the days are (Cup schedule, round 12: "night", "Cup nights"); default a week. */
+  unit?: string;
+  label?: string;
 }
 
 // memo: the League List re-renders on every scroll event; the strip only when its week, day or counts change
-export const WeekStrip = memo(function WeekStrip({ days, selected, selectedStore, today, onPick, onPrev, onNext, prevDisabled, nextDisabled }: WeekStripProps) {
+export const WeekStrip = memo(function WeekStrip({ days, selected, selectedStore, today, onPick, onPrev, onNext, prevDisabled, nextDisabled, unit = 'week', label = 'Week' }: WeekStripProps) {
   return (
     <div className="ck-strip" data-testid="week-strip">
-      <button type="button" className="ck-strip-arrow" aria-label="Previous week" disabled={prevDisabled} onClick={onPrev}>
+      <button type="button" className="ck-strip-arrow" aria-label={`Previous ${unit}`} disabled={prevDisabled} onClick={onPrev}>
         ‹
       </button>
-      <div className="ck-strip-days" role="tablist" aria-label="Week">
+      <div className="ck-strip-days" role="tablist" aria-label={label}>
         {selectedStore ? <StoreDays store={selectedStore} days={days} today={today} onPick={onPick} /> : days.map((d) => <Day key={d.date} day={d} selected={d.date === selected} today={today} onPick={onPick} />)}
       </div>
-      <button type="button" className="ck-strip-arrow" aria-label="Next week" disabled={nextDisabled} onClick={onNext}>
+      <button type="button" className="ck-strip-arrow" aria-label={`Next ${unit}`} disabled={nextDisabled} onClick={onNext}>
         ›
       </button>
     </div>

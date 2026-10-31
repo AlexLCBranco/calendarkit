@@ -5,7 +5,8 @@
 
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { hasNationalTv, opponentSecondNight, type CalendarData } from '../data/model';
+import { cupTag, hasNationalTv, opponentSecondNight, type CalendarData } from '../data/model';
+import { cupNightHeading, cupNights } from '../data/cupSchedule';
 import { teamThreeInFour } from '../data/scheduleTags';
 import { timeGroups } from './dayflow';
 import { GameCard } from './GameCard';
@@ -35,6 +36,8 @@ export interface SelectionCaptureProps {
   weekStyle?: string;
   /** League week view: 1 week (the lines get their Fatigue row, as on screen). */
   weeks?: 1 | 2;
+  /** Cup schedule (round 12): only its rows' Cup tags and night headings, as on screen. */
+  cup?: boolean;
 }
 
 /** "Fri 23 Oct · 2 games" */
@@ -49,9 +52,11 @@ function byDay(games: ScheduleGame[]): [string, ScheduleGame[]][] {
 
 export function SelectionCapture(p: SelectionCaptureProps) {
   const { kind, data, ids, teamId, tvOnly, size, now, timeZone } = p;
-  if (kind === 'team-list') return <TeamListView data={data} teamId={teamId} tvOnly={tvOnly} size={{ width: size.width, height: 1e6 }} now={now} timeZone={timeZone} only={ids} />;
+  const { cup } = p;
+  if (kind === 'team-list') return <TeamListView data={data} teamId={teamId} tvOnly={tvOnly} size={{ width: size.width, height: 1e6 }} now={now} timeZone={timeZone} only={ids} markNext={!cup} cupTag={cup ? (g) => cupTag(g, true) : undefined} />;
   if (kind === 'league-list') {
-    const days = listDays(data, tvOnly)
+    const nights = cup ? new Map(cupNights(data).map((n) => [n.date, n])) : undefined;
+    const days = (nights ? [...nights.values()] : listDays(data, tvOnly))
       .map((d) => ({ date: d.date, games: d.games.filter((g) => ids.has(g.gameId)) }))
       .filter((d) => d.games.length);
     return (
@@ -59,7 +64,7 @@ export function SelectionCapture(p: SelectionCaptureProps) {
       <section className={`ck-league-list${leagueListStyle(size.width) ? ' ck-league-side' : ''}`} aria-label="Selected games" style={leagueListStyle(size.width)}>
         <div className="ck-llist">
           {days.map((d) => (
-            <ListDaySection key={d.date} day={d} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} />
+            <ListDaySection key={d.date} day={d} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} heading={nights && cupNightHeading(nights.get(d.date)!)} cupTag={cup ? (g) => cupTag(g) : undefined} />
           ))}
         </div>
       </section>

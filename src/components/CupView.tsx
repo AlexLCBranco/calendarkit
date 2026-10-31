@@ -1,11 +1,14 @@
 // Cup (round 11): NBA Cup group standings "if group play ended today", worked out from the schedule already loaded
 // (src/data/cup.ts) — six group cards (West A/B/C over East A/B/C), then who advances + the tiebreakers, and each
 // conference's wild-card race. Desktop only; its own chunk, loaded and computed only when the Cup view is opened.
+// Round 12: Standings | Schedule (the switch is in the top bar); the Schedule (CupSchedule.tsx) is worked out only once
+// its tab is opened.
 
 import { useMemo, type CSSProperties } from 'react';
 import { cupStandings, type CupTeamLine, type Tiebreak, type WildCardRace } from '../data/cup';
 import { dateFormat, type CalendarData } from '../data/model';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
+import CupSchedule, { type CupScheduleProps } from './CupSchedule';
 import './styles/cup.css';
 
 /** Pill colors: each team's main color, lifted where it is near black or too light for white text on the dark page. */
@@ -30,9 +33,15 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 export interface CupViewProps {
   data: CalendarData;
+  /** Round 12: the schedule instead of the standings (default: standings). */
+  schedule?: Omit<CupScheduleProps, 'data'>;
 }
 
-export default function CupView({ data }: CupViewProps) {
+export default function CupView({ data, schedule }: CupViewProps) {
+  return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} />;
+}
+
+function CupStandingsView({ data }: { data: CalendarData }) {
   const s = useMemo(() => cupStandings(data.games), [data]);
   return (
     <section className="ck-cupview" aria-label="NBA Cup standings" data-testid="cup">

@@ -233,6 +233,32 @@ export function markers(g: ScheduleGame): Marker[] {
   return out;
 }
 
+/** NBA Cup rounds (round 12, the Cup schedule): group play, quarterfinals, semifinals, the Final. */
+export type CupRound = 'group' | 'qf' | 'sf' | 'final';
+
+/** A Cup game's round from the feed's own fields; undefined for every other game. "Semifinal" is checked before "final". */
+export function cupRound(g: ScheduleGame): CupRound | undefined {
+  if (g.isCupGroupGame) return 'group';
+  if (g.gameType === 'cup-final') return 'final';
+  if (!g.isCupKnockout) return undefined;
+  const sub = g.gameSubLabel ?? '';
+  return /quarter/i.test(sub) ? 'qf' : /semi/i.test(sub) ? 'sf' : 'final';
+}
+
+/**
+ * The Cup schedule's tag for a game: the group ("West A", from the feed's "West Group A") for group games, the round
+ * ("Quarterfinal", "Semifinal", "Final") for knockout games; `withRound` puts the round before the group ("Group play ·
+ * West A", the Cup Team list). Undefined for a game that isn't a Cup game.
+ */
+export function cupTag(g: ScheduleGame, withRound = false): string | undefined {
+  const r = cupRound(g);
+  if (r === 'group') {
+    const group = (g.gameSubLabel ?? '').replace(/\s+Group\s+/i, ' ').trim();
+    return withRound ? (group ? `Group play · ${group}` : 'Group play') : group || 'Group play';
+  }
+  return r && { qf: 'Quarterfinal', sf: 'Semifinal', final: 'Final' }[r];
+}
+
 /** Team label for display: tricode, or "TBD" while the team isn't decided. */
 export const teamLabel = (t: ScheduleGame['homeTeam']) => (t.teamId && t.teamTricode ? t.teamTricode : 'TBD');
 

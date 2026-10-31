@@ -231,3 +231,47 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+
+/* Cup → Schedule (round 12): the League List's rows (League) and the Team List's (Team), centered; the whole view fits
+   the window (1920 × 950, 1600 × 1000; e2e/cupschedule.spec.ts) — the busiest night and a team's 7 Cup games. */
+.ck-league-list.ck-cup-sched {
+  flex: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ck-cup-rounds {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+/* every Cup night in one row (11 in 2026-27), not the strip's fixed week */
+.ck-cup-strip {
+  flex: none;
+}
+.ck-cup-strip .ck-strip-days {
+  grid-template-columns: repeat(var(--ck-nights), minmax(0, 1fr));
+}
+.ck-cup-team {
+  flex: none;
+  width: 100%;
+  max-width: 1110px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.ck-cup-section > .ck-team-list {
+  max-width: none;
+}
+.ck-cup-sec-head {
+  margin: 10px 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ck-muted);
+}
+.ck-cup-none,
+.ck-cup-pick {
+  text-align: center;
+}

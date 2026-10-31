@@ -34,7 +34,12 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-10-31, after round 11)
+## Current state / handoff (2026-10-31, after round 12)
+Round 12 (v1.30.0): **Cup schedule** — the Cup view gets "Standings | Schedule"; the Schedule has a League list (one Cup
+night at a time) and a Team list (Played / Remaining), built from the League List's and Team List's own rows. Details:
+"### Round 12".
+
+## Previous handoff (2026-10-31, after round 11)
 Round 11 (v1.29.0): **Cup view** — League | Team | **Cup** (desktop, same widths as the Slate), the NBA Cup group standings
 "if group play ended today", worked out from the loaded schedule. Details: "### Round 11".
 
@@ -1892,6 +1897,48 @@ pixel checks, tablet + phone 55 — all pass (after the live-site handling of th
   `tests/fixtures/cup-2026-10-31.json`, feed groups = the list). `e2e/cup.spec.ts` (desktop widths: grid layout, every
   W/L/DIFF vs sums from the served snapshot, markers, panels, copy read back from the clipboard, chunk loaded only on
   opening; tablet/phone: no Cup tab).
+
+### Round 12 (2026-10-31): Cup schedule
+- **Feed, knockout games (checked in the snapshot of 2026-10-31):** 4 quarterfinals (Dec 4, Dec 5, two each), 2 semifinals
+  (Dec 8), the Final (Dec 11, gameId 006…, `gameType` "cup-final", Hinkle Fieldhouse, 8 pm ET, `seriesText` "Neutral Site").
+  All `gameSubtype: "in-season-knockout"`, `gameSubLabel` "Quarterfinal" / "Semifinal" / "Championship". Until decided both
+  sides are `teamId: 0` with `teamTricode`, `teamName`, `teamCity`, `teamSlug` **null** and `seed: 0`: **no placeholder text**
+  (nothing like "Winner West A"), so undecided sides show "TBD" (`teamLabel`), no logo, no game link. QF/SF: no time
+  (`gameStatusText` "TBD"), no arena, `seriesText` "Date subject to change". Every Cup night today holds only Cup games (the
+  NBA adds the other teams' knockout-week games after group play); the lists filter by `cupRound` anyway.
+- **Logic** (`src/data/cupSchedule.ts`, pure; `cupRound` / `cupTag` in model.ts): `cupNights` = every date with Cup games,
+  only those games, its round = the latest stage among them (once per data set); `cupOpeningNight` = the first night on
+  or after today (the clock's local date), else the last (after the Final, the Final); `teamCupGames` = the team's Cup games,
+  status final → Played, the rest → Remaining. A knockout game is the team's only once the feed puts it there (never
+  predicted). Tags: group games "West A" (League) / "Group play · West A" (Team), knockout "Quarterfinal", "Semifinal", "Final".
+- **View** (`src/components/CupSchedule.tsx`, in the Cup view's lazy chunk; nothing computed until Schedule is opened): the
+  switches are in the top bar where the Layout control sits — "Standings | Schedule", then "League | Team", then the existing
+  `TeamPicker` (it now takes no team: "Pick a team", no logo). State in CalendarView (`CupState`), reset whenever the Cup view
+  is left, never in the URL or storage: the Cup view always opens on Standings, Schedule on League, Team with no team.
+  Top bar one row (34 px) at 1280, 1600 and 1920.
+  - **League**: round tabs (Group play · Quarterfinals · Semifinals · Final: first night of the round), then the League
+    List's `WeekStrip` holding every Cup night (`unit="night"`, the count under each; 11 nights in 2026-27), ‹ › and ← / →
+    step nights (the League List's key rules). The night is the League List's `ListDaySection` (new props `heading` —
+    "Group play · Fri, Nov 6" — and `cupTag`), at the League List's zoom and column, centered; Fatigue legend below.
+  - **Team**: `TeamHeader` ("NBA Cup" on the right), "Played" = `TeamListView only={played} markNext={false}`, "Remaining" =
+    `TeamListView only={remaining}` (the next game marked). An empty section has no heading; nothing remaining → "No
+    remaining Cup games". Before a team is picked: "Pick a team above to see its Cup games."
+  - Rows are the existing ones with everything they have elsewhere; GameCard's new `cupTag` only replaces the Cup tag's text.
+    **B2B / 3-in-4 / records / streaks come from the whole schedule** (leagueFatigue, teamB2BPairs, teamSeason read `data`):
+    on the real snapshot all 21 back-to-back nights on Cup games pair with a non-Cup game (Cup nights are never consecutive).
+  - **Copies**: "Copy view" = the night on show (League) or the header + both sections (Team), copied from the screen (the
+    Schedule never scrolls); the day and game hover buttons as in the lists; marquee selection (SelectionCapture `cup`: night
+    headings and Cup tags as on screen).
+- **Fit** (e2e, 1920 × 950 and 1600 × 1000, real and "full Cup" data): League on the busiest night (Nov 27, 11 games) ends at
+  930 / 950 px (835 / 1000); Team with 7 games (4 group + QF + SF + Final) ends at 468 px. Row text = the List views' (14 px ×
+  the League List zoom 1.3 / 1.155). Nothing below the window, no inner scroll, nothing cut off.
+- **Tests**: unit `tests/cupschedule.test.tsx` (14: rounds + strip on synthetic and real data, tags, opening night before /
+  during / between / after, round tabs + ‹ › + keys, knockout night without its non-Cup game, TBD sides, B2B across a non-Cup
+  game in League and Team (own + opponent), Played / Remaining / assigned knockout / nothing left / hidden headings, the
+  switches never remembered). Mutation check: giving the lists Cup-only data fails both B2B tests. e2e `e2e/cupschedule.spec.ts`
+  (switches + reload; every night = the snapshot's Cup games with a non-Cup game injected on a QF night; real-data B2B per
+  row vs the snapshot's dates; Team list on "full Cup" data; copies read back from the clipboard + marquee; the fit rule +
+  top bar). Screenshots `test-output/cupschedule-*.png`.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
