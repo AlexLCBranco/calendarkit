@@ -35,6 +35,7 @@ where-to-watch info, embedding in gauntlet.
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
 ## Current state / handoff (2026-10-31, after round 12)
+v1.31.0 (12b): the Cup League list's group play is **Round 1–4** (every team's Nth group game), two columns. See "### Round 12".
 Round 12 (v1.30.0): **Cup schedule** — the Cup view gets "Standings | Schedule"; the Schedule has a League list (one Cup
 night at a time) and a Team list (Played / Remaining), built from the League List's and Team List's own rows. Details:
 "### Round 12".
@@ -1939,6 +1940,28 @@ pixel checks, tablet + phone 55 — all pass (after the live-site handling of th
   (switches + reload; every night = the snapshot's Cup games with a non-Cup game injected on a QF night; real-data B2B per
   row vs the snapshot's dates; Team list on "full Cup" data; copies read back from the clipboard + marquee; the fit rule +
   top bar). Screenshots `test-output/cupschedule-*.png`.
+
+- **12b, group play by round (v1.31.0; Alex: "give me what round of the group play it is … sort by round 1 2 3 4, the dates
+  are just confusing").** The feed has no rounds: group games are on shared Cup nights, and 16 of the 60 are one team's Nth
+  group game and the other's (N+1)th (e.g. Nov 6 CHA @ WAS: CHA's 2nd, WAS's 1st). **Alex's choices (asked):** Round N =
+  every team's Nth group game — each team exactly once per round, a split game in both rounds (18 / 20 / 20 / 18 games) —
+  and **two columns** so a round fits. `cupGroupNumbers` (each group game's number per team, data order), `cupStops`
+  (r1–r4, then the knockout nights), `cupOpeningStop` (first stop with a game today or later: a round still being played
+  opens), `cupStopHeading` ("Group play · Round 2 · Nov 6 – 20"). The strip's stops: "Round 1"… with the game count, then the
+  knockout nights (WeekStrip `top` / `num` / `aria`). Round rows: the League List row with the Team List's date column
+  ("Fri 06/11"), in two columns filled top to bottom (`ListDaySection columns`), the section as wide as the widget at the
+  List's zoom; the tricode marks (yellow fill / outline, 3-in-4 underline, same tooltip) instead of the Fatigue components,
+  and national TV as the green "TV" pill with the names in its tooltip (the calendar cells' pill) — both for width. Tag:
+  "East C", or "East C · G2/G1" on a split game (away / home, the row's order), explained in a note under the list; the
+  first version, "East C · PHI G2 · CLE G1", wrapped rows at 1600 px. Knockout nights unchanged (one column, components).
+  Team list tag: the team's own round, "Group round 2 · East C".
+  - **Fit**: every stop at 1920 × 950 and 1600 × 1000, real and full-Cup data, every row one line: rounds end at 871 / 950
+    and 783 / 1000 px; row text 14 px × the List zoom as before. Found by the fit test: a grid row took the height of its
+    taller neighbour (`align-items: start`).
+  - Tests: unit +3 (numbers, stops, real feed: 4 rounds × 30 teams once, 60 games, 16 split; opening; strip; two columns +
+    dates; B2B on tricode marks in a round, on components on a knockout night); e2e: every stop = the snapshot's games
+    worked out in the test (rounds from each team's own count), tags, two columns, B2B on every row, the fit walk over all
+    stops.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

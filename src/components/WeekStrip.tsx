@@ -11,6 +11,10 @@ export interface StripDay {
   /** Under the date: "9" (games) or "@ DET" / "vs CHI"; empty shows a dash. */
   sub?: string;
   disabled: boolean;
+  /** Instead of the date (Cup group rounds): the small line on top, the big one, and the spoken label. */
+  top?: string;
+  num?: string;
+  aria?: string;
 }
 
 export interface WeekStripProps {
@@ -57,16 +61,16 @@ const Day = memo(function Day({ day: d, selected, today, onPick }: DayProps & { 
       type="button"
       role="tab"
       aria-selected={selected}
-      aria-label={`${fmtDate(d.date, { weekday: 'long', month: 'long', day: 'numeric' })}${d.sub ? `: ${d.sub}` : ''}`}
+      aria-label={`${d.aria ?? fmtDate(d.date, { weekday: 'long', month: 'long', day: 'numeric' })}${d.sub ? `: ${d.sub}` : ''}`}
       className={`ck-strip-day${selected ? ' ck-strip-selected' : ''}${d.date === today ? ' ck-strip-today' : ''}`}
       disabled={d.disabled}
       onClick={() => onPick(d.date)}
       data-date={d.date}
     >
       <span className="ck-strip-mon">
-        {fmtDate(d.date, { weekday: 'short' })} {fmtDate(d.date, { month: 'short' })}
+        {d.top ?? `${fmtDate(d.date, { weekday: 'short' })} ${fmtDate(d.date, { month: 'short' })}`}
       </span>
-      <span className="ck-strip-num">{Number(d.date.slice(8))}</span>
+      <span className="ck-strip-num">{d.num ?? Number(d.date.slice(8))}</span>
       <span className="ck-strip-sub">{d.sub || '–'}</span>
     </button>
   );

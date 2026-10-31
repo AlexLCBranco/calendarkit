@@ -130,7 +130,7 @@ const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'sho
 /** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
 // memo: a re-render of the list (the strip, the clock) skips the day while its props are the same.
 // Cup schedule (round 12): its own heading ("Group play · Tue, Nov 10") and a tag per game (cupTag: "West A").
-export const ListDaySection = memo(function ListDaySection({ day, data, compact, fatigueSlots = false, now, timeZone, onOpenGame, gameLink, heading, cupTag }: { day: ListDay; data: CalendarData; compact: boolean; fatigueSlots?: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; gameLink?: GameLink; heading?: string; cupTag?: (g: ScheduleGame) => string | undefined }) {
+export const ListDaySection = memo(function ListDaySection({ day, data, compact, fatigueSlots = false, now, timeZone, onOpenGame, gameLink, heading, cupTag, dateLabel, columns, tvPill }: { day: ListDay; data: CalendarData; compact: boolean; fatigueSlots?: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; gameLink?: GameLink; heading?: string; cupTag?: (g: ScheduleGame) => string | undefined; dateLabel?: (g: ScheduleGame) => string; columns?: number; tvPill?: boolean }) {
   const records = compact ? undefined : leagueRecords(data); // once per data set
   const fatigue = leagueFatigue(data); // once per data set
   const head = heading ?? dayHeading(day.date, day.games.length);
@@ -140,9 +140,10 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
         {head}
       </h3>
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
-      <div className="ck-daylist">
+      {/* Cup group rounds (round 12b): two columns, filled top to bottom (date order reads down the first, then the second) */}
+      <div className={`ck-daylist${columns ? ' ck-daylist-cols' : ''}`} style={columns ? ({ '--ck-cols': columns, '--ck-col-rows': Math.ceil(day.games.length / columns) } as CSSProperties) : undefined}>
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} gameLink={gameLink} cupTag={cupTag?.(g)} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} gameLink={gameLink} cupTag={cupTag?.(g)} dateLabel={dateLabel?.(g)} tvPill={tvPill} copyable />
         ))}
       </div>
     </section>

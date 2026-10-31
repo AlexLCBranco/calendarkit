@@ -7,7 +7,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, describe, expect, it } from 'vitest';
 import { CalendarView } from '../src/components/CalendarView';
 import CupSchedule from '../src/components/CupSchedule';
-import { cupNightHeading, cupNights, cupOpeningNight, roundFirstNight, teamCupGames } from '../src/data/cupSchedule';
+import { cupGroupNumbers, cupLeagueTag, cupNightHeading, cupNights, cupOpeningNight, cupOpeningStop, cupStopHeading, cupStops, cupTeamTag, roundFirstNight, teamCupGames } from '../src/data/cupSchedule';
 import { cupTag } from '../src/data/model';
 import { data as realData } from './feed';
 import { dataOf, game, TEAM } from './synthetic';
@@ -74,40 +74,95 @@ describe('Cup nights and rounds', () => {
   });
 });
 
+describe('Cup group play by round', () => {
+  it('a team’s group games are numbered 1–4 in date order; Round N = every team’s Nth game, a split game in both rounds', () => {
+    const n = cupGroupNumbers(data);
+    expect(n.get(G.bosNyk.gameId)).toEqual({ away: 1, home: 1 });
+    expect(n.get(G.miaBos.gameId)).toEqual({ away: 1, home: 2 }); // MIA's 1st, BOS's 2nd
+    const stops = cupStops(data);
+    expect(stops.map((x) => [x.key, x.round, x.games.map((g) => g.gameId)])).toEqual([
+      ['r1', 'group', [G.bosNyk.gameId, G.lalDen.gameId, G.miaBos.gameId]],
+      ['r2', 'group', [G.miaBos.gameId]],
+      ['2026-12-04', 'qf', [G.qf1.gameId, G.qf2.gameId]],
+      ['2026-12-08', 'sf', [G.sf.gameId]],
+      ['2026-12-11', 'final', [G.final.gameId]],
+    ]);
+    expect(stops.map(cupStopHeading)).toEqual(['Group play · Round 1 · Nov 6 – 10', 'Group play · Round 2 · Nov 10', 'Quarterfinals · Fri, Dec 4', 'Semifinals · Tue, Dec 8', 'Final · Fri, Dec 11']);
+    expect(cupLeagueTag(data)(G.miaBos)).toBe('East C · G1/G2');
+    expect(cupLeagueTag(data)(G.lalDen)).toBe('West A');
+    expect(cupTeamTag(data, TEAM.BOS)(G.miaBos)).toBe('Group round 2 · East C');
+    expect(cupTeamTag(data, MIA)(G.miaBos)).toBe('Group round 1 · East C');
+  });
+
+  it('the real feed: 4 rounds, every team exactly once in each, all 60 group games; 16 split games in two rounds each', () => {
+    const stops = cupStops(realData).filter((x) => x.group !== undefined);
+    expect(stops.map((x) => x.group)).toEqual([1, 2, 3, 4]);
+    for (const r of stops) {
+      const teams = r.games.flatMap((g) => {
+        const n = cupGroupNumbers(realData).get(g.gameId)!;
+        return [...(n.away === r.group ? [g.awayTeam.teamId] : []), ...(n.home === r.group ? [g.homeTeam.teamId] : [])];
+      });
+      expect(new Set(teams).size).toBe(30);
+      expect(teams).toHaveLength(30);
+    }
+    const all = stops.flatMap((x) => x.games.map((g) => g.gameId));
+    expect(new Set(all).size).toBe(60);
+    expect(all.length - 60).toBe(16);
+  });
+});
+
 describe('Cup League list', () => {
-  it('opening night: before the Cup the first night, on a Cup night that night, between nights the next, after the Final the Final', () => {
-    const nights = cupNights(data);
-    expect(cupOpeningNight(nights, '2026-10-01')).toBe('2026-11-06');
-    expect(cupOpeningNight(nights, '2026-11-10')).toBe('2026-11-10');
-    expect(cupOpeningNight(nights, '2026-11-07')).toBe('2026-11-10');
-    expect(cupOpeningNight(nights, '2026-12-11')).toBe('2026-12-11');
-    expect(cupOpeningNight(nights, '2027-02-01')).toBe('2026-12-11');
-    for (const [today, shown] of [['2026-10-01', 'Group play · Fri, Nov 6'], ['2026-11-07', 'Group play · Tue, Nov 10'], ['2027-02-01', 'Final · Fri, Dec 11']]) {
+  it('opening: before the Cup Round 1; a round still being played; between rounds the next; after the Final the Final', () => {
+    const stops = cupStops(data);
+    expect(cupOpeningStop(stops, '2026-10-01')).toBe('r1');
+    expect(cupOpeningStop(stops, '2026-11-10')).toBe('r1'); // Round 1 ends Nov 10 (MIA's 1st)
+    expect(cupOpeningStop(stops, '2026-11-11')).toBe('2026-12-04');
+    expect(cupOpeningStop(stops, '2026-12-11')).toBe('2026-12-11');
+    expect(cupOpeningStop(stops, '2027-02-01')).toBe('2026-12-11');
+    expect(cupOpeningNight(cupNights(data), '2026-11-07')).toBe('2026-11-10'); // nights (selection images) unchanged
+    for (const [today, shown] of [['2026-10-01', 'Group play · Round 1 · Nov 6 – 10'], ['2026-11-11', 'Quarterfinals · Fri, Dec 4'], ['2027-02-01', 'Final · Fri, Dec 11']]) {
       league(today!);
       expect(heading()).toBe(shown);
       cleanup();
     }
   });
 
-  it('strip of the Cup nights only; round tabs jump to a round’s first night; ‹ › and ← / → step the nights', () => {
+  it('strip: Round 1–4 then the knockout nights; round tabs jump; ‹ › and ← / → step', () => {
     league('2026-10-01');
     const strip = [...document.querySelectorAll<HTMLElement>('.ck-cup-strip .ck-strip-day')];
-    expect(strip.map((d) => d.dataset.date)).toEqual(['2026-11-06', '2026-11-10', '2026-12-04', '2026-12-08', '2026-12-11']);
-    expect(strip.map((d) => d.querySelector('.ck-strip-sub')!.textContent)).toEqual(['2', '1', '2', '1', '1']);
+    expect(strip.map((d) => d.dataset.date)).toEqual(['r1', 'r2', '2026-12-04', '2026-12-08', '2026-12-11']);
+    expect(strip.slice(0, 2).map((d) => d.textContent)).toEqual(['Round13', 'Round21']);
+    expect(strip.map((d) => d.querySelector('.ck-strip-sub')!.textContent)).toEqual(['3', '1', '2', '1', '1']);
     const rounds = within(screen.getByRole('tablist', { name: 'Round' }));
     expect(rounds.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Group play', 'Quarterfinals', 'Semifinals', 'Final']);
     fireEvent.click(rounds.getByRole('tab', { name: 'Semifinals' }));
     expect(heading()).toBe('Semifinals · Tue, Dec 8');
     expect(rounds.getByRole('tab', { name: 'Semifinals' }).getAttribute('aria-selected')).toBe('true');
-    fireEvent.click(screen.getByRole('button', { name: 'Previous night' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Previous stop' }));
     expect(heading()).toBe('Quarterfinals · Fri, Dec 4');
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
-    expect(heading()).toBe('Group play · Tue, Nov 10');
+    expect(heading()).toBe('Group play · Round 2 · Nov 10');
     fireEvent.keyDown(window, { key: 'ArrowRight', ctrlKey: true }); // a modifier: ignored
-    expect(heading()).toBe('Group play · Tue, Nov 10');
+    expect(heading()).toBe('Group play · Round 2 · Nov 10');
+    fireEvent.click(rounds.getByRole('tab', { name: 'Group play' }));
+    expect(heading()).toBe('Group play · Round 1 · Nov 6 – 10');
     fireEvent.click(strip[4]!);
     expect(heading()).toBe('Final · Fri, Dec 11');
-    expect(screen.getByRole('button', { name: 'Next night' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Next stop' })).toHaveProperty('disabled', true);
+  });
+
+  it('a round: two columns, each row with its date and tag; a knockout night: one column, no date column', () => {
+    league('2026-10-01');
+    const list = document.querySelector<HTMLElement>('[data-testid="cup-night"] .ck-daylist')!;
+    expect(list.classList.contains('ck-daylist-cols')).toBe(true);
+    expect(list.style.getPropertyValue('--ck-cols')).toBe('2');
+    expect([...list.querySelectorAll('.ck-card .ck-date')].map((d) => d.textContent)).toEqual(['Fri 06/11', 'Fri 06/11', 'Tue 10/11']);
+    expect(row(G.miaBos.gameId).querySelector('.ck-tag.ck-cup')!.textContent).toBe('East C · G1/G2');
+    fireEvent.click(screen.getByRole('button', { name: 'Next stop' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next stop' }));
+    const ko = document.querySelector<HTMLElement>('[data-testid="cup-night"] .ck-daylist')!;
+    expect(ko.classList.contains('ck-daylist-cols')).toBe(false);
+    expect(ko.querySelector('.ck-date')).toBeNull();
   });
 
   it('a knockout night shows only its Cup games (the other game that night is left out); undecided sides are "TBD"', () => {
@@ -120,18 +175,24 @@ describe('Cup League list', () => {
   });
 
   it('group games carry their group; finished games their final score', () => {
-    league('2026-11-06');
+    league('2026-10-01');
     expect(row(G.lalDen.gameId).querySelector('.ck-tag.ck-cup')!.textContent).toBe('West A');
     expect(row(G.bosNyk.gameId).querySelector('.ck-teams')!.textContent!.replace(/\s+/g, ' ').trim()).toBe('NYK 100 @ 110 BOS');
   });
 
   it('back-to-back from the whole schedule: BOS played a non-Cup game the night before its Cup game → 2nd night', () => {
-    league('2026-11-10');
-    const fx = [...row(G.miaBos.gameId).querySelectorAll<HTMLElement>('[data-testid="fatigue"]')];
-    const second = fx.filter((f) => f.dataset.night === '2');
-    expect(second).toHaveLength(1);
-    expect(second[0]!.dataset.tip).toContain('BOS');
-    expect(fx.filter((f) => f.dataset.night === '1')).toHaveLength(0);
+    // a round (two columns): the marks on the tricodes (yellow fill = 2nd night)
+    league('2026-10-01');
+    const marks = [...row(G.miaBos.gameId).querySelectorAll<HTMLElement>('.ck-fm')];
+    expect(marks.filter((m) => m.classList.contains('ck-fm-n2')).map((m) => m.textContent)).toEqual(['BOS']);
+    expect(marks.filter((m) => m.classList.contains('ck-fm-n1'))).toHaveLength(0);
+    cleanup();
+    // a knockout night (one column): the Fatigue components — BOS played a non-Cup game the night before its QF
+    const d = dataOf([...Object.values(G), game({ date: '2026-12-03', utc: at('2026-12-04', 0), home: MIA, away: TEAM.BOS })]);
+    league('2026-12-04', d);
+    const fx = [...row(G.qf1.gameId).querySelectorAll<HTMLElement>('[data-testid="fatigue"]')];
+    expect(fx.filter((f) => f.dataset.night === '2')).toHaveLength(1);
+    expect(fx.filter((f) => f.dataset.night === '2')[0]!.dataset.tip).toContain('BOS');
   });
 });
 
@@ -145,7 +206,7 @@ describe('Cup Team list', () => {
     expect(ids('[data-testid="cup-played"]')).toEqual([G.bosNyk.gameId]);
     expect(row(G.bosNyk.gameId).querySelector('.ck-teams')!.textContent!.replace(/\s+/g, ' ').trim()).toBe('BOS 110 vs 100 NYK');
     expect(ids('[data-testid="cup-remaining"]')).toEqual([G.miaBos.gameId, G.qf1.gameId]); // never the non-Cup games
-    expect(row(G.miaBos.gameId).querySelector('.ck-tag.ck-cup')!.textContent).toBe('Group play · East C');
+    expect(row(G.miaBos.gameId).querySelector('.ck-tag.ck-cup')!.textContent).toBe('Group round 2 · East C');
     expect(row(G.qf1.gameId).querySelector('.ck-tag.ck-cup')!.textContent).toBe('Quarterfinal');
     expect(row(G.qf1.gameId).querySelector('.ck-date')!.textContent).toBe('Fri 04/12');
     // the next game is marked in Remaining, nothing in Played

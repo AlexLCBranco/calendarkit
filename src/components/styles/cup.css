@@ -275,3 +275,20 @@
 .ck-cup-pick {
   text-align: center;
 }
+/* group rounds: the round's games in two columns, filled top to bottom */
+.ck-daylist.ck-daylist-cols {
+  display: grid;
+  grid-template-columns: repeat(var(--ck-cols), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--ck-col-rows), auto);
+  grid-auto-flow: column;
+  column-gap: var(--ck-col-gap, 16px);
+}
+.ck-daylist.ck-daylist-cols {
+  align-items: start; /* a row never takes the height of its neighbour in the other column */
+}
+.ck-cup-note {
+  flex: none;
+  margin: 2px 0 4px;
+  font-size: 11px;
+  color: var(--ck-muted);
+}

@@ -6,15 +6,15 @@
 // runs until the Schedule tab is opened.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { cupTag, type CalendarData } from '../data/model';
+import type { CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { CUP_ROUNDS, cupNightHeading, cupNights, cupOpeningNight, roundFirstNight, teamCupGames } from '../data/cupSchedule';
+import { CUP_ROUNDS, cupLeagueTag, cupOpeningStop, cupStopHeading, cupStops, cupTeamTag, teamCupGames } from '../data/cupSchedule';
 import type { GameLink } from './GameCard';
 import { FatigueLegend } from './FatigueMark';
 import { FATIGUE_SLOTS_MIN_WIDTH, leagueListStyle, ListDaySection } from './LeagueListView';
 import { Segmented } from './Segmented';
 import { TeamHeader } from './TeamHeader';
-import { TeamListView } from './TeamListView';
+import { rowDate, TeamListView } from './TeamListView';
 import { WeekStrip } from './WeekStrip';
 import type { WidgetSize } from './widget';
 
@@ -38,20 +38,24 @@ export default function CupSchedule(p: CupScheduleProps) {
   return p.list === 'league' ? <CupLeague {...p} /> : <CupTeam {...p} />;
 }
 
-const leagueTag = (g: ScheduleGame) => cupTag(g);
-const teamTag = (g: ScheduleGame) => cupTag(g, true);
+const dateLabel = (g: ScheduleGame) => rowDate(g.dateEt);
+/** Group rounds (18–20 games) in two columns: every Cup night fits the window without scrolling (round 12b). */
+export const CUP_ROUND_COLUMNS = 2;
+const COL_GAP = 16;
+const ordinal = (n: number) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
 
 function CupLeague({ data, size, now, today, timeZone, onOpenGame, gameLink, onNight }: CupScheduleProps) {
-  const nights = useMemo(() => cupNights(data), [data]);
-  const [night, setNight] = useState(() => cupOpeningNight(nights, today));
-  const i = nights.findIndex((n) => n.date === night);
-  const n = nights[i];
+  const stops = useMemo(() => cupStops(data), [data]);
+  const tag = useMemo(() => cupLeagueTag(data), [data]);
+  const [key, setKey] = useState(() => cupOpeningStop(stops, today));
+  const i = stops.findIndex((x) => x.key === key);
+  const n = stops[i];
   const onNightRef = useRef(onNight);
   onNightRef.current = onNight;
-  useEffect(() => void (night && onNightRef.current?.(night)), [night]);
+  useEffect(() => void (key && onNightRef.current?.(key)), [key]);
 
-  const go = (k: number) => nights[k] && setNight(nights[k].date);
-  // ← / → step the nights, with the League List's rules (not in a field, a tab row, a listbox, an open picker, or with a modifier)
+  const go = (k: number) => stops[k] && setKey(stops[k].key);
+  // ← / → step the rounds and nights, with the League List's rules (not in a field, a tab row, a listbox, an open picker, or with a modifier)
   const goRef = useRef(go);
   goRef.current = go;
   const at = useRef(i);
@@ -67,36 +71,54 @@ function CupLeague({ data, size, now, today, timeZone, onOpenGame, gameLink, onN
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const strip = useMemo(() => nights.map((x) => ({ date: x.date, sub: String(x.games.length), disabled: false })), [nights]);
-  const day = useMemo(() => n && { date: n.date, games: n.games }, [n]);
+  const strip = useMemo(
+    () =>
+      stops.map((x) =>
+        x.group !== undefined
+          ? { date: x.key, top: 'Round', num: String(x.group), aria: `Group play, round ${x.group}`, sub: String(x.games.length), disabled: false }
+          : { date: x.key, sub: String(x.games.length), disabled: false },
+      ),
+    [stops],
+  );
+  const day = useMemo(() => n && { date: n.first, games: n.games }, [n]);
   if (!n || !day) return <p className="ck-empty">The schedule has no Cup games.</p>;
-  const style = leagueListStyle(size.width);
+  const base = leagueListStyle(size.width);
+  const cols = n.group !== undefined ? CUP_ROUND_COLUMNS : undefined;
+  const zoom = (base?.zoom as number | undefined) ?? 1;
+  // two columns take the whole widget width (at the List's zoom, so the text keeps its size)
+  const style = base && cols ? ({ ...base, width: Math.floor(size.width / zoom), maxWidth: Math.floor(size.width / zoom), '--ck-col-gap': `${COL_GAP}px` } as CSSProperties) : base;
   return (
-    <section className={`ck-league-list ck-cup-sched${style ? ' ck-league-side' : ''}`} aria-label="NBA Cup schedule" data-testid="cup-league" style={style}>
+    <section className={`ck-league-list ck-cup-sched${base ? ' ck-league-side' : ''}${cols ? ' ck-cup-rounds-view' : ''}`} aria-label="NBA Cup schedule" data-testid="cup-league" data-stop={n.key} style={style}>
       <div className="ck-cup-rounds">
         <Segmented
           label="Round"
           value={n.round}
           options={CUP_ROUNDS.map((r) => [r.round, r.label])}
           onChange={(r) => {
-            const d = roundFirstNight(nights, r);
-            if (d) setNight(d);
+            const d = stops.find((x) => x.round === r);
+            if (d) setKey(d.key);
           }}
         />
       </div>
-      <div className="ck-cup-strip" style={{ '--ck-nights': nights.length } as CSSProperties}>
-        <WeekStrip days={strip} selected={n.date} today={today} onPick={setNight} onPrev={() => go(i - 1)} onNext={() => go(i + 1)} prevDisabled={i <= 0} nextDisabled={i >= nights.length - 1} unit="night" label="Cup nights" />
+      <div className="ck-cup-strip" style={{ '--ck-nights': stops.length } as CSSProperties}>
+        <WeekStrip days={strip} selected={n.key} today={today} onPick={setKey} onPrev={() => go(i - 1)} onNext={() => go(i + 1)} prevDisabled={i <= 0} nextDisabled={i >= stops.length - 1} unit="stop" label="Cup rounds and nights" />
       </div>
       <div className="ck-llist" data-testid="cup-night" data-select-scroller>
-        <ListDaySection key={day.date} day={day} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} heading={cupNightHeading(n)} cupTag={leagueTag} />
+        <ListDaySection key={n.key} day={day} data={data} compact={false} fatigueSlots={!cols && size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} heading={cupStopHeading(n)} cupTag={tag} dateLabel={cols ? dateLabel : undefined} columns={cols} tvPill={!!cols} />
       </div>
-      <FatigueLegend component={size.width >= FATIGUE_SLOTS_MIN_WIDTH} />
+      {cols && (
+        <p className="ck-cup-note" data-testid="cup-round-note">
+          Round {n.group} = every team’s {ordinal(n.group!)} Cup group game. “G2/G1”: the away team’s 2nd group game and the home team’s 1st — a game like that is in both rounds.
+        </p>
+      )}
+      <FatigueLegend component={!cols && size.width >= FATIGUE_SLOTS_MIN_WIDTH} />
     </section>
   );
 }
 
 function CupTeam({ data, teamId, size, now, timeZone, onOpenGame, gameLink }: CupScheduleProps) {
   const games = useMemo(() => (teamId === undefined ? undefined : teamCupGames(data, teamId)), [data, teamId]);
+  const teamTag = useMemo(() => (teamId === undefined ? undefined : cupTeamTag(data, teamId)), [data, teamId]);
   const ids = useMemo(() => games && { played: new Set(games.played.map((g) => g.gameId)), remaining: new Set(games.remaining.map((g) => g.gameId)) }, [games]);
   if (teamId === undefined || !games || !ids)
     return (

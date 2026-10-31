@@ -58,24 +58,40 @@ async function fullCup(page: Page) {
   });
 }
 
-/** The snapshot as the page gets it (the route included): Cup games per night, and every team's game dates. */
+/**
+ * The snapshot as the page gets it (the route included), worked out here independently of the app: every team's game
+ * dates; the Cup's stops — group play's rounds (Round N = every team's Nth group game, in tip-off order) and the knockout
+ * nights — with their games; each group game's number per team.
+ */
 const snapshot = (page: Page) =>
   page.evaluate(async (app) => {
     const raw = await (await fetch(`${app}data/schedule.json`)).json();
-    const games = (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
-    const nights: Record<string, string[]> = {};
+    const tip = (g: RawGame) => (g.gameStatusText === 'TBD' ? 'Z' : g.gameDateTimeUTC); // a TBD time sorts last, as in the app
+    const games = (raw.leagueSchedule.gameDates as { games: RawGame[] }[])
+      .flatMap((d) => d.games)
+      .filter((g) => /^00[2456]/.test(g.gameId))
+      .sort((a, b) => a.gameDateEst.localeCompare(b.gameDateEst) || tip(a).localeCompare(tip(b)) || a.gameId.localeCompare(b.gameId));
+    const stops: Record<string, string[]> = {};
     const dates: Record<string, string[]> = {};
-    const cupIds: string[] = [];
+    const date: Record<string, string> = {};
+    const num: Record<string, [number, number]> = {};
     const tri: Record<string, [string, string]> = {};
+    const count: Record<string, number> = {};
     for (const g of games) {
-      const date = g.gameDateEst.slice(0, 10);
-      for (const t of [g.homeTeam, g.awayTeam]) if (t.teamTricode) (dates[t.teamTricode] ??= []).push(date);
+      const d = g.gameDateEst.slice(0, 10);
+      for (const t of [g.homeTeam, g.awayTeam]) if (t.teamTricode) (dates[t.teamTricode] ??= []).push(d);
       if (!/^in-season/.test(g.gameSubtype)) continue;
-      (nights[date] ??= []).push(g.gameId);
-      cupIds.push(g.gameId);
+      date[g.gameId] = d;
       tri[g.gameId] = [g.awayTeam.teamTricode ?? '', g.homeTeam.teamTricode ?? ''];
+      if (g.gameSubtype === 'in-season') {
+        const a = (count[g.awayTeam.teamTricode!] = (count[g.awayTeam.teamTricode!] ?? 0) + 1);
+        const h = (count[g.homeTeam.teamTricode!] = (count[g.homeTeam.teamTricode!] ?? 0) + 1);
+        num[g.gameId] = [a, h];
+        for (const r of new Set([a, h])) (stops[`r${r}`] ??= []).push(g.gameId);
+      } else (stops[d] ??= []).push(g.gameId);
     }
-    return { nights, dates, cupIds, tri };
+    const keys = Object.keys(stops).sort((x, y) => (x[0] === 'r') !== (y[0] === 'r') ? (x[0] === 'r' ? -1 : 1) : x.localeCompare(y));
+    return { stops, keys, dates, date, num, tri };
   }, APP);
 
 async function openSchedule(page: Page, list: 'league' | 'team' = 'league') {
@@ -90,8 +106,10 @@ const pickTeam = async (page: Page, name: string) => {
   await page.getByRole('option', { name }).click();
   await expect(page.getByTestId('cup-team')).toBeVisible();
 };
-const night = (page: Page, date: string) => page.locator(`.ck-cup-strip .ck-strip-day[data-date="${date}"]`).click();
+const stop = (page: Page, key: string) => page.locator(`.ck-cup-strip .ck-strip-day[data-date="${key}"]`).click();
 const rowIds = (scope: Locator) => scope.locator('[data-game-id]').evaluateAll((els) => els.map((e) => e.getAttribute('data-game-id')!));
+/** The Team List's row date, "Fri 06/11". */
+const fmtShort = (date: string) => `${new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })} ${date.slice(8)}/${date.slice(5, 7)}`;
 const fmt = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 test.describe('Cup schedule', () => {
@@ -113,52 +131,75 @@ test.describe('Cup schedule', () => {
     await expect(page.getByTestId('cup-league')).toHaveCount(0);
   });
 
-  test('League: every Cup night = the snapshot’s Cup games of that night, nothing else; heading, tags; non-Cup games left out', async ({ page }) => {
+  test('League: Round 1–4 then the knockout nights, each = the snapshot’s games; headings, dates, tags; non-Cup games left out', async ({ page }) => {
     await fullCup(page);
     await openSchedule(page);
     const s = await snapshot(page);
-    const dates = Object.keys(s.nights).sort();
-    await expect(page.locator('.ck-cup-strip .ck-strip-day')).toHaveCount(dates.length);
-    expect(await page.locator('.ck-cup-strip .ck-strip-day').evaluateAll((els) => els.map((e) => e.getAttribute('data-date')))).toEqual(dates);
-    for (const d of dates) {
-      await night(page, d);
+    expect(s.keys.slice(0, 4)).toEqual(['r1', 'r2', 'r3', 'r4']);
+    expect(await page.locator('.ck-cup-strip .ck-strip-day').evaluateAll((els) => els.map((e) => e.getAttribute('data-date')))).toEqual(s.keys);
+    for (const k of s.keys) {
+      await stop(page, k);
       const list = page.getByTestId('cup-night');
-      await expect(list.locator('.ck-lday')).toHaveAttribute('data-day', d);
-      expect((await rowIds(list)).sort()).toEqual([...s.nights[d]!].sort());
-      expect(await rowIds(list)).not.toContain(EXTRA_ID);
-      const head = await list.locator('.ck-lday-head').textContent();
-      expect(head).toMatch(new RegExp(`^(Group play|Quarterfinals|Semifinals|Final) · ${fmt(d)}$`));
-      // tags: the group on group nights ("West A"), the round on knockout nights
+      await expect(page.getByTestId('cup-league')).toHaveAttribute('data-stop', k);
+      const ids = await rowIds(list);
+      expect(ids).toEqual(s.stops[k]); // in date and tip-off order
+      expect(ids).not.toContain(EXTRA_ID);
+      const head = (await list.locator('.ck-lday-head').textContent())!;
       const tags = await list.locator('.ck-card .ck-tag.ck-cup, .ck-card .ck-tag.ck-cup-final').allTextContents();
-      expect(tags).toHaveLength(s.nights[d]!.length);
-      for (const t of tags) expect(t).toMatch(head!.startsWith('Group') ? /^(West|East) [ABC]$/ : /^(Quarterfinal|Semifinal|Final)$/);
+      expect(tags).toHaveLength(ids.length);
+      if (k[0] === 'r') {
+        // every team exactly once in the round
+        const teams = ids.flatMap((id) => s.tri[id]!.filter((_, i) => s.num[id]![i] === Number(k.slice(1))));
+        expect(new Set(teams).size).toBe(30);
+        expect(teams).toHaveLength(30);
+        expect(head).toMatch(new RegExp(`^Group play · Round ${k.slice(1)} · [A-Z][a-z]{2} \\d+( – ([A-Z][a-z]{2} )?\\d+)?$`));
+        // the date on every row; the tag: the group, and both numbers on a split game
+        expect(await list.locator('.ck-card .ck-date').allTextContents()).toEqual(ids.map((id) => `${fmtShort(s.date[id]!)}`));
+        tags.forEach((t, i) => {
+          const [a, h] = s.num[ids[i]!]!;
+          expect(t).toMatch(a === h ? /^(West|East) [ABC]$/ : new RegExp(`^(West|East) [ABC] · G${a}\/G${h}$`));
+        });
+        // two columns, filled top to bottom
+        const xs = await list.locator('.ck-card').evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)));
+        expect(new Set(xs).size).toBe(2);
+        expect(xs.slice(0, Math.ceil(xs.length / 2)).every((x) => x === xs[0])).toBe(true);
+      } else {
+        expect(head).toMatch(new RegExp(`^(Quarterfinals|Semifinals|Final) · ${fmt(k)}$`));
+        for (const t of tags) expect(t).toMatch(/^(Quarterfinal|Semifinal|Final)$/);
+        await expect(list.locator('.ck-date')).toHaveCount(0);
+      }
     }
-    // the quarterfinal night really has the non-Cup game (League → List shows it), the Cup list doesn't
-    const qf = dates.find((d) => s.nights[d]!.length && d >= '2026-12-01')!;
-    expect((await rowIds(page.getByTestId('cup-night'))).length).toBeGreaterThan(0);
-    await page.getByRole('tablist', { name: 'Round' }).getByRole('tab', { name: 'Quarterfinals' }).click();
-    await expect(page.getByTestId('cup-night').locator('.ck-lday')).toHaveAttribute('data-day', qf);
+    await page.getByRole('tablist', { name: 'Round', exact: true }).getByRole('tab', { name: 'Quarterfinals' }).click();
     await expect(page.getByTestId('cup-night').locator('.ck-teams').first()).toHaveText(/BOS\s+118\s+@\s+109\s+NYK/);
+    await page.getByRole('tablist', { name: 'Round', exact: true }).getByRole('tab', { name: 'Group play' }).click();
+    await expect(page.getByTestId('cup-league')).toHaveAttribute('data-stop', 'r1');
   });
 
   test('League, real snapshot: undecided knockout sides read "TBD"; back-to-backs counted over the whole schedule', async ({ page }) => {
     await openSchedule(page);
     const s = await snapshot(page);
-    const dates = Object.keys(s.nights).sort();
     const prevDay = (d: string) => new Date(Date.parse(`${d}T12:00:00Z`) - 864e5).toISOString().slice(0, 10);
     const nextDay = (d: string) => new Date(Date.parse(`${d}T12:00:00Z`) + 864e5).toISOString().slice(0, 10);
-    const cupDates = new Set(dates);
+    const cupOn = (t: string, d: string) => Object.keys(s.date).some((id) => s.date[id] === d && s.tri[id]!.includes(t));
     let flagged = 0;
     let fromNonCup = 0;
-    for (const d of dates) {
-      await night(page, d);
-      const list = page.getByTestId('cup-night');
-      await expect(list.locator('.ck-lday')).toHaveAttribute('data-day', d);
-      const rows = await list.locator('.ck-card').evaluateAll((els) =>
-        els.map((e) => ({ id: e.getAttribute('data-game-id')!, nights: [...e.querySelectorAll<HTMLElement>('[data-testid="fatigue"]')].map((f) => f.dataset.night ?? ''), teams: e.querySelector('.ck-teams')!.textContent!.replace(/\s+/g, ' ').trim() })),
+    for (const k of s.keys) {
+      await stop(page, k);
+      await expect(page.getByTestId('cup-league')).toHaveAttribute('data-stop', k);
+      // rounds: the marks on the tricodes (fill = 2nd night, outline = 1st); knockout nights: the Fatigue components
+      const rows = await page.getByTestId('cup-night').locator('.ck-card').evaluateAll((els) =>
+        els.map((e) => {
+          const fx = [...e.querySelectorAll<HTMLElement>('[data-testid="fatigue"]')];
+          const marks = [...e.querySelectorAll<HTMLElement>('.ck-teams .ck-team')].map((t) => {
+            const m = t.querySelector('.ck-fm');
+            return m?.classList.contains('ck-fm-n2') ? '2' : m?.classList.contains('ck-fm-n1') ? '1' : '';
+          });
+          return { id: e.getAttribute('data-game-id')!, nights: fx.length ? fx.map((f) => f.dataset.night ?? '') : marks, teams: e.querySelector('.ck-teams')!.textContent!.replace(/\s+/g, ' ').trim() };
+        }),
       );
       for (const r of rows) {
         const [away, home] = s.tri[r.id]!;
+        const d = s.date[r.id]!;
         if (!away && !home) {
           expect(r.teams).toBe('TBD @ TBD');
           continue;
@@ -168,12 +209,11 @@ test.describe('Cup schedule', () => {
         for (const [i, t] of [away, home].entries())
           if (expected[i]) {
             flagged++;
-            const other = expected[i] === '2' ? prevDay(d) : nextDay(d);
-            if (!cupDates.has(other) || !s.nights[other]!.some((id) => s.tri[id]!.includes(t!))) fromNonCup++;
+            if (!cupOn(t!, expected[i] === '2' ? prevDay(d) : nextDay(d))) fromNonCup++;
           }
       }
     }
-    console.log(`[cup schedule] ${flagged} back-to-back nights on Cup games, ${fromNonCup} of them paired with a non-Cup game`);
+    console.log(`[cup schedule] ${flagged} back-to-back marks on Cup rows, ${fromNonCup} of them paired with a non-Cup game`);
     expect(fromNonCup).toBeGreaterThan(0);
   });
 
@@ -187,7 +227,7 @@ test.describe('Cup schedule', () => {
     await expect(played.locator('.ck-card')).toHaveCount(5);
     await expect(remaining.locator('.ck-card')).toHaveCount(2);
     for (const t of await played.locator('.ck-teams').allTextContents()) expect(t.replace(/\s+/g, ' ').trim()).toMatch(/^BOS \d+ (vs|@) \d+ [A-Z]{3}$/);
-    expect(await played.locator('.ck-tag.ck-cup').allTextContents()).toEqual(['Group play · East C', 'Group play · East C', 'Group play · East C', 'Group play · East C', 'Quarterfinal']);
+    expect(await played.locator('.ck-tag.ck-cup').allTextContents()).toEqual(['Group round 1 · East C', 'Group round 2 · East C', 'Group round 3 · East C', 'Group round 4 · East C', 'Quarterfinal']);
     expect(await remaining.locator('.ck-tag.ck-cup, .ck-tag.ck-cup-final').allTextContents()).toEqual(['Semifinal', 'Final']);
     expect((await remaining.locator('.ck-teams').allTextContents()).map((t) => t.replace(/\s+/g, ' ').trim())).toEqual(['BOS vs OKC', 'BOS vs SAS']);
     const dates = await page.locator('[data-testid="cup-team"] .ck-card').evaluateAll((els) => els.map((e) => e.getAttribute('data-row-date')));
@@ -267,11 +307,11 @@ test.describe('Cup schedule fits the window', () => {
         if (e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX !== 'visible') out.push(`cut off: ${e.className} "${e.textContent}"`);
       }
       const t = view.querySelector('.ck-card .ck-team')!;
-      return { scroll: document.documentElement.scrollHeight, win: innerHeight, bottom: Math.round(view.getBoundingClientRect().bottom), out, font: getComputedStyle(t).fontSize, zoom: (t as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom ?? 1, rows: view.querySelectorAll('.ck-card').length };
+      return { scroll: document.documentElement.scrollHeight, win: innerHeight, bottom: Math.round(view.getBoundingClientRect().bottom), out, font: getComputedStyle(t).fontSize, zoom: (t as HTMLElement & { currentCSSZoom?: number }).currentCSSZoom ?? 1, rows: view.querySelectorAll('.ck-card').length, heights: [...new Set([...view.querySelectorAll('.ck-card')].map((c) => Math.round(c.getBoundingClientRect().height)))], tall: (() => { const cs = [...view.querySelectorAll<HTMLElement>('.ck-card')]; const min = Math.min(...cs.map((c) => c.getBoundingClientRect().height)); return cs.filter((c) => c.getBoundingClientRect().height > min + 1).map((c) => `${c.querySelector('.ck-matchup')!.textContent!.replace(/s+/g, ' ')} | ${c.querySelector('.ck-tags')!.textContent} | card ${c.clientWidth} parts ${[...c.children].map((x) => `${x.className.split(' ')[0]} ${Math.round((x as HTMLElement).offsetWidth)}`).join(', ')}`); })() };
     }, sel);
 
   for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }]) {
-    test(`${size.width}×${size.height}: League on the busiest night, real and full-Cup data`, async ({ page }) => {
+    test(`${size.width}×${size.height}: League, every round and knockout night, real and full-Cup data`, async ({ page }) => {
       await page.setViewportSize(size);
       // the League List's row text at this size, to compare
       await page.goto(`${APP}?view=league&layout=list`);
@@ -281,18 +321,20 @@ test.describe('Cup schedule fits the window', () => {
         if (data === 'full Cup') await fullCup(page);
         await openSchedule(page);
         const s = await snapshot(page);
-        const busiest = Object.keys(s.nights).sort((a, b) => s.nights[b]!.length - s.nights[a]!.length || a.localeCompare(b))[0]!;
-        await night(page, busiest);
-        await expect(page.getByTestId('cup-night').locator('.ck-card')).toHaveCount(s.nights[busiest]!.length);
-        const r = await measure(page, '[data-testid="cup-league"]');
-        await page.screenshot({ path: `test-output/cupschedule-league-${size.width}x${size.height}-${data.replace(' ', '-')}.png` });
-        console.log(`[cup schedule fit] league ${size.width}×${size.height} ${data}: busiest ${busiest} (${r.rows} games), view bottom ${r.bottom} / window ${r.win}, row text ${r.font} × ${r.zoom}`);
-        expect(r.scroll, 'page scrolls vertically').toBeLessThanOrEqual(r.win);
-        expect(r.out).toEqual([]);
-        expect([r.font, r.zoom], 'rows at the League List’s size').toEqual([ref.font, ref.zoom]);
+        for (const k of s.keys) {
+          await stop(page, k);
+          await expect(page.getByTestId('cup-night').locator('.ck-card')).toHaveCount(s.stops[k]!.length);
+          const r = await measure(page, '[data-testid="cup-league"]');
+          if (k === 'r2' || k === 'r3') await page.screenshot({ path: `test-output/cupschedule-league-${k}-${size.width}x${size.height}-${data.replace(' ', '-')}.png` });
+          console.log(`[cup schedule fit] league ${size.width}×${size.height} ${data} ${k}: ${r.rows} games, view bottom ${r.bottom} / window ${r.win}, row text ${r.font} × ${r.zoom}, row heights ${r.heights.join('/')}`);
+          expect(r.scroll, `${k}: page scrolls vertically`).toBeLessThanOrEqual(r.win);
+          expect(r.out, k).toEqual([]);
+          expect(r.heights, `${k}: every row one line ${r.tall.join(' / ')}`).toHaveLength(1);
+          expect([r.font, r.zoom], 'rows at the League List’s size').toEqual([ref.font, ref.zoom]);
+        }
       }
       // a knockout night (full Cup: one quarterfinal decided and final, the other still TBD): for the report
-      await page.getByRole('tablist', { name: 'Round' }).getByRole('tab', { name: 'Quarterfinals' }).click();
+      await page.getByRole('tablist', { name: 'Round', exact: true }).getByRole('tab', { name: 'Quarterfinals' }).click();
       await page.screenshot({ path: `test-output/cupschedule-knockout-${size.width}x${size.height}.png` });
     });
 
