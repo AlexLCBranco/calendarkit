@@ -166,6 +166,15 @@ describe('cupStandings: wild card', () => {
     expect(team(s, 'DAL').status).toBeUndefined();
   });
 
+  it('the race also lists the two best of the rest (3rd–5th today), after the three 2nd-place teams', () => {
+    // West 2nd: DAL 1-0, OKC and SAS 0-0. The rest: NOP, MEM, POR, SAC 0-0 (by last season: POR 42, NOP 26, MEM 25,
+    // SAC 22) above HOU, PHX, UTA, LAC, LAL 0-1 → POR, NOP
+    const s = cupStandings([cup('DEN', 'HOU', 110, 100), cup('DEN', 'PHX', 110, 100), cup('DAL', 'UTA', 105, 100), cup('MIN', 'LAC', 110, 100), cup('GSW', 'LAL', 110, 100)]);
+    const race = s.wildCards.find((w) => w.conference === 'West')!;
+    expect(race.teams.map((t) => t.tricode)).toEqual(['DAL', 'OKC', 'SAS']);
+    expect(race.chasing.map((t) => [t.tricode, t.rank, t.group])).toEqual([['POR', 3, 'West Group C'], ['NOP', 3, 'West Group B']]);
+  });
+
   it('a better 2nd-place record wins it over a better differential', () => {
     // West A: DEN 3-0, DAL 2-1 (−8); West B: MIN 1-0, OKC 1-1 (+49)
     const s = cupStandings([

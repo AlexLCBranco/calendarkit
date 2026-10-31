@@ -25,6 +25,7 @@ const TIEBREAK_TEXT: Record<Tiebreak, string> = {
 };
 
 const fmtThrough = (date: string) => dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
+const ordinal = (n: number) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 export interface CupViewProps {
@@ -156,6 +157,20 @@ function WildCards({ races }: { races: WildCardRace[] }) {
                 <Logo teamId={t.teamId} />
                 <span className="ck-cup-tri">{t.tricode}</span>
                 <span className="ck-cup-sub">2nd, {t.group.replace(' Group ', ' ')}</span>
+                <span className="ck-cup-rec">
+                  {t.w}-{t.l}
+                </span>
+                <DiffChip diff={t.diff} />
+              </div>
+            ))}
+            {r.chasing.map((t) => (
+              <div key={t.teamId} className="ck-cup-race-row ck-cup-chaser" data-team={t.tricode} title={`${ordinal(t.rank)} in its group today: in the race only by moving up to 2nd`}>
+                <span className="ck-cup-mark" />
+                <Logo teamId={t.teamId} />
+                <span className="ck-cup-tri">{t.tricode}</span>
+                <span className="ck-cup-sub">
+                  {ordinal(t.rank)}, {t.group.replace(' Group ', ' ')}
+                </span>
                 <span className="ck-cup-rec">
                   {t.w}-{t.l}
                 </span>

@@ -1,13 +1,11 @@
-/* Cup view (round 11): the 3 × 2 group cards, team pills in the team's color, the rules and wild-card panels. Round 11b:
-   the whole view fits the window without scrolling (1920 × 950, 1600 × 1000; e2e/cup.spec.ts) — height won back from
-   pill height, gaps and paddings and the two-column wild-card panel, never from smaller text — and it is at most
-   1320 px wide, centered, so a team's numbers sit close to its name. */
+/* Cup view (round 11): the 3 × 2 group cards, team pills in the team's color, the rules and wild-card panels. The whole
+   view fits the window without scrolling (1920 × 950, 1600 × 1000; e2e/cup.spec.ts): the group grid keeps its full
+   size (v1.29.0, Alex: "it was great"); the height comes from the panels below it — rules text in two columns, the
+   wild-card race West | East side by side. */
 .ck-cupview {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-width: 1320px;
-  margin: 0 auto;
+  gap: 12px;
 }
 .ck-cup-capture {
   background: var(--ck-bg);
@@ -17,7 +15,7 @@
   display: flex;
   align-items: baseline;
   gap: 14px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 .ck-cup-title {
   margin: 0;
@@ -35,16 +33,16 @@
 .ck-cup-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 14px;
 }
 .ck-cup-card {
   background: var(--ck-surface);
   border: 1px solid var(--ck-border);
   border-radius: 12px;
-  padding: 8px 8px 8px;
+  padding: 10px 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 /* one grid for the header and every pill, so W, L and DIFF line up */
 .ck-cup-row {
@@ -78,8 +76,8 @@
 }
 .ck-cup-pill {
   --ck-logo: 24px;
-  height: 32px;
-  border-radius: 16px;
+  height: 38px;
+  border-radius: 19px;
   background: linear-gradient(90deg, var(--ck-team), color-mix(in srgb, var(--ck-team) 55%, #0f1115));
   color: #fff;
   font-weight: 600;
@@ -144,8 +142,7 @@
 .ck-cup-panels {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: start;
+  gap: 14px;
 }
 .ck-cup-panel {
   --ck-logo: 20px;
@@ -213,6 +210,10 @@
   font-size: 10px;
   font-weight: 800;
   color: var(--ck-cup);
+}
+/* the two best of the rest (not 2nd in their group today), after the three who can hold it */
+.ck-cup-chaser {
+  opacity: 0.7;
 }
 .ck-cup-holder {
   border-color: var(--ck-cup);

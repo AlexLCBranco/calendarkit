@@ -1882,6 +1882,11 @@ pixel checks, tablet + phone 55 — all pass (after the live-site handling of th
   columns. Now 163 px spare at 1920 × 950. Test: "Cup view fits the window" in `e2e/cup.spec.ts` (1920 × 950 and
   1600 × 1000, real data and every group game final; no page scroll, nothing clipped or outside its card/panel,
   compact rows, text sizes 12/13/14 px); its 4 cases fail on v1.29.0. Screenshots go to `test-output/cup-*.png`.
+- **v1.29.2 — Alex: keep v1.29.0's size.** The 1320 px cap, 32 px pills and tighter grid were undone ("it was great"):
+  the group grid is back to full width and 38 px rows; the height comes only from the panels below (rules in two
+  columns, wild-card race West | East). The race now lists 5 per conference: the three 2nd-place teams, then the two
+  best of the rest (`chasing`, `CUP_CHASERS`; dimmed, "3rd, West C"). The fit test checks the pills stay 38 px; the
+  view ends at 888 px of 950.
 - **Tests:** `tests/cup.test.ts` (21: ties by head-to-head, 3-way, partial split + restart, differential, points, last
   season, unbreakable tie, wild cards, OT, what counts, the Oct 30 results as listed and from the real feed
   `tests/fixtures/cup-2026-10-31.json`, feed groups = the list). `e2e/cup.spec.ts` (desktop widths: grid layout, every

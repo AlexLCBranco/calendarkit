@@ -63,6 +63,8 @@ export interface WildCardRace {
   conference: Conference;
   /** The three 2nd-place teams, in wild-card order; the first holds it. */
   teams: (CupTeamLine & { group: CupGroup; wcTiebreak?: Exclude<Tiebreak, 'h2h'>; wcTied: boolean })[];
+  /** The best of the rest: CUP_CHASERS teams neither leading nor 2nd in their group today, same order (record, then the list without head-to-head). */
+  chasing: (CupTeamLine & { group: CupGroup })[];
 }
 
 export interface CupStandings {
@@ -75,6 +77,9 @@ export interface CupStandings {
   /** Any of them went to overtime (their OT points are in the numbers). */
   hasOt: boolean;
 }
+
+/** The wild-card race lists the three 2nd-place teams and then this many of the rest (5 per conference in all). */
+export const CUP_CHASERS = 2;
 
 /** A finished Cup group-play game inside the group-play dates (knockout games never are). */
 export const isCountedCupGame = (g: ScheduleGame) =>
@@ -151,9 +156,12 @@ export function cupStandings(games: readonly ScheduleGame[]): CupStandings {
   const wildCards: WildCardRace[] = (['West', 'East'] as const).map((conference) => {
     const seconds = groups.filter((g) => g.conference === conference && g.teams[1]).map((g) => ({ ...g.teams[1]!, group: g.group }));
     const ranked = rank(seconds, [byDiff, byPoints, byLastSeason]);
+    const rest = groups.filter((g) => g.conference === conference).flatMap((g) => g.teams.slice(2).map((t) => ({ ...t, group: g.group })));
+    const chasing = rank(rest, [byDiff, byPoints, byLastSeason]).slice(0, CUP_CHASERS).map((r) => r.team);
     return {
       conference,
       teams: ranked.map((r) => ({ ...r.team, wcTiebreak: r.tiebreak as WildCardRace['teams'][number]['wcTiebreak'], wcTied: r.tied })),
+      chasing,
     };
   });
   for (const wc of wildCards) {

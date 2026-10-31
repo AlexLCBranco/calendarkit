@@ -125,7 +125,8 @@ test.describe('Cup view', () => {
     await expect(page.getByTestId('cup-ot-note')).toContainText('OT games are counted with their final score');
     const holders = await page.locator('.ck-cup-holder').evaluateAll((els) => els.map((e) => e.getAttribute('data-team')));
     expect(holders).toEqual(wc.map((p) => p.tri));
-    await expect(page.locator('.ck-cup-race-row')).toHaveCount(6);
+    await expect(page.locator('.ck-cup-race-row')).toHaveCount(10); // per conference: the three 2nd-place teams + 2 more
+    await expect(page.locator('.ck-cup-chaser')).toHaveCount(4);
 
     // nothing below the panels is cut off and the page doesn't scroll sideways
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
@@ -241,24 +242,18 @@ test.describe('Cup view fits the window', () => {
           // the wild-card rows: one compact unit — the record starts within 16 px of the group label; West left of East
           const gaps = [...document.querySelectorAll('.ck-cup-race-row')].map((row) => box(row.querySelector('.ck-cup-rec')!).left - box(row.querySelector('.ck-cup-sub')!).right);
           const races = [...document.querySelectorAll('.ck-cup-race')].map((e) => ({ c: e.getAttribute('data-conference'), x: box(e).left, y: box(e).top }));
-          // group pills: the W column starts within 90 px of the end of the longest name's text
-          const nameGaps = [...document.querySelectorAll('.ck-cup-pill')].map((p) => {
-            const range = document.createRange();
-            range.selectNodeContents(p.querySelector('.ck-cup-name')!);
-            return box(p.querySelectorAll('.ck-cup-num')[0]!).left - range.getBoundingClientRect().right;
-          });
-          return { scroll: document.documentElement.scrollHeight, win: innerHeight, out, gaps, races, minNameGap: Math.min(...nameGaps), fontSizes: [...new Set([...view.querySelectorAll('.ck-cup-name, .ck-cup-panel p, .ck-cup-panel li')].map((e) => getComputedStyle(e).fontSize))] };
+          return { bottom: Math.round(box(view).bottom), pill: box(document.querySelector('.ck-cup-pill')!).height, scroll: document.documentElement.scrollHeight, win: innerHeight, out, gaps, races, fontSizes: [...new Set([...view.querySelectorAll('.ck-cup-name, .ck-cup-panel p, .ck-cup-panel li')].map((e) => getComputedStyle(e).fontSize))] };
         });
         await page.screenshot({ path: `test-output/cup-${size.width}x${size.height}-${data.replace(' ', '-')}.png` });
-        console.log(`[cup fit] ${size.width}×${size.height} ${data}: scroll height ${r.scroll} / window ${r.win}`);
+        console.log(`[cup fit] ${size.width}×${size.height} ${data}: scroll height ${r.scroll} / window ${r.win}, view bottom ${r.bottom}, pill ${r.pill} px`);
+        expect(r.pill, 'group rows keep their v1.29.0 height').toBe(38);
         expect(r.scroll, 'page scrolls vertically').toBeLessThanOrEqual(r.win);
         expect(r.out).toEqual([]);
-        expect(r.gaps).toHaveLength(6);
+        expect(r.gaps).toHaveLength(10);
         for (const g of r.gaps) expect(g).toBeLessThanOrEqual(16);
         expect(r.races.map((x) => x.c)).toEqual(['West', 'East']);
         expect(r.races[0]!.y).toBe(r.races[1]!.y);
         expect(r.races[0]!.x).toBeLessThan(r.races[1]!.x);
-        expect(r.minNameGap).toBeLessThanOrEqual(90);
         // text kept its size (the height came from layout, not smaller text)
         expect(r.fontSizes.sort()).toEqual(['12px', '13px', '14px']);
       });
