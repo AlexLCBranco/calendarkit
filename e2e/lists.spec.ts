@@ -3,6 +3,7 @@
 // views go to e2e/screenshots/<project>-<league|team>-<list|calendar>.png.
 
 import { expect, test, type Page } from './fixtures';
+import { eachTeamMonth, showMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const DEFAULT_DAY = '2026-11-15'; // evening games not over at 15:00 UTC
@@ -24,7 +25,7 @@ const selected = (page: Page, name: string) => page.getByRole('tab', { name, exa
 async function pickTeam(page: Page, name: string) {
   await page.getByTestId('team-picker').click();
   await page.getByRole('option', { name, exact: true }).click();
-  await expect(page.getByTestId('team-header')).toHaveText(name);
+  await expect(page.getByTestId('team-header').locator('.ck-team-name')).toHaveText(name);
 }
 /** League → Calendar is the week view where 7 columns fit a game line (desktop widths), else the count grid. */
 const weekView = (project: string) => project === 'desktop' || project === 'desktop-xl';
@@ -267,7 +268,13 @@ test('team list: every game in order, opens at the next game, earlier games abov
   const list = page.getByTestId('team-list');
   await expect(list.locator('article').first()).toBeAttached();
   const expected = await feedTeamGames(page, 1610612747);
-  const rows = await list.evaluate((el) =>
+  // opens at the next game not over (first game on or after Nov 15 at 15:00 UTC), at the top of the list (its month)
+  const atOpen = await list.evaluate((el) => {
+    const a = el.querySelector<HTMLElement>('article[data-next]')!;
+    return { id: a.dataset.gameId!, offset: a.getBoundingClientRect().top - el.getBoundingClientRect().top };
+  });
+  // round 9: one month at a time — every month in turn
+  const rows = (await eachTeamMonth(page, 'LAL', () => list.evaluate((el) =>
     [...el.querySelectorAll<HTMLElement>('article')].map((a) => ({
       id: a.dataset.gameId!,
       next: a.hasAttribute('data-next'),
@@ -275,9 +282,8 @@ test('team list: every game in order, opens at the next game, earlier games abov
       date: a.querySelector('.ck-date')!.textContent!,
       matchup: [...a.querySelector('.ck-matchup')!.querySelectorAll('.ck-self, .ck-vsat, .ck-opp')].map((e) => e.textContent).join(' '), // without scores
       imgs: a.querySelectorAll('.ck-logo-backing img').length,
-      offset: a.getBoundingClientRect().top - el.getBoundingClientRect().top,
     })),
-  );
+  ))).flat();
   expect(rows.map((r) => r.id)).toEqual(expected.map((g) => g.id));
   expect(rows.length).toBeGreaterThanOrEqual(80);
   // night 2 of a back-to-back exactly where the team also played the previous calendar day
@@ -289,12 +295,13 @@ test('team list: every game in order, opens at the next game, earlier games abov
     expect(r.matchup).toMatch(/^LAL (vs|@) [A-Z]{3}/);
     expect(r.imgs).toBe(2);
   }
-  // opens at the next game not over (first game on or after Nov 15 at 15:00 UTC), at the top of the list
   const nextIdx = rows.findIndex((r) => r.next);
+  expect(rows[nextIdx]!.id).toBe(atOpen.id);
   expect(expected[nextIdx]!.date >= '2026-11-15').toBe(true);
   expect(expected[nextIdx - 1]!.date < '2026-11-15').toBe(true);
-  expect(Math.abs(rows[nextIdx]!.offset)).toBeLessThan(1.5);
-  // markers and TV badge with network names
+  expect(Math.abs(atOpen.offset)).toBeLessThan(1.5);
+  // markers and TV badge with network names (November: Cup group games)
+  await showMonth(page, '2026-11');
   await expect(list.locator('.ck-cup').first()).toBeAttached();
   await expect(list.locator('[data-testid="tv-badge"]').first()).toHaveText(/\w/);
   if (info.project.name !== 'phone') expect(await rowsWithoutLogosDiffer(page)).toEqual([]);
@@ -304,7 +311,7 @@ test('team list: every game in order, opens at the next game, earlier games abov
   // row is two lines; three when B2B + long TV names fill line 2), and a played game's row leaves out its tip-off
   // time (measured; see PROJECT.md).
   const phone = info.project.name === 'phone';
-  const lines = await list.evaluate((el) =>
+  const lines = (await eachTeamMonth(page, 'LAL', () => list.evaluate((el) =>
     [...el.querySelectorAll('article')].map((a) => {
       const shown = ['.ck-date', '[data-testid="tipoff"]', '.ck-matchup'].map((s) => a.querySelector(s)!.getBoundingClientRect()).filter((r) => r.height > 0);
       return {
@@ -317,7 +324,7 @@ test('team list: every game in order, opens at the next game, earlier games abov
         text: a.textContent,
       };
     }),
-  );
+  ))).flat();
   expect(lines.filter((l) => !l.oneLine)).toEqual([]);
   expect(lines.filter((l) => l.time !== (!phone || !l.final))).toEqual([]); // time left out only on played phone rows
   if (phone) {
@@ -373,7 +380,7 @@ test('team list season line: game number + record + streak going in on the right
     });
   });
   expect(want.some((w) => w.scores.length)).toBe(true); // the snapshot has final games
-  const rows = await list.evaluate((el) =>
+  const rows = (await eachTeamMonth(page, 'BOS', () => list.evaluate((el) =>
     [...el.querySelectorAll<HTMLElement>('article')].map((a) => {
       const s = a.querySelector('[data-testid="season"]');
       const b = a.getBoundingClientRect();
@@ -391,7 +398,7 @@ test('team list season line: game number + record + streak going in on the right
         recRight: s ? s.children[1]!.getBoundingClientRect().right : 0,
       };
     }),
-  );
+  ))).flat();
   expect(rows.map(({ id, game, record, streak, scores }) => ({ id, game, record, streak, scores }))).toEqual(want);
   expect(want.some((w) => w.streak)).toBe(true);
   for (const r of rows) {

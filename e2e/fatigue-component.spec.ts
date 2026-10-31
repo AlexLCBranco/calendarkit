@@ -5,6 +5,15 @@
 // faded house left of a solid plane. Runs once (desktop-xl), sizing the window itself.
 
 import { expect, test, type Page } from './fixtures';
+import { eachTeamMonth } from './teamMonths';
+
+/** columns() over every month of the Team List (round 9: one month at a time): the values seen, merged. */
+async function teamColumns(page: Page, tri: string, rowSel: string, parts: string[]) {
+  const all = await eachTeamMonth(page, tri, () => columns(page, rowSel, parts));
+  const out: Record<string, string[]> = {};
+  for (const r of all) for (const [k, vs] of Object.entries(r.out)) for (const v of vs) if (!(out[k] ??= []).includes(v)) out[k]!.push(v);
+  return { out, bad: all.flatMap((r) => r.bad), rows: all.reduce((n, r) => n + r.rows, 0) };
+}
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [
@@ -93,13 +102,13 @@ for (const size of SIZES) {
   test(`Team List ${size.width}×${size.height}: team + opponent components at one x on every row`, async ({ page }) => {
     for (const team of ['LAL', 'ORL']) {
       await open(page, size, `?view=team&layout=list&team=${team}`);
-      const { out, bad, rows } = await columns(page, '[data-testid="team-list"] .ck-card', ['.ck-logo-backing', '.ck-vsat']);
+      const { out, bad, rows } = await teamColumns(page, team, '[data-testid="team-list"] .ck-card', ['.ck-logo-backing', '.ck-vsat']);
       expect(rows, team).toBeGreaterThan(60);
       expect(bad, team).toEqual([]);
       for (const k of ['fx0.left', 'fx0.width', 'fx1.left', 'fx1.width', 'fx0.b', 'fx1.b', 'fx0.n1', 'fx1.n2', 'fx0.c', 'fx1.c', '.ck-logo-backing#0']) expect(out[k], `${team} ${k}: one value`).toHaveLength(1);
       // the opponent's logo: one x on played rows and one on unplayed rows (round 7, 2.4: no score slots without a score)
       for (const kind of [':has(.ck-score)', ':not(:has(.ck-score))']) {
-        const r = await columns(page, `[data-testid="team-list"] .ck-card${kind}`, ['.ck-logo-backing']);
+        const r = await teamColumns(page, team, `[data-testid="team-list"] .ck-card${kind}`, ['.ck-logo-backing']);
         expect(r.out['.ck-logo-backing#1'], `${team} ${kind} opponent logo: one value`).toHaveLength(1);
       }
     }
@@ -291,7 +300,7 @@ for (const size of SIZES) {
     expect(Math.max(...heights), 'one line per row').toBeLessThanOrEqual(listLine(size));
     // the Team List: BOS's own column holds it
     await open(page, size, '?view=team&layout=list&team=BOS');
-    chips = await fit('[data-testid="team-list"] .ck-card');
+    chips = (await eachTeamMonth(page, 'BOS', () => fit('[data-testid="team-list"] .ck-card'))).flat();
     expect(chips.map((c) => c.chip)).toContain('7in11 · 2nd');
     for (const c of chips) expect(c.inside, c.chip).toBe(true);
     expect(new Set(chips.map((c) => c.fxW)).size).toBe(1);

@@ -3,6 +3,7 @@
 // the map; beside the list at 1920 (the 1110 px Team List leaves no room at 1280), never in a copy.
 
 import { expect, test, type Page } from './fixtures';
+import { showMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -78,6 +79,7 @@ test('hover a row: its trip on the map, its stop lit, the game and arena shown; 
   const list = page.getByTestId('team-list');
   for (const k of [1, 6, trips.length - 1]) {
     const g = trips[k]!.at(-1)!;
+    await showMonth(page, g.date.slice(0, 7)); // round 9: the Team List shows one month
     const row = list.locator(`.ck-card[data-game-id="${g.id}"]`);
     await row.scrollIntoViewIfNeeded();
     await row.locator('.ck-time').hover();
@@ -144,6 +146,7 @@ test('every trip of six teams across the map (hovering one row per trip): every 
     const trips = await feedTrips(page, tri);
     const list = page.getByTestId('team-list');
     for (let k = 0; k < trips.length; k++) {
+      await showMonth(page, trips[k]![0]!.date.slice(0, 7)); // round 9: the Team List shows one month
       const row = list.locator(`.ck-card[data-game-id="${trips[k]![0]!.id}"]`);
       await row.scrollIntoViewIfNeeded();
       await row.locator('.ck-time').hover();

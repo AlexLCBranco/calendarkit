@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { CalendarView } from '../src/components/CalendarView';
-import { hasNationalTv, teamGames, teamRestDays, weekOf } from '../src/data/model';
+import { hasNationalTv, monthOf, teamGames, teamRestDays, weekOf } from '../src/data/model';
 import { TEAM_BY_ID } from '../src/data/teams';
 import { data } from './feed';
 
@@ -81,9 +81,10 @@ describe('Team List strip and title', () => {
   it('desktop: title and strip on the row at the top; opponents under game days; other days disabled', async () => {
     fakeLayout();
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
-    const games = teamGames(data, LAL);
-    // opens at the next game not over (Nov 15 15:00 UTC)
-    const next = games.find((g) => Date.parse(g.startTimeUtc!) + 3 * 3_600_000 > NOW)!;
+    const all = teamGames(data, LAL);
+    // opens at the next game not over (Nov 15 15:00 UTC), in its month (round 9: the list holds that month's rows)
+    const next = all.find((g) => Date.parse(g.startTimeUtc!) + 3 * 3_600_000 > NOW)!;
+    const games = all.filter((g) => monthOf(g.dateEt) === monthOf(next.dateEt));
     expect(screen.getByTestId('team-day-title').textContent).toMatch(new RegExp(`${Number(next.dateEt.slice(8))}, 2026$`));
     // scroll to the 10th row: title + strip follow
     await scrollTo(10 * 40);
@@ -91,7 +92,7 @@ describe('Team List strip and title', () => {
     expect(screen.getByTestId('team-day-title').textContent).toContain(` ${Number(g.dateEt.slice(8))}, `);
     expect(days().map((d) => d.dataset.date)).toEqual(weekOf(g.dateEt));
     for (const d of days()) {
-      const game = games.find((x) => x.dateEt === d.dataset.date);
+      const game = all.find((x) => x.dateEt === d.dataset.date);
       const opp = game && (game.homeTeam.teamId === LAL ? `vs ${game.awayTeam.teamTricode}` : `@ ${game.homeTeam.teamTricode}`);
       expect(sub(d), d.dataset.date).toBe(opp ?? '–');
       expect((d as HTMLButtonElement).disabled, d.dataset.date).toBe(!game);
@@ -102,14 +103,15 @@ describe('Team List strip and title', () => {
     fakeLayout();
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const games = teamGames(data, LAL);
-    await scrollTo(10 * 40);
+    // the row's place in its month's list (round 9)
+    const at = (date: string) => games.filter((g) => monthOf(g.dateEt) === monthOf(date)).findIndex((g) => g.dateEt === date);
+    await scrollTo(5 * 40);
     const target = days().find((d) => !(d as HTMLButtonElement).disabled && d.getAttribute('aria-selected') !== 'true')!;
     fireEvent.click(target);
-    const i = games.findIndex((g) => g.dateEt === target.dataset.date);
-    expect(screen.getByTestId('team-list').scrollTop).toBe(i * 40);
+    expect(screen.getByTestId('team-list').scrollTop).toBe(at(target.dataset.date!) * 40);
     fireEvent.click(screen.getByLabelText('Next week'));
     const nextGame = games.find((g) => g.dateEt > weekOf(target.dataset.date!)[6]!)!;
-    expect(screen.getByTestId('team-list').scrollTop).toBe(games.indexOf(nextGame) * 40);
+    expect(screen.getByTestId('team-list').scrollTop).toBe(at(nextGame.dateEt) * 40);
     expect(days().map((d) => d.dataset.date)).toEqual(weekOf(nextGame.dateEt));
   });
 

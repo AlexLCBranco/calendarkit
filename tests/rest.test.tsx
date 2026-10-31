@@ -8,6 +8,7 @@ import { CalendarView } from '../src/components/CalendarView';
 import { hasNationalTv, teamGames, teamRestDays } from '../src/data/model';
 import { data } from './feed';
 import { TEAM } from './synthetic';
+import { acrossMonths, shownMonth } from './teamMonths';
 
 afterEach(cleanup);
 
@@ -33,6 +34,9 @@ function expectedRest(teamId: number): string[] {
 const rows = () =>
   [...screen.getByTestId('team-list').querySelectorAll('[data-game-id], [data-rest]')].map((e) => (e.hasAttribute('data-rest') ? `rest:${e.getAttribute('data-rest')}` : e.getAttribute('data-game-id')!));
 const restRows = () => rows().filter((r) => r.startsWith('rest:')).map((r) => r.slice(5));
+/** Round 9: the Team List shows a month; these walk every month of the team's season. */
+const allRows = (teamId: number, tvOnly = false) => acrossMonths(data, teamId, rows, tvOnly);
+const allRest = (teamId: number, tvOnly = false) => acrossMonths(data, teamId, restRows, tvOnly);
 
 describe('teamRestDays', () => {
   it('matches the independently worked-out gap days for 5 teams; none on a game day, none outside the season', () => {
@@ -53,7 +57,7 @@ describe('Team List rest rows', () => {
   it('on by default (round 7, 2.2): toggle checked, rest rows shown', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
     expect((screen.getByLabelText('Show rest days') as HTMLInputElement).checked).toBe(true);
-    expect(restRows()).toEqual(expectedRest(TEAM.BOS));
+    expect(allRest(TEAM.BOS)).toEqual(expectedRest(TEAM.BOS));
   });
 
   it('on: one row per gap day in date order among the game rows ("Wed 21/10" + "Rest"), for 5 teams', () => {
@@ -63,7 +67,7 @@ describe('Team List rest rows', () => {
       const expected = [...games.map((g) => ({ key: g.gameId, date: g.dateEt })), ...expectedRest(teamId).map((d) => ({ key: `rest:${d}`, date: d }))]
         .sort((a, b) => a.date.localeCompare(b.date))
         .map((x) => x.key);
-      expect(rows()).toEqual(expected);
+      expect(allRows(teamId)).toEqual(expected);
       const first = document.querySelector<HTMLElement>('[data-rest]')!;
       const d = first.getAttribute('data-rest')!;
       const wd = new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
@@ -78,10 +82,10 @@ describe('Team List rest rows', () => {
   it('TV filter: the same rest rows (no fake rest days); a day with a non-TV game shows nothing', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.LAL, showRest: true, tvOnly: true }} />);
     const games = teamGames(data, TEAM.LAL);
-    expect(restRows()).toEqual(expectedRest(TEAM.LAL));
+    expect(allRest(TEAM.LAL, true)).toEqual(expectedRest(TEAM.LAL));
     const nonTv = games.filter((g) => !hasNationalTv(g));
     expect(nonTv.length).toBeGreaterThan(10);
-    const shown = new Set(rows());
+    const shown = new Set(allRows(TEAM.LAL, true));
     for (const g of nonTv) {
       expect(shown.has(g.gameId)).toBe(false);
       expect(shown.has(`rest:${g.dateEt}`)).toBe(false);
@@ -92,10 +96,10 @@ describe('Team List rest rows', () => {
   it('the toggle turns the rows on and off; kept across team changes; only in Team List and not on phones', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS, showRest: false }} />);
     fireEvent.click(screen.getByLabelText('Show rest days'));
-    expect(restRows()).toEqual(expectedRest(TEAM.BOS));
+    expect(allRest(TEAM.BOS)).toEqual(expectedRest(TEAM.BOS));
     fireEvent.click(screen.getByTestId('team-picker'));
     fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
-    expect(restRows()).toEqual(expectedRest(TEAM.MIA));
+    expect(allRest(TEAM.MIA)).toEqual(expectedRest(TEAM.MIA));
     fireEvent.click(screen.getByLabelText('Show rest days'));
     expect(restRows()).toEqual([]);
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
@@ -125,8 +129,14 @@ describe('Team List rest rows', () => {
     // there: jsdom has no img.decode, so the stub never resolves and the copy waits (it outlives the test; this jsdom
     // is this file's alone)
     Object.defineProperty(HTMLImageElement.prototype, 'decode', { value: () => new Promise(() => {}), configurable: true });
+    const month = shownMonth();
+    const title = screen.getByTestId('team-month').textContent;
     fireEvent.click(screen.getByTestId('copy-view'));
     const stage = await waitFor(() => document.querySelector<HTMLElement>('.ck-capture')!);
-    expect([...stage.querySelectorAll('[data-rest]')].map((e) => e.getAttribute('data-rest'))).toEqual(expectedRest(TEAM.BOS));
+    // round 9: the shown month, every row of it (games and rest days), not only what's on screen
+    expect([...stage.querySelectorAll('[data-rest]')].map((e) => e.getAttribute('data-rest'))).toEqual(expectedRest(TEAM.BOS).filter((d) => d.startsWith(month)));
+    const want = [...teamGames(data, TEAM.BOS).map((g) => g.dateEt), ...expectedRest(TEAM.BOS)].filter((d) => d.startsWith(month)).length;
+    expect(stage.querySelectorAll('.ck-team-rows > [data-row-date]')).toHaveLength(want);
+    expect(stage.querySelector('[data-testid="team-month"]')!.textContent).toBe(title);
   });
 });

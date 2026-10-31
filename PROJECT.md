@@ -29,7 +29,10 @@ where-to-watch info, embedding in gauntlet.
   2026-10-23; push to `main` deploys). Smoke test passes against it (`npm run e2e:live -- <url>`).
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
-## Current state / handoff (2026-10-30, after round 8)
+## Current state / handoff (2026-10-31, round 9 in progress)
+Round 9: Part 1 (v1.25.0: the Team List shows one calendar month). Details: "### Round 9".
+
+## Previous handoff (2026-10-30, after round 8)
 Round 8: Part 0 (Cup fixture from the feed, CI split into parallel jobs, ck-old removed, audit clean), Part 1
 (v1.21.0: one-day League List, left-aligned, rows scaled by width), Part 2 (v1.22.0: static map), Part 3 (v1.23.0: hover links list and map, B2B travel lines). Then v1.24.0: the Team map (see "### Team map"). Details: "### Round 8".
 
@@ -376,7 +379,7 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   none`, the component restores it itself before paint); a scroll not yet seen by the handler is read first so a
   re-render can't undo it. Space after the last day lets every day reach the top. Events: `onSelectDate` (day at the
   top changed), `onOpenGame`.
-- **Team list** (`TeamListView`): every game of the team, one row: date "Sun 15/11", local tip-off ((+1)/TBD),
+- **Team list** (`TeamListView`) — **round 9: one calendar month at a time, see "### Round 9"**. Before: every game of the team, one row: date "Sun 15/11", local tip-off ((+1)/TBD),
   "BOS vs CHI" / "BOS @ DET" with both logos, Cup/Play-In/Playoffs markers, national TV badge with names, B2B labels. All rows rendered
   (~82, cheap); opens scrolled so the next game not over is at the top (accent border); earlier games are above
   (scroll up). Same team picker as Team → Calendar.
@@ -1451,6 +1454,55 @@ link**. (Not chosen: the whole season at once.)
   class like the active-day class (a class on a row as it passes under the pointer, no re-render).
 - **Not done / ideas**: the Team Calendar has no map (by choice); the whole-season view and a "show all travel" toggle
   for the League map remain ideas.
+
+### Round 9 (2026-10-31)
+Ground rules as every round (desktop first, nothing slower, every check automated where possible, never invent data).
+
+**Part 1, Team List: one month at a time** (v1.25.0)
+- **One calendar month** (`TeamListView` `month` / `onMonthChange`; the month lives in CalendarView, `teamListAt`): only
+  that month's rows are rendered (games, and rest days inside the month when "Show rest days" is on). Scrolling stays
+  inside it; the room after the last row lets the month's last row reach the top, never the next month.
+- **Which month**: opening the Team List, another team or the TV filter → the month of the next game not over (TV
+  filter applied; the row the list opens at), that game at the top — the old rule. If no game is left in the current
+  calendar month, that is the next month's (I read "current month, next game at the top" as one rule: the next game's
+  month).
+- **Month title**: "November 2026" in the team header, right-aligned over the list column (`TeamHeader` `period`, plain
+  text, `data-testid="team-month"`). Top bar unchanged (one row at 1920). The day title in the top bar stays.
+- **Paging across months**: the week strip's ‹ › (previous / next week with a game) and its day clicks, the date picker
+  and Today: a row in another month switches the month first, then puts that row at the top (`pending` in
+  TeamListView, applied in the layout effect after the new month renders). The strip knows the whole season's days, so a
+  week that crosses the month edge has both months' days enabled. ‹ › are disabled only at the season's first / last
+  week with a game. No month arrows of their own on desktop/tablet.
+- **Phones** (no strip, no date picker, no Today): the top bar's period title is the month with ‹ › (`monthNav`), the
+  only way to page there; the header shows no second title. Same month behaviour otherwise.
+- **Whole season behind the month**: game numbers, records, streaks, B2B nights, 3-in-4 chips and the opponent's dot are
+  all computed from the full season (unchanged code). A B2B whose other night is in the previous/next month keeps its
+  badge, leg dot and chips; its bracket (`data-b2b`) is drawn only for nights whose partner row is in the month
+  (`bracketNights`, the selection images' rule), so no half bracket dangles at the month edge.
+- **Team map**: unchanged. Hovering a stop whose game is in another month lights no row and doesn't switch months (the
+  info line still names the game); a stop in the month lights and scrolls its row as before.
+- **Copies**: the whole-view copy = the shown month, every row of it (also those off screen), with the month in its
+  header. Row copies and the marquee unchanged.
+- **Found and fixed on the way**: the room after the last row was sized from the scroller's height before the week strip
+  mounted above it, so the last row stopped ~60 px short of the top (also before this round, for the season's last row).
+  The size is now re-measured when the scroller resizes.
+- **Timing**: month change (strip ‹ › across Nov → Dec and back), click → next frame **median 31 ms, max 50–59 ms** at
+  1280 / 1920 / tablet (e2e, guarded: median < 100 ms). View switch to the Team List 41 ms (was ~80: half the rows).
+- **Perf guard updated, not deleted** (`perf.spec.ts`): the old gesture (wheel through LAL's whole season) can't run on a
+  month, so, as the League List in round 8, two A/B checks against v1.17.1 in the same run, each the same user action on
+  both builds: `team-scroll` — wheel 1500 px down and up from the list's top in a 1920 × 700 window (frames keep the old
+  baselines): main thread 152 vs 489 ms, **×0.31**; `team-month-nav` — 12 clicks on the strip's "Next week" from Nov 15
+  (current: two month changes; reference: scrolls the long list): 556 vs 576 ms, **×0.97** (limit ×1.25).
+- **Tests**: unit `tests/teammonth.test.tsx` (every team × month = the games + rest days of that month, both rest
+  settings; opens on the next game's month at the top; TV filter / team change; strip ‹ › through the whole season with
+  every month edge, disabled at the ends; strip day in the other month; date picker into three other months; Today;
+  phone ‹ ›; game numbers / records / streaks = the whole-season list's on every row; every real B2B split across a month
+  edge — 9 in the feed — keeps its marks with no bracket half), helper `tests/teamMonths.ts`; e2e `e2e/teammonth.spec.ts`
+  (every team × every month vs the served snapshot at all four widths — 210 each; title; top bar one row at 1920; strip
+  across every month edge; strip day + picker + Today; scrolling stays in the month; timing; split B2Bs; Team map stop in
+  another month — on a real cross-month road trip with the clock set before it), helper `e2e/teamMonths.ts`. 23 older
+  unit/e2e tests that read the whole season now walk the months (same checks). **Against v1.24.0**: all 9 new unit
+  tests and all 8 new e2e tests fail.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

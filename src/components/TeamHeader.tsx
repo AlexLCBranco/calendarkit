@@ -14,13 +14,18 @@ function BigLogo({ teamId, px }: { teamId: number; px: number }) {
   );
 }
 
-/** Team views: large logo on its disc + full name. */
-export function TeamHeader({ teamId, compact = false }: { teamId: number; compact?: boolean }) {
+/** Team views: large logo on its disc + full name; the Team List adds the month it shows (round 9), plain text. */
+export function TeamHeader({ teamId, compact = false, period }: { teamId: number; compact?: boolean; period?: string }) {
   const t = TEAM_BY_ID.get(teamId);
   return (
     <div className="ck-team-header" data-testid="team-header">
       <BigLogo teamId={teamId} px={compact ? 40 : 48} />
       <h2 className="ck-team-name">{t ? fullName(t) : 'Team'}</h2>
+      {period && (
+        <span className="ck-team-period" data-testid="team-month">
+          {period}
+        </span>
+      )}
     </div>
   );
 }

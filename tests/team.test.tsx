@@ -11,6 +11,7 @@ import type { ScheduleGame } from '../src/shared/nba-schedule/parse';
 import { TEAM_BY_ID, TEAMS } from '../src/data/teams';
 import { data } from './feed';
 import { dataOf, game, TEAM } from './synthetic';
+import { eachTeamMonth, showTeamMonth } from './teamMonths';
 
 afterEach(cleanup);
 
@@ -94,7 +95,7 @@ describe('team picker', () => {
     fireEvent.click(screen.getByTestId('team-picker'));
     fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
     expect(screen.queryByRole('listbox')).toBeNull();
-    expect(screen.getByTestId('team-header').textContent).toBe('Miami Heat');
+    expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Miami Heat');
     expect(screen.getByRole('region', { name: 'Heat games' })).toBeTruthy();
     expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ teamId: TEAM.MIA }));
   });
@@ -123,12 +124,12 @@ describe('team picker', () => {
     fireEvent.keyDown(list, { key: 'Escape' });
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(document.activeElement).toBe(btn);
-    expect(screen.getByTestId('team-header').textContent).toBe('Boston Celtics'); // Escape doesn't pick
+    expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Boston Celtics'); // Escape doesn't pick
     fireEvent.keyDown(btn, { key: 'ArrowDown' });
     fireEvent.keyDown(screen.getByRole('listbox'), { key: 'l' }); // L…: LA Clippers
     fireEvent.keyDown(screen.getByRole('listbox'), { key: 'l' }); // then Los Angeles Lakers
     fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Enter' });
-    expect(screen.getByTestId('team-header').textContent).toBe('Los Angeles Lakers');
+    expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Los Angeles Lakers');
     expect(screen.getByRole('region', { name: 'Lakers schedule' })).toBeTruthy();
     expect(document.activeElement).toBe(screen.getByTestId('team-picker'));
   });
@@ -150,7 +151,7 @@ describe('team picker', () => {
     fireEvent.mouseMove(miami, { movementX: 0, movementY: 0 });
     expect(active()).toBe('Orlando Magic');
     fireEvent.keyDown(list, { key: 'Enter' });
-    expect(screen.getByTestId('team-header').textContent).toBe('Orlando Magic');
+    expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Orlando Magic');
     // a real move over an option still highlights it (and a click picks it)
     fireEvent.keyDown(btn, { key: 'ArrowDown' });
     const atl = screen.getByRole('option', { name: 'Atlanta Hawks' });
@@ -173,7 +174,8 @@ describe('selected team first, both logos', () => {
     const tri = TEAM_BY_ID.get(teamId)!.tricode;
     it(`${tri} list: "${tri} vs OPP" at home, "${tri} @ OPP" away; logos [${tri}, OPP]`, () => {
       const el = team(teamId, 'list');
-      for (const g of teamGames(data, teamId)) {
+      eachTeamMonth(data, teamId, (m) => {
+      for (const g of teamGames(data, teamId).filter((x) => monthOf(x.dateEt) === m)) {
         const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
         const home = g.homeTeam.teamId === teamId;
         const opp = home ? g.awayTeam : g.homeTeam;
@@ -184,6 +186,7 @@ describe('selected team first, both logos', () => {
         expect(imgs(row), g.gameId).toEqual([`/logos/${tri}.svg`, `/logos/${opp.teamTricode}.svg`]);
         expect(row.querySelector('.ck-matchup > :first-child .ck-self')!.textContent).toBe(tri); // always first
       }
+      });
     });
 
     it(`${tri} calendar (desktop): same in every game cell`, () => {
@@ -244,19 +247,29 @@ describe('back-to-back pairs (team views)', () => {
       const pairs = expectedPairs(data, teamId);
       expect(pairs.length).toBeGreaterThan(5);
       const want = new Map<string, { text: string; night: string; plane: boolean }[]>();
+      // round 9: the bracket only where the other night is in the shown month (labels stay on both)
+      const bracket = new Map<string, string[]>();
       for (const p of pairs) {
         want.set(p.a.gameId, [...(want.get(p.a.gameId) ?? []), { text: `1/2 · ${p.code}`, night: '1', plane: p.travels }]);
         want.set(p.b.gameId, [...(want.get(p.b.gameId) ?? []), { text: `2/2 · ${p.code}`, night: '2', plane: p.travels }]);
+        if (monthOf(p.a.dateEt) === monthOf(p.b.dateEt)) {
+          bracket.set(p.a.gameId, [...(bracket.get(p.a.gameId) ?? []), '1']);
+          bracket.set(p.b.gameId, [...(bracket.get(p.b.gameId) ?? []), '2']);
+        }
       }
-      for (const g of teamGames(data, teamId)) {
-        const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
-        expect(label(row), `${tri} ${g.dateEt}`).toEqual(want.get(g.gameId) ?? []);
-        expect(row.getAttribute('data-b2b') ?? '', g.dateEt).toBe((want.get(g.gameId) ?? []).map((w) => w.night).join(' '));
-        expect(row.querySelector('.ck-b2b'), g.dateEt).toBeNull();
-      }
-      const n1 = el.container.querySelector('.ck-b2b-n1')!;
-      const n2 = el.container.querySelector('.ck-b2b-n2')!;
-      expect(n1.className).not.toBe(n2.className); // outlined vs solid (calendar.css)
+      const classes = new Set<string>();
+      eachTeamMonth(data, teamId, (m) => {
+        for (const g of teamGames(data, teamId).filter((x) => monthOf(x.dateEt) === m)) {
+          const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
+          expect(label(row), `${tri} ${g.dateEt}`).toEqual(want.get(g.gameId) ?? []);
+          expect(row.getAttribute('data-b2b') ?? '', g.dateEt).toBe((bracket.get(g.gameId) ?? []).join(' '));
+          expect(row.querySelector('.ck-b2b'), g.dateEt).toBeNull();
+        }
+        for (const n of el.container.querySelectorAll('.ck-b2b-n1, .ck-b2b-n2')) classes.add(n.className);
+      });
+      const n1 = [...classes].find((c) => c.includes('ck-b2b-n1'))!;
+      const n2 = [...classes].find((c) => c.includes('ck-b2b-n2'))!;
+      expect(n1).not.toBe(n2); // outlined vs solid (calendar.css)
     });
   }
 
@@ -269,6 +282,7 @@ describe('back-to-back pairs (team views)', () => {
     const tipOf = (p: (typeof pairs)[number]) => `Back-to-back: ${side(p.a)} → ${side(p.b)}${p.travels ? ` · travels ${p.a.arenaCity} → ${p.b.arenaCity}` : ''}`;
     for (const p of [travel, same]) {
       for (const g of [p.a, p.b]) {
+        showTeamMonth(monthOf(g.dateEt));
         const l = el.container.querySelector<HTMLElement>(`[data-game-id="${g.gameId}"] .ck-b2b-label`)!;
         expect(l.getAttribute('data-tip')).toBe(tipOf(p));
         expect(l.getAttribute('aria-label')).toBe(tipOf(p));
@@ -357,7 +371,8 @@ describe("opponent's 2nd night (team views)", () => {
     for (const teamId of [TEAM.BOS, ORL]) {
       const el = team(teamId, 'list');
       let n = 0;
-      for (const g of teamGames(data, teamId)) {
+      eachTeamMonth(data, teamId, (m) => {
+      for (const g of teamGames(data, teamId).filter((x) => monthOf(x.dateEt) === m)) {
         const opp = g.homeTeam.teamId === teamId ? g.awayTeam : g.homeTeam;
         const dot = el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-opp .ck-b2b-mark`);
         expect(!!dot, g.dateEt).toBe(isBackToBack(data, opp.teamId, g.dateEt));
@@ -369,6 +384,7 @@ describe("opponent's 2nd night (team views)", () => {
         }
         expect(el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-self .ck-b2b-mark`)).toBeNull(); // own B2B: labels, not a dot
       }
+      });
       expect(n).toBeGreaterThan(3);
       cleanup();
     }

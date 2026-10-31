@@ -6,6 +6,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from './fixtures';
+import { showMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const OUT = 'test-output/copy-images';
@@ -20,7 +21,7 @@ test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
 
 /** Area of an element inside the copied root, in CSS px, and what the image must show there. */
 type Region = { kind: 'logo' | 'text' | 'score' | 'b2b' | 'tv' | 'rest' | 'tif' | 'leg'; x: number; y: number; w: number; h: number; what: string };
-type Target = { width: number; height: number; regions: Region[]; ratio: number };
+type Target = { width: number; height: number; regions: Region[]; ratio: number; rows: number; month: string | null };
 
 /** Every area to check inside `root` (runs in the page). Exported as a string so it works for the stage too. */
 const MEASURE = `(root) => {
@@ -44,7 +45,10 @@ const MEASURE = `(root) => {
   add('rest', '.ck-rest-row .ck-date, .ck-rest');
   // round 8: an element inside the zoomed League List is copied at its on-screen size (its layout size × currentCSSZoom)
   const z = root.currentCSSZoom ?? 1;
-  return { width: z === 1 ? root.offsetWidth : r0.width, height: z === 1 ? root.offsetHeight : r0.height, regions: out };
+  // round 9: the Team List's rows and month in the copy
+  const rows = root.querySelectorAll('.ck-team-rows > [data-row-date]').length;
+  const month = root.querySelector('[data-testid="team-month"]')?.textContent ?? null;
+  return { width: z === 1 ? root.offsetWidth : r0.width, height: z === 1 ? root.offsetHeight : r0.height, regions: out, rows, month };
 }`;
 
 async function open(page: Page, search: string) {
@@ -206,7 +210,7 @@ test('whole view: league week view (1 and 2 weeks)', async ({ page }) => {
   await check(page, 'view-league-2weeks', await copyView(page), ['logo', 'text', 'b2b', 'tv']);
 });
 
-test('whole view: team calendar and the full team list', async ({ page }, info) => {
+test('whole view: team calendar and the whole Team List month', async ({ page }, info) => {
   test.setTimeout(240_000); // three large copies
   await open(page, '?view=team&layout=calendar&team=LAL');
   await expect(page.locator('.ck-team-grid')).toBeVisible();
@@ -216,22 +220,31 @@ test('whole view: team calendar and the full team list', async ({ page }, info) 
   if (info.project.name !== 'desktop-xl') return;
 
   await page.getByRole('tab', { name: 'List', exact: true }).click();
+  // round 9: the Team List shows a month; the copy is that month — all its rows, not only those on screen. A short
+  // window, so the month doesn't fit on screen.
+  await page.setViewportSize({ width: 1920, height: 600 });
   await page.getByLabel('Show rest days').uncheck(); // on by default since round 7: first the games only
   const shown = await page.locator('.ck-team-rows > .ck-card').count();
+  const visible = await page.getByTestId('team-list').evaluate((l) => l.clientHeight);
+  expect(await page.getByTestId('team-list').evaluate((l) => l.querySelector('.ck-team-rows')!.getBoundingClientRect().height)).toBeGreaterThan(visible);
+  const month = await page.getByTestId('team-month').textContent();
   const view = await copyView(page);
-  // every game, not just the rows scrolled into view: 2 logos per row, + the team header's
+  // every game of the month, not just the rows scrolled into view: 2 logos per row, + the team header's
   expect(view.target.regions.filter((r) => r.kind === 'logo').length).toBe(2 * shown + 1);
+  expect(view.target.rows, 'image rows = the month’s rows').toBe(shown);
+  expect(view.target.month).toBe(month);
   const r = await check(page, 'view-team-list', view, ['logo', 'text', 'b2b', 'tv', 'tif']);
   // both Fatigue columns are in the image (round 5): every badge and chip of the team and the opponent
   expect(view.target.regions.filter((x) => x.kind === 'tif').length).toBe(await page.locator('.ck-team-rows :is(.ck-tif, .ck-fx-chip)').count());
   expect(view.target.regions.filter((x) => x.kind === 'b2b').length).toBe(await page.locator('.ck-team-rows :is(.ck-b2b-label, .ck-b2b-mark, .ck-fx-b2b:not(:empty))').count());
-  expect(r.height / view.target.ratio, 'taller than the window').toBeGreaterThan(1080);
+  expect(r.height / view.target.ratio, 'taller than the list on screen').toBeGreaterThan(visible);
 
   // "Show rest days": the rest rows are in the image too, every one of them drawn
   await page.getByLabel('Show rest days').check();
   const rest = await page.locator('.ck-team-rows > .ck-rest-row').count();
-  expect(rest).toBeGreaterThan(60);
+  expect(rest).toBeGreaterThan(5);
   const withRest = await copyView(page);
+  expect(withRest.target.rows, 'image rows = the month’s rows').toBe(shown + rest);
   expect(withRest.target.regions.filter((x) => x.kind === 'rest').length).toBe(2 * rest); // date + "Rest"
   expect(withRest.target.regions.filter((x) => x.kind === 'logo').length).toBe(2 * shown + 1);
   const rr = await check(page, 'view-team-list-rest', withRest, ['logo', 'text', 'b2b', 'tv', 'rest']);
@@ -342,6 +355,7 @@ test('final scores are in the images: week view (1 and 2 weeks), league list day
   await check(page, 'scores-team-calendar-day', await copyPart(page, cell, 'copy-day'), ['logo', 'text', 'score']);
 
   await page.getByRole('tab', { name: 'List', exact: true }).click();
+  await showMonth(page, '2026-10'); // round 9: the month with the final scores
   await check(page, 'scores-team-list', await copyView(page), ['logo', 'text', 'score']);
 });
 

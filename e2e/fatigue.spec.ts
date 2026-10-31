@@ -3,6 +3,7 @@
 // clipped, no sideways scroll; tooltips on hover and focus. Prints the widest content per column.
 
 import { expect, test, type Page } from './fixtures';
+import { eachTeamMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -24,8 +25,10 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
   let widest = { team: 0, opp: 0 };
   for (const tri of TRICODES) {
     await open(page, `?view=team&layout=list&team=${tri}&rest=1`);
+    // round 9: every month of the team's Team List
+    for (const r of await eachTeamMonth(page, tri, async () => {
     await page.waitForFunction(() => [...document.images].every((i) => i.complete));
-    const r = await page.evaluate(() => {
+    return page.evaluate(() => {
       const round = (n: number) => Math.round(n * 10) / 10;
       const root = document.querySelector('.ck-root')!.getBoundingClientRect();
       const out = { rows: 0, self: [] as number[], oppCol: [] as number[], tags: [] as number[], teamCol: [] as number[], logo1: [] as string[], vsat: [] as string[], oppRight: [] as string[], logo2: [] as string[], bad: [] as string[], widestTeam: 0, widestOpp: 0, restCols: 0 };
@@ -75,6 +78,7 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
       out.restCols = document.querySelectorAll('.ck-rest-row .ck-fat').length;
       return out;
     });
+    })) {
     rows += r.rows;
     r.self.forEach((x) => xs.self.add(x));
     r.oppCol.forEach((x) => xs.oppCol.add(x));
@@ -84,6 +88,7 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
     bad.push(...r.bad.map((b) => `${tri} ${b}`));
     expect(r.restCols, `${tri} rest rows have no columns`).toBe(0);
     widest = { team: Math.max(widest.team, r.widestTeam), opp: Math.max(widest.opp, r.widestOpp) };
+    }
   }
   const sideways = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   const widths = await page.evaluate(() => ({

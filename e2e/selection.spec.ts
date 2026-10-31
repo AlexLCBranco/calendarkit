@@ -69,6 +69,9 @@ const count = (page: Page) => page.getByTestId('selection-count').textContent();
 
 test('team list: box selects the rows it touches; Shift adds; click and Escape clear; rest rows never selected', async ({ page }) => {
   await open(page, '?view=team&layout=list&team=BOS&rest=1');
+  // round 9: the list holds one month and opens at Nov 15 (its second half); from the month's top there's room below
+  await page.getByTestId('team-list').evaluate((e) => (e.scrollTop = 0));
+  await page.waitForTimeout(200);
   const rows = '.ck-team-rows > .ck-card';
   const r1 = await rectOf(page, rows, 1);
   const r4 = await rectOf(page, rows, 4);
@@ -111,9 +114,18 @@ test('team list: box selects the rows it touches; Shift adds; click and Escape c
 });
 
 test('team list: dragging to the bottom edge auto-scrolls and selects rows beyond the first screen; wheel mid-drag stays right', async ({ page }) => {
+  // round 9: a month at a time — a short window, so the month is more than a screen, and from the month's top
+  await page.setViewportSize({ width: page.viewportSize()!.width, height: 640 });
   await open(page, '?view=team&layout=list&team=LAL');
   const list = page.getByTestId('team-list');
+  await list.evaluate((e) => (e.scrollTop = 0));
+  await page.waitForTimeout(200);
   const lb = await list.evaluate((e) => e.getBoundingClientRect().toJSON() as DOMRect);
+  // the game rows wholly on the first screen
+  const onScreen = await list.evaluate((e) => {
+    const b = e.getBoundingClientRect();
+    return [...e.querySelectorAll('.ck-team-rows > .ck-card')].filter((r) => r.getBoundingClientRect().bottom <= b.bottom).length;
+  });
   const first = await rectOf(page, '.ck-team-rows > .ck-card', 0); // first row clear of the top auto-scroll zone
   const startId = await page.evaluate((y) => [...document.querySelectorAll<HTMLElement>('.ck-team-rows > .ck-card')].find((r) => Math.abs(r.getBoundingClientRect().top - y) < 0.5)!.dataset.gameId!, first.top);
   const a = { x: first.left + first.width * 0.72, y: first.top + first.height / 2 };
@@ -138,10 +150,9 @@ test('team list: dragging to the bottom edge auto-scrolls and selects rows beyon
     [startId, end.y] as const,
   );
   const got = await highlighted(page);
-  const visible = Math.floor(lb.height / first.height);
-  console.log(`[selection] auto-scroll: ${got.length} rows selected (${visible} fit the screen)`);
+  console.log(`[selection] auto-scroll: ${got.length} rows selected (${onScreen} on the first screen)`);
   expect(got).toEqual(want);
-  expect(got.length).toBeGreaterThan(visible);
+  expect(got.length).toBeGreaterThan(onScreen);
 });
 
 test('league list, team calendar (month / 1 week / 2 weeks), league week view (1 / 2 weeks): exactly the games the box touches', async ({ page }, info) => {

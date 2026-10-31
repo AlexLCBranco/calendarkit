@@ -153,7 +153,7 @@ describe('App: URL state for the List | Calendar switch', () => {
     for (const q of ['', '&rest=1', '&rest=0']) {
       await open(`?view=team&layout=list&team=BOS${q}`);
       expect(box().checked, `opened with "${q}"`).toBe(true);
-      expect(document.querySelectorAll('[data-rest]').length).toBeGreaterThan(60);
+      expect(document.querySelectorAll('[data-rest]').length).toBeGreaterThan(3); // one month's (round 9)
       cleanup();
     }
     localStorage.clear();

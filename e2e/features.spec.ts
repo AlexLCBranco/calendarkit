@@ -4,6 +4,7 @@
 // e2e/screenshots/<project>-f-<view>.png.
 
 import { expect, test, type Page } from './fixtures';
+import { eachTeamMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const ORL = 1610612753;
@@ -86,14 +87,14 @@ test('team header and team picker: logos, mouse and keyboard, team change', asyn
   const errors = collectErrors(page);
   const p = info.project.name;
   await open(page, '?view=team&layout=list&team=BOS');
-  const header = page.getByTestId('team-header');
+  const header = page.getByTestId('team-header').locator('.ck-team-name'); // (the Team List adds its month, round 9)
   await expect(header).toHaveText('Boston Celtics');
   await imagesLoaded(page);
-  const h = await header.evaluate((el) => {
+  const h = await page.getByTestId('team-header').evaluate((el) => {
     const img = el.querySelector('img')!;
     const disc = img.parentElement!.getBoundingClientRect();
     const name = el.querySelector('h2')!;
-    return { disc: disc.width, loaded: img.naturalWidth > 0, font: parseFloat(getComputedStyle(name).fontSize), visible: el.getBoundingClientRect().bottom <= innerHeight, biggestOther: Math.max(...[...document.querySelectorAll('.ck-toolbar *')].map((e) => parseFloat(getComputedStyle(e).fontSize))) };
+    return { disc: disc.width, loaded: img.naturalWidth > 0, font: parseFloat(getComputedStyle(name).fontSize), visible: el.getBoundingClientRect().bottom <= innerHeight, biggestOther: Math.max(...[...document.querySelectorAll('.ck-toolbar *:not(.ck-arrow)')].map((e) => parseFloat(getComputedStyle(e).fontSize))) };
   });
   expect(h.loaded).toBe(true);
   expect(h.disc).toBe(p === 'phone' ? 40 : 48);
@@ -141,7 +142,7 @@ test('team picker: a pointer resting where the list opens never overrides the ke
   test.skip(info.project.name === 'phone', 'touch device: no hover');
   await open(page, '?view=team&layout=list&team=MIA');
   const btn = page.getByTestId('team-picker');
-  const header = page.getByTestId('team-header');
+  const header = page.getByTestId('team-header').locator('.ck-team-name'); // (the Team List adds its month, round 9)
   const list = page.getByRole('listbox', { name: 'Teams' });
   await btn.click();
   const atl = (await page.getByRole('option', { name: 'Atlanta Hawks' }).boundingBox())!;
@@ -173,7 +174,8 @@ test('team views: selected team first, vs/@ from its side, two loaded logos per 
   })()).filter((g) => g.homeTeam.teamId === ORL || g.awayTeam.teamId === ORL);
   const want = (g: RawGame) => (g.homeTeam.teamId === ORL ? `ORL vs ${g.awayTeam.teamTricode}` : `ORL @ ${g.homeTeam.teamTricode}`);
   await imagesLoaded(page);
-  const rows = await page.getByTestId('team-list').evaluate((el) =>
+  // round 9: month by month
+  const rows = (await eachTeamMonth(page, 'ORL', async () => (await imagesLoaded(page), page.getByTestId('team-list').evaluate((el) =>
     [...el.querySelectorAll<HTMLElement>('article')].map((a) => ({
       id: a.dataset.gameId!,
       // without the final scores (checked in lists.spec.ts)
@@ -182,7 +184,7 @@ test('team views: selected team first, vs/@ from its side, two loaded logos per 
       selfX: a.querySelector('.ck-self')!.getBoundingClientRect().left,
       final: !!a.querySelector('.ck-score'),
     })),
-  );
+  )))).flat();
   expect(rows.map((r) => r.id)).toEqual(games.map((g) => g.gameId));
   expect(rows.map((r) => r.matchup)).toEqual(games.map(want));
   expect(rows.every((r) => r.logos === 2)).toBe(true);

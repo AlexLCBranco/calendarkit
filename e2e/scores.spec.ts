@@ -4,6 +4,7 @@
 // widths. Clock: Nov 15, 2026 (games from Oct 23 on are over but not final in the snapshot: unchanged).
 
 import { expect, test, type Page } from './fixtures';
+import { showMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 type Side = { teamId: number; teamTricode: string; score: number };
@@ -132,6 +133,7 @@ test('overtime marker: League List, Team List (worst case in its slot), week vie
     expect(await oneLine(`.ck-card[data-game-id="${g.gameId}"]`), `${g.gameId} League List one line`).toBe(true);
     for (const tri of [g.away.teamTricode, g.home.teamTricode]) {
       await open(page, `?view=team&layout=list&team=${tri}`);
+      await showMonth(page, g.date.slice(0, 7)); // round 9: the Team List shows one month
       const row = page.locator(`[data-testid="team-list"] .ck-card[data-game-id="${g.gameId}"]`);
       expect(await row.locator('.ck-ot').textContent()).toBe(g.ot);
       expect(await oneLine(`[data-testid="team-list"] .ck-card[data-game-id="${g.gameId}"]`), `${g.gameId} Team List one line`).toBe(true);
@@ -139,6 +141,7 @@ test('overtime marker: League List, Team List (worst case in its slot), week vie
   }
   // worst case in the Team List's fixed matchup slot: write the widest tricodes, 3-digit scores and "3OT" into a row
   await open(page, `?view=team&layout=list&team=${ots[0]!.home.teamTricode}`);
+  await showMonth(page, ots[0]!.date.slice(0, 7));
   const r = await page.locator(`[data-testid="team-list"] .ck-card[data-game-id="${ots[0]!.gameId}"] .ck-matchup`).evaluate((m) => {
     m.querySelectorAll('.ck-team').forEach((t) => (t.firstChild!.textContent = 'MEM'));
     m.querySelectorAll('.ck-team').forEach((t) => t.classList.remove('ck-loss')); // both bold: the widest

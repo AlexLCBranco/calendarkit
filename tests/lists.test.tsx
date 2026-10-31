@@ -9,6 +9,7 @@ import { addDays, hasNationalTv, isBackToBack, isOver, markers, nationalTv, team
 import { TEAM_BY_ID } from '../src/data/teams';
 import { data } from './feed';
 import { TEAM } from './synthetic';
+import { acrossMonths, eachTeamMonth, shownMonth } from './teamMonths';
 
 afterEach(cleanup);
 
@@ -98,9 +99,9 @@ describe('TV games only, all four views', () => {
     const tv = all.filter(hasNationalTv);
     expect(tv.length).toBeGreaterThan(0);
     expect(tv.length).toBeLessThan(all.length);
-    expect(ids(screen.getByTestId('team-list'))).toEqual(all.map((g) => g.gameId));
+    expect(acrossMonths(data, TEAM.LAL, () => ids(screen.getByTestId('team-list')))).toEqual(all.map((g) => g.gameId));
     fireEvent.click(screen.getByLabelText('TV games only'));
-    expect(ids(screen.getByTestId('team-list'))).toEqual(tv.map((g) => g.gameId));
+    expect(acrossMonths(data, TEAM.LAL, () => ids(screen.getByTestId('team-list')), true)).toEqual(tv.map((g) => g.gameId));
     fireEvent.click(tab('Calendar'));
     const oct = tv.filter((g) => g.dateEt.startsWith('2026-10')).map((g) => g.gameId);
     expect(ids(el.container.querySelector('[role="grid"]')!)).toEqual(oct);
@@ -218,14 +219,15 @@ describe('league list: one day at a time (round 8)', () => {
 describe('team list', () => {
   const lal = teamGames(data, TEAM.LAL);
 
-  it('every game of the team in order, one row each, opens at the next game not over', () => {
+  it('every game of the team in order, one row each (month by month, round 9), opens at the next game not over', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', teamId: TEAM.LAL }} />);
-    const list = screen.getByRole('region', { name: 'Lakers games' });
-    expect(ids(list)).toEqual(lal.map((g) => g.gameId));
-    expect(lal.length).toBeGreaterThanOrEqual(80);
+    const list = () => screen.getByRole('region', { name: 'Lakers games' });
     const next = lal.find((g) => !isOver(g, NOW))!;
-    expect(list.querySelector('[data-next]')!.getAttribute('data-game-id')).toBe(next.gameId);
-    expect(lal.indexOf(next)).toBeGreaterThan(0); // earlier games are in the list, above it
+    expect(shownMonth()).toBe(next.dateEt.slice(0, 7));
+    expect(list().querySelector('[data-next]')!.getAttribute('data-game-id')).toBe(next.gameId);
+    expect(ids(list()).indexOf(next.gameId)).toBeGreaterThan(0); // earlier games of the month are in the list, above it
+    expect(acrossMonths(data, TEAM.LAL, () => ids(list()))).toEqual(lal.map((g) => g.gameId));
+    expect(lal.length).toBeGreaterThanOrEqual(80);
   });
 
   it('row: date, local tip-off, selected team first, vs/@, both logos', () => {
@@ -250,7 +252,10 @@ describe('team list', () => {
   it('markers, national TV badge with network names and B2B on exactly the right games', () => {
     for (const teamId of [TEAM.LAL, TEAM.BOS, TEAM.NYK]) {
       const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', teamId }} />);
-      for (const g of teamGames(data, teamId)) {
+      let checked = 0;
+      eachTeamMonth(data, teamId, (m) => {
+      for (const g of teamGames(data, teamId).filter((x) => x.dateEt.startsWith(m))) {
+        checked++;
         const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
         const name = `${TEAM_BY_ID.get(teamId)!.tricode} ${g.dateEt}`;
         // night 2 = played the previous calendar day; night 1 = plays the next one (labels: team.test.tsx)
@@ -260,6 +265,8 @@ describe('team list', () => {
         expect(row.querySelector('[data-testid="tv-badge"]')?.textContent ?? '', name).toBe(tv.join(' · '));
         expect([...row.querySelectorAll('.ck-cup, .ck-cup-final, .ck-play-in, .ck-playoffs')].map((t) => t.textContent), name).toEqual(markers(g).map((m) => m.long));
       }
+      });
+      expect(checked).toBe(teamGames(data, teamId).length);
       cleanup();
     }
     expect(teamGames(data, TEAM.LAL).some((g) => markers(g).length)).toBe(true);
@@ -269,7 +276,7 @@ describe('team list', () => {
     render(<CalendarView data={data} size={PHONE} now={NOW} timeZone="UTC" initial={{ mode: 'team', teamId: TEAM.BOS }} />);
     fireEvent.click(screen.getByTestId('team-picker'));
     fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
-    expect(ids(screen.getByRole('region', { name: 'Heat games' }))).toEqual(teamGames(data, TEAM.MIA).map((g) => g.gameId));
+    expect(acrossMonths(data, TEAM.MIA, () => ids(screen.getByRole('region', { name: 'Heat games' })))).toEqual(teamGames(data, TEAM.MIA).map((g) => g.gameId));
     fireEvent.click(tab('Calendar'));
     expect(screen.getByTestId('team-picker').getAttribute('data-team-id')).toBe(String(TEAM.MIA));
   });

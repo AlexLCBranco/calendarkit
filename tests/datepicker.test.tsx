@@ -86,11 +86,13 @@ describe('Team List', () => {
   it('opponent on game days; a game day jumps to its row; a day without a game goes to the next game', () => {
     fakeLayout();
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
-    const games = teamGames(data, LAL);
+    const all = teamGames(data, LAL);
+    // round 9: the list holds November's rows (the month of the next game); these picks stay in it
+    const games = all.filter((g) => g.dateEt.startsWith('2026-11'));
     expect(screen.getByTestId('team-day-title').nextElementSibling).toBe(screen.getByRole('button', { name: 'Pick a date' }));
     open();
     for (const c of popup().querySelectorAll<HTMLButtonElement>('[data-date]')) {
-      const g = games.find((x) => x.dateEt === c.dataset.date);
+      const g = all.find((x) => x.dateEt === c.dataset.date);
       const opp = g && (g.homeTeam.teamId === LAL ? `vs ${g.awayTeam.teamTricode}` : `@ ${g.homeTeam.teamTricode}`);
       expect(c.querySelector('.ck-count')?.textContent ?? '', c.dataset.date).toBe(opp ?? '');
     }

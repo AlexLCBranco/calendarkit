@@ -4,7 +4,7 @@
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { addDays, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
+import { addDays, addMonths, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -32,7 +32,7 @@ import { TeamPicker } from './TeamPicker';
 import { useTooltip } from './Tooltip';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
-import { fmtRange, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
+import { fmtMonth, fmtRange, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 import './calendar.css';
 
 // The widgets live in their own files; re-exported here so hosts and tests keep one entry point.
@@ -207,6 +207,16 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const [teamAtNext] = useState(() => createValueStore(true));
   // Team List: the date of the row at the top (written while scrolling; read only by the title and the week strip)
   const [teamTop] = useState(() => createValueStore(''));
+  // Team List (round 9): one calendar month at a time. Opening the list, another team or the TV filter → the month of
+  // the next game not over (the row the list opens at); the strip, the date picker and Today move it from there.
+  const teamListKey = `${state.teamId}|${state.tvOnly}|${team && list}`;
+  const [teamListAt, setTeamListAt] = useState(() => ({ key: teamListKey, month: teamListMonthOf(data, state.teamId, state.tvOnly, now) }));
+  let teamListMonth = teamListAt.month;
+  if (teamListAt.key !== teamListKey) {
+    teamListMonth = teamListMonthOf(data, state.teamId, state.tvOnly, now);
+    setTeamListAt({ key: teamListKey, month: teamListMonth });
+  }
+  const setTeamListMonth = useCallback((month: string) => setTeamListAt((a) => ({ ...a, month })), []);
 
   // Top bar navigation for the view on show.
   const days = useMemo(() => listDays(data, state.tvOnly), [data, state.tvOnly]);
@@ -222,6 +232,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
       nextDisabled: addDays(teamWeek, span) > (data.dates.at(-1) ?? teamWeek),
     };
   } else if (team && !list) nav = monthNav(teamMonth, seasonMonths(data), setTeamMonth);
+  else if (team && compact) nav = { ...monthNav(teamListMonth, teamListMonths(teamPickGames), setTeamListMonth), testId: 'team-month' };
   else if (!team && (list || slate)) {
     const cur = nearestDay(days, state.date);
     const i = days.findIndex((d) => d.date === cur);
@@ -333,7 +344,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   const listDay = days.find((d) => d.date === nearestDay(days, state.date));
   const listStyle = leagueListStyle(size.width);
   const leagueListWidth = listStyle ? Math.ceil(LEAGUE_LIST_COLUMN * leagueZoom(size.width)) : Math.min(size.width, LIST_MAX_WIDTH);
-  const capturePeriod = team && list ? undefined : nav?.title;
+  const capturePeriod = team && list ? undefined : nav?.title; // the Team List's month is in its header
   const fullHeight = { width: size.width, height: 1e6 };
 
   // Marquee selection of games (desktop/tablet, mouse): only to copy several games as one image. The selected ids live
@@ -477,11 +488,11 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
             ))}
           <CopyButton label="Copy view as image" copy={copyView} testId="copy-view" />
         </div>
-        {team && <TeamHeader teamId={state.teamId} compact={compact} />}
+        {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? fmtMonth(teamListMonth) : undefined} />}
         {team ? (
           teamMap ? (
             <div className="ck-league-split" {...hoverHandlers(mapHover)}>
-              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
+              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} month={teamListMonth} onMonthChange={setTeamListMonth} />
               <div className="ck-map-slot">
                 <NextFrame>
                   <Suspense fallback={null}>
@@ -491,7 +502,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
               </div>
             </div>
           ) : list ? (
-            <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
+            <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} month={teamListMonth} onMonthChange={setTeamListMonth} />
           ) : (
             <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
           )
@@ -562,10 +573,10 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
               {state.tvOnly && <span className="ck-capture-filter">TV games only</span>}
               {note && <span className="ck-note">{note}</span>}
             </div>
-            {team && <TeamHeader teamId={state.teamId} compact={compact} />}
+            {team && <TeamHeader teamId={state.teamId} compact={compact} period={list ? fmtMonth(teamListMonth) : undefined} />}
             {team ? (
               list ? (
-                <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} />
+                <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} month={teamListMonth} />
               ) : (
                 <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
               )
@@ -620,6 +631,20 @@ function teamWeekOf(data: CalendarData, today: string): string {
   const last = weekOf(data.dates.at(-1) ?? today)[0]!;
   const w = weekOf(today)[0]!;
   return w < first ? first : w > last ? last : w;
+}
+
+/** Team List: the month of the next game not over (TV filter applied), else of the last game. */
+function teamListMonthOf(data: CalendarData, teamId: number, tvOnly: boolean, now: number): string {
+  const games = teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g));
+  return monthOf((games.find((g) => !isOver(g, now)) ?? games.at(-1))?.dateEt ?? data.dates[0] ?? localDate(now));
+}
+
+/** The months from a team's first to its last game. */
+function teamListMonths(games: readonly ScheduleGame[]): string[] {
+  const out: string[] = [];
+  const last = games.at(-1);
+  for (let m = games[0] && monthOf(games[0].dateEt); m && last && m <= monthOf(last.dateEt); m = addMonths(m, 1)) out.push(m);
+  return out;
 }
 
 function teamDefaultDate(data: CalendarData, teamId: number, now: number): string | undefined {

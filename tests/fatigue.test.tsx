@@ -10,6 +10,7 @@ import { TEAM_BY_ID } from '../src/data/teams';
 import type { ScheduleGame } from '../src/shared/nba-schedule/parse';
 import { data, feed } from './feed';
 import { TEAM } from './synthetic';
+import { acrossMonths, eachTeamMonth } from './teamMonths';
 
 afterEach(cleanup);
 
@@ -111,7 +112,11 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
     it(`${name}: the team's and the opponent's Fatigue component on every row, worked out from the feed`, () => {
       const el = render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId }} />);
       const counts = { n1: 0, n2: 0, tif: 0, empty: 0, oppN1: 0, oppN2: 0, oppTif: 0, oppEmpty: 0 };
-      for (const g of gamesOf(teamId)) {
+      let checked = 0;
+      // round 9: month by month (the full-season values on every month's rows)
+      eachTeamMonth(data, teamId, (m) => {
+      for (const g of gamesOf(teamId).filter((x) => x.dateEt.startsWith(m))) {
+        checked++;
         const row = el.container.querySelector(`[data-game-id="${g.gameId}"]`)!;
         const label = `${name} ${g.dateEt}`;
         // columns in order: date, time, team column, matchup, opponent column, tags
@@ -132,6 +137,8 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
         counts.n1 += +(t.night === '1'); counts.n2 += +(t.night === '2'); counts.tif += +!!t.pos; counts.empty += +(!t.night && !t.pos);
         counts.oppN1 += +(o.night === '1'); counts.oppN2 += +(o.night === '2'); counts.oppTif += +!!o.pos; counts.oppEmpty += +(!o.night && !o.pos);
       }
+      });
+      expect(checked).toBe(gamesOf(teamId).length);
       // every kind occurs for each team
       for (const [k, v] of Object.entries(counts)) expect(v, `${name} ${k}`).toBeGreaterThan(1);
     });
@@ -154,13 +161,13 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
 
   it('rest rows have no fatigue columns; the TV filter never changes the labels', () => {
     render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.LAL, showRest: true }} />);
-    const rest = document.querySelectorAll('[data-rest]');
+    const rest = acrossMonths(data, TEAM.LAL, () => [...document.querySelectorAll('[data-rest]')].map((r) => r.querySelectorAll('.ck-fat, .ck-fx, .ck-b2b-label, .ck-tif, .ck-b2b-opp').length));
     expect(rest.length).toBeGreaterThan(60);
-    for (const r of rest) expect(r.querySelectorAll('.ck-fat, .ck-fx, .ck-b2b-label, .ck-tif, .ck-b2b-opp')).toHaveLength(0);
-    const labels = () => new Map([...document.querySelectorAll('[data-game-id]')].map((r) => [r.getAttribute('data-game-id'), [...r.querySelectorAll('.ck-fat')].map((c) => c.textContent).join('|')]));
-    const all = labels();
+    for (const n of rest) expect(n).toBe(0);
+    const labels = (tvOnly: boolean) => new Map(acrossMonths(data, TEAM.LAL, () => [...document.querySelectorAll('[data-game-id]')].map((r) => [r.getAttribute('data-game-id'), [...r.querySelectorAll('.ck-fat')].map((c) => c.textContent).join('|')] as const), tvOnly));
+    const all = labels(false);
     fireEvent.click(screen.getByLabelText('TV games only'));
-    const tv = labels();
+    const tv = labels(true);
     expect(tv.size).toBeLessThan(all.size);
     for (const [id, text] of tv) expect(text).toBe(all.get(id));
   });
@@ -168,10 +175,11 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
   it('narrower than the 1080 px column (tablet, phone): no columns, B2B labels among the tags as before, no chips', () => {
     for (const size of [NARROW, { width: 390, height: 800 }]) {
       render(<CalendarView data={data} size={size} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
-      expect(document.querySelectorAll('.ck-fat, .ck-fx, .ck-tif, .ck-b2b-opp')).toHaveLength(0);
-      expect(document.querySelectorAll('.ck-tags .ck-b2b-label').length).toBeGreaterThan(5);
+      const n = (sel: string) => acrossMonths(data, TEAM.BOS, () => [document.querySelectorAll(sel).length]).reduce((a, b) => a + b, 0);
+      expect(n('.ck-fat, .ck-fx, .ck-tif, .ck-b2b-opp')).toBe(0);
+      expect(n('.ck-tags .ck-b2b-label')).toBeGreaterThan(5);
       // no opponent component here, so the opponent's 2nd night keeps its dot (round 7, 1.4)
-      expect(document.querySelectorAll('.ck-opp .ck-b2b-mark').length).toBeGreaterThan(5);
+      expect(n('.ck-opp .ck-b2b-mark')).toBeGreaterThan(5);
       cleanup();
     }
   });

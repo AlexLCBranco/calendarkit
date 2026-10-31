@@ -11,6 +11,14 @@
   font-weight: 700;
   letter-spacing: -0.01em;
 }
+/* Team List (round 9): the month on show, after the name; plain text, not a control */
+.ck-team-period {
+  margin-left: auto;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ck-text);
+  white-space: nowrap;
+}
 .ck-compact .ck-team-header {
   gap: 10px;
   margin-bottom: 8px;

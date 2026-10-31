@@ -2,6 +2,7 @@
 // rest rows about half a game row tall, nothing clipped, no sideways scroll, opens / Today at the next game.
 
 import { expect, test, type Page } from './fixtures';
+import { eachTeamMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const BOS = 1610612738;
@@ -60,7 +61,10 @@ test('show rest days: on by default, order and dates vs snapshot, half-height ro
   await expect(toggle).toBeChecked();
   await expect(page).not.toHaveURL(/rest=/);
   const expected = await expectedRows(page, BOS);
-  const rows = await rowsOnPage(page);
+  // opened at the next game, at the top (with the rest rows above it in its month)
+  expect(Math.abs(await nextOffset(page))).toBeLessThan(1.5);
+  // round 9: the rows month by month
+  const rows = (await eachTeamMonth(page, 'BOS', () => rowsOnPage(page))).flat();
   expect(rows.map((r) => r.key)).toEqual(expected.map((e) => e.key));
   const fmt = (d: string) => `${new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })} ${d.slice(8)}/${d.slice(5, 7)}`;
   expect(rows.map((r) => r.date)).toEqual(expected.map((e) => fmt(e.date)));
@@ -76,8 +80,9 @@ test('show rest days: on by default, order and dates vs snapshot, half-height ro
   expect(rest.filter((r) => r.lines !== 1)).toEqual([]);
   expect(rows.filter((r) => r.clipped).map((r) => r.key)).toEqual([]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-  // reopened at the next game (the rows above it moved), then Today after scrolling away
-  expect(Math.abs(await nextOffset(page))).toBeLessThan(1.5);
+  // Today: back to the next game's month and row; then again after scrolling away
+  await page.getByRole('button', { name: 'Today' }).click();
+  await expect.poll(() => nextOffset(page).then(Math.abs)).toBeLessThan(1.5);
   await page.getByTestId('team-list').hover();
   for (let i = 0; i < 6; i++) await page.mouse.wheel(0, -500);
   await expect.poll(() => nextOffset(page)).toBeGreaterThan(100);

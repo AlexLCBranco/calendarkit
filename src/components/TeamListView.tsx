@@ -1,7 +1,7 @@
 // Team → List: every game of one team, one row each, opened at the next game.
 
 import { memo, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type RefObject } from 'react';
-import { hasNationalTv, isOver, opponentSecondNight, sideLabel, teamGames, teamRestDays, teamSeason, weekOf, type CalendarData } from '../data/model';
+import { hasNationalTv, isOver, monthOf, opponentSecondNight, sideLabel, teamGames, teamRestDays, teamSeason, weekOf, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import { TEAM_BY_ID } from '../data/teams';
@@ -37,6 +37,13 @@ export interface TeamListViewProps {
   topStore?: ValueStore<string>;
   /** Local calendar date shown in blue in the strip. */
   today?: string;
+  /**
+   * Round 9: only this month's rows ("YYYY-MM"); undefined = the whole season. Numbers, records, streaks and B2B nights
+   * still come from the whole season; a B2B whose other night is in another month keeps its marks but no bracket.
+   */
+  month?: string;
+  /** The strip, the picker or "Today" asked for a row in another month: the host shows that month (then the row is put at the top). */
+  onMonthChange?: (month: string) => void;
 }
 
 export interface TeamListHandle {
@@ -58,25 +65,28 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
  * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
  */
-export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, onAtNext, topStore, today }: TeamListViewProps) {
+export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, onAtNext, topStore, today, month, onMonthChange }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
-  const rows = useMemo(() => (showRest && !only ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, data, teamId]);
+  const allRows = useMemo(() => (showRest && !only ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, data, teamId]);
+  const rows = useMemo(() => (month ? allRows.filter((r) => monthOf(rowDateOf(r)) === month) : allRows), [allRows, month]);
   const b2b = useTeamB2B(data, teamId);
   const season = useMemo(() => teamSeason(data, teamId), [data, teamId]);
   const fatigue = leagueFatigue(data); // once per data set: both teams' Fatigue columns
   const cols = !compact && size.width >= FATIGUE_COLUMNS_MIN_WIDTH;
-  const next = (games.find((g) => !isOver(g, now)) ?? games.at(-1))?.gameId;
+  const nextGame = games.find((g) => !isOver(g, now)) ?? games.at(-1);
+  const next = nextGame?.gameId;
   const scroller = useRef<HTMLDivElement>(null);
-  // scroll offset that puts the next game at the top (as far as the list can scroll)
+  // scroll offset that puts the next game at the top (as far as the list can scroll); undefined while its row is in
+  // another month
   const nextTop = () => {
     const el = scroller.current;
     const row = el?.querySelector<HTMLElement>('[data-next]');
-    return el && row ? Math.min(row.offsetTop - el.querySelector<HTMLElement>('.ck-daylist')!.offsetTop, el.scrollHeight - el.clientHeight) : 0;
+    return el && row ? Math.min(row.offsetTop - el.querySelector<HTMLElement>('.ck-daylist')!.offsetTop, el.scrollHeight - el.clientHeight) : undefined;
   };
-  const nextAt = useRef(0); // nextTop(), as of the last measure
-  const report = () => onAtNext?.(Math.abs((scroller.current?.scrollTop ?? 0) - nextAt.current) < 1);
+  const nextAt = useRef<number | undefined>(0); // nextTop(), as of the last measure
+  const report = () => onAtNext?.(nextAt.current !== undefined && Math.abs((scroller.current?.scrollTop ?? 0) - nextAt.current) < 1);
   // Row tops (px into the list) and dates, measured after layout; the scroll handler only reads them.
   const tops = useRef<{ top: number; date: string }[]>([]);
   const tail = useRef<HTMLDivElement>(null);
@@ -111,9 +121,24 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
     report();
     track();
   };
-  const toNext = () => scrollTo(nextTop());
+  // A row in another month: the host switches months first, then the layout effect below puts it at the top.
+  const pending = useRef<{ next: true } | { date: string }>(undefined);
+  const otherMonth = (date: string) => !!month && !!onMonthChange && monthOf(date) !== month;
+  const toNext = () => {
+    if (nextGame && otherMonth(nextGame.dateEt)) {
+      pending.current = { next: true };
+      onMonthChange!(monthOf(nextGame.dateEt));
+    } else scrollTo(nextTop() ?? 0);
+  };
   /** The row of this date, or the next row after it (a day without a game → the next game). */
   const toDate = (date: string) => {
+    const target = allRows.map(rowDateOf).find((d) => d >= date);
+    if (!target) return;
+    if (otherMonth(target)) {
+      pending.current = { date: target };
+      onMonthChange!(monthOf(target));
+      return;
+    }
     const row = tops.current.find((r) => r.date >= date);
     if (row) scrollTo(row.top);
   };
@@ -145,12 +170,20 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
     },
     [],
   );
-  // reopen at the next game only when the list changes (not every minute as `now` ticks), rest rows included
+  // reopen at the next game only when the list changes (not every minute as `now` ticks), rest rows included; after a
+  // month change asked for by the strip, the picker or Today, at that row. A month without the next game opens at its 1st.
   useLayoutEffect(() => {
     measure();
-    toNext();
+    const p = pending.current;
+    pending.current = undefined;
+    if (p && 'date' in p) {
+      const row = tops.current.find((r) => r.date >= p.date);
+      scrollTo(row?.top ?? 0);
+    } else scrollTo(nextTop() ?? 0);
   }, [rows]);
-  // rows change size after the first layout (the font arriving, another width): measure again whenever the list does
+  // rows change size after the first layout (the font arriving, another width): measure again whenever the list does;
+  // and when the scroller does (round 9: the week strip mounts above it after the first render, so the room after the
+  // last row, sized from the scroller's height, was short and a month's last row couldn't reach the top)
   useLayoutEffect(() => {
     const list = scroller.current?.querySelector('.ck-daylist');
     if (!list || typeof ResizeObserver === 'undefined') return;
@@ -159,6 +192,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
       track();
     });
     ro.observe(list);
+    ro.observe(scroller.current!);
     return () => ro.disconnect();
   }, []);
 
@@ -181,11 +215,12 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
   }, [topStore, rows]);
 
   // the strip's days: what each date holds (game: opponent; rest day: a row only with "Show rest days")
+  // (the whole season's rows: a day in the next month is still a day to click)
   const byDate = useMemo(() => {
     const m = new Map<string, string>();
-    for (const r of rows) m.set(typeof r === 'string' ? r : r.dateEt, typeof r === 'string' ? '' : sideLabel(r, teamId));
+    for (const r of allRows) m.set(rowDateOf(r), typeof r === 'string' ? '' : sideLabel(r, teamId));
     return m;
-  }, [rows, teamId]);
+  }, [allRows, teamId]);
   const gameDates = useMemo(() => games.map((g) => g.dateEt), [games]);
 
   return (
@@ -207,7 +242,17 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
                 teamId={teamId}
                 teamFirst
                 b2b={b2b.byGame.get(g.gameId)}
-                bracketNights={only && b2b.byGame.get(g.gameId)?.filter((n) => only.has((n.night === 1 ? n.pair.second : n.pair.first).gameId)).map((n) => n.night)}
+                bracketNights={
+                  only || month
+                    ? b2b.byGame
+                        .get(g.gameId)
+                        ?.filter((n) => {
+                          const other = n.night === 1 ? n.pair.second : n.pair.first;
+                          return only ? only.has(other.gameId) : monthOf(other.dateEt) === month;
+                        })
+                        .map((n) => n.night)
+                    : undefined
+                }
                 opponentB2B={opponentSecondNight(data, g, teamId)}
                 teamFatigue={cols ? fatigue.get(g.gameId) : undefined}
                 fatigueColumns={cols}
@@ -232,6 +277,8 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
     </section>
   );
 }
+
+const rowDateOf = (r: ScheduleGame | string) => (typeof r === 'string' ? r : r.dateEt);
 
 /** Games and rest days (dates) merged in date order. */
 function withRest(games: ScheduleGame[], rest: string[]): (ScheduleGame | string)[] {
