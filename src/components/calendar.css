@@ -19,5 +19,5 @@
 @import './styles/active-day.css';
 @import './styles/copy.css';
 @import './styles/selection.css';
-@import './styles/slate.css';
-@import './styles/notes.css';
+@import '../slate/styles/slate.css';
+@import '../slate/styles/notes.css';

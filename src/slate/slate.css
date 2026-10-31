@@ -1,0 +1,3 @@
+/* The Slate's stylesheet for a host page (round 10): calendarkit's widget styles, all scoped to .ck-* classes (no
+   html / body rules), so the cards look exactly as in calendarkit. Put the grid inside an element with class "ck-root". */
+@import '../components/calendar.css';

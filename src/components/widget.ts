@@ -96,6 +96,6 @@ export function useTeamB2B(data: CalendarData, teamId: number) {
 }
 
 /** Clamp a fixed-position popup/tooltip of width `w` into the viewport. */
-export const clampX = (x: number, w: number) => Math.max(8, Math.min(x, document.documentElement.clientWidth - w - 8));
+export { clampX } from '../slate/tooltip';
 
 export const fullName = (t: Team) => `${t.city} ${t.name}`;

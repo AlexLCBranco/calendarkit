@@ -26,6 +26,7 @@ export default defineConfig({
   plugins: [react(), { name: 'version-json', generateBundle() { this.emitFile({ type: 'asset', fileName: 'version.json', source: JSON.stringify(BUILD) }); } }],
   define: { __APP_VERSION__: JSON.stringify(BUILD.version), __APP_COMMIT__: JSON.stringify(BUILD.commit), __BUILT_AT__: JSON.stringify(BUILD.builtAt) },
   test: {
+    setupFiles: ['tests/setup.ts'],
     projects: [
       { extends: true, test: { name: 'unit', include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx', 'src/**/*.test.ts'], exclude: TZ_TESTS, env: { TZ: 'UTC' } } },
       ...TIME_ZONES.map((tz) => ({ extends: true, test: { name: `tz:${tz}`, include: TZ_TESTS, env: { TZ: tz } } })),

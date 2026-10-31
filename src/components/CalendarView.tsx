@@ -23,14 +23,14 @@ import { Segmented } from './Segmented';
 import { createSelectionStore, useMarqueeSelection } from './selection';
 import { SelectionBar, SelectionStyle } from './SelectionBar';
 import { SelectionCapture, type SelectionKind } from './SelectionCapture';
-import { slateCopyColumns, slateImageSize, slatePixelRatio } from './slate';
+import { slateCopyColumns, slateImageSize, slatePixelRatio } from '../slate/layout';
 import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
-import { createNotesStore } from './notes';
+import { localNotesStore } from '../slate/notes';
 import { TeamHeader } from './TeamHeader';
 import { TeamListView, type TeamListHandle } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
 import { TeamPicker } from './TeamPicker';
-import { useTooltip } from './Tooltip';
+import { useTooltip } from '../slate/tooltip';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
 import { fmtMonth, fmtRange, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
@@ -131,7 +131,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   stateRef.current = state;
   const tooltip = useTooltip();
   // Slate notes (round 9): the games' notes, saved in localStorage (notes.ts); "Hide all notes" is a view toggle, never stored
-  const [notes] = useState(createNotesStore);
+  const [notes] = useState(localNotesStore);
   useEffect(() => notes.listen(), [notes]);
   const [hideNotes, setHideNotes] = useState(false);
 

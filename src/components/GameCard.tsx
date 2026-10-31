@@ -3,9 +3,9 @@
 
 import { Fragment, type ReactNode } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord, type Tipoff } from '../data/model';
+import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord } from '../data/model';
 import { mergedChip, mergedDays, mergedTip, type ThreeInFour } from '../data/scheduleTags';
-import { teamLogo } from '../data/teams';
+import { seasonTip, TeamLogo, TipTime } from '../slate/parts';
 import { CopyButton } from './CopyButton';
 import { FatigueMark } from './FatigueMark';
 import { Fatigue } from './Fatigue';
@@ -80,7 +80,8 @@ export interface GameCardProps {
 }
 
 /** The host's game-page URL for a game (hoopsjunkie, config.ts gameLinkUrl), or undefined (no link: undecided teams). */
-export type GameLink = (game: ScheduleGame) => string | undefined;
+export type { GameLink } from '../slate/links';
+import type { GameLink } from '../slate/links';
 
 /**
  * The matchup as a real link to the game's page (round 5, replaces round 4's hover "↗"): an `<a>` in a new tab, so
@@ -99,34 +100,8 @@ export function MatchLink({ game, gameLink, className, children }: { game: Sched
   );
 }
 
-/** The season line's tooltip: "Game 2, record 0-1 going in, on a 1-game losing streak" ('' without a game number). */
-export const seasonTip = ({ game, record, streak }: SeasonLine) =>
-  game ? `Game ${game}${record ? `, record ${record.wins}-${record.losses} going in` : ''}${streak ? `, on a ${streak.n}-game ${streak.kind === 'W' ? 'winning' : 'losing'} streak` : ''}` : '';
-
-/** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
-export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
-  const src = teamLogo(team.teamId);
-  return src ? (
-    <span className="ck-logo-backing">
-      <img src={src} alt="" width={16} height={16} />
-    </span>
-  ) : (
-    <span className="ck-logo-empty" aria-hidden="true" />
-  );
-}
-
-/**
- * Tip-off time, the same on every day, today included (round 7, 2.3: round 4's countdown "in 2h 35m" on today's games
- * was dropped for now, on purpose — PROJECT.md).
- */
-export function TipTime({ tip }: { tip: Tipoff }) {
-  return (
-    <>
-      {tip.time}
-      {tip.dayOffset !== 0 && <span className="ck-dayoff" title="Local calendar day after the NBA game date">{` (${tip.dayOffset > 0 ? '+' : ''}${tip.dayOffset})`}</span>}
-    </>
-  );
-}
+// round 10: the logo, the tip-off time and the season tooltip live with the Slate's part (src/slate/parts.tsx)
+export { seasonTip, TeamLogo, TipTime } from '../slate/parts';
 
 /** Small plane: the team changes city between the two nights of a back-to-back. */
 export const PlaneIcon = () => (

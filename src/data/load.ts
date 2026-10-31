@@ -1,6 +1,6 @@
 // Loads the schedule snapshot once per page (in-memory cache) and parses it with the shared module.
 
-import { SCHEDULE_DATA_URL } from '../config';
+import { SCHEDULE_DATA_URL } from './address';
 import { parseSchedule } from '../shared/nba-schedule/parse';
 import { buildCalendarData, type CalendarData } from './model';
 

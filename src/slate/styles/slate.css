@@ -213,3 +213,8 @@
 .ck-slate-tools-msg.ck-error {
   color: var(--ck-playoffs);
 }
+/* Round 10: the Slate's part in a host page (the gauntlet's Slate widget, slate.html): the cards on nothing — no page
+   background behind or between them, only the cards are opaque (as in the copies) */
+.ck-root.ck-slate-widget {
+  background: none;
+}

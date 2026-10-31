@@ -1,5 +1,7 @@
 // Static 30-team table keyed by the schedule feed's teamId.
 
+import { CALENDARKIT_BASE } from './address';
+
 export type Conference = 'East' | 'West';
 export type Division = 'Atlantic' | 'Central' | 'Southeast' | 'Northwest' | 'Pacific' | 'Southwest';
 
@@ -62,7 +64,7 @@ export const TEAM_BY_ID = new Map(TEAMS.map((t) => [t.id, t]));
  */
 export function teamLogo(teamId: number): string | undefined {
   const t = TEAM_BY_ID.get(teamId);
-  return t && `${import.meta.env.BASE_URL}logos/${t.tricode}.svg`;
+  return t && `${CALENDARKIT_BASE}logos/${t.tricode}.svg`;
 }
 
 export const DIVISIONS: { conference: Conference; division: Division }[] = [
