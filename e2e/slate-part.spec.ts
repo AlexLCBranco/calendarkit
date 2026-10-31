@@ -91,9 +91,9 @@ for (const date of [DAY, PLAYED]) {
     });
     const width = frame.width;
     const app = [];
-    // the logos are masked: an SVG <img> is sometimes rasterized a level apart between two pages (seen on 14–38 px of one
+    // the logos (with their light disc) are masked: an SVG <img> is sometimes rasterized a level apart between two pages (seen on 14–38 px of one
     // logo, a different card each run, with identical markup); they are compared by their address and size instead
-    const shoot = (card: ReturnType<Page['locator']>) => card.screenshot({ caret: 'hide', mask: [card.locator('img')], maskColor: '#ff00ff' });
+    const shoot = (card: ReturnType<Page['locator']>) => card.screenshot({ caret: 'hide', mask: [card.locator('.ck-logo-backing')], maskColor: '#ff00ff' });
     const logos = (p: Page, sel: string) => p.locator(`${sel} .ck-slate-card img`).evaluateAll((is) => is.map((i) => { const r = i.getBoundingClientRect(); return [new URL((i as HTMLImageElement).src).pathname, r.width, r.height, (i as HTMLImageElement).naturalWidth > 0]; }));
     const appLogos = await logos(page, '[data-testid="slate"]');
     for (const id of ids) app.push(await shoot(page.locator(`[data-testid="slate"] [data-game-id="${id}"]`)));
