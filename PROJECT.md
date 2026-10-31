@@ -30,7 +30,7 @@ where-to-watch info, embedding in gauntlet.
   The snapshot is served brotli-compressed: ~106 KB over the wire for the 4 MB file.
 
 ## Current state / handoff (2026-10-31, round 9 in progress)
-Round 9: Part 1 (v1.25.0: the Team List shows one calendar month). Details: "### Round 9".
+Round 9: Part 1 (v1.25.0: the Team List shows one calendar month), Part 2 (v1.26.0: Slate streaks, TV cards green, ↗ link icon). Details: "### Round 9".
 
 ## Previous handoff (2026-10-30, after round 8)
 Round 8: Part 0 (Cup fixture from the feed, CI split into parallel jobs, ck-old removed, audit clean), Part 1
@@ -1208,7 +1208,7 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
     national TV names; then the away row and the home row ("@" before the home team): logo (28 px), full team name
     ("Wizards"), record going in, the Fatigue component (B2B badge with the leg dot, night icons, merged 3-in-4 chip),
     score (winner bright). Same facts as the League List row (e2e compares them game by game). No countdown, no
-    thumbnails. The teams are the hoopsjunkie link (`MatchLink`); never link-styled in images.
+    thumbnails. The teams were the hoopsjunkie link (`MatchLink`) — **round 9: a "↗" icon after the time instead**.
   - **Copy** (toolbar button, and the marquee selection bar): `SlateCopy` in `CaptureStage`, no caption, **transparent**
     (no background fill: only the cards are opaque — e2e: every pixel outside the cards alpha 0, every pixel inside 255).
     `SLATE_COPY_GAP` = **120 px** between cards and half of it around them (site: 12 px) — one constant to tune.
@@ -1503,6 +1503,32 @@ Ground rules as every round (desktop first, nothing slower, every check automate
   another month — on a real cross-month road trip with the clock set before it), helper `e2e/teamMonths.ts`. 23 older
   unit/e2e tests that read the whole season now walk the months (same checks). **Against v1.24.0**: all 9 new unit
   tests and all 8 new e2e tests fail.
+
+**Part 2, Slate: streak, TV highlight, link icon** (v1.26.0; layout unchanged)
+- **Streak** after each team's record: "3-2 W2" (W green `--ck-tv`, L red `--ck-playoffs`), the Team List season line's
+  rule, tooltip ("BOS: Game 5, record 3-1 going in, on a 2-game winning streak": the Team List's text, `seasonTip`, with the
+  team in front) and colours. Computed as of that game (`leagueSeasonLines` in model.ts: `teamSeason` for both teams of
+  every game, once per data set), so a past night shows that night's streaks. None on a team's first game, where the
+  record is unknown (an earlier game not final — so none yet on nights after the snapshot's last result), or for the Cup
+  Final / play-in / playoffs. Record and streak have fixed columns (2.9 em, 1.9 em; the record column was 3.3 em): "W2"
+  lines up across cards. With 3.3 em the streak column cut "Timberwolves"; checked over all 159 days of the season at 1280
+  and 1920: no name, record or streak cut.
+- **National TV cards** (`nationalTv()`, NBA TV alone excluded): green outline (the border + a 1 px inset ring: no layout
+  change) and a faint tint (`--ck-tv-tint`, the TV green at 9 % over the opaque card), `.ck-slate-tv`. Nothing else on the
+  card uses it except the TV badge — and the green W streak, which is the Team List's colour by the brief (the highlight
+  check looks at the card's outline and background, not its text).
+- **hoopsjunkie link = "↗" icon** right after the start time / "Final" (`.ck-slate-link`, tooltip "Open on hoopsjunkie",
+  new tab, same URL rule), muted, brightening on hover, never underlined, `data-capture-exclude` (not in copies). The team
+  names are no link any more (no anchor, no link cursor or underline anywhere on the card).
+- Tests: unit `tests/slatecard.test.tsx` (streaks worked out from the scores in the test — synthetic W/L runs, a past night
+  vs a later one, unknown record and Cup Final; the real feed's first 12 game days; TV class = `nationalTv` on four nights;
+  icon: one anchor per card, after the time, href = `gameLinkUrl`, no anchor around names); e2e `e2e/slatecards.spec.ts`
+  (served snapshot: every card of every played night = the streak worked out from the snapshot's scores, colours, one x for
+  the streak column and one record width; TV outline / ring / tint exactly on the snapshot's TV games on four nights; in the
+  copy, every TV card's edge green and its inside greener than the plain cards, which share one background; the icon:
+  tooltip, place, no underline, brighter on hover, click / middle / ctrl-click open the game URL in a new tab (gamelink.spec's
+  CDP target watch), names no link, the icon's spot in the copy = the card's background). Copy helpers moved to
+  `e2e/slatecopy.ts` (`copySlate`, `readPng`). **Against v1.25.0**: all 6 new unit and all 3 new e2e tests fail.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

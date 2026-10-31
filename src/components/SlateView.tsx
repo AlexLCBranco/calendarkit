@@ -7,10 +7,10 @@
 import { memo, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
-import { finalScore, leagueRecords, markers, nationalTv, overtime, teamLabel, tipoff, type CalendarData, type TeamRecord } from '../data/model';
+import { finalScore, leagueSeasonLines, markers, nationalTv, overtime, teamLabel, tipoff, type CalendarData, type SeasonLine } from '../data/model';
 import { TEAM_BY_ID } from '../data/teams';
 import { Fatigue } from './Fatigue';
-import { MatchLink, TeamLogo, TipTime, type GameLink } from './GameCard';
+import { seasonTip, TeamLogo, TipTime, type GameLink } from './GameCard';
 import { listDays } from './LeagueListView';
 import { slateImageSize, SLATE_COPY_GAP } from './slate';
 import { LIST_MAX_WIDTH } from './widget';
@@ -63,7 +63,7 @@ export function SlateCopy({ data, games, cols, cardWidth, timeZone }: { data: Ca
 /** One game as a card. */
 export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink }: { data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink }) {
   const fx = leagueFatigue(data).get(game.gameId);
-  const rec = leagueRecords(data).get(game.gameId);
+  const lines = leagueSeasonLines(data).get(game.gameId);
   const result = finalScore(game, game.awayTeam.teamId);
   const ot = result && overtime(game);
   const tip = tipoff(game, timeZone);
@@ -71,20 +71,31 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
   const marks = markers(game);
   const away = teamLabel(game.awayTeam);
   const home = teamLabel(game.homeTeam);
+  const url = gameLink?.(game);
   const label = `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}`;
   return (
-    <article className={`ck-slate-card${result ? ' ck-slate-final' : ''}`} data-game-id={game.gameId} aria-label={label}>
-      {/* the head: tip-off time (or "Final OT") on the left, the Cup / play-off labels and the TV names on the right */}
+    // round 9 (2.2): a national TV game's card is outlined and tinted in the TV badge's green (nothing else uses it)
+    <article className={`ck-slate-card${result ? ' ck-slate-final' : ''}${tv.length ? ' ck-slate-tv' : ''}`} data-game-id={game.gameId} aria-label={label}>
+      {/* the head: tip-off time (or "Final OT") and the hoopsjunkie icon on the left, the Cup / play-off labels and the
+          TV names on the right */}
       <div className="ck-slate-head">
-        {result ? (
-          <span className="ck-slate-status" data-testid="slate-status">
-            Final{ot && <span className="ck-ot"> {ot}</span>}
-          </span>
-        ) : (
-          <span className={`ck-slate-status ck-slate-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
-            <TipTime tip={tip} />
-          </span>
-        )}
+        <span className="ck-slate-when">
+          {result ? (
+            <span className="ck-slate-status" data-testid="slate-status">
+              Final{ot && <span className="ck-ot"> {ot}</span>}
+            </span>
+          ) : (
+            <span className={`ck-slate-status ck-slate-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
+              <TipTime tip={tip} />
+            </span>
+          )}
+          {/* round 9 (2.3): the game page is this icon, not the team names; a control, so never in a copy */}
+          {url && (
+            <a className="ck-slate-link" href={url} target="_blank" rel="noopener noreferrer" draggable={false} title="Open on hoopsjunkie" aria-label="Open on hoopsjunkie" data-testid="game-link" data-capture-exclude="true" onClick={(e) => e.stopPropagation()}>
+              ↗
+            </a>
+          )}
+        </span>
         <span className="ck-slate-tags">
           {marks.map((m) => (
             <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
@@ -99,17 +110,23 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
           )}
         </span>
       </div>
-      <MatchLink game={game} gameLink={gameLink} className="ck-slate-teams">
-        <TeamRow team={game.awayTeam} f={fx?.get(game.awayTeam.teamId)} rec={rec?.get(game.awayTeam.teamId)} score={result && { n: result.score, win: result.win }} />
-        <TeamRow team={game.homeTeam} f={fx?.get(game.homeTeam.teamId)} rec={rec?.get(game.homeTeam.teamId)} score={result && { n: result.oppScore, win: !result.win }} home />
-      </MatchLink>
+      <div className="ck-slate-teams">
+        <TeamRow team={game.awayTeam} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} score={result && { n: result.score, win: result.win }} />
+        <TeamRow team={game.homeTeam} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} score={result && { n: result.oppScore, win: !result.win }} home />
+      </div>
     </article>
   );
 });
 
-/** "[@] [logo] Wizards 3-1 [fatigue] 113": one team; the home team's row starts with the "@" (the away row keeps its room). */
-function TeamRow({ team, f, rec, score, home = false }: { team: ScheduleGame['homeTeam']; f?: TeamFatigue; rec?: TeamRecord; score?: { n: number; win: boolean }; home?: boolean }) {
+/**
+ * "[@] [logo] Wizards 3-1 W2 [fatigue] 113": one team; the home team's row starts with the "@" (the away row keeps its
+ * room). Record and streak going in (round 9, 2.1): the Team List season line's rule, colours and tooltip.
+ */
+function TeamRow({ team, f, line, score, home = false }: { team: ScheduleGame['homeTeam']; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; home?: boolean }) {
   const t = TEAM_BY_ID.get(team.teamId);
+  const rec = line?.record;
+  const streak = line?.streak;
+  const tip = line && seasonTip(line) ? `${teamLabel(team)}: ${seasonTip(line)}` : undefined;
   const loss = score && !score.win ? ' ck-loss' : '';
   return (
     <span className={`ck-slate-row${loss}`} data-side={home ? 'home' : 'away'}>
@@ -120,7 +137,12 @@ function TeamRow({ team, f, rec, score, home = false }: { team: ScheduleGame['ho
       <span className="ck-slate-name" data-tricode={teamLabel(team)}>
         {t?.name ?? teamLabel(team)}
       </span>
-      <span className="ck-slate-rec">{rec ? `${rec.wins}-${rec.losses}` : ''}</span>
+      <span className="ck-slate-rec" data-tip={rec ? tip : undefined}>
+        {rec ? `${rec.wins}-${rec.losses}` : ''}
+      </span>
+      <span className={`ck-slate-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-testid="slate-streak" data-tip={streak ? tip : undefined}>
+        {streak ? `${streak.kind}${streak.n}` : ''}
+      </span>
       <Fatigue f={f} team={teamLabel(team)} />
       <span className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>{score?.n ?? ''}</span>
     </span>

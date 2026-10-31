@@ -99,6 +99,10 @@ export function MatchLink({ game, gameLink, className, children }: { game: Sched
   );
 }
 
+/** The season line's tooltip: "Game 2, record 0-1 going in, on a 1-game losing streak" ('' without a game number). */
+export const seasonTip = ({ game, record, streak }: SeasonLine) =>
+  game ? `Game ${game}${record ? `, record ${record.wins}-${record.losses} going in` : ''}${streak ? `, on a ${streak.n}-game ${streak.kind === 'W' ? 'winning' : 'losing'} streak` : ''}` : '';
+
 /** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
 export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
   const src = teamLogo(team.teamId);
@@ -272,9 +276,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
     );
 
   const streak = season?.streak;
-  const seasonText = season?.game
-    ? `Game ${season.game}${season.record ? `, record ${season.record.wins}-${season.record.losses} going in` : ''}${streak ? `, on a ${streak.n}-game ${streak.kind === 'W' ? 'winning' : 'losing'} streak` : ''}`
-    : '';
+  const seasonText = season ? seasonTip(season) : '';
   const label = side
     ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${seasonText ? `, ${seasonText}` : ''}`
     : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${recOf(game.awayTeam) && recOf(game.homeTeam) ? `, records going in ${away} ${recText(recOf(game.awayTeam))}, ${home} ${recText(recOf(game.homeTeam))}` : ''}`;

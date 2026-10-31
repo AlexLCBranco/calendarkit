@@ -365,6 +365,27 @@ export function leagueRecords(data: CalendarData): Map<string, Map<number, TeamR
   return out;
 }
 
+const linesCache = new WeakMap<CalendarData, Map<string, Map<number, SeasonLine>>>();
+
+/**
+ * Round 9 (Slate streaks): every game's season line for both teams (gameId → teamId → line) — teamSeason for all 30
+ * teams, so a game's record and streak are as of that game (only the games final before it). Once per data set.
+ */
+export function leagueSeasonLines(data: CalendarData): Map<string, Map<number, SeasonLine>> {
+  let out = linesCache.get(data);
+  if (out) return out;
+  out = new Map();
+  for (const teamId of data.teamDates.keys()) {
+    for (const [gameId, line] of teamSeason(data, teamId)) {
+      let m = out.get(gameId);
+      if (!m) out.set(gameId, (m = new Map()));
+      m.set(teamId, line);
+    }
+  }
+  linesCache.set(data, out);
+  return out;
+}
+
 export function teamSeason(data: CalendarData, teamId: number): Map<string, SeasonLine> {
   const out = new Map<string, SeasonLine>();
   let n = 0;

@@ -25,6 +25,8 @@
   --ck-playoffs: #e5534b;
   --ck-playin: #c06bd6;
   --ck-tv: #3fb68b;
+  /* the Slate's TV-game tint (round 9): --ck-tv at 9 % */
+  --ck-tv-tint: rgb(63 182 139 / 0.09);
   /* back-to-back: lemon yellow (hue 53°), apart from the Cup's gold (43°); contrast 14.1:1 on --ck-bg, 11.7:1 on surface-2 */
   --ck-b2b: #f5e042;
   /* stale data stamp: orange (was --ck-b2b before B2B turned yellow) */

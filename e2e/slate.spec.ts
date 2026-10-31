@@ -2,9 +2,10 @@
 // keyboard), opening on today. Its copy: a transparent PNG where only the cards are opaque, SLATE_COPY_GAP apart, in a
 // column count that suits the page (1920 × 911 here), sharp at 2× its fitted size. Desktop widths.
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { test as plain } from '@playwright/test';
 import { expect, test, type Page } from './fixtures';
+import { copySlate } from './slatecopy';
 
 const NOW = new Date('2026-11-15T15:00:00Z'); // 12:00 in São Paulo (the projects' zone): Nov 15 is today
 const OUT = 'test-output/copy-images';
@@ -140,78 +141,6 @@ test('the day changes only with ← / → (keyboard and top bar), never by scrol
   await page.keyboard.press('Escape');
   expect(await title(page)).toBe(t);
 });
-
-/** Copies via `button`, returns the PNG's facts and the stage measured while it was on screen. */
-async function copySlate(page: Page, testId: 'copy-view' | 'copy-selection', name: string) {
-  await page.evaluate(() => {
-    const w = window as unknown as { __slate?: unknown };
-    w.__slate = undefined;
-    const obs = new MutationObserver(() => {
-      const root = document.querySelector<HTMLElement>('.ck-capture .ck-slate-copy');
-      if (root && !w.__slate) {
-        const r0 = root.getBoundingClientRect();
-        const card = root.querySelector('.ck-slate-name')!;
-        w.__slate = {
-          width: root.offsetWidth,
-          height: root.offsetHeight,
-          cols: getComputedStyle(root).gridTemplateColumns.split(' ').length,
-          nameFont: parseFloat(getComputedStyle(card).fontSize),
-          cards: [...root.querySelectorAll('.ck-slate-card')].map((c) => {
-            const r = c.getBoundingClientRect();
-            return { id: c.getAttribute('data-game-id'), x: r.left - r0.left, y: r.top - r0.top, w: r.width, h: r.height };
-          }),
-        };
-        obs.disconnect();
-      }
-    });
-    obs.observe(document.body, { childList: true, subtree: true });
-  });
-  const button = page.getByTestId(testId);
-  await page.evaluate(() => navigator.clipboard.writeText(''));
-  const t0 = Date.now();
-  await button.click();
-  await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 });
-  const ms = Date.now() - t0;
-  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; cards: { id: string; x: number; y: number; w: number; h: number }[] };
-  const ratio = Number((await button.getAttribute('data-captured'))!.split('@')[1]);
-  const png = await page.evaluate(async () => {
-    const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;
-    const bytes = new Uint8Array(await (await item.getType('image/png')).arrayBuffer());
-    let s = '';
-    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-    return btoa(s);
-  });
-  writeFileSync(`${OUT}/${name}.png`, Buffer.from(png, 'base64'));
-  // pixels: alpha 0 everywhere outside the cards (2 px margin for antialiased edges and rounded corners), opaque inside
-  const px = await page.evaluate(
-    async ({ png, stage, ratio }) => {
-      const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
-      const c = new OffscreenCanvas(bmp.width, bmp.height);
-      const ctx = c.getContext('2d')!;
-      ctx.drawImage(bmp, 0, 0);
-      const { data, width, height } = ctx.getImageData(0, 0, bmp.width, bmp.height);
-      const inCard = (x: number, y: number, m: number) => stage.cards.some((k) => x >= (k.x - m) * ratio && x < (k.x + k.w + m) * ratio && y >= (k.y - m) * ratio && y < (k.y + k.h + m) * ratio);
-      let outside = 0;
-      let outsideOpaque = 0;
-      let inside = 0;
-      let insideClear = 0;
-      for (let y = 0; y < height; y += 3)
-        for (let x = 0; x < width; x += 3) {
-          const a = data[(y * width + x) * 4 + 3]!;
-          if (!inCard(x, y, 2)) {
-            outside++;
-            if (a !== 0) outsideOpaque++;
-          } else if (inCard(x, y, -12)) {
-            inside++;
-            if (a !== 255) insideClear++;
-          }
-        }
-      return { width, height, outside, outsideOpaque, inside, insideClear };
-    },
-    { png, stage, ratio },
-  );
-  return { ms, stage, ratio, px };
-}
 
 /** The fitted scale of the image on the page and what it means for the text. */
 const fit = (s: { width: number; height: number }) => Math.min(PAGE.width / s.width, PAGE.height / s.height);

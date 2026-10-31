@@ -39,6 +39,32 @@
   gap: 4px 12px;
   min-height: 1.5em;
 }
+.ck-slate-when {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+/* round 9 (2.3): the game page link, a small "↗" after the time; no underline, a slight brightening on hover */
+.ck-slate-link {
+  color: var(--ck-muted);
+  font-size: 14px;
+  line-height: 1;
+  text-decoration: none;
+  padding: 1px 3px;
+  border-radius: 4px;
+}
+.ck-slate-link:hover,
+.ck-slate-link:focus-visible {
+  color: var(--ck-text);
+  text-decoration: none;
+}
+/* round 9 (2.2): national TV games — the TV badge's green as an outline (border + inset ring: no layout change) and a
+   faint tint over the opaque card, so copies keep it on their transparent page */
+.ck-slate-card.ck-slate-tv {
+  border-color: var(--ck-tv);
+  box-shadow: inset 0 0 0 1px var(--ck-tv);
+  background: linear-gradient(var(--ck-tv-tint), var(--ck-tv-tint)), var(--ck-surface-2);
+}
 .ck-slate-status {
   font-size: 14px;
   font-weight: 600;
@@ -63,7 +89,7 @@
    parts line up */
 .ck-slate-row {
   display: grid;
-  grid-template-columns: 1.1em var(--ck-logo) minmax(0, 1fr) 3.3em auto 2.1em;
+  grid-template-columns: 1.1em var(--ck-logo) minmax(0, 1fr) 2.9em 1.9em auto 2.1em;
   align-items: center;
   column-gap: 8px;
   font-size: 16px;
@@ -89,6 +115,14 @@
   color: var(--ck-muted);
   font-variant-numeric: tabular-nums;
   text-align: right;
+  white-space: nowrap;
+}
+/* streak going in (round 9): the Team List's colours (.ck-streak-w / -l); its own column, so "W2" lines up across cards */
+.ck-slate-streak {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
   white-space: nowrap;
 }
 .ck-slate-score {
