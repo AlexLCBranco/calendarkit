@@ -42,6 +42,8 @@ async function openCup(page: Page) {
   await page.getByRole('tab', { name: 'Cup' }).click();
   await expect(page.getByTestId('cup-group')).toHaveCount(6);
   await page.evaluate(() => document.fonts.ready);
+  // the logos load over the network on the live site: wait for them (a broken one fails here by timeout)
+  await page.waitForFunction(() => [...document.querySelectorAll<HTMLImageElement>('[data-testid="cup"] img')].every((i) => i.complete && i.naturalWidth > 0));
 }
 
 test.describe('Cup view', () => {
