@@ -254,7 +254,13 @@ test.describe('Cup schedule', () => {
       await button.click();
       await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 });
       return page.evaluate(async () => {
-        const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;
+        // the image can reach the clipboard a moment after the button shows ✓ (seen on CI, Linux): read until it is there
+        let item: ClipboardItem | undefined;
+        for (let t = 0; t < 50 && !item; t++) {
+          item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'));
+          if (!item) await new Promise((r) => setTimeout(r, 100));
+        }
+        if (!item) throw new Error('no image/png on the clipboard after 5 s');
         const bmp = await createImageBitmap(await item.getType('image/png'));
         return { w: bmp.width, h: bmp.height };
       });
