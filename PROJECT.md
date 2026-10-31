@@ -41,8 +41,8 @@ uses it — pixel-identical to v1.27.0 on screen and in copies. v1.28.0: calenda
 **https://gauntlet-home.vercel.app/calendar/** (the gauntlet's rewrite, like /boardkit and /linkkit); the old address hands
 its notes over once and redirects. Details: "### Round 10"; the gauntlet's guide: "## Using Slate in the gauntlet".
 **Decided (Alex, 2026-10-31): option A** — the gauntlet installs this repo as a package pinned to a commit, as it does
-Boardkit and Linkkit (options under "### Round 10", 1.6). Set up in phase 2. Still open: the repo is private, so either
-make it public or give the gauntlet's Vercel project a token.
+Boardkit and Linkkit (options under "### Round 10", 1.6). Set up in phase 2. The repo is **public** since 2026-10-31 (Alex's yes; history scanned
+for secrets first, none), so the gauntlet can download the tarball with no token.
 
 ## Previous handoff (2026-10-31, after round 9)
 Round 9: Part 1 (v1.25.0: the Team List shows one calendar month), Part 2 (v1.26.0: Slate streaks, national TV cards in green, ↗ link icon), Part 3 (v1.27.0: Slate wide layout + a note box per game, notes in localStorage `ck:notes:v1` — format under "### Round 9", Part 3; the gauntlet Slate widget will read it). Details: "### Round 9". Decided this round: `SLATE_COPY_GAP` 120 → 24 px (wider cards). Don't undo: notes are stored (content), defaults still aren't (Hide all notes, rest days).
@@ -183,8 +183,8 @@ follow it without reading calendarkit's code. Code: `src/slate/` in this repo (e
 (`src/slate/demo.tsx`; `?date=YYYY-MM-DD&width=<px>&n=<widgets>`). **How the gauntlet gets the code (decided, Alex
 2026-10-31): option A** — a package pinned to a calendarkit commit, like Boardkit and Linkkit
 (`"calendarkit": "https://codeload.github.com/AlexLCBranco/calendarkit/tar.gz/<commit>"`); a card change reaches the
-gauntlet when the pin moves. Don't copy the code. calendarkit's repo is private: the tarball needs it public (Alex's yes)
-or a token in the gauntlet's Vercel project.
+gauntlet when the pin moves. Don't copy the code. The repo is public (2026-10-31), so the tarball downloads without a token
+(checked: HTTP 200 for a commit's tarball, signed out).
 
 **One origin.** calendarkit is served at gauntlet-home.vercel.app/calendar/ through the gauntlet's own `vercel.json`
 rewrites (`/calendar`, `/calendar/`, `/calendar/:path+` → calendarkit-brown.vercel.app/calendar/…). So the whiteboard,
@@ -1896,6 +1896,7 @@ pixel checks, tablet + phone 55 — all pass (after the live-site handling of th
   (deploy check above). If it fails: Vercel's Hobby plan blocks deployments of private-repo commits whose author isn't
   the account owner — set repo variables `DATA_COMMIT_NAME` / `DATA_COMMIT_EMAIL` to Alex's identity (or make the
   repo public).
-- Repo is private; the standard for these projects is public (needs Alex's yes to change).
+- ~~Repo is private~~ — made **public** 2026-10-31 (Alex's yes, for the gauntlet's pinned package); homepage set to
+  https://gauntlet-home.vercel.app/calendar/.
 - Repo growth from daily 4 MB snapshot commits (~a few hundred KB compressed per change). Fine for a season;
   revisit if it becomes a problem (e.g. Vercel Blob or a separate data branch).
