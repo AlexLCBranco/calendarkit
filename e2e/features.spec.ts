@@ -604,8 +604,9 @@ test('lists capped at ~960 px (Team List 1110 px) and centered — the desktop L
     console.log(`[${p}] ${sel}: ${r.w.toFixed(0)} px of ${r.root.toFixed(0)} px`);
     // round 8: the desktop League List is left-aligned, LEAGUE_LIST_COLUMN (910) × its zoom (1.3 at 1920, 1 at 1280), the map
     // on its right; tablets and phones keep the centered 960 px column
-    const side = sel === '.ck-league-list' && (p === 'desktop' || p === 'desktop-xl');
-    const cap = side ? Math.round(910 * (p === 'desktop-xl' ? 1.3 : 1)) : sel === '.ck-team-list' && r.root >= 1110 ? 1110 : 960; // the Team List is 1110 px where its fatigue columns show
+    // after round 8 the Team List is left-aligned too where its map fits (desktop-xl), at its 1110 px
+    const side = (sel === '.ck-league-list' && (p === 'desktop' || p === 'desktop-xl')) || (sel === '.ck-team-list' && p === 'desktop-xl');
+    const cap = side && sel === '.ck-league-list' ? Math.round(910 * (p === 'desktop-xl' ? 1.3 : 1)) : sel === '.ck-team-list' && r.root >= 1110 ? 1110 : 960; // the Team List is 1110 px where its fatigue columns show
     expect(r.w).toBeLessThanOrEqual(cap + 0.5);
     if (r.root > cap) expect(r.w).toBeCloseTo(cap, 0);
     if (side) expect(r.leftGap).toBeLessThanOrEqual(0.5);

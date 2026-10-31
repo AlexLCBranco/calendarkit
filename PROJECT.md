@@ -31,7 +31,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-10-30, after round 8)
 Round 8: Part 0 (Cup fixture from the feed, CI split into parallel jobs, ck-old removed, audit clean), Part 1
-(v1.21.0: one-day League List, left-aligned, rows scaled by width), Part 2 (v1.22.0: static map), Part 3 (v1.23.0: hover links list and map, B2B travel lines). Details: "### Round 8".
+(v1.21.0: one-day League List, left-aligned, rows scaled by width), Part 2 (v1.22.0: static map), Part 3 (v1.23.0: hover links list and map, B2B travel lines). Then v1.24.0: the Team map (see "### Team map"). Details: "### Round 8".
 
 ## Previous handoff (2026-10-30, after round 7)
 Round 7 shipped v1.18.2 (leftovers: merged chip in Team Calendar cells, no opponent dot beside its component, home
@@ -1374,8 +1374,8 @@ Ground rules as every round (desktop first, nothing slower, every check automate
 **Part 3, map: hover and travel** (v1.23.0)
 - **One hovered game, shared** (`src/components/MapHover.tsx`): a value store holds `list:<id>` / `map:<id>`. Pointer
   handlers on the list + map area set it (a row, or a dot's pin; anything else clears it; a new day / view clears it).
-  The list never re-renders for it: the hovered row gets the class `ck-map-hot` straight on its element (an
-  **outline**, so nothing moves — e2e: every row's layout box identical before and after hovering all 15 dots). The map
+  The list never re-renders for it: the hovered row gets the class `ck-map-hot` straight on its element (since v1.24.0
+  a **sky bar + thin ring as box-shadows**, first an outline; nothing moves — e2e: every row's layout box identical before and after hovering all 15 dots). The map
   re-renders (≤ 15 dots).
 - **Row → map (3.1)**: the game's dot lit (accent ring), every other dot dimmed to 28 %, and the info line under the map
   (its two lines always reserved, so nothing moves): "BOS @ HOU Houston, TX · Toyota Center", then the travel in words —
@@ -1411,6 +1411,46 @@ Ground rules as every round (desktop first, nothing slower, every check automate
   Slate" passes there by nature.
 
 **Later idea, not this round**: the same map in the Team view, showing a team's whole road trip.
+
+### Team map (2026-10-30, after round 8; v1.24.0)
+Alex: "I want it on the team view too, with a more detailed view for the selected team." Chosen (2026-10-30): **Team
+List only** (the Team Calendar keeps its full width); show the **current road trip**, its **numbers**, and the **hover
+link**. (Not chosen: the whole season at once.)
+- **Where**: beside the Team List on desktop where the 1110 px list leaves `LEAGUE_MAP_MIN` (260 px) after the 24 px gap
+  (`teamMapFits`: a widget ≥ 1394 px). **1920: ~706 px of map; 1280: no map** — the Team List needs its 1110 px column
+  for the fatigue columns, so there is no room (the list and the header stay as before there). List and header are
+  left-aligned when the map shows. Lazy chunk `TeamMap` (6.5 KB, 2.9 KB gz) + the maps' shared chunk (outline, arenas:
+  38.1 KB, 15.7 KB gz, also used by the League map); main bundle +0.8 kB.
+- **Road trip** (`src/map/trips.ts`): a maximal run of the team's consecutive games played **outside its home metro**, by
+  each game's feed arena (`metroOf`: Inglewood = LA, Brooklyn = New York). So LAL @ LAC is a home game for both, and SAS's
+  "home" games in Austin, IND's in Mexico City are travel. Home arena = where most of its home games are.
+- **Which trip**: the one of the hovered row; otherwise the **current** one — the first with a game not over at the
+  widget's "now" (under way, or the next one), else the last. A home-game row shows the current trip.
+- **Drawn**: home as a square ("BOS home"), each stop a numbered pill at its arena (two games in one arena share a stop:
+  "2·3"), labeled "@ SAC Nov 21" / "vs SAS Nov 29" (a neutral or moved "home" game), the route home → stops → home as
+  arcs with arrows, the legs leaving / coming home dashed. Labels open to the right, to the left past 72 % of the width;
+  stops closer than 40 units stack their labels above / below (Sacramento / San Francisco, New York / Philadelphia).
+  Unknown places are listed under the map; places off the map are edge markers, as in the League map.
+- **The trip's numbers** (under the map): "Road trip 4 of 17 (current) · 4 games in 7 days, Nov 18–24", "≈ 5,554 mi
+  (straight lines) · ET → MT → PT → ET (3 time-zone changes) · 1 back-to-back". Miles: great-circle home → each stop →
+  home (not road or flight distance; "distance unknown" when a stop has no arena). Zones: of each stop's state (Toronto
+  ET; abroad unknown). Back-to-backs: pairs with both nights on the trip.
+- **Hover**: a row → its trip, its stop lit (others dimmed), "Game 2: @ SAC Nov 21 Sacramento, CA · Golden 1 Center"; a
+  stop → its row lit and scrolled into view (the League List's MapHover, now for both lists). Never in a copy.
+- Tests: `tests/trips.test.ts` (every team's trips = runs outside the home metro worked out in the test; LAL @ LAC home,
+  Austin / Mexico City travel; current trip; miles = Boston → LA ≈ 2 600 mi and the sum home → stops → home for every trip;
+  back-to-backs; stops numbered); e2e `teammap.spec.ts` (placement and no overlap at 1920; BOS's current trip vs the
+  snapshot — stops, arenas, home, legs, numbers; hover rows of other trips and a home game; hover stops → rows scrolled
+  in, no layout shift; all 30 teams' current trips with every label inside the map, no console errors; every trip of
+  BOS, MIA, POR, LAL, NYK, TOR; no map in the copy; no map at 1280 / tablet / phone). **Against v1.23.0** all 6 desktop
+  tests fail. Found while testing: stacked labels near the right edge (MIA's trip, New York) ran off the map; fixed.
+- **Changed for the League map too**: the hovered row is now a **sky bar on its left + thin ring (box-shadow)**, not an
+  outline — the outline looked exactly like the marquee selection (found by selection.spec: a hovered row read as
+  selected). Both maps **mount one frame after their list** (`NextFrame`): with the Team map in the same frame the switch
+  to the Team List measured 120 ms against its 121.5 ms limit; now 88 ms. The Team List's strip test ignores the hover
+  class like the active-day class (a class on a row as it passes under the pointer, no re-render).
+- **Not done / ideas**: the Team Calendar has no map (by choice); the whole-season view and a "show all travel" toggle
+  for the League map remain ideas.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

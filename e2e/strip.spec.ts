@@ -68,13 +68,16 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; â€
   await list.evaluate((el) => {
     const w = window as unknown as { __rowMutations: number };
     w.__rowMutations = 0;
-    // every change counts, except the active-day class moving from row to row (item 10: that's its whole job)
+    // every change counts, except the active-day class moving from row to row (item 10: that's its whole job) and the
+    // map's hover class following the pointer as rows pass under it (a class on the row, no re-render)
     const onlyActiveDay = (r: MutationRecord) => {
       if (r.type !== 'attributes' || r.attributeName !== 'class') return false;
       const was = new Set((r.oldValue ?? '').split(' ').filter(Boolean));
       const now = new Set((r.target as Element).className.split(' ').filter(Boolean));
-      was.delete('ck-active-day');
-      now.delete('ck-active-day');
+      for (const c of ['ck-active-day', 'ck-map-hot']) {
+        was.delete(c);
+        now.delete(c);
+      }
       return was.size === now.size && [...was].every((c) => now.has(c));
     };
     new MutationObserver((m) => (w.__rowMutations += m.filter((r) => !onlyActiveDay(r)).length)).observe(el.querySelector('.ck-team-rows')!, { subtree: true, childList: true, attributes: true, attributeOldValue: true, characterData: true });

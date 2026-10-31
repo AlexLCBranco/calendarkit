@@ -236,3 +236,82 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Team map: one road trip — numbered stops, the route (home legs dashed), home as a square, the trip's numbers below */
+.ck-route {
+  fill: none;
+  stroke: #5ec8ff;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 1.5px var(--ck-bg));
+}
+.ck-route-home {
+  stroke-dasharray: 5 5;
+  opacity: 0.75;
+}
+.ck-route-head {
+  fill: #5ec8ff;
+}
+.ck-trip-home .ck-map-pin {
+  border-radius: 2px;
+  background: var(--ck-text);
+}
+.ck-trip-home .ck-map-code {
+  color: var(--ck-muted);
+}
+.ck-trip-stop .ck-trip-num {
+  left: -9px;
+  top: -9px;
+  width: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 9px;
+  background: #5ec8ff;
+  color: #071018;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 800;
+  text-align: center;
+  white-space: nowrap;
+}
+.ck-trip-stop .ck-map-code {
+  left: 13px;
+  top: -9px;
+  font-size: 12px;
+  line-height: 18px;
+}
+.ck-trip-stop.ck-map-label-left .ck-map-code {
+  left: auto;
+  right: 13px;
+}
+.ck-trip-stats {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 20px;
+  color: var(--ck-muted);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ck-trip-stats b {
+  color: var(--ck-text);
+}
+.ck-trip-stop.ck-label-up .ck-map-code {
+  top: -29px;
+  left: -9px;
+  right: auto;
+}
+.ck-trip-stop.ck-label-down .ck-map-code {
+  top: 11px;
+  left: -9px;
+  right: auto;
+}
+/* stacked near the right edge (New York / Philadelphia): anchored on the right, so the label stays inside */
+.ck-trip-stop.ck-map-label-left.ck-label-up .ck-map-code,
+.ck-trip-stop.ck-map-label-left.ck-label-down .ck-map-code {
+  left: auto;
+  right: -9px;
+}

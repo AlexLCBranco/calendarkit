@@ -112,13 +112,21 @@
   min-width: 0;
   padding-top: 4px;
 }
-/* Round 8 (3.1): the row of the game hovered on the map (or in the list) — an outline, so nothing moves; never in an image */
+/* Round 8 (3.1): the row of the game hovered on the map (or in the list) — a sky bar on its left and a thin ring, drawn
+   as box-shadows: nothing moves, and it never looks like the marquee selection (accent outline + tint); never in an image */
 .ck-league-split .ck-card.ck-map-hot {
-  outline: 2px solid var(--ck-accent);
-  outline-offset: -2px;
+  box-shadow: inset 4px 0 0 #5ec8ff, inset 0 0 0 1px rgba(94, 200, 255, 0.6);
 }
 /* copying the row or its day (suspendForCapture marks the copied node .ck-capturing): as specific as the rule above, and later */
 .ck-league-split .ck-capturing .ck-card.ck-map-hot,
 .ck-league-split .ck-card.ck-map-hot.ck-capturing {
-  outline: none;
+  box-shadow: none;
+}
+/* the Team List with its map (after round 8): list and header left-aligned, the map on the right */
+.ck-league-split > .ck-team-list {
+  flex: none;
+  margin: 0;
+}
+.ck-team-side > .ck-team-header {
+  margin-left: 0;
 }

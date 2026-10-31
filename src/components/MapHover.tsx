@@ -6,6 +6,9 @@
 import { useEffect, useLayoutEffect, type PointerEvent, type RefObject } from 'react';
 import type { ValueStore } from './valueStore';
 
+/** The rows that link to a map: the League List's and the Team List's games. */
+const ROWS = '[data-testid="league-list"] .ck-card[data-game-id], [data-testid="team-list"] .ck-card[data-game-id]';
+
 /** The hovered row's class; lifted in images (styles: `.ck-capturing .ck-map-hot`). */
 export const MAP_HOT = 'ck-map-hot';
 
@@ -21,7 +24,7 @@ export function hoverHandlers(store: ValueStore<string>) {
   return {
     onPointerOver(e: PointerEvent) {
       const t = e.target as Element;
-      const row = t.closest<HTMLElement>('[data-testid="league-list"] .ck-card[data-game-id]');
+      const row = t.closest<HTMLElement>(ROWS);
       const dot = row ? null : t.closest<HTMLElement>('[data-map-game]');
       store.set(row ? hoverKey('list', row.dataset.gameId!) : dot ? hoverKey('map', dot.dataset.mapGame!) : '');
     },
@@ -37,14 +40,14 @@ export function useHoverRow(store: ValueStore<string>, root: RefObject<HTMLEleme
     let lit: HTMLElement | null = null;
     const apply = () => {
       const h = parseHover(store.get());
-      const row = h ? root.current?.querySelector<HTMLElement>(`[data-testid="league-list"] .ck-card[data-game-id="${h.id}"]`) ?? null : null;
+      const row = h ? root.current?.querySelector<HTMLElement>(ROWS.split(', ').map((s) => s.replace('[data-game-id]', `[data-game-id="${h.id}"]`)).join(', ')) ?? null : null;
       if (lit !== row) {
         lit?.classList.remove(MAP_HOT);
         row?.classList.add(MAP_HOT);
         lit = row;
       }
       if (row && h!.from === 'map') {
-        const list = row.closest<HTMLElement>('[data-testid="league-list"]')!;
+        const list = row.closest<HTMLElement>('[data-testid="league-list"], [data-testid="team-list"]')!;
         const r = row.getBoundingClientRect();
         const l = list.getBoundingClientRect();
         if (r.top < l.top || r.bottom > l.bottom) row.scrollIntoView({ block: 'nearest' });

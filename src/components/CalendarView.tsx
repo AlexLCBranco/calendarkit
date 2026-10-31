@@ -3,7 +3,7 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { addDays, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
@@ -32,7 +32,7 @@ import { TeamPicker } from './TeamPicker';
 import { useTooltip } from './Tooltip';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
-import { fmtRange, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
+import { fmtRange, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 import './calendar.css';
 
 // The widgets live in their own files; re-exported here so hosts and tests keep one entry point.
@@ -96,6 +96,10 @@ const NO_GAMES: readonly ScheduleGame[] = [];
 const DEFAULT_TEAM = TEAMS[0]!.id;
 /** Round 8: the League List's map, its own chunk (outline + styles), loaded after the list is on screen. */
 const LeagueMap = lazy(() => import('../map/LeagueMap'));
+/** The Team List's map (after round 8): the selected team's road trip, beside the list on desktop. */
+const TeamMap = lazy(() => import('../map/TeamMap'));
+/** The Team List keeps its 1110 px column; the map comes where LEAGUE_MAP_MIN is left beside it (1920: ~706 px; 1280: none). */
+const teamMapFits = (width: number) => width >= TEAM_LIST_MAX_WIDTH + LEAGUE_MAP_GAP + LEAGUE_MAP_MIN;
 
 
 export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt }: CalendarViewProps) {
@@ -345,7 +349,8 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   // round 8 (Part 3): the game hovered in the League List or on its map; the list's row is lit without re-rendering it
   const [mapHover] = useState(() => createValueStore(''));
   useHoverRow(mapHover, root);
-  useClearHover(mapHover, `${state.mode}|${state.layout}|${nearestDay(days, state.date)}|${state.tvOnly}`);
+  useClearHover(mapHover, `${state.mode}|${state.layout}|${nearestDay(days, state.date)}|${state.tvOnly}|${state.teamId}`);
+  const teamMap = team && list && !compact && teamMapFits(size.width);
   const [selCapture, setSelCapture] = useState<{ ids: ReadonlySet<string>; cellWidth?: number; teamScale?: number; weekStyle?: string; onReady: (node: HTMLElement) => void }>();
   const copySelection = (button: HTMLButtonElement) => {
     if (slate) {
@@ -374,7 +379,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
     <ClockProvider clock={clock}>
       <div
         ref={root}
-        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${list || slate ? ' ck-root-fill' : ' ck-root-grow'}`}
+        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${teamMap ? ' ck-team-side' : ''}${list || slate ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={selKind ? onMarquee : undefined}
         style={{ maxWidth: size.width, height: list || slate ? size.height : undefined, minHeight: list || slate || compact ? undefined : size.height }}
         {...tooltip.handlers}
@@ -474,7 +479,18 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         </div>
         {team && <TeamHeader teamId={state.teamId} compact={compact} />}
         {team ? (
-          list ? (
+          teamMap ? (
+            <div className="ck-league-split" {...hoverHandlers(mapHover)}>
+              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
+              <div className="ck-map-slot">
+                <NextFrame>
+                  <Suspense fallback={null}>
+                    <TeamMap data={data} teamId={state.teamId} now={now} room={{ width: size.width - TEAM_LIST_MAX_WIDTH - LEAGUE_MAP_GAP, height: size.height - 120 }} hover={mapHover} />
+                  </Suspense>
+                </NextFrame>
+              </div>
+            </div>
+          ) : list ? (
             <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} />
           ) : (
             <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
@@ -486,9 +502,11 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           <div className="ck-league-split" {...hoverHandlers(mapHover)}>
             <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
             <div className="ck-map-slot">
-              <Suspense fallback={null}>
-                <LeagueMap data={data} games={listDay?.games ?? NO_GAMES} room={{ width: size.width - leagueListWidth - LEAGUE_MAP_GAP, height: size.height - 48 }} hover={mapHover} />
-              </Suspense>
+              <NextFrame>
+                <Suspense fallback={null}>
+                  <LeagueMap data={data} games={listDay?.games ?? NO_GAMES} room={{ width: size.width - leagueListWidth - LEAGUE_MAP_GAP, height: size.height - 48 }} hover={mapHover} />
+                </Suspense>
+              </NextFrame>
             </div>
           </div>
         ) : list ? (
@@ -573,6 +591,20 @@ export function seasonDay(data: CalendarData, today: string): string {
   const first = data.dates[0];
   const last = data.dates.at(-1);
   return !first || !last ? today : today < first ? first : today > last ? last : today;
+}
+
+/**
+ * Renders its children from the frame after it mounts: the maps come one frame after their list, so switching to a
+ * list view costs what it did before the maps (perf guard "switching views"; the Team List switch measured 120 ms
+ * against a 121.5 ms limit with the map in the same frame).
+ */
+function NextFrame({ children }: { children: ReactNode }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setOn(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return on ? <>{children}</> : null;
 }
 
 /** Team Calendar: the month with `today`, kept inside the season's months. */

@@ -247,11 +247,12 @@ test('hover a dot: its row lit (scrolled into view on a busy night), both ways; 
   expect(scrolled, 'some rows were off screen and got scrolled in').toBeGreaterThan(0);
   // no layout shift: every row's box (in list coordinates) is as before any hover
   expect(await rects()).toEqual(before);
-  // the hover outline is never in a copy: the copied node (the row, or its day) is marked .ck-capturing while it's taken
-  const outline = (on: 'row' | 'day') => page.locator('.ck-card.ck-map-hot').evaluate((e, on) => { const n = on === 'row' ? e : e.closest('.ck-lday')!; n.classList.add('ck-capturing'); const o = getComputedStyle(e).outlineStyle; n.classList.remove('ck-capturing'); return o; }, on);
+  // the hover highlight is never in a copy: the copied node (the row, or its day) is marked .ck-capturing while it's taken
+  const outline = (on: 'row' | 'day') => page.locator('.ck-card.ck-map-hot').evaluate((e, on) => { const n = on === 'row' ? e : e.closest('.ck-lday')!; n.classList.add('ck-capturing'); const o = getComputedStyle(e).boxShadow; n.classList.remove('ck-capturing'); return o; }, on);
   expect(await outline('row')).toBe('none');
   expect(await outline('day')).toBe('none');
-  expect(await page.locator('.ck-card.ck-map-hot').evaluate((e) => getComputedStyle(e).outlineStyle)).toBe('solid');
+  // lit with the sky bar (box-shadow), not an outline: the marquee selection's outline stays its own
+  expect(await page.locator('.ck-card.ck-map-hot').evaluate((e) => [getComputedStyle(e).boxShadow.includes('94, 200, 255'), getComputedStyle(e).outlineStyle])).toEqual([true, 'none']);
 });
 
 test('hover feels instant: pointer → highlight painted, row → dot and dot → row (median printed)', async ({ page }, info) => {

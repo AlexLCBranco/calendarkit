@@ -3,17 +3,18 @@
 // dot per game at the feed's arena, labeled with the home team; yellow when either team is on a back-to-back. Never in a
 // copied image (outside the copied nodes, and data-capture-exclude).
 
-import { memo, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import type { CalendarData } from '../data/model';
 import { teamLabel } from '../data/model';
-import { CANADA, MAP_H, MAP_W, MEXICO, STATES } from './basemap';
+import { MAP_H, MAP_W } from './basemap';
+import { arc, Basemap, pct } from './draw';
 import { gameLocation, type GameLocation } from './location';
 import { parseHover } from '../components/MapHover';
 import { useValue, type ValueStore } from '../components/valueStore';
 import { travelLines, type TravelLine } from './travel';
-import { STATE_ZONE, ZONE_NAMES, type Zone } from './zones';
+import { ZONE_NAMES, type Zone } from './zones';
 import './map.css';
 
 export interface MapGame {
@@ -61,21 +62,6 @@ export function mapGames(data: CalendarData, games: readonly ScheduleGame[]): Ma
   return out;
 }
 
-const pct = (v: number, of: number) => `${(v / of) * 100}%`;
-
-/** The outline: neighbours, then the states in their zone's tint. Never changes: memo with no props. */
-const Basemap = memo(function Basemap() {
-  return (
-    <svg className="ck-map-svg" viewBox={`0 0 ${MAP_W} ${MAP_H}`} aria-hidden="true" preserveAspectRatio="xMidYMid meet">
-      <path className="ck-map-land" d={CANADA} data-country="CA" />
-      <path className="ck-map-land" d={MEXICO} data-country="MX" />
-      {STATES.map(([st, d]) => (
-        <path key={st} className={`ck-map-state ck-tz-${STATE_ZONE[st] ?? 'none'}`} d={d} data-state={st} />
-      ))}
-    </svg>
-  );
-});
-
 export interface LeagueMapProps {
   data: CalendarData;
   /** The games the list shows (its day, the TV filter applied). */
@@ -89,21 +75,6 @@ export interface LeagueMapProps {
 /** Under the map: the hover info (two lines, always reserved: nothing moves when it fills) and the legend. */
 const INFO_H = 36;
 const LEGEND_H = 44;
-
-/** Bend of a travel line (share of its length): away team one way, home team the other, so two lines never coincide. */
-const BEND = 0.14;
-
-/** A travel line's path: a gentle arc from → to, bent to the team's side. */
-function arc(from: { x: number; y: number }, to: { x: number; y: number }, side: 'away' | 'home'): string {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const len = Math.hypot(dx, dy) || 1;
-  const k = Math.max(BEND * len, 10) * (side === 'away' ? 1 : -1);
-  const cx = (from.x + to.x) / 2 - (dy / len) * k;
-  const cy = (from.y + to.y) / 2 + (dx / len) * k;
-  const f = (n: number) => n.toFixed(1);
-  return `M${f(from.x)} ${f(from.y)} Q${f(cx)} ${f(cy)} ${f(to.x)} ${f(to.y)}`;
-}
 
 type Placed = Exclude<GameLocation, { kind: 'unknown' }>;
 const placed = (l: GameLocation): l is Placed => l.kind !== 'unknown';
