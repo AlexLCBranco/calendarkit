@@ -66,6 +66,19 @@ async function open(browser: Browser, base: string, date: string, variant: Varia
   return page;
 }
 
+/** Reloads a page opened by `open` and waits as it did. */
+async function reopen(page: Page, variant: Variant) {
+  await page.reload();
+  await expect(page.locator('[data-testid="slate"] .ck-slate-card').first()).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await page.addStyleTag({ content: '[data-testid="site-version"] { visibility: hidden !important; }' });
+  await page.mouse.move(0, 0);
+  if (variant === 'hidden') {
+    await page.getByTestId('notes-hide').click();
+    await page.mouse.move(0, 0);
+  }
+}
+
 /** How many pixels of two PNGs (base64) differ, or the size mismatch. */
 const diff = (page: Page, a: string, b: string) =>
   page.evaluate(
@@ -95,14 +108,22 @@ for (const variant of ['notes', 'empty', 'hidden'] as Variant[]) {
       // contexts made here don't get the project's baseURL: the current build's address is spelled out
       const old = await open(browser, ref!.base + '/', date, variant, viewport);
       const cur = await open(browser, new URL(APP, info.project.use.baseURL).href, date, variant, viewport);
-      const screens = [await old.locator('.ck-slate').screenshot({ animations: 'disabled', caret: 'hide' }), await cur.locator('.ck-slate').screenshot({ animations: 'disabled', caret: 'hide' })];
-      const same = screens[0]!.equals(screens[1]!);
-      expect(same || (await diff(cur, screens[0]!.toString('base64'), screens[1]!.toString('base64'))), `screen, ${n} games, ${variant}: differing pixels`).toBe(true);
+      // up to 3 tries, the pages reloaded before the last: a team logo (an SVG <img>) is now and then rasterized a level
+      // apart on one page load (CI, 2026-10-31: 7 px of a 1280 screen, once in 24) — a real change differs every time
+      let screens: Buffer[] = [];
+      let tries = 0;
+      for (; tries < 3; tries++) {
+        if (tries === 2) for (const p of [old, cur]) await reopen(p, variant);
+        screens = [await old.locator('.ck-slate').screenshot({ animations: 'disabled', caret: 'hide' }), await cur.locator('.ck-slate').screenshot({ animations: 'disabled', caret: 'hide' })];
+        if (screens[0]!.equals(screens[1]!)) break;
+      }
+      const same = tries < 3;
+      expect(same || (await diff(cur, screens[0]!.toString('base64'), screens[1]!.toString('base64'))), `screen, ${n} games, ${variant}: differing pixels (3 tries)`).toBe(true);
       const copies: [Awaited<ReturnType<typeof copySlate>>, Awaited<ReturnType<typeof copySlate>>] = [await copySlate(old, 'copy-view', `same-ref-${n}-${variant}-${viewport.width}`), await copySlate(cur, 'copy-view', `same-cur-${n}-${variant}-${viewport.width}`)];
       const sameCopy = copies[0].png === copies[1].png;
       expect(sameCopy || (await diff(cur, copies[0].png, copies[1].png)), `copy, ${n} games, ${variant}: differing pixels`).toBe(true);
       expect(copies[1].stage.cards.length).toBe(n);
-      console.log(`[same] ${viewport.width} ${n} games ${variant}: screen ${screens[1]!.length} B identical=${same}, copy ${copies[1].px.width}×${copies[1].px.height} identical=${sameCopy}`);
+      console.log(`[same] ${viewport.width} ${n} games ${variant}: screen ${screens[1]!.length} B identical=${same} (try ${tries + 1}), copy ${copies[1].px.width}×${copies[1].px.height} identical=${sameCopy}`);
       await Promise.all([old.context().close(), cur.context().close()]);
     }
   });
