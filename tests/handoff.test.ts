@@ -46,7 +46,7 @@ function tab(oldNotes?: object, newNotes?: object) {
     return { location: loc(href), referrer, ...side, random: () => 'n0nce', replaceUrl: (u) => (replaced = u) };
   };
   /** Follows the hand-off from a visit to `href` until a page runs or stops; returns the steps. */
-  const visit = (href: string) => {
+  const visit = (href: string, hideReferrer = false) => {
     const steps: string[] = [];
     let url = href;
     let referrer = '';
@@ -54,7 +54,7 @@ function tab(oldNotes?: object, newNotes?: object) {
       const r = handoff(at(url, referrer));
       if (r.kind !== 'go') return { steps, end: r, url };
       steps.push(r.to);
-      referrer = `${new URL(url).origin}/`;
+      referrer = hideReferrer ? '' : `${new URL(url).origin}/`;
       url = r.to;
     }
     throw new Error('loop');
@@ -149,7 +149,6 @@ describe('hand-off', () => {
     const [to] = t.visit(`${OLD_ORIGIN}/`).steps.slice(0, 1);
     t.neu.local.clear();
     expect(handoff(t.at(to!, 'https://evil.example/'))).toEqual({ kind: 'run' });
-    expect(handoff(t.at(to!, ''))).toEqual({ kind: 'run' });
     expect(t.neu.local.length).toBe(0);
     const t2 = tab(notes);
     t2.visit(`${OLD_ORIGIN}/`); // done once properly
@@ -158,6 +157,15 @@ describe('hand-off', () => {
     expect(handoff(t3.at(`${OLD_ORIGIN}/calendar/?ck-handoff=done&nonce=n0nce&games=2`, 'https://evil.example/')).kind).toBe('failed');
     expect(handoff(t3.at(`${OLD_ORIGIN}/calendar/?ck-handoff=done&nonce=other&games=2`, `${NEW_ORIGIN}/`)).kind).toBe('failed');
     expect(t3.old.local.getItem(HANDED_OFF_KEY)).toBeNull();
+  });
+
+  it('a browser that hides the referrer: not silent — the old page says why and offers Export; nothing stored or marked', () => {
+    const t = tab(notes);
+    const { steps, end } = t.visit(`${OLD_ORIGIN}/?view=league`, true);
+    expect(steps).toHaveLength(2);
+    expect(end).toMatchObject({ kind: 'failed', reason: 'the browser did not say where they came from (its referrer is hidden)', target: `${NEW_ORIGIN}/calendar/?view=league` });
+    expect(t.neu.local.length).toBe(0);
+    expect(t.old.local.getItem(HANDED_OFF_KEY)).toBeNull();
   });
 
   it('notes the old page can\'t read: not redirected, the reason and the stored text for Export', () => {

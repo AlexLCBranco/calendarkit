@@ -1780,9 +1780,11 @@ added (kept for the old paths).
   bar at once) does it with no click; origin checks on both sides as with postMessage. Over 1.5 MB of address (≈ 1.1 MB
   of notes; Chrome's limit is 2 MB) it doesn't try.
 - **Failure is never silent**: storage full or blocked at the new address, an answer from elsewhere, notes the old page
-  can't read, too many → the old page stays, says why ("…could not be moved there: the browser storage at the new address
-  is full."), **Export notes** (round 9's file), Try again, and a link to go on without them. Nothing is marked, so the
-  next visit tries again.
+  can't read, too many, **a browser that hides the referrer** (v1.28.1: the new page can't tell where the notes came from,
+  so it answers "failed" instead of ignoring them — found in the round's self-review; unit + e2e, the unit test fails on
+  v1.28.0) → the old page stays, says why ("…could not be moved there: the browser storage at the new address is full."),
+  **Export notes** (round 9's file), Try again, and a link to go on without them. Nothing is marked, so the next visit
+  tries again.
 - **Browser storage** (checked: `src/` uses localStorage only in `slate/notes.ts` and `handoff.ts`; no cookies, IndexedDB,
   caches or service worker): `ck:notes:v1` (round 9), and new: `ck:notes:handoff:v1` (old origin only) and sessionStorage
   `ck:handoff:pending` (old origin, during a hand-off). Round 7's "nothing" + round 9's notes is otherwise still true.

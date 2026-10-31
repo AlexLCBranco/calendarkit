@@ -20,7 +20,7 @@ const TYPES: Record<string, string> = { '.html': 'text/html', '.js': 'text/javas
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'once: addresses, not layout'));
 
 /** This build as Vercel serves it at both hosts (dist/ = calendarkit's deployment). */
-async function serveBuild(ctx: BrowserContext) {
+async function serveBuild(ctx: BrowserContext, headers: Record<string, string> = {}) {
   if (LIVE) return;
   const dist = resolve('dist');
   const file = (p: string) => {
@@ -37,7 +37,7 @@ async function serveBuild(ctx: BrowserContext) {
     else if (old) f = u.pathname === '/' ? file('index.html') : file(u.pathname.slice(1));
     else if (u.pathname === '/') return route.fulfill({ contentType: 'text/html', body: '<!doctype html><title>gauntlet</title><p>whiteboard</p>' });
     if (!f) return route.fulfill({ status: 404, body: 'not found' });
-    return route.fulfill({ contentType: TYPES[extname(f)] ?? 'application/octet-stream', body: readFileSync(f) });
+    return route.fulfill({ contentType: TYPES[extname(f)] ?? 'application/octet-stream', body: readFileSync(f), headers: old ? headers : {} });
   });
 }
 
@@ -176,6 +176,18 @@ test('hand-off fails (storage full at the new address): no redirect — the old 
   await page.waitForTimeout(1000);
   expect(new URL(page.url()).origin).toBe(OLD);
   await expect(page.getByTestId('handoff-continue')).toHaveAttribute('href', `${NEW}/calendar/?view=league`);
+});
+
+test('a browser that hides the referrer: the hand-off cannot be trusted, so the old page says so and offers Export (never silent)', async ({ page, context }) => {
+  test.skip(LIVE, 'needs the old address served with no-referrer');
+  await serveBuild(context, { 'referrer-policy': 'no-referrer' });
+  await seed(context, OLD, NOTES);
+  await page.goto(`${OLD}/?view=league`);
+  await expect(page.getByTestId('handoff-failed')).toBeVisible();
+  expect(new URL(page.url()).origin).toBe(OLD);
+  await expect(page.getByTestId('handoff-reason')).toHaveText('the browser did not say where they came from (its referrer is hidden)');
+  await expect(page.getByTestId('handoff-export')).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('ck:notes:handoff:v1'))).toBeNull();
 });
 
 test('a gauntlet page (same origin) reads the schedule from /calendar/data/ and the notes calendarkit stored', async ({ page, context }) => {

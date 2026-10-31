@@ -87,9 +87,10 @@ function onOld({ location, referrer, local, session, random = () => crypto.rando
     // the new side answered: only it can (referrer), and only to this tab's own hand-off (nonce)
     const pending = JSON.parse(session.getItem(PENDING_KEY) ?? 'null') as { nonce: string; target: string } | null;
     const target = pending?.target ?? `${NEW_ORIGIN}/calendar/`;
+    // a failure needs no proof (it only shows the message); a success must be the new address answering this hand-off
+    if (back !== 'done') return { kind: 'failed', reason: q.get('reason') || 'the new address could not store them', target, notes: raw ?? '' };
     if (originOf(referrer) !== NEW_ORIGIN) return { kind: 'failed', reason: 'the answer did not come from the new address', target, notes: raw ?? '' };
     if (!pending || q.get('nonce') !== pending.nonce) return { kind: 'failed', reason: 'the answer does not match this hand-off', target, notes: raw ?? '' };
-    if (back !== 'done') return { kind: 'failed', reason: q.get('reason') || 'the new address could not store them', target, notes: raw ?? '' };
     local.setItem(HANDED_OFF_KEY, JSON.stringify({ to: NEW_ORIGIN, at: now().toISOString(), games: Number(q.get('games')) || 0 }));
     session.removeItem(PENDING_KEY);
     return { kind: 'go', to: target };
@@ -115,7 +116,10 @@ function onNew({ location, referrer, local, replaceUrl = (u) => history.replaceS
   if (!location.hash.startsWith(HASH)) return { kind: 'run' };
   const payload = location.hash.slice(HASH.length);
   replaceUrl(location.pathname + location.search); // the notes leave the address bar (and this history entry) at once
-  // only the old address may hand notes over; anything else is ignored, the app runs as usual
+  // only the old address may hand notes over: from another site they are ignored and the app runs as usual; with no
+  // referrer at all (a privacy setting or extension hides it) the old page is told, so it shows why and offers Export
+  // instead of the notes silently staying behind
+  if (!referrer) return { kind: 'go', to: `${OLD_ORIGIN}/calendar/?ck-handoff=failed&nonce=&reason=${encodeURIComponent('the browser did not say where they came from (its referrer is hidden)')}` };
   if (originOf(referrer) !== OLD_ORIGIN) return { kind: 'run' };
   let nonce = '';
   try {
