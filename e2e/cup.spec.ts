@@ -37,6 +37,27 @@ const snapshotTable = (page: Page) =>
     return { teams: t, through };
   }, APP);
 
+/** Every Cup group game final: varied margins, every 5th game in OT. */
+async function allPlayed(page: Page) {
+  await page.route('**/data/schedule.json', async (route) => {
+    const raw = await (await route.fetch()).json();
+    let k = 0;
+    for (const d of raw.leagueSchedule.gameDates as { games: (RawGame & { gameStatusText: string })[] }[])
+      for (const g of d.games) {
+        if (g.gameSubtype !== 'in-season') continue;
+        k++;
+        g.gameStatus = 3;
+        g.gameStatusText = k % 5 ? 'Final' : 'Final/OT';
+        g.homeTeam.score = 95 + ((k * 7) % 31);
+        g.awayTeam.score = 95 + ((k * 13) % 29);
+        if (g.homeTeam.score === g.awayTeam.score) g.homeTeam.score++;
+        // the longest name: every game won or lost by 10+ points (2-digit differentials)
+        if (g.homeTeam.teamTricode === 'MIN' || g.awayTeam.teamTricode === 'MIN') [g.homeTeam.score, g.awayTeam.score] = k % 2 ? [121, 104] : [99, 112];
+      }
+    await route.fulfill({ json: raw });
+  });
+}
+
 async function openCup(page: Page) {
   await page.goto(`${APP}?view=league&layout=list`);
   await page.getByRole('tab', { name: 'Cup' }).click();
@@ -136,11 +157,15 @@ test.describe('Cup view', () => {
     expect(errors).toEqual([]);
   });
 
-  test('copy as image: the group grid (not the panels) on the clipboard', async ({ page }) => {
+  test('copy as image: the group grid (not the panels) on the clipboard, game slots included', async ({ page }) => {
     mkdirSync(OUT, { recursive: true });
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await allPlayed(page); // every slot played: 120 W / L slots to find in the image
     await openCup(page);
     const grid = await page.getByTestId('cup-grid').boundingBox();
+    // each slot: its top-centre (1 px inside, above its text) relative to the grid, and its colour on screen
+    const slots = await page.locator('.ck-cup-slot').evaluateAll((els, g) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2 - g.x, y: r.top + 1.5 - g.y, w: e.classList.contains('ck-cup-slot-w') }; }), grid!);
+    expect(slots).toHaveLength(120);
     const button = page.getByTestId('copy-view');
     await page.evaluate(() => navigator.clipboard.writeText(''));
     await button.click();
@@ -154,7 +179,7 @@ test.describe('Cup view', () => {
       return btoa(s);
     });
     writeFileSync(`${OUT}/${test.info().project.name}-cup.png`, Buffer.from(png, 'base64'));
-    const img = await page.evaluate(async (png) => {
+    const img = await page.evaluate(async ({ png, slots, ratio }) => {
       const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
       const c = new OffscreenCanvas(bmp.width, bmp.height);
       const ctx = c.getContext('2d')!;
@@ -162,13 +187,18 @@ test.describe('Cup view', () => {
       const { data } = ctx.getImageData(0, 0, bmp.width, bmp.height);
       const colors = new Set<number>();
       for (let i = 0; i < data.length; i += 4 * 97) colors.add((data[i]! << 16) | (data[i + 1]! << 8) | data[i + 2]!);
-      return { width: bmp.width, height: bmp.height, corner: [...data.subarray(0, 4)], colors: colors.size };
-    }, png);
+      const at = (x: number, y: number) => { const i = (Math.round(y * ratio) * bmp.width + Math.round(x * ratio)) * 4; return [data[i]!, data[i + 1]!, data[i + 2]!]; };
+      return { width: bmp.width, height: bmp.height, corner: [...data.subarray(0, 4)], colors: colors.size, slots: slots.map((s) => ({ w: s.w, rgb: at(s.x, s.y) })) };
+    }, { png, slots, ratio });
     // the grid's size × the ratio (± 2 px rounding): the panels below it are not in the image
     expect(Math.abs(img.width - grid!.width * ratio)).toBeLessThanOrEqual(2 * ratio);
     expect(Math.abs(img.height - grid!.height * ratio)).toBeLessThanOrEqual(2 * ratio);
     expect(img.corner).toEqual([15, 17, 21, 255]); // the dark page background, opaque
     expect(img.colors).toBeGreaterThan(50); // pills, logos and text drawn, not a blank image
+    // every game slot is in the image in its colour: W green #1f8f5f, L red #c2413b
+    const near = (a: number[], b: number[]) => a.every((v, i) => Math.abs(v - b[i]!) <= 12);
+    const bad = img.slots.filter((s) => !near(s.rgb, s.w ? [31, 143, 95] : [194, 65, 59]));
+    expect(bad, 'slots missing from the image').toEqual([]);
   });
 
   test('the Cup’s code loads only when the view is opened', async ({ page }) => {
@@ -185,29 +215,85 @@ test.describe('Cup view', () => {
   });
 });
 
+// Round 13: each team row's 4 group games, worked out here from the served snapshot's raw feed — real data and every game
+// played.
+test.describe('Cup standings: game slots', () => {
+  test.beforeEach(({}, info) => test.skip(!desktop(info.project.name), 'desktop only'));
+
+  /** Per tricode, its group games in date then tip-off order, as the slots should show them. */
+  const expected = (page: Page) =>
+    page.evaluate(async (app) => {
+      const raw = await (await fetch(`${app}data/schedule.json`)).json();
+      const games = (raw.leagueSchedule.gameDates as { games: (RawGame & { gameDateTimeUTC: string; gameStatusText: string })[] }[])
+        .flatMap((d) => d.games)
+        .filter((g) => g.gameSubtype === 'in-season')
+        .sort((a, b) => a.gameDateEst.localeCompare(b.gameDateEst) || a.gameDateTimeUTC.localeCompare(b.gameDateTimeUTC));
+      const out: Record<string, { opp: string; res: string | null; tip: string | null }[]> = {};
+      for (const g of games) {
+        const date = g.gameDateEst.slice(0, 10);
+        const played = g.gameStatus === 3 && date >= '2026-10-30' && date <= '2026-11-27';
+        const tip = played ? `${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.teamTricode} ${g.homeTeam.score} · ${g.gameStatusText.trim()}` : null;
+        for (const [me, opp] of [[g.homeTeam, g.awayTeam], [g.awayTeam, g.homeTeam]] as const)
+          (out[me.teamTricode] ??= []).push({ opp: opp.teamTricode, res: played ? (me.score > opp.score ? 'W' : 'L') : null, tip });
+      }
+      return out;
+    }, APP);
+
+  const shown = (page: Page) =>
+    page.locator('.ck-cup-pill').evaluateAll((els) =>
+      Object.fromEntries(
+        els.map((p) => [
+          p.getAttribute('data-team')!,
+          [...p.querySelectorAll<HTMLElement>('.ck-cup-slot')].map((e) => ({
+            opp: e.querySelector('.ck-cup-slot-opp')!.textContent!,
+            res: e.querySelector('.ck-cup-slot-res')?.textContent ?? null,
+            tip: e.dataset.tip ?? null,
+            cls: e.className,
+            color: getComputedStyle(e).color,
+          })),
+        ]),
+      ),
+    );
+
+  for (const data of ['real', 'all played'] as const)
+    test(`${data} data: opponents in date order, W / L, final score as tooltip; upcoming muted, no result`, async ({ page }) => {
+      if (data === 'all played') await allPlayed(page);
+      await openCup(page);
+      const want = await expected(page);
+      const got = await shown(page);
+      expect(Object.keys(got)).toHaveLength(30);
+      let played = 0;
+      let next = 0;
+      for (const [tri, slots] of Object.entries(got)) {
+        expect(slots.map(({ opp, res, tip }) => ({ opp, res, tip })), tri).toEqual(want[tri]);
+        expect(slots).toHaveLength(4);
+        for (const s of slots) {
+          if (s.res) {
+            played++;
+            expect(s.cls).toContain(s.res === 'W' ? 'ck-cup-slot-w' : 'ck-cup-slot-l');
+            expect(s.color, 'played: white text').toBe('rgb(255, 255, 255)');
+          } else {
+            next++;
+            expect(s.cls).toContain('ck-cup-slot-next');
+            expect(s.color, 'upcoming: muted text').toBe('rgba(255, 255, 255, 0.55)');
+          }
+        }
+      }
+      if (data === 'all played') expect([played, next]).toEqual([120, 0]);
+      console.log(`[cup slots] ${data}: ${played} played, ${next} upcoming`);
+      if (data === 'real') return; // the hover is checked on the all-played data
+      // hover a played slot: the floating tooltip shows the full final score
+      const slot = page.locator('.ck-cup-pill[data-team="MIN"] .ck-cup-slot').first();
+      await slot.hover();
+      await expect(page.getByTestId('tooltip')).toHaveText((await slot.getAttribute('data-tip'))!);
+      expect(await slot.getAttribute('data-tip')).toMatch(/^[A-Z]{3} \d+ @ [A-Z]{3} \d+ · Final(\/OT)?$/);
+    });
+});
+
 // Round 11b: the whole view fits the window — no page scroll, nothing clipped — with the real snapshot and with a
 // worst case where all 60 group games are final (some in OT), so it can't pass only while most teams are 0-0.
 test.describe('Cup view fits the window', () => {
   test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'fixed window sizes: one desktop project is enough'));
-
-  /** Every Cup group game final: varied margins, every 5th game in OT. */
-  async function allPlayed(page: Page) {
-    await page.route('**/data/schedule.json', async (route) => {
-      const raw = await (await route.fetch()).json();
-      let k = 0;
-      for (const d of raw.leagueSchedule.gameDates as { games: (RawGame & { gameStatusText: string })[] }[])
-        for (const g of d.games) {
-          if (g.gameSubtype !== 'in-season') continue;
-          k++;
-          g.gameStatus = 3;
-          g.gameStatusText = k % 5 ? 'Final' : 'Final/OT';
-          g.homeTeam.score = 95 + ((k * 7) % 31);
-          g.awayTeam.score = 95 + ((k * 13) % 29);
-          if (g.homeTeam.score === g.awayTeam.score) g.homeTeam.score++;
-        }
-      await route.fulfill({ json: raw });
-    });
-  }
 
   for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }])
     for (const data of ['real', 'all played'] as const)
@@ -242,10 +328,43 @@ test.describe('Cup view fits the window', () => {
           // the wild-card rows: one compact unit — the record starts within 16 px of the group label; West left of East
           const gaps = [...document.querySelectorAll('.ck-cup-race-row')].map((row) => box(row.querySelector('.ck-cup-rec')!).left - box(row.querySelector('.ck-cup-sub')!).right);
           const races = [...document.querySelectorAll('.ck-cup-race')].map((e) => ({ c: e.getAttribute('data-conference'), x: box(e).left, y: box(e).top }));
-          return { bottom: Math.round(box(view).bottom), pill: box(document.querySelector('.ck-cup-pill')!).height, scroll: document.documentElement.scrollHeight, win: innerHeight, out, gaps, races, fontSizes: [...new Set([...view.querySelectorAll('.ck-cup-name, .ck-cup-panel p, .ck-cup-panel li')].map((e) => getComputedStyle(e).fontSize))] };
+          // round 13, the game slots: after the name with no overlap, inside the row's name column (before W), every
+          // slot's text inside its box, the name at its full text width
+          const slotGaps: number[] = [];
+          for (const p of document.querySelectorAll('.ck-cup-pill')) {
+            const tri = p.getAttribute('data-team');
+            const name = box(p.querySelector('.ck-cup-name')!);
+            const slots = box(p.querySelector('.ck-cup-slots')!);
+            const w = box(p.querySelector('.ck-cup-num')!);
+            const range = document.createRange();
+            range.selectNodeContents(p.querySelector('.ck-cup-name')!);
+            if (name.width + 0.5 < range.getBoundingClientRect().width) out.push(`${tri}: name narrower than its text`);
+            slotGaps.push(slots.left - name.right);
+            if (slots.left < name.right) out.push(`${tri}: slots overlap the name by ${(name.right - slots.left).toFixed(1)} px`);
+            if (slots.right > w.left) out.push(`${tri}: slots overlap W`);
+            for (const sl of p.querySelectorAll('.ck-cup-slot')) {
+              const b = box(sl);
+              for (const t of sl.children) {
+                const r = box(t);
+                if (r.left < b.left - 0.5 || r.right > b.right + 0.5 || r.top < b.top - 0.5 || r.bottom > b.bottom + 0.5) out.push(`${tri}: "${t.textContent}" outside its slot`);
+              }
+            }
+          }
+          const min = document.querySelector('.ck-cup-pill[data-team="MIN"]')!;
+          const minTips = [...min.querySelectorAll<HTMLElement>('.ck-cup-slot')].map((e) => e.dataset.tip ?? '');
+          return { minSpare: Math.min(...slotGaps), minTips, slotFont: getComputedStyle(document.querySelector('.ck-cup-slots')!).fontSize, bottom: Math.round(box(view).bottom), pill: box(document.querySelector('.ck-cup-pill')!).height, scroll: document.documentElement.scrollHeight, win: innerHeight, out, gaps, races, fontSizes: [...new Set([...view.querySelectorAll('.ck-cup-name, .ck-cup-panel p, .ck-cup-panel li')].map((e) => getComputedStyle(e).fontSize))] };
         });
         await page.screenshot({ path: `test-output/cup-${size.width}x${size.height}-${data.replace(' ', '-')}.png` });
-        console.log(`[cup fit] ${size.width}×${size.height} ${data}: scroll height ${r.scroll} / window ${r.win}, view bottom ${r.bottom}, pill ${r.pill} px`);
+        console.log(`[cup fit] ${size.width}×${size.height} ${data}: scroll height ${r.scroll} / window ${r.win}, view bottom ${r.bottom}, pill ${r.pill} px, tightest name → slots ${r.minSpare.toFixed(1)} px`);
+        if (data === 'all played') {
+          // the worst case: the longest name (Minnesota Timberwolves) with 4 played games, each a 2-digit differential
+          expect(r.minTips).toHaveLength(4);
+          for (const t of r.minTips) {
+            const [, a, b] = /(\d+) @ [A-Z]{3} (\d+)/.exec(t)!;
+            expect(Math.abs(Number(a) - Number(b))).toBeGreaterThanOrEqual(10);
+          }
+        }
+        expect(r.slotFont, 'slot text at the DIFF chips’ size, not smaller').toBe('12px');
         expect(r.pill, 'group rows keep their v1.29.0 height').toBe(38);
         expect(r.scroll, 'page scrolls vertically').toBeLessThanOrEqual(r.win);
         expect(r.out).toEqual([]);

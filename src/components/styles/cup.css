@@ -49,8 +49,10 @@
   display: grid;
   grid-template-columns: 26px 24px minmax(0, 1fr) 22px 22px 50px;
   align-items: center;
-  column-gap: 6px;
-  padding: 0 8px;
+  /* round 13: gaps 6 → 4 px and side padding 8 → 6 px (column widths unchanged) give the name's column the 14 px the
+     game slots need beside "Minnesota Timberwolves" at 1600 × 1000 */
+  column-gap: 4px;
+  padding: 0 6px;
 }
 .ck-cup-cols {
   color: var(--ck-muted);
@@ -83,14 +85,58 @@
   font-weight: 600;
   text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
 }
-.ck-cup-name {
+/* round 13: the name, then the 4 game slots right-aligned against W; the name never shrinks or wraps */
+.ck-cup-main {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ck-cup-name {
+  flex: none;
   white-space: nowrap;
 }
+.ck-cup-slots {
+  margin-left: auto;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 30px;
+  gap: 2px;
+  font-size: 12px;
+  line-height: 13px;
+  font-weight: 600;
+}
+.ck-cup-slot {
+  height: 30px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-shadow: none;
+}
+.ck-cup-slot-w {
+  background: #1f8f5f;
+}
+.ck-cup-slot-l {
+  background: #c2413b;
+}
+.ck-cup-slot-res {
+  font-weight: 800;
+}
+/* not played yet: the opponent alone, outlined and faded */
+.ck-cup-slot-next {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3);
+  background: rgb(0 0 0 / 0.18);
+  color: rgb(255 255 255 / 0.55);
+}
+.ck-cup-markcell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 .ck-cup-tied {
-  margin-left: 6px;
+  line-height: 10px;
   font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;

@@ -49,6 +49,50 @@ export interface CupTeamLine {
   tied: boolean;
   /** If group play ended today: leads the group, holds its conference's wild card, or neither. */
   status?: 'leader' | 'wild-card';
+  /** The team's group games (4 once the feed has them all), in date and tip-off order: played or still to come. */
+  slots: CupSlot[];
+}
+
+/** One of a team's group games, from that team's side. */
+export interface CupSlot {
+  gameId: string;
+  opponent: string;
+  /** The team is the home team. */
+  home: boolean;
+  /** Counted in the standings (finished, inside group play): only then are the result and scores known. */
+  played: boolean;
+  win?: boolean;
+  /** This team's points minus the opponent's (OT included, as in the standings). */
+  diff?: number;
+  score?: number;
+  oppScore?: number;
+  /** The full final score, away team first: "HOU 105 @ DEN 112 · Final/OT". */
+  final?: string;
+}
+
+const tipOrder = (g: ScheduleGame) => (g.startTimeUtc ? Date.parse(g.startTimeUtc) : Number.MAX_SAFE_INTEGER);
+
+/** Every team's group games (finished or not) as slots, in date and tip-off order. */
+export function cupSlots(games: readonly ScheduleGame[]): Map<number, CupSlot[]> {
+  const group = games
+    .filter((g) => g.isCupGroupGame && g.homeTeam.teamId && g.awayTeam.teamId)
+    .sort((a, b) => a.dateEt.localeCompare(b.dateEt) || tipOrder(a) - tipOrder(b));
+  const out = new Map<number, CupSlot[]>();
+  for (const g of group) {
+    const played = isCountedCupGame(g);
+    const final = played ? `${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.teamTricode} ${g.homeTeam.score} · ${g.statusText || 'Final'}` : undefined;
+    for (const [me, opp, home] of [
+      [g.homeTeam, g.awayTeam, true],
+      [g.awayTeam, g.homeTeam, false],
+    ] as const) {
+      const slot: CupSlot = { gameId: g.gameId, opponent: opp.teamTricode, home, played };
+      if (played) Object.assign(slot, { win: me.score > opp.score, diff: me.score - opp.score, score: me.score, oppScore: opp.score, final });
+      let list = out.get(me.teamId);
+      if (!list) out.set(me.teamId, (list = []));
+      list.push(slot);
+    }
+  }
+  return out;
 }
 
 export interface CupGroupTable {
@@ -141,8 +185,9 @@ export function cupStandings(games: readonly ScheduleGame[]): CupStandings {
     }
   }
 
+  const slots = cupSlots(games);
   const groups: CupGroupTable[] = [...cupGroupsOf(games)].map(([group, ids]) => {
-    const teams = ids.map(line);
+    const teams = ids.map((id) => ({ ...line(id), slots: slots.get(id) ?? [] }));
     const ranked = rank(teams, [h2h(counted), byDiff, byPoints, byLastSeason]);
     const conference: Conference = group.startsWith('West') ? 'West' : 'East';
     return {

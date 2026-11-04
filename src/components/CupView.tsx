@@ -5,7 +5,7 @@
 // its tab is opened.
 
 import { useMemo, type CSSProperties } from 'react';
-import { cupStandings, type CupTeamLine, type Tiebreak, type WildCardRace } from '../data/cup';
+import { cupStandings, type CupSlot, type CupTeamLine, type Tiebreak, type WildCardRace } from '../data/cup';
 import { dateFormat, type CalendarData } from '../data/model';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import CupSchedule, { type CupScheduleProps } from './CupSchedule';
@@ -114,11 +114,15 @@ function TeamPill({ t }: { t: CupTeamLine }) {
       data-tied={t.tied || undefined}
       title={why}
     >
-      <Marker t={t} />
-      <Logo teamId={t.teamId} />
-      <span className="ck-cup-name">
-        {team ? `${team.city} ${team.name}` : t.tricode}
+      {/* "tied" sits under the marker, not after the name: the name's row space holds the game slots */}
+      <span className="ck-cup-markcell">
+        <Marker t={t} />
         {t.tied && <span className="ck-cup-tied">tied</span>}
+      </span>
+      <Logo teamId={t.teamId} />
+      <span className="ck-cup-main">
+        <span className="ck-cup-name">{team ? `${team.city} ${team.name}` : t.tricode}</span>
+        <Slots slots={t.slots} />
       </span>
       <span className="ck-cup-num">{t.w}</span>
       <span className="ck-cup-num">{t.l}</span>
@@ -126,6 +130,37 @@ function TeamPill({ t }: { t: CupTeamLine }) {
         <DiffChip diff={t.diff} />
       </span>
     </div>
+  );
+}
+
+/**
+ * Round 13: the team's 4 group games in date order, between the name and W / L — opponent over the result ("W" / "L"),
+ * upcoming games the opponent alone, muted. No per-game differential and no "@" / "vs": they don't fit beside the longest
+ * name at 1600 × 1000 (e2e/cup.spec.ts), so the full final score is in each played slot's tooltip.
+ */
+function Slots({ slots }: { slots: readonly CupSlot[] }) {
+  return (
+    <span className="ck-cup-slots" data-testid="cup-slots">
+      {slots.map((s) =>
+        s.played ? (
+          <span
+            key={s.gameId}
+            className={`ck-cup-slot ${s.win ? 'ck-cup-slot-w' : 'ck-cup-slot-l'}`}
+            data-game-id={s.gameId}
+            data-tip={s.final}
+            tabIndex={0}
+            aria-label={`${s.win ? 'Won' : 'Lost'} ${s.home ? 'vs' : 'at'} ${s.opponent}: ${s.final}`}
+          >
+            <span className="ck-cup-slot-opp">{s.opponent}</span>
+            <span className="ck-cup-slot-res">{s.win ? 'W' : 'L'}</span>
+          </span>
+        ) : (
+          <span key={s.gameId} className="ck-cup-slot ck-cup-slot-next" data-game-id={s.gameId} aria-label={`${s.home ? 'vs' : 'at'} ${s.opponent}, not played yet`}>
+            <span className="ck-cup-slot-opp">{s.opponent}</span>
+          </span>
+        ),
+      )}
+    </span>
   );
 }
 

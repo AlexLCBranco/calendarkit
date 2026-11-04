@@ -34,7 +34,11 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-10-31, after round 12)
+## Current state / handoff (2026-11-04, after round 13)
+v1.32.0: the Cup Standings' team rows show each team's 4 group games (opponent + W / L, upcoming muted, final score as
+tooltip). The per-game differential didn't fit at 1600 × 1000, so it is left out everywhere. See "### Round 13".
+
+## Previous handoff (2026-10-31, after round 12)
 v1.31.0 (12b): the Cup League list's group play is **Round 1–4** (every team's Nth group game), two columns. See "### Round 12".
 Round 12 (v1.30.0): **Cup schedule** — the Cup view gets "Standings | Schedule"; the Schedule has a League list (one Cup
 night at a time) and a Team list (Played / Remaining), built from the League List's and Team List's own rows. Details:
@@ -1962,6 +1966,30 @@ pixel checks, tablet + phone 55 — all pass (after the live-site handling of th
     dates; B2B on tricode marks in a round, on components on a knockout night); e2e: every stop = the snapshot's games
     worked out in the test (rounds from each team's own count), tags, two columns, B2B on every row, the fit walk over all
     stops.
+
+### Round 13 (2026-11-04): game slots in the Cup standings (v1.32.0)
+- **What**: each group-card team row shows the team's 4 group games between the name and W / L, in date then tip-off
+  order (`cupSlots` in `src/data/cup.ts`, carried on `CupTeamLine.slots` by `cupStandings`; no new fetch). A played game
+  (= counted in the standings: final, inside group play) is a 30 × 30 px box, opponent tricode over "W" / "L", green
+  (#1f8f5f) or red (#c2413b) — the DIFF chips' colours; its tooltip (`data-tip`, the widget's floating tooltip) is the
+  full final score, away first: "HOU 105 @ DEN 112 · Final/OT". A game to come: the opponent alone, outlined, text at 55 %
+  white. No dates, no logos.
+- **Measured at 1600 × 1000 first**: the name column was 296 px; "Minnesota Timberwolves" (the longest name) 171 px at 14 px
+  semibold. Four slots with the differential ("W +17", 33.8 px at 12 px) need ~147 px; W / L only ~126 px; ~125 px were free.
+  So **no per-game differential and no "@" / "vs"** (Alex's rule: one choice for every row) — the score is in the
+  tooltip. To fit even W / L: the row grid's column gap 6 → 4 px and side padding 8 → 6 px (column widths, text sizes and
+  the 38 px pill unchanged); now **13.6 px** between MIN's name and its slots at 1600 × 1000, 109 px at 1920 × 950. Slot text
+  12 px (the DIFF chips' size). The view still ends at 888 px of 950 / 1000.
+- **"tied" moved** from after the name to under the rank marker (`.ck-cup-markcell`): beside a long name it would have
+  pushed the slots over W. (With this season's `LAST_SEASON_WINS` no group tie survives every rule, so it doesn't show.)
+- **Copy as image** copies the grid, slots included (same DOM).
+- Tests: unit `tests/cupslots.test.tsx` (12: order whatever the feed order, opponent, home/away, W / L, differential, tooltip
+  incl. OT; 4 / 2 / 0 played in the model and on screen; out-of-window final not "played"; W / L / DIFF = the slots; real
+  feed: 4 slots per team mirroring the opponent's; "tied" under the marker). e2e `cup.spec.ts`: slots vs the snapshot's raw
+  feed (real and all played), muted colour on games to come, tooltip on hover; the fit test (1920 × 950, 1600 × 1000) also
+  checks slots never overlap the name or W, every slot's text inside its box, names at full text width, MIN's 4 played
+  games with 2-digit margins, slot font 12 px; the copy test reads every one of the 120 slots' colours back from the
+  clipboard image. Mutation check: the old 6 px gaps / 8 px padding fail the 1600 × 1000 fit test ("MIN: slots overlap W").
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
