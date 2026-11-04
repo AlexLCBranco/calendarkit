@@ -1991,6 +1991,30 @@ pixel checks, tablet + phone 55 — all pass (after the live-site handling of th
   games with 2-digit margins, slot font 12 px; the copy test reads every one of the 120 slots' colours back from the
   clipboard image. Mutation check: the old 6 px gaps / 8 px padding fail the 1600 × 1000 fit test ("MIN: slots overlap W").
 
+### Round 14 (2026-11-04)
+Ten items, in order; ground rules as every round (nothing slower, desktop at 1920 × 950 and 1600 × 1000, no smaller text,
+every check automated, no invented facts).
+
+**Before the round: CI on main was red** (v1.32.0, run 41928855580; fixed in 6e7b58f, test only). Three e2e checks assumed
+every final game is in October, true until the Nov 2 snapshot: the Team Calendar cell text was compared without allowing
+for November scores, the TV-filter check wanted a TV pill on final week-view lines (they drop it for the OT slot), and the
+scores walk only opened October. They now read the matchup parts, skip final lines, and walk each month that has finals.
+
+**Item 1, the flaky Slate pixel test** (`slate-same.spec.ts`, test only). Reproduced: 4 failures in 12 runs, always a few
+dozen pixels in the logo column, ≤ 38 levels. **Cause: Chromium's partial raster, not the app or the two builds.** A
+script loading the *same* build repeatedly (`test-output/loads.mjs`) gave 1 distinct screenshot in 16 sequential loads, but
+up to 10 distinct ones in 12 loads with three such scripts running at once. Layout was identical on every load (image
+rects to 0.001 px); the differing pixels were the logo disc's antialiased edge inside each `<img>`'s rect. Ruled out one
+by one under the same load: the test's `img.decode()` call, logos arriving after first paint (delayed 400 ms), a
+repaint, a cache purge + resize, `--num-raster-threads=1`, `--disable-gpu-rasterization`, `--disable-gpu`,
+`--disable-gpu-compositing`, checker-imaging off. **`--disable-partial-raster`: 30 of 30 loads identical.** When an image
+finishes loading after its tile was first rasterized, Chromium re-rasterizes only that image's rect into the old tile, and
+the disc edge under it comes out slightly different from a whole-tile raster; which cards get that depends on timing, so it
+showed under CPU load. Fix: the spec launches its browser with `--disable-partial-raster` (every tile rasterized whole);
+round 10's 3 tries with a reload and its corner mask are gone locally (the corner mask stays for the live-site run only,
+where logos come over the network). Exact comparison, no retries, no threshold. **20 runs in a row afterwards (both
+projects, 6 tests each, with unit tests and a dev server running on the same PC): 20 / 20 passed.**
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip
