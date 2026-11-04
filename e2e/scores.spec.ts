@@ -97,9 +97,12 @@ test('Team Calendar: every team with a final game, every final cell; scale print
   let n = 0;
   for (const tri of teams) {
     await open(page, `?view=team&layout=calendar&team=${tri}`);
-    await page.getByLabel('Previous month').click(); // clock in November; the finals are in October
-    await expect(page.getByTestId('period-title')).toHaveText('October 2026');
-    for (const g of all.filter((x) => x.home.teamTricode === tri || x.away.teamTricode === tri)) {
+    // clock in November; the finals are in October and (since the Nov 2 snapshot) November: walk each month with finals
+    const idx = (d: string) => Number(d.slice(0, 4)) * 12 + Number(d.slice(5, 7));
+    let month = idx('2026-11-15');
+    for (const g of all.filter((x) => x.home.teamTricode === tri || x.away.teamTricode === tri).sort((a, b) => a.date.localeCompare(b.date))) {
+      for (; month !== idx(g.date); month += month > idx(g.date) ? -1 : 1) await page.getByLabel(month > idx(g.date) ? 'Previous month' : 'Next month').click();
+      await expect(page.getByTestId('period-title')).toHaveText(new Date(`${g.date}T12:00:00Z`).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }));
       const home = g.home.teamTricode === tri;
       const [me, opp] = home ? [g.home, g.away] : [g.away, g.home];
       const cell = page.locator(`.ck-day-cell[data-date="${g.date}"]`);

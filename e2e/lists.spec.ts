@@ -431,7 +431,8 @@ test('TV games only in all four views', async ({ page }, info) => {
     await expect(page.getByRole('region', { name: 'Month navigator' })).toBeVisible();
   } else {
     await expect(page.locator('.ck-month-game').first()).toBeVisible();
-    expect(await noTv('.ck-month-game:not(:has(.ck-tv-pill))')).toBe(0);
+    // final lines drop the TV pill (their slot holds OT), so only upcoming lines must carry it
+    expect(await noTv('.ck-month-game:not(.ck-month-final):not(:has(.ck-tv-pill))')).toBe(0);
   }
   expect(errors).toEqual([]);
 });

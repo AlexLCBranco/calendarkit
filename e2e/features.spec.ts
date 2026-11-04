@@ -196,7 +196,8 @@ test('team views: selected team first, vs/@ from its side, two loaded logos per 
   const cells = await page.locator('.ck-team-grid').evaluate((grid) =>
     [...grid.querySelectorAll<HTMLElement>('.ck-cell-game')].map((c) => ({
       date: c.dataset.date!,
-      matchup: c.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim(),
+      // without the final scores (the snapshot has finals in November too; checked in scores.spec.ts)
+      matchup: [...c.querySelector('.ck-matchup')!.querySelectorAll('.ck-self, .ck-vsat, .ck-opp')].map((e) => e.textContent!.trim()).join(' ') || c.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim(),
       logos: [...c.querySelectorAll('.ck-matchup img')].filter((i) => (i as HTMLImageElement).naturalWidth > 0).length,
     })),
   );
