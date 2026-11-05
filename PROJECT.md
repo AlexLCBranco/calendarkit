@@ -2059,7 +2059,10 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
 - **Inside a game link** (List rows, calendar cells, week lines: since round 5 the matchup is the hoopsjunkie link) the
   team is a nested `<a>`: the team part opens the Team view, the "@" / "vs" / scores still open the game page; hovering
   the team doesn't underline the game. (Invalid HTML strictly — React warns in dev only; browsers follow the innermost link.)
-  **Decided (Alex, 2026-11-05): keep it so** — no "↗" icon in those views.
+  **Decided (Alex, 2026-11-05; corrects an earlier "keep it so", a mis-click): League List and Team List rows switch to
+  the Slate's style** — team names / logos / tricodes are team links only, and the game link becomes a separate "↗"
+  icon (the Slate's icon, tooltip and behaviour). **Calendar cells and week lines stay as they are** (matchup = game
+  link, team link inside). **Not built yet** (as of v1.35.0 the List rows still have the matchup game link): next session.
 - **One piece**: `TeamLink` (`src/slate/teamLink.tsx`) renders an `<a class="ck-tlink" data-team-link>` only under
   `TeamLinkContext` (CalendarView, when the host passes `teamHref`; App.tsx `teamLinkUrl`), else the `<span>` it was —
   so the gauntlet's Slate and unit tests are unchanged. Same element class, so no layout change. No listener per link:
