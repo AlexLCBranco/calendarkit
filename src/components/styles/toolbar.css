@@ -3,8 +3,9 @@
 .ck-toolbar {
   display: flex;
   flex-wrap: wrap;
-  /* 8 px apart (12 before round 11): with the Cup tab, Team → Calendar's row still fits 1920 px */
-  gap: 8px;
+  /* columns 6 px apart (12 before round 11, 8 before round 17) so Team → List keeps one row at 1920 px with the
+     Standings tab and button; rows still 8 px apart, so 2-row bars (1280) keep their height */
+  gap: 8px 6px; /* rows 8 px apart as before (2-row bars keep their height) */
   align-items: center;
   margin-bottom: 12px;
   min-width: 0;
@@ -39,8 +40,8 @@
   white-space: nowrap;
 }
 .ck-tabs-view .ck-tab {
-  /* League | Team | Cup: narrower tabs (round 11), for the same reason */
-  padding: 7px 10px;
+  /* League | Team | Cup | Standings: narrower tabs (round 11: 10 px; round 17: 8 px), for the same reason */
+  padding: 7px 8px;
 }
 .ck-tab-selected {
   background: var(--ck-accent);
@@ -118,4 +119,21 @@
 .ck-compact .ck-check {
   font-size: 13px;
   gap: 4px;
+}
+
+/* the header's "Standings" button */
+.ck-st-button {
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  font: inherit;
+  padding: 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ck-st-button[aria-expanded='true'] {
+  background: var(--ck-accent);
+  color: #06121f;
+  font-weight: 600;
 }

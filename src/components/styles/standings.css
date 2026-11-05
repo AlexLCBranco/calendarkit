@@ -1,0 +1,209 @@
+/* Standings (round 17): one table, one line per row, text at the app's sizes (13 px cells, 11 px headers). Every
+   column fits at 1600 × 1000 without shrinking text (e2e/standings.spec.ts), so no column set is hidden. */
+.ck-standings {
+  display: flex;
+  flex-direction: column;
+}
+.ck-st-capture {
+  background: var(--ck-bg);
+  padding: 4px 0;
+  overflow-x: auto; /* narrow desktop widgets (< ~1400 px) scroll the table sideways; 1600 and up fit */
+}
+.ck-st-head,
+.ck-st-pop-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.ck-st-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+.ck-st-through {
+  color: var(--ck-muted);
+  font-size: 13px;
+}
+.ck-st-table,
+.ck-st-mini {
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ck-st-table {
+  width: 100%;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 10px;
+}
+.ck-st-table th,
+.ck-st-table td,
+.ck-st-mini th,
+.ck-st-mini td {
+  padding: 0 7px;
+  text-align: center;
+}
+.ck-st-table td,
+.ck-st-mini td {
+  height: 30px;
+  border-top: 1px solid var(--ck-border);
+}
+.ck-st-table th {
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.ck-st-groups th {
+  padding-top: 6px;
+  height: 18px;
+}
+.ck-st-group {
+  color: var(--ck-text) !important;
+  border-bottom: 1px solid var(--ck-border);
+}
+.ck-st-cols th {
+  height: 28px;
+}
+.ck-st-table th button {
+  all: unset;
+  cursor: pointer;
+  padding: 4px 0;
+  white-space: nowrap;
+}
+.ck-st-table th button:hover,
+.ck-st-table th[aria-sort] button {
+  color: var(--ck-text);
+}
+.ck-st-table th button:focus-visible {
+  outline: 2px solid var(--ck-accent);
+  outline-offset: 1px;
+}
+.ck-st-gstart {
+  border-left: 1px solid var(--ck-border);
+}
+.ck-st-seed {
+  width: 34px;
+  color: var(--ck-muted);
+}
+.ck-st-team {
+  text-align: left !important;
+}
+.ck-st-teamcell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.ck-st-logo {
+  --ck-logo: 22px;
+}
+.ck-st-name {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ck-st-clinch {
+  color: var(--ck-tv);
+  font-size: 11px;
+  font-weight: 700;
+}
+.ck-st-out {
+  color: var(--ck-muted);
+}
+.ck-st-tied {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: help;
+}
+.ck-st-good {
+  color: #4cc38a;
+}
+.ck-st-bad {
+  color: #e5736d;
+}
+/* the playoff line under seed 6, the play-in line under seed 10 */
+.ck-st-line-playoffs td {
+  border-bottom: 2px solid var(--ck-playoffs);
+}
+.ck-st-line-playin td {
+  border-bottom: 2px dashed var(--ck-playin);
+}
+.ck-st-legend {
+  margin: 8px 0 0;
+  color: var(--ck-muted);
+  font-size: 12px;
+}
+.ck-st-key {
+  display: inline-block;
+  width: 18px;
+  vertical-align: middle;
+  border-top: 2px solid var(--ck-playoffs);
+}
+.ck-st-key-playin {
+  border-top: 2px dashed var(--ck-playin);
+  margin-left: 8px;
+}
+
+/* the condensed popup, over the current view */
+.ck-st-pop {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  max-height: calc(100vh - 80px);
+  overflow: auto;
+  background: var(--ck-bg);
+  border: 1px solid var(--ck-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.55);
+}
+.ck-st-pop-body {
+  background: var(--ck-bg);
+  padding: 12px 14px 14px;
+}
+.ck-st-pop-tools {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 6px;
+  align-self: center;
+}
+.ck-st-pop-close {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ck-st-pop-close:hover {
+  color: var(--ck-text);
+}
+.ck-st-pop-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 18px;
+}
+.ck-st-mini {
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+}
+.ck-st-mini th {
+  height: 26px;
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.ck-st-mini th.ck-st-seed {
+  color: var(--ck-text);
+  font-size: 12px;
+  text-align: left;
+}
+.ck-st-mini td {
+  height: 28px;
+}

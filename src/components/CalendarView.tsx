@@ -22,6 +22,7 @@ import { hoverHandlers, useClearHover, useHoverRow } from './MapHover';
 import { MonthNavigator } from './MonthNavigator';
 import { monthNav, PeriodNav, TodayButton, type PeriodNavProps } from './PeriodNav';
 import { Segmented } from './Segmented';
+import type { StandingsTable } from './Standings';
 import { createSelectionStore, useMarqueeSelection } from './selection';
 import { SelectionBar, SelectionStyle } from './SelectionBar';
 import { SelectionCapture, type SelectionKind } from './SelectionCapture';
@@ -51,8 +52,8 @@ export { TEAM_CELL_MIN_HEIGHT, TEAM_SCALE_FILL, TEAM_SCALE_MAX, TEAM_SCALE_MIN, 
 export { TeamPicker } from './TeamPicker';
 export { COMPACT_WIDTH, fmtRange, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
 
-/** League, Team, or (desktop) Cup: the NBA Cup group standings (round 11). */
-export type CalendarMode = 'team' | 'league' | 'cup';
+/** League, Team, or (desktop) Cup: the NBA Cup group standings (round 11), or (desktop) Standings (round 17). */
+export type CalendarMode = 'team' | 'league' | 'cup' | 'standings';
 /** List, Calendar, or (League, desktop) Slate: a day of games as cards (round 7). */
 export type CalendarLayout = 'list' | 'calendar' | 'slate';
 /** Team → Calendar: a month grid (default) or 1 or 2 week rows. */
@@ -128,6 +129,10 @@ const TeamMap = lazy(() => import('../map/TeamMap'));
 /** The Team List keeps its 1110 px column; the map comes where LEAGUE_MAP_MIN is left beside it (1920: ~706 px; 1280: none). */
 /** Round 11: the Cup standings, their own chunk, loaded (and worked out) only when the Cup view is opened. */
 const CupView = lazy(() => import('./CupView'));
+/** Round 17: the standings view and the header's condensed popup, one chunk, loaded (and computed) on first use. */
+const standingsChunk = () => import('./Standings');
+const StandingsView = lazy(standingsChunk);
+const StandingsPopup = lazy(() => standingsChunk().then((m) => ({ default: m.StandingsPopup })));
 type CupState = { tab: 'standings' | 'schedule'; list: 'league' | 'team'; teamId?: number; night?: string };
 const CUP_START: CupState = { tab: 'standings', list: 'league' };
 const teamMapFits = (width: number) => width >= TEAM_LIST_MAX_WIDTH + LEAGUE_MAP_GAP + LEAGUE_MAP_MIN;
@@ -211,7 +216,15 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const slateFits = !compact && size.width >= SLATE_MIN_WIDTH;
   // Cup (round 11): desktop only, like the Slate; a narrower widget shows the League views meanwhile (the state keeps "cup").
   const cup = state.mode === 'cup' && slateFits;
-  const slate = !team && !cup && state.layout === 'slate' && slateFits;
+  // Standings (round 17): desktop only too
+  const standings = state.mode === 'standings' && slateFits;
+  /** A desktop view that isn't a schedule (Cup, Standings): no layout, period, weeks or TV switches. */
+  const other = cup || standings;
+  const [stTable, setStTable] = useState<StandingsTable>('West');
+  // the condensed popup over any view (desktop)
+  const [stPop, setStPop] = useState(false);
+  const closeStPop = useCallback(() => setStPop(false), []);
+  const slate = !team && !other && state.layout === 'slate' && slateFits;
   // Cup (round 12): Standings | Schedule, the schedule's League | Team, its team and night — never remembered: leaving the
   // Cup view resets them, so it always opens on Standings (then League; no team until one is picked).
   const [cupView, setCupView] = useState<CupState>(CUP_START);
@@ -347,7 +360,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   // Slate (round 7) and the League List (round 8): the day changes with ← / → — the top bar's arrows, or the arrow keys
   // anywhere but in a field, a tab row or an open picker (they keep their own arrow keys). Scrolling never changes the
   // day. One listener for whichever of the two is on show, so the keys never act twice.
-  const dayKeys = !cup && (slate || (!team && list));
+  const dayKeys = !other && (slate || (!team && list));
   const navRef = useRef(nav);
   navRef.current = nav;
   useEffect(() => {
@@ -404,7 +417,15 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   // "Copy view as image": render the view off-screen (CaptureStage), copy it, remove it.
   const [capture, setCapture] = useState<(node: HTMLElement) => void>();
   // The button records the size copied (CSS px) and the pixel ratio used: data-captured="1840x1010@4".
+  // Standings (round 17): the heading, the whole table and its legend, as on screen (the League table's 30 rows too)
+  const copyStandings = (button: HTMLButtonElement) => {
+    const node = root.current?.querySelector<HTMLElement>('[data-testid="standings-capture"]');
+    if (!node) return Promise.reject(new Error('the standings are not on screen yet'));
+    button.dataset.captured = `${node.scrollWidth}x${node.scrollHeight}@${capturePixelRatio(node.scrollWidth, node.scrollHeight, COPY_PIXEL_RATIO)}`;
+    return copyElement(node, 1);
+  };
   const copyView = (button: HTMLButtonElement) =>
+    standings ? copyStandings(button) :
     cup ? copyCup(button) :
     slate ? copySlate(button, slateGames(data, nearestDay(days, state.date), state.tvOnly)) :
     new Promise<HTMLCanvasElement>((resolve, reject) =>
@@ -427,7 +448,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const [selection] = useState(createSelectionStore);
   const marquee = useRef<HTMLDivElement>(null);
   const onMarquee = useMarqueeSelection(selection, marquee);
-  const selKind: SelectionKind | undefined = compact ? undefined : cup ? (cupSchedule ? (cupTeam ? (cupView.teamId !== undefined ? 'team-list' : undefined) : 'league-list') : undefined) : team ? (list ? 'team-list' : 'team-calendar') : slate ? 'league-slate' : list ? 'league-list' : weekView ? 'league-week' : undefined;
+  const selKind: SelectionKind | undefined = compact || standings ? undefined : cup ? (cupSchedule ? (cupTeam ? (cupView.teamId !== undefined ? 'team-list' : undefined) : 'league-list') : undefined) : team ? (list ? 'team-list' : 'team-calendar') : slate ? 'league-slate' : list ? 'league-list' : weekView ? 'league-week' : undefined;
   // a new view, team, period, span or toggle clears it (scrolling the League List doesn't)
   const viewKey = [state.mode, state.layout, state.teamId, state.tvOnly, state.showRest, state.weeks, state.teamSpan, teamMonth, teamWeek, leagueMonth, weekView ? weekOf(state.date)[0] : '', slate ? state.date : '', compact, cupView.tab, cupView.list, cupView.teamId, cupView.night].join('|');
   useEffect(() => selection.clear(), [viewKey, selection]);
@@ -474,6 +495,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   /** The date on show: the day (League List / Slate, a Cup night), the row at the top (Team List), today if it is in the shown week or month, else its first day. */
   const lookingAt = (): string => {
     const inRange = (from: string, to: string) => (today >= from && today <= to ? today : from);
+    if (standings) return seasonDay(data, today);
     if (cup) {
       const night = cupSchedule && cupView.list === 'league' ? cupView.night : undefined;
       const stop = night ? cupStops(data).find((s) => s.key === night) : undefined;
@@ -511,6 +533,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     setTeamListAt({ key: `${teamId}|${s.tvOnly}|${layout === 'list'}`, month: monthOf(target) });
     setTeamOpen({ date: target });
     setPicking(false);
+    setStPop(false); // a team link in the standings popup: the popup closes on the new view
   };
   const openTeamRef = useRef(openTeam);
   openTeamRef.current = openTeam;
@@ -552,14 +575,17 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         onBlur={tooltip.handlers.onBlur}
       >
         <div className="ck-toolbar" data-testid="top-bar">
-          {title && <h1 className={`ck-title${compact ? ' ck-sr' : ''}`}>{title}</h1>}
-          <Segmented label="View" className=" ck-tabs-view" value={cup ? 'cup' : state.mode === 'cup' ? 'league' : state.mode} options={[['league', 'League'], ['team', 'Team'], ...(slateFits ? ([['cup', 'Cup']] as [CalendarMode, string][]) : [])]} onChange={(mode) => update({ mode })} />
+          {/* round 17: phones, and the Team views on desktop (the team header names the team; with the Standings tab and button their
+              busiest row, Team → Calendar, no longer fit 1920 px), keep the title for screen readers only */}
+          {title && <h1 className={`ck-title${compact || team ? ' ck-sr' : ''}`}>{title}</h1>}
+          <Segmented label="View" className=" ck-tabs-view" value={cup ? 'cup' : standings ? 'standings' : state.mode === 'cup' || state.mode === 'standings' ? 'league' : state.mode} options={[['league', 'League'], ['team', 'Team'], ...(slateFits ? ([['cup', 'Cup'], ['standings', 'Standings']] as [CalendarMode, string][]) : [])]} onChange={(mode) => update({ mode })} />
           {cup && <Segmented label="Cup view" value={cupView.tab} options={[['standings', 'Standings'], ['schedule', 'Schedule']]} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />}
           {cupSchedule && <Segmented label="Cup list" value={cupView.list} options={[['league', 'League'], ['team', 'Team']]} onChange={(list) => setCupView((v) => ({ ...v, list }))} />}
+          {standings && <Segmented label="Standings table" value={stTable} options={[['West', 'West'], ['East', 'East'], ['League', 'League']]} onChange={setStTable} />}
           {cupTeam && <TeamPicker teamId={cupView.teamId} onChange={(teamId) => setCupView((v) => ({ ...v, teamId }))} />}
-          {!cup && <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(team || !slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />}
+          {!other && <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(team || !slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />}
           {team && <TeamPicker teamId={state.teamId} onChange={pickTeam} compact={compact} />}
-          {nav && !cup && (
+          {nav && !other && (
             <div className="ck-period-wrap">
               <PeriodNav {...nav} />
               {picking && weekView && (
@@ -615,7 +641,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
               )}
             </div>
           )}
-          {weekView && !cup && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
+          {weekView && !other && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
           {team && !list && !compact && (
             <Segmented
               label="Span"
@@ -629,7 +655,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
               <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Show rest days
             </label>
           )}
-          {!cup && <label className="ck-check">
+          {!other && <label className="ck-check">
             <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact ? 'TV only' : 'TV games only'}
           </label>}
           {note &&
@@ -645,10 +671,19 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
                 {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
               </span>
             ))}
+          {slateFits && (
+            <button type="button" className="ck-st-button" aria-expanded={stPop} aria-haspopup="dialog" data-testid="standings-button" onClick={() => setStPop((o) => !o)}>
+              Standings
+            </button>
+          )}
           <CopyButton label="Copy view as image" copy={copyView} testId="copy-view" />
         </div>
         {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? fmtMonth(teamListMonth) : undefined} />}
-        {cup ? (
+        {standings ? (
+          <Suspense fallback={<p className="ck-empty">Loading the standings…</p>}>
+            <StandingsView data={data} table={stTable} />
+          </Suspense>
+        ) : cup ? (
           <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>
             <CupView data={data} schedule={cupSchedule ? { list: cupView.list, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
           </Suspense>
@@ -689,6 +724,11 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
           <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} gameLink={gameLink} />
         ) : (
           <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
+        )}
+        {stPop && slateFits && (
+          <Suspense fallback={null}>
+            <StandingsPopup data={data} onClose={closeStPop} />
+          </Suspense>
         )}
         {tooltip.node}
         {series.node}

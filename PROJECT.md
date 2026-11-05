@@ -34,7 +34,11 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-05, after round 16)
+## Current state / handoff (2026-11-05, after round 17)
+v1.37.0: **Standings** — a 4th View tab (desktop) with West | East | League tables, and a "Standings" button in the top
+bar that opens a condensed popup over any view. See "### Round 17".
+
+## Previous handoff (2026-11-05, after round 16)
 v1.36.0: League List / Team List rows (and the Cup schedule's) open the game page from a separate "↗" icon — the Slate's —
 first among the tags; their teams are team links only. Team Calendar cells and week lines keep the matchup as the game
 link. See "### Round 15", "List rows: game link = ↗ icon".
@@ -2100,6 +2104,55 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   `.ck-capturing`, so never in images. The test checks every link in view has a point a click reaches.
 - Tests: `e2e/teamlinks.spec.ts` (every view and the popup: no plain team element, each link's team / mode / date,
   a reachable click point, a real click per kind of link; slots not links; last-used mode; Ctrl- and middle-click tab).
+
+### Round 17 (2026-11-05): Standings (v1.37.0)
+- **Data**: `src/data/standings.ts`, pure, from the schedule already loaded (no fetch); `leagueStandings(data)` is
+  cached per data set (WeakMap), shared by the view and the popup, and only runs when one of them is opened (own lazy
+  chunk `Standings`, ~15 KB). Counts finished **002** games: every Cup game but the Championship (006).
+- **Tiebreakers = NBA Paragraph L.2** ("Play-In and Playoff Tie-Break Procedures", nba.com/standings, checked
+  2026-11-05): 2 teams L.2.a (h2h, division leader, division record if same division, conference, vs top-10 own conf,
+  vs top-10 other conf, point differential); 3+ teams L.2.b (division leader, win % among them, division if all one
+  division, conference, vs top-10 own conf, point differential); L.2.c: division ties first and only for the title; a
+  partial break restarts each still-level group from the start of L.2.a / L.2.b; unbroken = drawing (shown A–Z, marked).
+  "Top 10" = the 10 best records in the conference, ties for 10th included. **Two readings L.2 doesn't spell out, taken
+  from NBA.com's own numbers**: (1) a team with no games under a win-% criterion (0-0) ranks below every record, 0-2
+  included (that is how NBA.com seeded WAS over NYK and SAS over MEM on 2026-11-05); (2) the ".500+" column is the
+  record vs opponents at .500 or better *going into the game*, 0-0 included (NBA.com's "vs. over .500": 30/30 teams;
+  "over .500 today" matched 4/30). Hover a tied seed (dotted underline) for each step and the team's value.
+- **Verified**: `tests/standings.test.ts` checks all 30 teams × W-L, home, road, neutral, conf, div, L10, OT, ≤3-pt,
+  .500+, streak, PF, PA, per game, **seed** and GB against stats.nba.com leaguestandingsv3 (the data behind
+  nba.com/standings) for the same moment (`tests/fixtures/standings-feed-2026-11-05.json` +
+  `nba-standings-2026-11-05.json`, games through Nov 4): 0 differences. Plus synthetic 2-team h2h, 2-team
+  division-leader, 3-team division-leader + restart, 0-0 ranking, drawing, Cup Championship excluded, splits, B2B legs.
+- **Columns** (all fit at 1600, no column set needed: the table's natural width is ~1170 px, so nothing is grouped
+  away): Seed, Team, W, L, Pct, GB · Splits: Home, Road, Conf, Div · Games: .500+, Close (≤ 5, OT included), OT · Form:
+  L10, Strk · Per game: PF, PA, Diff · Remaining: Left, Home, Road, B2B (2nd night still to come) · B2B legs: 1st, 2nd
+  (finished regular-season nights; the night after the Cup Championship counts as a 2nd night). Neutral-site games are
+  in neither Home nor Road (as NBA.com). "Left" counts scheduled games only: before the Cup knockout is set, teams'
+  two Cup-week games aren't in the feed yet, so it shows 80 until then; the clinch maths uses 82 − games played.
+- **Lines and markers**: red line under seed 6, dashed purple under 10 (conference tables in seed order; gone while
+  sorted by another column and in League). Clinch codes as NBA.com: w/e conference, a/c/se/nw/p/sw division, x
+  playoffs, pi play-in, o eliminated — from 82-game maxima (a tie on final wins counts as not clinched). None apply yet.
+- **League** table: 30 rows, ranked the same way, GB from the league's 1st; it is taller than the window, so the page
+  scrolls there (the no-scroll rule is for the 15-row conference tables).
+- **Sorting**: click a header (best first; L, GB, PA, Left, Road left, B2B left ascending first), again to reverse;
+  "Seed" puts it back. Team names and logos are `TeamLink`s. "Copy view as image" copies heading + whole table + legend.
+- **Popup**: "Standings" button at the right of the top bar, every desktop view; fixed, centered under the top bar;
+  West | East side by side: seed, team, W-L, GB, L10, Strk, the two lines, tie hovers, clinch codes; its own copy button
+  (copies both tables). Closes on the button, Esc, a press outside it, or a team link in it (`openTeam` closes it — the
+  root's capture-phase handler stops that click before the popup sees it). Opening it changes nothing underneath.
+- **Top bar** (choice made without asking, easy to undo): the 4th tab and the button made the busiest rows too wide at 1920 —
+  Team → List 26 px over, Team → Calendar 135 px (it had 14 px spare). Text sizes unchanged; won back by column gaps
+  8 → 6 px (rows stay 8 px apart, so 2-row bars at 1280 keep their height — `slate-same.spec` caught a 2 px change),
+  View tabs' side padding 10 → 8 px, and **in the Team views on desktop the page title "NBA schedule 2026-27" is
+  screen-reader-only** (as on phones; the team header right below names the team; copies keep their caption). Team →
+  Calendar now has ~50 px spare at 1920.
+- **Tests**: e2e `e2e/standings.spec.ts` — W/L of every row vs the served snapshot, lines, columns, sorting, tie hover,
+  team links, copies read back from the clipboard (West, League with 30 rows below the window, popup), chunk loaded
+  only on opening; fit at 1600 × 1000 and 1920 × 950 (15 rows, no page / table scroll, 30 px rows, one line per cell,
+  13 px cells / 11 px headers, "Minnesota Timberwolves" + a clinch code in every row); the popup over all 8 views (League
+  List / Calendar / Slate, Team List / Calendar, Cup standings / schedule, Standings) opening and closing by button, Esc
+  and outside click; no tab / button on tablet and phone.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
