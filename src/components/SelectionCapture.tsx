@@ -53,7 +53,7 @@ function byDay(games: ScheduleGame[]): [string, ScheduleGame[]][] {
 export function SelectionCapture(p: SelectionCaptureProps) {
   const { kind, data, ids, teamId, tvOnly, size, now, timeZone } = p;
   const { cup } = p;
-  if (kind === 'team-list') return <TeamListView data={data} teamId={teamId} tvOnly={tvOnly} size={{ width: size.width, height: 1e6 }} now={now} timeZone={timeZone} only={ids} markNext={!cup} cupTag={cup ? cupTeamTag(data, teamId) : undefined} />;
+  if (kind === 'team-list') return <TeamListView data={data} teamId={teamId} tvOnly={tvOnly} size={{ width: size.width, height: 1e6 }} now={now} timeZone={timeZone} only={ids} markNext={!cup} series={!cup} cupTag={cup ? cupTeamTag(data, teamId) : undefined} />;
   if (kind === 'league-list') {
     const nights = cup ? new Map(cupNights(data).map((n) => [n.date, n])) : undefined;
     const days = (nights ? [...nights.values()] : listDays(data, tvOnly))
@@ -64,7 +64,7 @@ export function SelectionCapture(p: SelectionCaptureProps) {
       <section className={`ck-league-list${leagueListStyle(size.width) ? ' ck-league-side' : ''}`} aria-label="Selected games" style={leagueListStyle(size.width)}>
         <div className="ck-llist">
           {days.map((d) => (
-            <ListDaySection key={d.date} day={d} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} heading={nights && cupNightHeading(nights.get(d.date)!)} cupTag={cup ? cupLeagueTag(data) : undefined} />
+            <ListDaySection key={d.date} day={d} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} heading={nights && cupNightHeading(nights.get(d.date)!)} cupTag={cup ? cupLeagueTag(data) : undefined} series={!cup} />
           ))}
         </div>
       </section>

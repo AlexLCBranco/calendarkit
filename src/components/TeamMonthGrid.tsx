@@ -1,5 +1,6 @@
 // Team → Calendar: one team's month (or 1 or 2 weeks), a game per day cell, back-to-back bars; content scaled to the cell.
 
+import { seriesLine } from '../slate/series';
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { addDays, hasNationalTv, isOver, monthCells, nationalTv, opponentSecondNight, seasonMonths, teamGames, type B2BPair, type CalendarData } from '../data/model';
@@ -170,7 +171,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               {/* week views can cross a month: the 1st says which */}
               <span className="ck-daynum">{weekView && date.endsWith('-01') ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
-              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} gameLink={compact ? undefined : gameLink} />}
+              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} gameLink={compact ? undefined : gameLink} seriesTip={seriesLine(data, g)} />}
               {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
             </div>
           );

@@ -418,6 +418,10 @@ test('TV games only in all four views', async ({ page }, info) => {
   const errors = collectErrors(page);
   const noTv = (sel: string) => page.locator(sel).count();
   await open(page, '?view=league&layout=list&tv=1');
+  // round 14 (item 6): every day is listed, so today (Nov 15: 9 games, none on national TV) says so instead of jumping
+  await expect(page.getByTestId('no-games')).toHaveText('No national TV games today');
+  await expect(page.locator('[data-testid="league-list"] article')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Next day' }).click();
   await expect(page.locator('[data-testid="league-list"] article').first()).toBeVisible();
   expect(await noTv('[data-testid="league-list"] article:not(:has([data-testid="tv-badge"]))')).toBe(0);
   await open(page, '?view=team&layout=list&team=LAL&tv=1');

@@ -123,13 +123,16 @@ describe('start week, navigation, Today, Month ↔ weeks', () => {
 });
 
 describe('cells and bars', () => {
-  it('every week of the season, 1 and 2 weeks, BOS and LAL: every game in its cell, nothing else', () => {
-    for (const teamId of [TEAM.BOS, TEAM.LAL]) {
-      for (const span of [1, 2] as const) {
+  // round 14 (item 2): one test per team and span (was one test for all four: ~6 s under a busy full suite, past
+  // Vitest's 5 s); the arrows found by their label, not getByRole (which reads every element's role and name)
+  const arrow = (dir: 'Previous' | 'Next') => document.querySelector<HTMLButtonElement>(`button[aria-label^="${dir}"]`)!;
+  it.each([['BOS', 1, TEAM.BOS], ['BOS', 2, TEAM.BOS], ['LAL', 1, TEAM.LAL], ['LAL', 2, TEAM.LAL]] as const)('every week of the season, %s, %i week(s): every game in its cell, nothing else', (_, span, teamId) => {
+    {
+      {
         open({ teamId, teamSpan: span });
         const games = teamGames(data, teamId);
         const byDate = new Map(games.map((g) => [g.dateEt, g.gameId]));
-        while (!(screen.getByRole('button', { name: /^Previous/ }) as HTMLButtonElement).disabled) fireEvent.click(screen.getByRole('button', { name: /^Previous/ }));
+        while (!arrow('Previous').disabled) fireEvent.click(arrow('Previous'));
         const seen: string[] = [];
         for (let guard = 0; guard < 40; guard++) {
           const dates = shownDates();
@@ -140,7 +143,7 @@ describe('cells and bars', () => {
             expect(ids, d).toEqual(byDate.has(d) ? [byDate.get(d)] : []);
             seen.push(...(ids as string[]));
           }
-          const next = screen.getByRole('button', { name: /^Next/ }) as HTMLButtonElement;
+          const next = arrow('Next');
           if (next.disabled) break;
           fireEvent.click(next);
         }

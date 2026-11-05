@@ -1,5 +1,6 @@
 // Team → List: every game of one team, one row each, opened at the next game.
 
+import { leagueSeries } from '../data/series';
 import { memo, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type RefObject } from 'react';
 import { hasNationalTv, isOver, monthOf, opponentSecondNight, sideLabel, teamGames, teamRestDays, teamSeason, weekOf, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -20,6 +21,8 @@ export interface TeamListViewProps {
   showRest?: boolean;
   /** Selection image: only these games (no rest rows); a B2B bracket only where both nights are in. */
   only?: ReadonlySet<string>;
+  /** Round 14 (item 5): the season-series chip on each row (default); off in the Cup schedule. */
+  series?: boolean;
   size: WidgetSize;
   now: number;
   timeZone?: string;
@@ -69,7 +72,7 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
  * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
  */
-export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, onAtNext, topStore, today, month, onMonthChange, markNext = true, cupTag }: TeamListViewProps) {
+export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, onAtNext, topStore, today, month, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
@@ -258,6 +261,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
                     : undefined
                 }
                 opponentB2B={opponentSecondNight(data, g, teamId)}
+                series={!series ? undefined : leagueSeries(data).get(g.gameId)}
                 teamFatigue={cols ? fatigue.get(g.gameId) : undefined}
                 fatigueColumns={cols}
                 now={now}

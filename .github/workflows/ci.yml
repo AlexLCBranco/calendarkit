@@ -1,8 +1,7 @@
 # Tests on every push and pull request. Round 8 (0.2): three kinds of job run side by side, so a push waits for the
 # slowest one instead of the sum — unit (version check, unit tests in both zones, typecheck + build), the functional
-# e2e in two jobs by project (desktop-xl, which has the copy tests, alone; Playwright's --shard split by file group gave
-# 7.1 vs 1.4 min), and the perf guard on a runner of its own (nothing else runs on its machine, as before when
-# it ran after the other projects). Every job runs on every push; nothing moved to nightly.
+# e2e in 5 jobs (round 14: desktop-xl and desktop halved by test, tablet + phone), and the perf guard on a runner of its own (nothing else
+# runs on its machine, as before when it ran after the other projects). Every job runs on every push; nothing moved to nightly.
 name: CI
 
 on:
@@ -34,7 +33,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        projects: ['--project=desktop-xl', '--project=desktop --project=tablet --project=phone']
+        # round 14 (item 2): the groups of scripts/e2e-all.ts (GROUPS), one job each — desktop-xl and desktop halved by test
+        # (fullyParallel in playwright.config.ts), tablet + phone together; was one job for desktop-xl and one for the
+        # rest (6.5 / 5.4 min)
+        projects: ['--project=desktop-xl --shard=1/2', '--project=desktop-xl --shard=2/2', '--project=desktop --shard=1/2', '--project=desktop --shard=2/2', '--project=tablet --project=phone']
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5

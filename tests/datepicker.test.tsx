@@ -35,7 +35,9 @@ describe('League List', () => {
     for (const c of popup().querySelectorAll<HTMLButtonElement>('[data-date]')) {
       const n = data.byDate.get(c.dataset.date!)?.length ?? 0;
       expect(c.querySelector('.ck-count')?.textContent ?? '', c.dataset.date).toBe(n ? String(n) : '');
-      expect(c.disabled).toBe(!n);
+      // round 14, item 6: every day of the season can be picked (a game-less one shows "No games")
+      const d = c.dataset.date!;
+      expect(c.disabled, d).toBe(d < data.dates[0]! || d > data.dates.at(-1)!);
     }
     fireEvent.click(within(popup()).getByLabelText('Next month'));
     expect(within(popup()).getByText('December 2026')).toBeTruthy();

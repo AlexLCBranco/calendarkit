@@ -12,6 +12,9 @@ export default defineConfig({
   // ~5 min, CI's slower runners more (round 6: 9–12 min on CI with the perf reference runs) — 20 min is the ceiling
   globalTimeout: 20 * 60_000,
   workers: 2,
+  // round 14 (item 2): tests (not files) are the unit of parallelism and of sharding, so shards (npm run e2e:all, CI)
+  // come out even; a file whose tests share a server keeps its own order (slate-same.spec.ts), the perf guard runs alone
+  fullyParallel: true,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: { baseURL, trace: 'off', timezoneId: 'America/Sao_Paulo' },
   webServer: process.env.E2E_BASE_URL ? undefined : { command: 'npm run build && npm run preview', url: `${baseURL}/calendar/`, reuseExistingServer: true, timeout: 120_000 },
@@ -22,6 +25,6 @@ export default defineConfig({
     { name: 'phone', testIgnore: 'perf.spec.ts', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } } },
     // Performance guard: after every other project, so its timings aren't skewed by tests running alongside.
     // Finite per-test timeout (the longest perf test sets 180 s itself; this caps the rest).
-    { name: 'perf', testMatch: 'perf.spec.ts', dependencies: ['desktop', 'desktop-xl', 'tablet', 'phone'], timeout: 180_000, use: desktopXl },
+    { name: 'perf', testMatch: 'perf.spec.ts', fullyParallel: false, dependencies: ['desktop', 'desktop-xl', 'tablet', 'phone'], timeout: 180_000, use: desktopXl },
   ],
 });

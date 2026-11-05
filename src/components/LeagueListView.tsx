@@ -1,9 +1,10 @@
 // League → List: one game day at a time (round 8), with a week strip; the day changes only by navigation.
 
+import { leagueSeries } from '../data/series';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
-import { hasNationalTv, leagueRecords, localDate, weekOf, type CalendarData, type TeamRecord } from '../data/model';
+import { addDays, hasNationalTv, leagueRecords, localDate, weekOf, type CalendarData, type TeamRecord } from '../data/model';
 import { CopyButton } from './CopyButton';
 import { GameCard, type GameLink } from './GameCard';
 import { PeriodNav } from './PeriodNav';
@@ -37,11 +38,16 @@ export type ListDay = { date: string; games: ScheduleGame[] };
 
 /** The list's game days (only TV games when filtered; days left without games are dropped). */
 export function listDays(data: CalendarData, tvOnly: boolean): ListDay[] {
+  // round 14 (item 6): every calendar day from the season's first game day to its last, game-less days included (they
+  // show "No games"), so the arrows, keys, strip and picker never skip a day; nothing before opening night or after the
+  // last game
   const out: ListDay[] = [];
-  for (const d of data.dates) {
-    const all = data.byDate.get(d)!;
-    const games = tvOnly ? all.filter(hasNationalTv) : all;
-    if (games.length) out.push({ date: d, games });
+  const first = data.dates[0];
+  const last = data.dates.at(-1);
+  if (!first || !last) return out;
+  for (let d = first; d <= last; d = addDays(d, 1)) {
+    const all = data.byDate.get(d) ?? [];
+    out.push({ date: d, games: tvOnly ? all.filter(hasNationalTv) : all });
   }
   return out;
 }
@@ -91,8 +97,9 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, to
     const prevWeekDay = before && days.find((d) => d.date >= weekOf(before)[0]!)?.date;
     const nextWeekDay = days.find((d) => d.date > week[6]!)?.date;
     return {
-      days: week.map((d) => ({ date: d, sub: counts.get(d) ? String(counts.get(d)) : '', disabled: !counts.get(d) })),
-      // previous / next week with games: its first game day (the strip stays Sun–Sat; it never recenters)
+      // round 14 (item 6): every day of the season can be picked, a game-less one too ("–" under it); days outside it can't
+      days: week.map((d) => ({ date: d, sub: counts.has(d) ? String(counts.get(d) || '–') : '', disabled: !counts.has(d) })),
+      // previous / next week: its first day in the season (the strip stays Sun–Sat; it never recenters)
       onPrev: () => prevWeekDay && pickRef.current(prevWeekDay),
       onNext: () => nextWeekDay && pickRef.current(nextWeekDay),
       prevDisabled: !prevWeekDay,
@@ -116,11 +123,21 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, to
       )}
       <WeekStrip {...strip} selected={shown} today={today} onPick={pick} />
       <div className="ck-llist" ref={scroller} data-testid="league-list" data-select-scroller>
-        {!day && <p className="ck-empty">No games.</p>}
-        {day && <ListDaySection key={day.date} day={day} data={data} compact={compact} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} />}
+        {(!day || !day.games.length) && <NoGames date={shown} today={today} tvOnly={tvOnly} />}
+        {day && day.games.length > 0 && <ListDaySection key={day.date} day={day} data={data} compact={compact} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} series />}
       </div>
       <FatigueLegend component={size.width >= FATIGUE_SLOTS_MIN_WIDTH} />
     </section>
+  );
+}
+
+/** Round 14 (item 6): a day of the season without games (or without TV games under the filter). */
+export function NoGames({ date, today, tvOnly }: { date: string; today: string; tvOnly: boolean }) {
+  const what = tvOnly ? 'No national TV games' : 'No games';
+  return (
+    <p className="ck-empty ck-no-games" data-testid="no-games" data-day={date}>
+      {date === today ? `${what} today` : `${what} on ${fmtDate(date, { weekday: 'long', month: 'long', day: 'numeric' })}`}
+    </p>
   );
 }
 
@@ -130,7 +147,7 @@ const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'sho
 /** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
 // memo: a re-render of the list (the strip, the clock) skips the day while its props are the same.
 // Cup schedule (round 12): its own heading ("Group play · Tue, Nov 10") and a tag per game (cupTag: "West A").
-export const ListDaySection = memo(function ListDaySection({ day, data, compact, fatigueSlots = false, now, timeZone, onOpenGame, gameLink, heading, cupTag, dateLabel, columns, tvPill }: { day: ListDay; data: CalendarData; compact: boolean; fatigueSlots?: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; gameLink?: GameLink; heading?: string; cupTag?: (g: ScheduleGame) => string | undefined; dateLabel?: (g: ScheduleGame) => string; columns?: number; tvPill?: boolean }) {
+export const ListDaySection = memo(function ListDaySection({ day, data, compact, fatigueSlots = false, now, timeZone, onOpenGame, gameLink, heading, cupTag, dateLabel, columns, tvPill, series = false }: { series?: boolean; day: ListDay; data: CalendarData; compact: boolean; fatigueSlots?: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; gameLink?: GameLink; heading?: string; cupTag?: (g: ScheduleGame) => string | undefined; dateLabel?: (g: ScheduleGame) => string; columns?: number; tvPill?: boolean }) {
   const records = compact ? undefined : leagueRecords(data); // once per data set
   const fatigue = leagueFatigue(data); // once per data set
   const head = heading ?? dayHeading(day.date, day.games.length);
@@ -143,7 +160,7 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
       {/* Cup group rounds (round 12b): two columns, filled top to bottom (date order reads down the first, then the second) */}
       <div className={`ck-daylist${columns ? ' ck-daylist-cols' : ''}`} style={columns ? ({ '--ck-cols': columns, '--ck-col-rows': Math.ceil(day.games.length / columns) } as CSSProperties) : undefined}>
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} gameLink={gameLink} cupTag={cupTag?.(g)} dateLabel={dateLabel?.(g)} tvPill={tvPill} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} gameLink={gameLink} cupTag={cupTag?.(g)} dateLabel={dateLabel?.(g)} tvPill={tvPill} series={series ? leagueSeries(data).get(g.gameId) : undefined} copyable />
         ))}
       </div>
     </section>

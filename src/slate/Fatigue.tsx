@@ -46,8 +46,10 @@ function label(team: string, f: TeamFatigue): string {
  * time order, and the leg dot stays on its B. `focusable`: a tab stop for the tooltip (Team List; in the league views
  * the tricode's mark already is one).
  */
-export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = false }: { f?: TeamFatigue; team: string; size?: 'full' | 'compact'; badge?: 'left' | 'right'; focusable?: boolean }) {
-  const cls = `ck-fx ck-fx-${size}${badge === 'right' ? ' ck-fx-mirror' : ''}`;
+export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = false, shortChip = false }: { f?: TeamFatigue; team: string; size?: 'full' | 'compact'; badge?: 'left' | 'right'; focusable?: boolean; shortChip?: boolean }) {
+  // round 14 (item 3): `shortChip` — full size, but the chip shows the stretch only ("7in11", as compact does) and its
+  // track is narrower (the Slate's tight cards); tonight's place stays in the tooltip
+  const cls = `ck-fx ck-fx-${size}${badge === 'right' ? ' ck-fx-mirror' : ''}${shortChip && size === 'full' ? ' ck-fx-short' : ''}`;
   const pair = f?.pairs[0];
   const night = f?.nights[0];
   if (!f || (!pair && !f.tif)) return <span className={`${cls} ck-fx-empty`} data-testid="fatigue" aria-hidden="true" />;
@@ -73,7 +75,7 @@ export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = fa
           <NightIcon home={pair.code[1] === 'H'} tonight={night === 2} />
         </>
       )}
-      {m && <span className={`ck-fx-chip ck-tif-pos-${Math.min(3, m.position)}`}>{size === 'compact' ? mergedLabel(m) : mergedChip(m)}</span>}
+      {m && <span className={`ck-fx-chip ck-tif-pos-${Math.min(3, m.position)}`}>{size === 'compact' || shortChip ? mergedLabel(m) : mergedChip(m)}</span>}
     </span>
   );
 }

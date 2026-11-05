@@ -21,6 +21,8 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
           height: root.offsetHeight,
           cols: getComputedStyle(root).gridTemplateColumns.split(' ').length,
           nameFont: parseFloat(getComputedStyle(card).fontSize),
+          // round 14: links (the ↗ icons) in the copied node; the strip's chips reflow without them
+          links: root.querySelectorAll('a').length,
           cards: [...root.querySelectorAll('.ck-slate-card')].map((c) => {
             const r = c.getBoundingClientRect();
             // round 9: the note box (its rect in the image, the slot label, its text, controls left in it)
@@ -41,7 +43,7 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
   await button.click();
   await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 });
   const ms = Date.now() - t0;
-  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number } | null }[] };
+  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; links: number; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number } | null }[] };
   const ratio = Number((await button.getAttribute('data-captured'))!.split('@')[1]);
   const png = await page.evaluate(async () => {
     const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;

@@ -24,6 +24,7 @@ import { createSelectionStore, useMarqueeSelection } from './selection';
 import { SelectionBar, SelectionStyle } from './SelectionBar';
 import { SelectionCapture, type SelectionKind } from './SelectionCapture';
 import { slateCopyColumns, slateImageSize, slatePixelRatio } from '../slate/layout';
+import type { SlateOdds } from '../slate/odds';
 import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
 import { localNotesStore } from '../slate/notes';
 import { TeamHeader } from './TeamHeader';
@@ -31,6 +32,7 @@ import { TeamListView, type TeamListHandle } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
 import { TeamPicker } from './TeamPicker';
 import { useTooltip } from '../slate/tooltip';
+import { useSeriesPopup } from '../slate/series';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
 import { fmtMonth, fmtRange, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
@@ -72,6 +74,8 @@ export interface CalendarState {
 
 export interface CalendarViewProps {
   data: CalendarData;
+  /** Round 14: the Slate's moneyline odds (the app shell passes liveOddsStore()); none: no odds, no request. */
+  odds?: SlateOdds;
   size: WidgetSize;
   /** Initial state; anything missing gets a default (League → List, default day). */
   initial?: Partial<CalendarState>;
@@ -108,7 +112,7 @@ const CUP_START: CupState = { tab: 'standings', list: 'league' };
 const teamMapFits = (width: number) => width >= TEAM_LIST_MAX_WIDTH + LEAGUE_MAP_GAP + LEAGUE_MAP_MIN;
 
 
-export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt }: CalendarViewProps) {
+export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt }: CalendarViewProps) {
   // The clock (round 7: moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
   // `now` (the default day, the next game, games over) is the time the widget opened.
   const clock = useClock(fixedNow, timeZone, localDate);
@@ -162,6 +166,20 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
   };
   const onSelectDate = useCallback((date: string) => update({ date }), [update]);
   const openDay = (date: string) => update({ date, layout: 'list' });
+  // round 14 (item 5): a square of the season-series popup → that day in the League List, the game highlighted (a class
+  // on its row, set after the day renders; cleared by the next jump or another day)
+  const [picked, setPicked] = useState<string>();
+  useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    el.querySelectorAll('.ck-series-picked').forEach((r) => r.classList.remove('ck-series-picked'));
+    if (!picked || state.mode !== 'league' || state.layout !== 'list') return;
+    const row = el.querySelector<HTMLElement>(`[data-testid="league-list"] [data-game-id="${picked}"]`);
+    if (!row) return setPicked(undefined); // another day: the highlight is gone
+    row.classList.add('ck-series-picked');
+    row.scrollIntoView?.({ block: 'nearest' });
+  });
+  const series = useSeriesPopup(data, { gameLink, onPick: (g) => (setPicked(g.gameId), update({ mode: 'league', layout: 'list', date: g.dateEt })) });
   const team = state.mode === 'team';
   // League → Slate (round 7): desktop only. A Team view, or a widget too narrow for it, shows the List meanwhile (the
   // state keeps "slate", so League comes back to it).
@@ -429,7 +447,10 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
         className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${teamMap ? ' ck-team-side' : ''}${list || slate ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={selKind ? onMarquee : undefined}
         style={{ maxWidth: size.width, height: list || slate ? size.height : undefined, minHeight: list || slate || compact ? undefined : size.height }}
-        {...tooltip.handlers}
+        onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e))}
+        onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e))}
+        onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave())}
+        onBlur={tooltip.handlers.onBlur}
       >
         <div className="ck-toolbar" data-testid="top-bar">
           {title && <h1 className={`ck-title${compact ? ' ck-sr' : ''}`}>{title}</h1>}
@@ -550,7 +571,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
             <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
           )
         ) : slate ? (
-          <SlateView data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} width={size.width} notes={notes} hideNotes={hideNotes} onHideNotes={setHideNotes} />
+          <SlateView data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} width={size.width} notes={notes} odds={odds} hideNotes={hideNotes} onHideNotes={setHideNotes} />
         ) : list && leagueSideBySide(size.width) ? (
           // round 8: the map beside the list (desktop); it stays put while a busy night scrolls
           <div className="ck-league-split" {...hoverHandlers(mapHover)}>
@@ -571,12 +592,13 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
           <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />
         )}
         {tooltip.node}
+        {series.node}
         <div ref={marquee} className="ck-marquee" aria-hidden="true" data-testid="marquee" />
         <SelectionStyle store={selection} scope=".ck-select-area" />
         {selKind && <SelectionBar store={selection} copy={copySelection} />}
         {slateCapture && (
           <CaptureStage onReady={slateCapture.onReady} width={slateImageSize(slateCapture.games.length, slateCapture.cols, slateCapture.card).width} className=" ck-slate-capture">
-            <SlateCopy data={data} games={slateCapture.games} cols={slateCapture.cols} cardWidth={slateCapture.card.width} timeZone={timeZone} notes={hideNotes ? undefined : notes} />
+            <SlateCopy data={data} games={slateCapture.games} cols={slateCapture.cols} cardWidth={slateCapture.card.width} timeZone={timeZone} notes={hideNotes ? undefined : notes} odds={odds?.get(slateCapture.games[0]!.dateEt)} />
           </CaptureStage>
         )}
         {selCapture && selKind && selKind !== 'league-slate' && (
@@ -627,7 +649,7 @@ export function CalendarView({ data, size, initial, now: fixedNow, timeZone, onO
               )
             ) : list ? (
               <section className={`ck-league-list${listStyle ? ' ck-league-side' : ''}`} aria-label="League schedule" style={listStyle}>
-                <div className="ck-llist">{listDay ? <ListDaySection day={listDay} data={data} compact={compact} fatigueSlots={size.width >= LIST_MAX_WIDTH} now={now} timeZone={timeZone} /> : <p className="ck-empty">No games.</p>}</div>
+                <div className="ck-llist">{listDay ? <ListDaySection day={listDay} data={data} compact={compact} fatigueSlots={size.width >= LIST_MAX_WIDTH} now={now} timeZone={timeZone} series /> : <p className="ck-empty">No games.</p>}</div>
               </section>
             ) : weekView ? (
               <LeagueWeekView data={data} start={weekOf(state.date)[0]!} weeks={state.weeks} tvOnly={state.tvOnly} size={size} today={today} timeZone={timeZone} onSelectDate={openDay} />

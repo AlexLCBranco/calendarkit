@@ -30,6 +30,14 @@
   grid-template-columns: 2.6em 1.15em 1.15em 3em;
   width: 8.35em; /* 2.6 + 1.15 + 1.15 + 3 + 3 × 0.15 */
 }
+/* round 14: full size with the short chip ("7in11", 3 em like compact), the Slate's tight cards: 8.5 em = 102 px */
+.ck-fx-short {
+  grid-template-columns: 2.6em 1.15em 1.15em 3em;
+  width: 8.5em; /* 2.6 + 1.15 + 1.15 + 3 + 3 × 0.2 */
+}
+.ck-fx-short.ck-fx-mirror {
+  grid-template-columns: 3em 1.15em 1.15em 2.6em;
+}
 .ck-fx-compact.ck-fx-mirror {
   grid-template-columns: 3em 1.15em 1.15em 2.6em;
 }

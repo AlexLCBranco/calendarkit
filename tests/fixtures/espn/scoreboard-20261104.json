@@ -1,0 +1,832 @@
+{
+ "fetched": "2026-11-04T23:00Z",
+ "note": "site.api.espn.com scoreboard?dates=20261104, trimmed to the fields read",
+ "events": [
+  {
+   "id": "401909922",
+   "date": "2026-11-05T00:00Z",
+   "shortName": "PHI @ DET",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "DET"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "PHI"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "-119"
+         },
+         "close": {
+          "odds": "-136"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "+101"
+         },
+         "close": {
+          "odds": "+115"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909923",
+   "date": "2026-11-05T00:00Z",
+   "shortName": "ATL @ WSH",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "WSH"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "ATL"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "+105"
+         },
+         "close": {
+          "odds": "+105"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "-124"
+         },
+         "close": {
+          "odds": "-124"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909924",
+   "date": "2026-11-05T00:30Z",
+   "shortName": "MIL @ BOS",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "BOS"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "MIL"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "-1000"
+         },
+         "close": {
+          "odds": "-518"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "+660"
+         },
+         "close": {
+          "odds": "+394"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909925",
+   "date": "2026-11-05T00:30Z",
+   "shortName": "CHA @ BKN",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "BKN"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "CHA"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "+115"
+         },
+         "close": {
+          "odds": "+143"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "-136"
+         },
+         "close": {
+          "odds": "-170"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909926",
+   "date": "2026-11-05T00:30Z",
+   "shortName": "CHI @ NY",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "NY"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "CHI"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "-640"
+         },
+         "close": {
+          "odds": "-597"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "+466"
+         },
+         "close": {
+          "odds": "+443"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909927",
+   "date": "2026-11-05T01:00Z",
+   "shortName": "IND @ MEM",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "MEM"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "IND"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "-258"
+         },
+         "close": {
+          "odds": "-237"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "+212"
+         },
+         "close": {
+          "odds": "+196"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909928",
+   "date": "2026-11-05T01:00Z",
+   "shortName": "UTAH @ NO",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "NO"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "UTAH"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "-207"
+         },
+         "close": {
+          "odds": "-203"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "+172"
+         },
+         "close": {
+          "odds": "+169"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909929",
+   "date": "2026-11-05T01:00Z",
+   "shortName": "CLE @ OKC",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "OKC"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "CLE"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "-137"
+         },
+         "close": {
+          "odds": "-161"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "+116"
+         },
+         "close": {
+          "odds": "+136"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909930",
+   "date": "2026-11-05T01:30Z",
+   "shortName": "MIN @ HOU",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "HOU"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "MIN"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "-348"
+         },
+         "close": {
+          "odds": "-278"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "+279"
+         },
+         "close": {
+          "odds": "+227"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909931",
+   "date": "2026-11-05T02:00Z",
+   "shortName": "TOR @ DEN",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "DEN"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "TOR"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "-217"
+         },
+         "close": {
+          "odds": "-203"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "+180"
+         },
+         "close": {
+          "odds": "+169"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909932",
+   "date": "2026-11-05T02:00Z",
+   "shortName": "POR @ PHX",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "PHX"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "POR"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "+118"
+         },
+         "close": {
+          "odds": "+125"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "-140"
+         },
+         "close": {
+          "odds": "-148"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909933",
+   "date": "2026-11-05T02:30Z",
+   "shortName": "DAL @ SA",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "SA"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "DAL"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "+503"
+         },
+         "close": {
+          "odds": "-620"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "-700"
+         },
+         "close": {
+          "odds": "+458"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909934",
+   "date": "2026-11-05T03:00Z",
+   "shortName": "LAL @ SAC",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "SAC"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "LAL"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "+450"
+         },
+         "close": {
+          "odds": "+470"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "-610"
+         },
+         "close": {
+          "odds": "-650"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "401909935",
+   "date": "2026-11-05T03:30Z",
+   "shortName": "MIA @ LAC",
+   "status": {
+    "type": {
+     "state": "pre",
+     "name": "STATUS_SCHEDULED"
+    }
+   },
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "LAC"
+       }
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "MIA"
+       }
+      }
+     ],
+     "status": {
+      "type": {
+       "state": "pre"
+      }
+     },
+     "odds": [
+      {
+       "provider": {
+        "name": "DraftKings"
+       },
+       "moneyline": {
+        "home": {
+         "open": {
+          "odds": "+164"
+         },
+         "close": {
+          "odds": "+180"
+         }
+        },
+        "away": {
+         "open": {
+          "odds": "-196"
+         },
+         "close": {
+          "odds": "-216"
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

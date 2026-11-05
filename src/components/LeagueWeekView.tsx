@@ -1,5 +1,6 @@
 // League → Calendar on desktop: 7 day columns, 1 or 2 week rows, every game of each day as a line.
 
+import { seriesLine } from '../slate/series';
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { addDays, finalScore, hasNationalTv, nationalTv, overtime, teamLabel, type CalendarData } from '../data/model';
@@ -60,6 +61,9 @@ export function MonthGameLine({ data, game, gameLink, fxRow = false }: { data: C
     <li
       className={`ck-month-game${fin ? ' ck-month-final' : ''}${fx ? ' ck-month-fx' : ''}`}
       data-game-id={game.gameId}
+      // round 14 (item 5): no room for the series chip on a line; the series is the line's tooltip (its marks and TV
+      // pill keep their own)
+      data-tip={seriesLine(data, game)}
       aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}${ot ? ` (${ot})` : ''}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
     >
       {/* logos, tricodes, scores and "@": the link to the game page (a subgrid on the line's columns, round 5) */}

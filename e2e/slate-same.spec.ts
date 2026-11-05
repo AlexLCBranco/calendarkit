@@ -21,6 +21,8 @@ const SIZES = [1, 5, 12, 15];
 // (test-output/loads.mjs). With partial raster off every tile is rasterized whole: 30 of 30 loads identical under the same
 // load. No retries, nothing masked locally.
 test.use({ launchOptions: { args: ['--disable-partial-raster'] } });
+// one worker builds and serves the reference for all of this file's tests (playwright.config.ts runs tests fully parallel)
+test.describe.configure({ mode: 'default' });
 
 test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
 

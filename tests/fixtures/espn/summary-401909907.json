@@ -1,0 +1,31 @@
+{
+ "fetched": "2026-11-04T23:10Z",
+ "note": "summary?event=401909907, pickcenter only",
+ "pickcenter": [
+  {
+   "provider": {
+    "name": "DraftKings"
+   },
+   "moneyline": {
+    "displayName": "Moneyline",
+    "shortDisplayName": "ML",
+    "home": {
+     "close": {
+      "odds": "-173"
+     },
+     "open": {
+      "odds": "-185"
+     }
+    },
+    "away": {
+     "close": {
+      "odds": "+146"
+     },
+     "open": {
+      "odds": "+154"
+     }
+    }
+   }
+  }
+ ]
+}

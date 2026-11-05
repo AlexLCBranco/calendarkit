@@ -6,16 +6,19 @@
 // filling the width it is given, two columns while each note box keeps SLATE_NOTE_MIN. No timers, no requests: the
 // data comes in (loadCalendarData fetches it once per page), only the logos are images.
 
-import { memo, useEffect, type CSSProperties } from 'react';
+import { memo, useEffect, useSyncExternalStore, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
-import { finalScore, hasNationalTv, leagueSeasonLines, markers, nationalTv, overtime, teamLabel, tipoff, type CalendarData, type SeasonLine } from '../data/model';
+import { dateFormat, finalScore, hasNationalTv, leagueSeasonLines, markers, nationalTv, overtime, teamLabel, tipoff, type CalendarData, type SeasonLine } from '../data/model';
 import { TEAM_BY_ID } from '../data/teams';
 import { Fatigue } from './Fatigue';
-import { slateColumns, slateImageSize, SLATE_COPY_GAP, SLATE_GRID_GAP, SLATE_INFO_WIDTH, SLATE_NOTE_GAP } from './layout';
+import { slateColumns, slateImageSize, slateInfoColumns, SLATE_CARD_PAD, SLATE_CARD_WIDTH, SLATE_COPY_GAP, SLATE_GRID_GAP, SLATE_INFO_WIDTH, SLATE_NOTE_GAP, SLATE_ROW_GAP, SLATE_ROW_TRACKS, SLATE_STRIP, SLATE_STRIP_GAP } from './layout';
 import type { GameLink } from './links';
 import { NoteBox, NoteCopy } from './NoteBox';
 import type { SlateNotes } from './notes';
+import { SeriesChip } from './series';
+import { leagueSeries } from '../data/series';
+import { fmtOdds, gameOdds, type DayOdds, type GameOdds, type SlateOdds } from './odds';
 import { seasonTip, TeamLogo, TipTime } from './parts';
 
 /** The day's games (TV games only when filtered), in tip-off order; [] on a day without games. */
@@ -32,51 +35,84 @@ export interface SlateDayProps {
   timeZone?: string;
   /** The games' notes; none: info-only cards (round 7's). */
   notes?: SlateNotes;
-  /** The width the grid fills (CSS px): two columns while each note box keeps SLATE_NOTE_MIN, else one. */
+  /** The width the grid fills (CSS px): with notes, two columns while each note box keeps SLATE_NOTE_MIN, else one;
+   *  without (round 14), as many tight info-only cards as fit. */
   width?: number;
   tvOnly?: boolean;
   /** Each card's "↗" link (e.g. hoopsjunkieLink); none: no icon. */
   gameLink?: GameLink;
+  /** Round 14: moneyline odds (liveOddsStore()); none: no request, the odds column stays empty. */
+  odds?: SlateOdds;
 }
 
 /**
  * One day's cards: the grid (and "No games." on an empty day). It follows other tabs' notes for as long as it is shown
  * (`notes.listen`; the default store keeps one storage listener per page however many grids there are).
  */
-export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = false, gameLink }: SlateDayProps) {
+const NO_SUB = () => () => {};
+const NONE = () => undefined;
+
+/** The day's odds from the store (undefined until they come, or without a store). */
+function useDayOdds(odds: SlateOdds | undefined, date: string, allOver: boolean): DayOdds | undefined {
+  const day = useSyncExternalStore(odds ? (fn) => odds.subscribe(date, fn) : NO_SUB, odds ? () => odds.get(date) : NONE);
+  // after the cards are on screen (an effect): load, and refresh while shown
+  useEffect(() => odds?.show(date, allOver), [odds, date, allOver]);
+  return day;
+}
+
+export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = false, gameLink, odds }: SlateDayProps) {
   const games = slateGames(data, date, tvOnly);
-  const cols = notes ? slateColumns(width) : 2;
+  const day = useDayOdds(odds, date, (data.byDate.get(date) ?? []).every((g) => g.status === 'final'));
+  const cols = notes ? slateColumns(width) : slateInfoColumns(width);
   useEffect(() => notes?.listen?.(), [notes]);
   return (
     <>
-      {games.length === 0 && <p className="ck-empty">No games.</p>}
+      {/* round 14 (item 6): a game-less day of the season is reachable and says so */}
+      {games.length === 0 && (
+        <p className="ck-empty ck-no-games" data-testid="no-games" data-day={date}>
+          {tvOnly ? 'No national TV games' : 'No games'} on {dateFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`))}
+        </p>
+      )}
       <div className={`ck-slate-grid${notes ? ' ck-slate-wide' : ''}`} data-cols={cols} style={slateVars(cols)}>
         {games.map((g) => (
-          <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} />
+          <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, g)} />
         ))}
       </div>
     </>
   );
 }
 
-const slateVars = (cols: number) => ({ '--ck-slate-cols': cols, '--ck-slate-info': `${SLATE_INFO_WIDTH}px`, '--ck-slate-note-gap': `${SLATE_NOTE_GAP}px`, '--ck-slate-grid-gap': `${SLATE_GRID_GAP}px` }) as CSSProperties;
+/** The layout constants as CSS variables (layout.ts is the one source of the sizes). */
+const T = SLATE_ROW_TRACKS;
+const LAYOUT_VARS = {
+  '--ck-slate-info': `${SLATE_INFO_WIDTH}px`,
+  '--ck-slate-card-w': `${SLATE_CARD_WIDTH}px`,
+  '--ck-slate-pad': `${SLATE_CARD_PAD}px`,
+  '--ck-slate-strip': `${SLATE_STRIP}px`,
+  '--ck-slate-strip-gap': `${SLATE_STRIP_GAP}px`,
+  '--ck-slate-row-gap': `${SLATE_ROW_GAP}px`,
+  '--ck-slate-tracks': `${T.at}px ${T.logo}px ${T.name}px ${T.rec}px ${T.streak}px ${T.fx}px ${T.score}px ${T.odds}px`,
+  '--ck-slate-note-gap': `${SLATE_NOTE_GAP}px`,
+  '--ck-slate-grid-gap': `${SLATE_GRID_GAP}px`,
+};
+const slateVars = (cols: number) => ({ ...LAYOUT_VARS, '--ck-slate-cols': cols }) as CSSProperties;
 
 /**
  * The copied image (and a selection's): the cards in `cols` columns, SLATE_COPY_GAP apart and half of it around them,
  * on nothing — only the cards are opaque. `cardWidth`: the on-screen card width, so cards wrap their text as on screen.
  */
-export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes }) {
+export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds }) {
   return (
-    <div className="ck-slate-copy" style={{ width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-gap': `${SLATE_COPY_GAP}px`, '--ck-slate-info': `${SLATE_INFO_WIDTH}px` } as CSSProperties}>
+    <div className="ck-slate-copy" style={{ ...LAYOUT_VARS, width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-gap': `${SLATE_COPY_GAP}px` } as CSSProperties}>
       {games.map((g) => (
-        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} notes={notes} copy />
+        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} notes={notes} odds={gameOdds(odds, g)} copy />
       ))}
     </div>
   );
 }
 
 /** One game as a card. */
-export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, copy = false }: { data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; copy?: boolean }) {
+export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, copy = false }: { data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; copy?: boolean }) {
   const fx = leagueFatigue(data).get(game.gameId);
   const lines = leagueSeasonLines(data).get(game.gameId);
   const result = finalScore(game, game.awayTeam.teamId);
@@ -92,10 +128,9 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
     // round 9 (2.2): a national TV game's card is outlined and tinted in the TV badge's green (nothing else uses it)
     <article className={`ck-slate-card${result ? ' ck-slate-final' : ''}${tv.length ? ' ck-slate-tv' : ''}${notes ? ' ck-with-note' : ''}`} data-game-id={game.gameId} aria-label={label}>
       <div className="ck-slate-info">
-      {/* the head: tip-off time (or "Final OT") and the hoopsjunkie icon on the left, the Cup / play-off labels and the
-          TV names on the right */}
-      <div className="ck-slate-head">
-        <span className="ck-slate-when">
+        {/* round 14 (item 3): the strip — tip-off time (or "Final" + OT) on top, then the ↗ link, the TV pill and the
+            Cup / play-off tags, wrapping inside the strip; beside the two team rows instead of a line of its own */}
+        <div className="ck-slate-strip">
           {result ? (
             <span className="ck-slate-status" data-testid="slate-status">
               Final{ot && <span className="ck-ot"> {ot}</span>}
@@ -105,31 +140,31 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
               <TipTime tip={tip} />
             </span>
           )}
-          {/* round 9 (2.3): the game page is this icon, not the team names; a control, so never in a copy */}
-          {url && (
-            <a className="ck-slate-link" href={url} target="_blank" rel="noopener noreferrer" draggable={false} title="Open on hoopsjunkie" aria-label="Open on hoopsjunkie" data-testid="game-link" data-capture-exclude="true" onClick={(e) => e.stopPropagation()}>
-              ↗
-            </a>
-          )}
-        </span>
-        <span className="ck-slate-tags">
-          {marks.map((m) => (
-            <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
-              {m.long}
-            </span>
-          ))}
-          {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}
-          {tv.length > 0 && (
-            <span className="ck-tag ck-tv" title="US national TV" data-testid="tv-badge">
-              {tv.join(' · ')}
-            </span>
-          )}
-        </span>
-      </div>
-      <div className="ck-slate-teams">
-        <TeamRow team={game.awayTeam} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} score={result && { n: result.score, win: result.win }} />
-        <TeamRow team={game.homeTeam} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} score={result && { n: result.oppScore, win: !result.win }} home />
-      </div>
+          <span className="ck-slate-chips">
+            {/* round 9 (2.3): the game page is this icon, not the team names; a control, so never in a copy */}
+            {url && (
+              <a className="ck-slate-link" href={url} target="_blank" rel="noopener noreferrer" draggable={false} title="Open on hoopsjunkie" aria-label="Open on hoopsjunkie" data-testid="game-link" data-capture-exclude="true" onClick={(e) => e.stopPropagation()}>
+                ↗
+              </a>
+            )}
+            <SeriesChip s={leagueSeries(data).get(game.gameId)} gameId={game.gameId} />
+            {tv.length > 0 && (
+              <span className="ck-slate-tv-pill" data-tip={tv.join(' · ')} aria-label={`National TV: ${tv.join(', ')}`} title={tv.join(' · ')} data-testid="tv-badge">
+                TV
+              </span>
+            )}
+            {marks.map((m) => (
+              <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long} data-tip={m.long}>
+                {m.short}
+              </span>
+            ))}
+            {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}
+          </span>
+        </div>
+        <div className="ck-slate-teams">
+          <TeamRow team={game.awayTeam} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} score={result && { n: result.score, win: result.win }} odds={odds?.away} provider={odds?.provider} />
+          <TeamRow team={game.homeTeam} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} score={result && { n: result.oppScore, win: !result.win }} odds={odds?.home} provider={odds?.provider} home />
+        </div>
       </div>
       {notes && (copy ? <NoteCopy note={notes.get(game.gameId)} /> : <NoteBox store={notes} gameId={game.gameId} label={`${away} at ${home}`} />)}
     </article>
@@ -140,7 +175,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
  * "[@] [logo] Wizards 3-1 W2 [fatigue] 113": one team; the home team's row starts with the "@" (the away row keeps its
  * room). Record and streak going in (round 9, 2.1): the Team List season line's rule, colours and tooltip.
  */
-function TeamRow({ team, f, line, score, home = false }: { team: ScheduleGame['homeTeam']; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; home?: boolean }) {
+function TeamRow({ team, f, line, score, odds, provider, home = false }: { team: ScheduleGame['homeTeam']; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
   const t = TEAM_BY_ID.get(team.teamId);
   const rec = line?.record;
   const streak = line?.streak;
@@ -161,8 +196,12 @@ function TeamRow({ team, f, line, score, home = false }: { team: ScheduleGame['h
       <span className={`ck-slate-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-testid="slate-streak" data-tip={streak ? tip : undefined}>
         {streak ? `${streak.kind}${streak.n}` : ''}
       </span>
-      <Fatigue f={f} team={teamLabel(team)} />
+      <Fatigue f={f} team={teamLabel(team)} shortChip />
       <span className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>{score?.n ?? ''}</span>
+      {/* round 14 (item 4): the moneyline, decimal; its column is reserved, empty until (unless) the odds come */}
+      <span className="ck-slate-odds" data-testid="slate-odds" data-tip={odds ? `${teamLabel(team)} moneyline ${fmtOdds(odds)} (decimal${provider ? `, ${provider}` : ''}; the last line before tip-off once the game has started)` : undefined}>
+        {odds ? fmtOdds(odds) : ''}
+      </span>
     </span>
   );
 }

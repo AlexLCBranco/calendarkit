@@ -10,6 +10,7 @@ import type { CalendarData } from '../data/model';
 import type { GameLink } from '../slate/links';
 import { exportFile, parseExport, SLOT_LABEL, SLOTS, type NotesStore, type Slot } from '../slate/notes';
 import { SlateDay, slateGames } from '../slate/SlateCard';
+import type { SlateOdds } from '../slate/odds';
 import { LIST_MAX_WIDTH } from './widget';
 
 export { SlateCard, SlateCopy, slateGames } from '../slate/SlateCard';
@@ -25,6 +26,8 @@ export interface SlateViewProps {
   width?: number;
   /** The games' notes (round 9); none: info-only cards, no notes toolbar. */
   notes?: NotesStore;
+  /** Round 14: the moneyline odds store (liveOddsStore()); none: no odds. */
+  odds?: SlateOdds;
   /** "Hide all notes": info-only cards (a view toggle, never stored). */
   hideNotes?: boolean;
   onHideNotes?: (hide: boolean) => void;
@@ -33,13 +36,13 @@ export interface SlateViewProps {
 /** Slate on desktop only: from the lists' column width (960 px; the grid is that wide), so not on tablets or phones. */
 export const SLATE_MIN_WIDTH = LIST_MAX_WIDTH;
 
-export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840, notes, hideNotes = false, onHideNotes }: SlateViewProps) {
+export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840, notes, odds, hideNotes = false, onHideNotes }: SlateViewProps) {
   const games = slateGames(data, date, tvOnly);
   return (
     <section className="ck-slate" aria-label="Games of the day" data-day={date}>
       {notes && <NotesTools notes={notes} games={games} hideNotes={hideNotes} onHideNotes={onHideNotes} />}
       <div className="ck-slate-scroll" data-testid="slate" data-select-scroller>
-        <SlateDay data={data} date={date} tvOnly={tvOnly} timeZone={timeZone} gameLink={gameLink} width={width} notes={hideNotes ? undefined : notes} />
+        <SlateDay data={data} date={date} tvOnly={tvOnly} timeZone={timeZone} gameLink={gameLink} width={width} notes={hideNotes ? undefined : notes} odds={odds} />
       </div>
     </section>
   );

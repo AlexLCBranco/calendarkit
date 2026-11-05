@@ -216,6 +216,10 @@ rewrites (`/calendar`, `/calendar/`, `/calendar/:path+` → calendarkit-brown.ve
 - `gameLink?: GameLink` — pass `hoopsjunkieLink` for the "↗" icon after each time (opens the game's hoopsjunkie.io
   page in a new tab); leave it out for no icon.
 - `tvOnly?: boolean` — only national-TV games (calendarkit's TV filter).
+- `odds?: SlateOdds` — round 14: moneyline odds per team (decimal). Pass `liveOddsStore()` (fetches
+  `/calendar/api/odds?date=` once a Slate shows a date, refreshes every 10 min while shown unless the night is over, one
+  store per page); leave it out for no odds — then the part makes no request and starts no timer for odds (the odds
+  column stays reserved and empty).
 
 **The notes store** (`SlateNotes`, what a note box needs):
 `get(gameId) → { pre, live, post, shown }` (must return the same object until that game's note changes — React's
@@ -238,10 +242,11 @@ unsaved typing is never replaced by another tab's save. Notes live in that brows
 calendarkit's Slate toolbar is the backup).
 
 **What it renders:** `<SlateDay>` = "No games." on an empty day, else `<div class="ck-slate-grid">` of
-`<article class="ck-slate-card" data-game-id>` in tip-off order. Card: head (start time or "Final" + OT, the ↗ icon, Cup /
-play-off labels, national TV names), the away row and the home row ("@" before the home team): logo (28 px), team name,
-record and streak going in, the Fatigue component (B2B badge with the leg dot, the two nights as house / plane, merged
-3-in-4 chip "4in6 · 2nd"), score (winner bright). National TV games: green outline and tint. Then the note box. Wrap
+`<article class="ck-slate-card" data-game-id>` in tip-off order. Card (round 14): a narrow strip on the left (start time or
+"Final" + OT; then the ↗ icon, the green "TV" pill with the networks in its tooltip, the short Cup / play-off labels), beside
+the away row and the home row ("@" before the home team): logo (28 px), team name, record and streak going in, the Fatigue
+component (B2B badge with the leg dot, the two nights as house / plane, the 3-in-4 chip as the stretch only, "7in11"),
+score (winner bright), moneyline odds (decimal). National TV games: green outline and tint. Then the note box. Wrap
 the grid in an element with class `ck-root` (the colours and font are variables on it) and `ck-slate-widget` (no
 background: nothing is drawn between or around the cards, only the cards are opaque); import `src/slate/slate.css` once
 (calendarkit's widget stylesheet, every rule scoped to `.ck-*`, no html/body rules; 35.7 KB, 7.6 KB gz). Tooltips
@@ -249,11 +254,12 @@ background: nothing is drawn between or around the cards, only the cards are opa
 `node` to render inside it (as slate.html does). `SlateCopy` is the copied image's layout (no controls, the note box as
 static text) if the widget ever copies.
 
-**Size:** a card = the info (444 px of content, `SLATE_INFO_WIDTH`) + a 14 px gap + the note box; 14 px padding and a 1 px
-border; cards 12 px apart (`SLATE_GRID_GAP`). **Two columns while each note box keeps 300 px (`SLATE_NOTE_MIN`), i.e. a
+**Size (round 14):** a card = the info (`SLATE_INFO_WIDTH`, 505 px: strip 80 + 8 + the row's fixed tracks) + a 14 px gap
++ the note box; 8 px padding and a 1 px border; cards 12 px apart (`SLATE_GRID_GAP`); 78 px tall (was 117). Info-only
+cards (no store) are `SLATE_CARD_WIDTH` (523 px) wide, as many per row as fit the width (`slateInfoColumns`: 3 in 1840 px).
+With notes: **Two columns while each note box keeps 300 px (`SLATE_NOTE_MIN`), i.e. a
 width ≥ 1588 px; else one column, cards as wide as the width.** (Measured in calendarkit: 1920 window → 2 columns, cards
-914 px, note box 426 px; 1280 → 1 column, card 1233 px, box 745 px.) Info-only cards (no store): 2 columns of 474 px in
-a 960 px grid. A card is ≥ 117 px tall; a long note grows its box, its card and its row (no inner scrollbar, the font
+914 px, note box 426 px; 1280 → 1 column, card 1233 px, box 745 px.) A card is ≥ 78 px tall; a long note grows its box, its card and its row (no inner scrollbar, the font
 never shrinks). The widget's height = rows × card height + gaps + the grid's 8 px top / 16 px bottom padding — it grows
 with the day's games and the notes; scaling by the corners (phase 2) should scale this whole layout (a CSS transform),
 not change `width`, so the columns stay put. Copies (calendarkit) use `SLATE_COPY_GAP` = 24 px between cards and half of it

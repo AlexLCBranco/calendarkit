@@ -23,5 +23,6 @@ export {
   type Slot,
   type SlateNotes,
 } from './notes';
-export { slateColumns, slateCopyColumns, slateImageSize, slateNoteWidth, slatePixelRatio, SLATE_COPY_GAP, SLATE_INFO_WIDTH, SLATE_NOTE_MIN } from './layout';
+export { slateColumns, slateCopyColumns, slateImageSize, slateInfoColumns, slateNoteWidth, slatePixelRatio, SLATE_CARD_WIDTH, SLATE_COPY_GAP, SLATE_INFO_WIDTH, SLATE_NOTE_MIN } from './layout';
 export { useTooltip } from './tooltip';
+export { createOddsStore, fmtOdds, liveOddsStore, oddsKey, ODDS_URL, type DayOdds, type GameOdds, type SlateOdds } from './odds';

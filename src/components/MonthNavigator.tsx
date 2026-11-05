@@ -20,7 +20,8 @@ export interface MonthNavigatorProps {
   /** Own month header (default); off when the host shows the navigation. */
   nav?: boolean;
   /**
-   * What a day shows and whether it can be picked (default: its game count; days without games disabled). The Team
+   * What a day shows and whether it can be picked (default: its game count; round 14, item 6: every day of the season
+   * can be picked, a game-less one too — only days before opening night or after the last game are disabled). The Team
    * List's picker shows the opponent and lets a day without a game go to the next one.
    */
   cell?: (date: string) => { enabled: boolean; label?: string };
@@ -40,7 +41,7 @@ export function MonthNavigator({ data, month, onMonthChange, selectedDate, selec
   const info = (date: string) => {
     if (cell) return cell(date);
     const n = counts.get(date) ?? 0;
-    return { enabled: n > 0, label: n ? String(n) : undefined };
+    return { enabled: date >= (data.dates[0] ?? '') && date <= (data.dates.at(-1) ?? ''), label: n ? String(n) : undefined };
   };
   // keyboard focus: the day to focus after the next render (opening, or an arrow that turned the month)
   const grid = useRef<HTMLDivElement>(null);

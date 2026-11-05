@@ -150,8 +150,10 @@ describe('hoopsjunkie link as an icon', () => {
       expect(a.getAttribute('title')).toBe('Open on hoopsjunkie');
       expect(a.getAttribute('target')).toBe('_blank');
       expect(a.getAttribute('data-capture-exclude')).toBe('true');
-      expect(a.closest('.ck-slate-head')).toBeTruthy();
-      expect(a.previousElementSibling!.matches('[data-testid="tipoff"], [data-testid="slate-status"]')).toBe(true);
+      // round 14: in the strip, first in the chip row right under the start time / "Final"
+      expect(a.closest('.ck-slate-strip')).toBeTruthy();
+      expect(a.parentElement!.firstElementChild).toBe(a);
+      expect(a.parentElement!.previousElementSibling!.matches('[data-testid="tipoff"], [data-testid="slate-status"]')).toBe(true);
       const g = feed.games.find((x) => x.gameId === c.dataset.gameId)!;
       expect(a.getAttribute('href')).toBe(gameLinkUrl(g));
       expect(c.querySelector('.ck-slate-teams')!.tagName).not.toBe('A');

@@ -1,6 +1,7 @@
 // Standalone app shell: loads the schedule, sizes the widget to the window, keeps view state in the URL, and
 // handles onOpenGame by opening rotationkit and gives the widgets the game-page URL rule (gameLink: hoopsjunkie). Everything else lives in the self-contained components.
 
+import { liveOddsStore } from './slate/odds';
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { CalendarView, type CalendarState } from './components/CalendarView';
 import { gameLinkUrl, isGameLinkConfigured, isRotationkitConfigured } from './config';
@@ -128,6 +129,7 @@ export function App() {
       <div ref={widgetRef}>
         {data && (
           <CalendarView
+            odds={liveOddsStore()}
             data={data}
             size={size}
             initial={initial}

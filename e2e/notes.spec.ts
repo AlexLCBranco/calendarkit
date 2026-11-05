@@ -27,7 +27,7 @@ const stored = (page: Page) => page.evaluate((k) => JSON.parse(localStorage.getI
 /** Waits until the debounced save has written. */
 const saved = (page: Page, id: string, want: Record<string, string>) => expect.poll(async () => (await stored(page))[id]).toMatchObject(want);
 
-test('layout: from the left edge, two columns at 1920 and one at 1280; every note box ≥ 300 px; the info at its old size', async ({ page }, info) => {
+test('layout: from the left edge, two columns at 1920 and one at 1280; every note box ≥ 300 px; the info block at its round 14 width', async ({ page }, info) => {
   await openSlate(page);
   const r = await page.evaluate(() => {
     const grid = document.querySelector<HTMLElement>('.ck-slate-grid')!;
@@ -41,7 +41,7 @@ test('layout: from the left edge, two columns at 1920 and one at 1280; every not
   expect(r.right).toBeLessThan(1);
   for (const c of r.cs) {
     expect(c.note).toBeGreaterThanOrEqual(300);
-    expect(c.info).toBe(444); // the round 7 card's content width
+    expect(c.info).toBe(491); // round 14: SLATE_INFO_WIDTH (strip 68 + 6 + the row's fixed tracks; was 444)
   }
 });
 

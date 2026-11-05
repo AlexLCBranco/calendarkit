@@ -22,20 +22,32 @@ function monthFromTitle(text: string): string {
 /** The month the Team List shows ("YYYY-MM"), from its title. */
 export const shownMonth = () => monthFromTitle(screen.getByTestId('team-month').textContent!);
 
+/**
+ * The one button labelled `label` under `root`. Round 14 (item 2): a direct selector, not Testing Library's
+ * getByRole — that computes the role and accessible name of every element in the document (13–21 ms per call over a
+ * Team List month, whose rows each carry a copy button), and a season walk made ~5 of them per month: the main cost of
+ * rest.test.tsx, which went past Vitest's 5 s under the full suite. The date picker's own tests check roles and names.
+ */
+function button(label: string, root: ParentNode = document): HTMLButtonElement {
+  const b = root.querySelectorAll<HTMLButtonElement>(`button[aria-label="${label}"]`);
+  if (b.length !== 1) throw new Error(`${b.length} buttons "${label}"`);
+  return b[0]!;
+}
+
 /** Shows `month` in the Team List through the UI. */
 export function showTeamMonth(month: string): void {
-  const pick = screen.queryByRole('button', { name: 'Pick a date' });
+  const pick = document.querySelector<HTMLButtonElement>('button[aria-label="Pick a date"]');
   if (!pick) {
     // phone: the month title's own arrows
-    for (let i = 0; i < 24 && shownMonth() !== month; i++) fireEvent.click(screen.getByRole('button', { name: shownMonth() < month ? 'Next month' : 'Previous month' }));
+    for (let i = 0; i < 24 && shownMonth() !== month; i++) fireEvent.click(button(shownMonth() < month ? 'Next month' : 'Previous month'));
   } else {
     if (shownMonth() === month) return;
     fireEvent.click(pick);
-    const popup = screen.getByRole('dialog', { name: 'Pick a date' });
+    const popup = document.querySelector<HTMLElement>('[role="dialog"][aria-label="Pick a date"]')!;
     for (let i = 0; i < 24; i++) {
       const at = monthFromTitle(within(popup).getByTestId('period-title').textContent!);
       if (at === month) break;
-      fireEvent.click(within(popup).getByRole('button', { name: at < month ? 'Next month' : 'Previous month' }));
+      fireEvent.click(button(at < month ? 'Next month' : 'Previous month', popup));
     }
     const day = [...popup.querySelectorAll<HTMLButtonElement>('[data-date]')].find((c) => c.dataset.date!.startsWith(month) && !c.disabled);
     fireEvent.click(day!);

@@ -177,20 +177,20 @@ test('the link is a "↗" after the time: tooltip, no underline (brightens), cli
   const name = card.locator('.ck-slate-name').first();
   await name.hover();
   expect(await name.evaluate((n) => [getComputedStyle(n).cursor, getComputedStyle(n).textDecorationLine])).toEqual(['auto', 'none']);
-  // one icon per card, right after the start time, with its tooltip
+  // one icon per card, in the strip right under the start time (round 14; was beside it), with its tooltip
   expect(await cards(page).count()).toBe(await page.locator('[data-testid="slate"] a[data-testid="game-link"]').count());
   const link = card.locator('a[data-testid="game-link"]');
   expect(await link.textContent()).toBe('↗');
   expect(await link.getAttribute('title')).toBe('Open on hoopsjunkie');
   expect(await link.getAttribute('href')).toBe(want);
   const pos = await link.evaluate((a) => {
-    const t = a.parentElement!.querySelector('[data-testid="tipoff"], [data-testid="slate-status"]')!.getBoundingClientRect();
+    const t = a.closest('.ck-slate-strip')!.querySelector('[data-testid="tipoff"], [data-testid="slate-status"]')!.getBoundingClientRect();
     const b = a.getBoundingClientRect();
-    return { gap: b.left - t.right, dy: Math.abs(b.top + b.height / 2 - (t.top + t.height / 2)) };
+    return { gap: b.top - t.bottom, dx: b.left - t.left };
   });
   expect(pos.gap).toBeGreaterThanOrEqual(0);
-  expect(pos.gap).toBeLessThan(16);
-  expect(pos.dy).toBeLessThan(6);
+  expect(pos.gap).toBeLessThan(8);
+  expect(Math.abs(pos.dx)).toBeLessThan(2);
   await page.mouse.move(2, 2);
   const idle = await link.evaluate((a) => [getComputedStyle(a).color, getComputedStyle(a).textDecorationLine]);
   await link.hover();
@@ -213,23 +213,12 @@ test('the link is a "↗" after the time: tooltip, no underline (brightens), cli
     expect(opened, how).toBe(want);
     expect(page.url()).not.toContain('hoopsjunkie');
   }
-  // never in a copy: the icon's spot in the copied card is the card's plain background
+  // never in a copy: no link in the copied cards (round 14: the strip's chips reflow without it, so its old spot holds the
+  // series chip; before, the spot was checked to be plain background)
   if (info.project.name !== 'desktop-xl') return;
   await page.setViewportSize({ width: 1920, height: 911 });
   await openSlate(page, '2026-11-16');
-  const box = await cards(page).first().evaluate((c) => {
-    const a = c.querySelector('a[data-testid="game-link"]')!.getBoundingClientRect();
-    const r = c.getBoundingClientRect();
-    return { x: a.left - r.left, y: a.top - r.top, w: a.width, h: a.height };
-  });
   const r = await copySlate(page, 'copy-view', 'slate-icon');
-  const k = r.stage.cards[0]!;
-  const [spot, plain] = await readPng(page, r.png, [
-    { x: (k.x + box.x) * r.ratio, y: (k.y + box.y) * r.ratio, w: box.w * r.ratio, h: box.h * r.ratio },
-    { x: (k.x + k.w / 2) * r.ratio, y: (k.y + 3) * r.ratio, w: 1, h: 1 }, // the card's plain top edge area
-  ], true);
-  // every pixel where the icon was ≈ the card's background (no glyph: a "↗" would put text-bright pixels there)
-  console.log(`[slatecards] icon spot in the copy: ${spot}, card background ${plain}`);
-  expect(spot![5], 'brightest deviation from the background where the icon was').toBeLessThan(12);
-  expect(Math.max(...spot!.slice(0, 3).map((v, i) => Math.abs(v - plain![i]!)))).toBeLessThan(3);
+  expect(r.stage.links).toBe(0);
+  expect(r.stage.cards.length).toBeGreaterThan(0);
 });

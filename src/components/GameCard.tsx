@@ -2,6 +2,8 @@
 // "Open" actions are raised through onOpenGame(gameId) and the host decides what that means.
 
 import { Fragment, type ReactNode } from 'react';
+import { SeriesChip } from '../slate/series';
+import type { SeriesGame } from '../data/series';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord } from '../data/model';
 import { mergedChip, mergedDays, mergedTip, type ThreeInFour } from '../data/scheduleTags';
@@ -79,6 +81,10 @@ export interface GameCardProps {
   gameLink?: GameLink;
   /** Cup schedule (round 12): the Cup tag's text instead of "NBA Cup · West Group A" ("West A", "Quarterfinal"). */
   cupTag?: string;
+  /** Round 14 (item 5): the game's season series — the "G2/4" chip first among the tags (League List, Team List). */
+  series?: SeriesGame;
+  /** Round 14 (item 5): views too tight for the chip (Team Calendar cells) — the series as the card's tooltip. */
+  seriesTip?: string;
 }
 
 /** The host's game-page URL for a game (hoopsjunkie, config.ts gameLinkUrl), or undefined (no link: undecided teams). */
@@ -160,7 +166,7 @@ export function TifChip({ tif }: { tif: ThreeInFour }) {
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink, cupTag }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink, cupTag, series, seriesTip }: GameCardProps) {
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -270,6 +276,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
       data-row-date={rowDate}
       data-next={next || undefined}
       data-b2b={bracket}
+      data-tip={seriesTip}
       aria-label={dateLabel ? `${dateLabel}, ${label}` : label}
     >
       {/* first, so the season block stays the last part; positioned in the corner */}
@@ -290,6 +297,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         </span>
       )}
       <span className="ck-tags">
+        <SeriesChip s={series} gameId={game.gameId} />
         {!cols && b2bLabels}
         {!cols && tifChip}
         {marks.map((m) => (

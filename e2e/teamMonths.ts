@@ -31,9 +31,35 @@ export const teamMonths = (page: Page, tri: string) =>
 /** The month the Team List shows ("YYYY-MM"). */
 export const shownMonth = async (page: Page) => monthOfTitle((await page.getByTestId('team-month').first().textContent())!);
 
-/** Shows `month` in the Team List through the UI. */
+/**
+ * Shows `month` in the Team List through the UI. Round 14 (item 2): on desktop the same clicks a person makes — the date
+ * picker's icon, its ‹ › months, the month's first open day — dispatched in the page in one go (a frame between steps)
+ * instead of one Playwright action each: a season walk of 30 teams made ~2 500 round trips this way and took ~50 s per
+ * project. The picker itself is tested click by click in datepicker.spec.ts.
+ */
 export async function showMonth(page: Page, month: string) {
   if ((await shownMonth(page)) === month) return;
+  const fast = await page.evaluate(async (month) => {
+    const frame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+    const pick = document.querySelector<HTMLButtonElement>('button[aria-label="Pick a date"]');
+    if (!pick) return false;
+    pick.click();
+    await frame();
+    const popup = document.querySelector<HTMLElement>('[role="dialog"][aria-label="Pick a date"]')!;
+    const want = new Date(`${month}-15T12:00:00Z`).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const at = () => popup.querySelector('[data-testid="period-title"]')!.textContent!;
+    for (let i = 0; i < 12 && at() !== want; i++) {
+      const later = Date.parse(`1 ${want}`) > Date.parse(`1 ${at()}`);
+      popup.querySelector<HTMLButtonElement>(`button[aria-label="${later ? 'Next month' : 'Previous month'}"]`)!.click();
+      await frame();
+    }
+    popup.querySelector<HTMLButtonElement>(`[data-date^="${month}"]:not([disabled])`)!.click();
+    return true;
+  }, month);
+  if (fast) {
+    await expect(page.getByTestId('team-month').first()).toHaveText(monthTitle(month));
+    return;
+  }
   const pick = page.getByRole('button', { name: 'Pick a date' });
   if (await pick.count()) {
     await pick.click();

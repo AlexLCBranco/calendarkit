@@ -12,13 +12,14 @@
   overflow-y: auto;
   position: relative;
 }
+/* round 14 (item 3): notes hidden — as many tight cards as fit (slateInfoColumns), each exactly its content's width,
+   filled left to right, then down, in tip-off order */
 .ck-slate-grid {
-  max-width: 960px;
   margin: 0; /* round 9: from the page's left edge, like the League List */
   padding: 8px 0 16px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(var(--ck-slate-cols), var(--ck-slate-card-w));
+  gap: var(--ck-slate-grid-gap);
 }
 /* Round 9 (Part 3): with the note boxes, the grid fills the widget in 1 or 2 columns (slateColumns) */
 .ck-slate-grid.ck-slate-wide {
@@ -26,29 +27,59 @@
   grid-template-columns: repeat(var(--ck-slate-cols), minmax(0, 1fr));
   gap: var(--ck-slate-grid-gap);
 }
-/* One card: the head (time or "Final", labels, TV), then the away and the home team's rows. */
+/* One card: the strip (time or "Final", link, TV, labels) beside the away and the home team's rows. */
 .ck-slate-card {
   --ck-logo: 28px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 14px;
+  padding: var(--ck-slate-pad);
   background: var(--ck-surface-2);
   border: 1px solid var(--ck-border);
   border-radius: 10px;
   color: var(--ck-text);
 }
-.ck-slate-head {
+.ck-slate-info {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 12px;
-  min-height: 1.5em;
+  align-items: flex-start;
+  gap: var(--ck-slate-strip-gap);
 }
-.ck-slate-when {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
+/* the strip: the status line, then the chips wrapping in its fixed width (at most two lines: tested on the season's
+   fullest strips) */
+.ck-slate-strip {
+  flex: none;
+  width: var(--ck-slate-strip);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.ck-slate-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 4px;
+}
+.ck-slate-chips .ck-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.ck-slate-status .ck-dayoff {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--ck-muted);
+}
+/* the national TV pill (the calendar cells' "TV"): the networks in its tooltip */
+.ck-slate-tv-pill {
+  display: inline-block;
+  padding: 0 4px;
+  border: 1px solid var(--ck-tv);
+  border-radius: 3px;
+  color: var(--ck-tv);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  cursor: default;
 }
 /* round 9 (2.3): the game page link, a small "↗" after the time; no underline, a slight brightening on hover */
 .ck-slate-link {
@@ -56,7 +87,7 @@
   font-size: 14px;
   line-height: 1;
   text-decoration: none;
-  padding: 1px 3px;
+  padding: 0 2px;
   border-radius: 4px;
 }
 .ck-slate-link:hover,
@@ -80,24 +111,18 @@
 .ck-slate-final .ck-slate-status {
   color: var(--ck-muted);
 }
-.ck-slate-tags {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
-}
 .ck-slate-teams {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 /* a team row: "@" column, logo, full name, record going in, Fatigue component, score — fixed tracks, so the two rows'
    parts line up */
 .ck-slate-row {
   display: grid;
-  grid-template-columns: 1.1em var(--ck-logo) minmax(0, 1fr) 2.9em 1.9em auto 2.1em;
+  grid-template-columns: var(--ck-slate-tracks);
   align-items: center;
-  column-gap: 8px;
+  column-gap: var(--ck-slate-row-gap);
   font-size: 16px;
 }
 .ck-slate-at {
@@ -141,6 +166,15 @@
 .ck-slate-score.ck-score-win {
   color: var(--ck-text);
   font-weight: 700;
+}
+/* round 14 (item 4): the moneyline (decimal), muted, after the score; reserved width (layout.ts) so it never shifts */
+.ck-slate-odds {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--ck-muted);
+  white-space: nowrap;
 }
 .ck-slate-row.ck-loss .ck-slate-name {
   color: var(--ck-muted);
@@ -217,4 +251,113 @@
    background behind or between them, only the cards are opaque (as in the copies) */
 .ck-root.ck-slate-widget {
   background: none;
+}
+
+/* Round 14 (item 5): the season-series chip ("G2/4") and its popup (series.tsx). The popup is fixed and clamped into
+   the window like the tooltip, above everything, never in a copy (data-capture-exclude). */
+.ck-series {
+  display: inline-block;
+  /* 3 px sides: the season's widest Team List row (DAL @ DEN, Nov 24: 3in4 + series + Cup group + "NBC · Peacock")
+     fits its 1080 px at 1920 and 1600 (4 px sides wrapped it by under 1 px; fatigue.spec walks every row) */
+  padding: 0 3px;
+  border: 1px solid var(--ck-border);
+  border-radius: 3px;
+  color: var(--ck-muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: default;
+}
+.ck-series:hover,
+.ck-series:focus-visible {
+  color: var(--ck-text);
+  border-color: var(--ck-accent);
+  outline: none;
+}
+.ck-series-pop {
+  position: fixed;
+  z-index: 60;
+  padding: 8px 10px 10px;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  color: var(--ck-text);
+  font-size: 12px;
+}
+.ck-series-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+}
+.ck-series-title {
+  color: var(--ck-muted);
+}
+.ck-series-status {
+  font-weight: 700;
+}
+.ck-series-row {
+  display: flex;
+  gap: 6px;
+}
+.ck-series-sq {
+  position: relative;
+  width: 64px;
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+  background: var(--ck-surface-2);
+}
+.ck-series-sq.ck-series-current {
+  border-color: var(--ck-accent);
+  box-shadow: inset 0 0 0 1px var(--ck-accent);
+}
+.ck-series-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 100%;
+  min-height: 52px;
+  padding: 4px 2px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ck-series-pick:disabled {
+  cursor: default;
+}
+.ck-series-pick:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+}
+.ck-series-win {
+  font-weight: 700;
+}
+.ck-series-score {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+}
+.ck-series-date {
+  color: var(--ck-muted);
+  font-size: 10px;
+}
+.ck-series-next {
+  opacity: 0.6;
+}
+.ck-series-link {
+  position: absolute;
+  top: 1px;
+  right: 3px;
+  color: var(--ck-muted);
+  font-size: 11px;
+  text-decoration: none;
+}
+.ck-series-link:hover {
+  color: var(--ck-text);
 }

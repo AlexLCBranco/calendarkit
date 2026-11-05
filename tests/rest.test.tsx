@@ -8,6 +8,7 @@ import { CalendarView } from '../src/components/CalendarView';
 import { hasNationalTv, teamGames, teamRestDays } from '../src/data/model';
 import { data } from './feed';
 import { TEAM } from './synthetic';
+import { TEAM_BY_ID } from '../src/data/teams';
 import { acrossMonths, shownMonth } from './teamMonths';
 
 afterEach(cleanup);
@@ -60,8 +61,9 @@ describe('Team List rest rows', () => {
     expect(allRest(TEAM.BOS)).toEqual(expectedRest(TEAM.BOS));
   });
 
-  it('on: one row per gap day in date order among the game rows ("Wed 21/10" + "Rest"), for 5 teams', () => {
-    for (const teamId of TEAMS) {
+  // round 14 (item 2): one test per team (was one for all 5: ~5 s under a busy full suite, past Vitest's 5 s)
+  it.each(TEAMS.map((t) => [TEAM_BY_ID.get(t)!.tricode, t] as const))('on: one row per gap day in date order among the game rows ("Wed 21/10" + "Rest"), %s', (_, teamId) => {
+    {
       render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId, showRest: true }} />);
       const games = teamGames(data, teamId);
       const expected = [...games.map((g) => ({ key: g.gameId, date: g.dateEt })), ...expectedRest(teamId).map((d) => ({ key: `rest:${d}`, date: d }))]

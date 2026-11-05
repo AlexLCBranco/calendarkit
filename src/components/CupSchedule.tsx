@@ -133,14 +133,14 @@ function CupTeam({ data, teamId, size, now, timeZone, onOpenGame, gameLink }: Cu
       {games.played.length > 0 && (
         <div className="ck-cup-section" data-testid="cup-played">
           <h3 className="ck-cup-sec-head">Played</h3>
-          <TeamListView data={data} teamId={teamId} tvOnly={false} only={ids.played} markNext={false} cupTag={teamTag} size={rows} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} />
+          <TeamListView data={data} teamId={teamId} tvOnly={false} series={false} only={ids.played} markNext={false} cupTag={teamTag} size={rows} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} />
         </div>
       )}
       <div className="ck-cup-section" data-testid="cup-remaining">
         {games.remaining.length > 0 ? (
           <>
             <h3 className="ck-cup-sec-head">Remaining</h3>
-            <TeamListView data={data} teamId={teamId} tvOnly={false} only={ids.remaining} cupTag={teamTag} size={rows} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} />
+            <TeamListView data={data} teamId={teamId} tvOnly={false} series={false} only={ids.remaining} cupTag={teamTag} size={rows} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} />
           </>
         ) : (
           <p className="ck-empty ck-cup-none">No remaining Cup games</p>
