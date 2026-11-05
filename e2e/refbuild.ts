@@ -13,7 +13,8 @@ const TYPES: Record<string, string> = { '.html': 'text/html', '.js': 'text/javas
 export async function serveRef(commit: string): Promise<{ base: string; server: Server }> {
   const dir = buildPerfRef(commit);
   const server = createServer((q, r) => {
-    const path = decodeURIComponent(q.url!.split('?')[0]!);
+    // a build from v1.28.0 on lives under /calendar/ (its asset and data URLs too): served from the same files
+    const path = decodeURIComponent(q.url!.split('?')[0]!).replace(/^\/calendar(?=\/|$)/, '') || '/';
     let file = path.startsWith('/data/') ? join(resolve('public'), path) : join(dir, path);
     if (!existsSync(file) || statSync(file).isDirectory()) file = join(dir, 'index.html');
     r.writeHead(200, { 'content-type': TYPES[extname(file)] ?? 'application/octet-stream' });

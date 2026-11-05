@@ -1,4 +1,4 @@
-// Round 10 (1.4): the Slate drawn from its self-contained part (src/slate/) is pixel for pixel the v1.27.0 Slate — on
+// Round 10 (1.4): the Slate drawn from its self-contained part (src/slate/) is pixel for pixel the reference Slate (REF below; v1.27.0 until round 14, now v1.33.0: tight cards, odds, series chip) — on
 // screen and in its copied images — measured in the same run against that build (scripts/perf-ref.ts, served with the
 // same snapshot). At 1280 × 900 (desktop) and 1920 × 1080 (desktop-xl); days of 1, 5, 12 and 15 games; with notes, with
 // no notes at all, and with notes but "Hide all notes". Move REF on purpose only when the Slate is meant to change.
@@ -10,7 +10,7 @@ import { APP } from './app';
 import { serveRef } from './refbuild';
 import { copySlate } from './slatecopy';
 
-const REF = { commit: 'b99390c0ad92b119318447f45694da3fa46cf8e2', version: '1.27.0' };
+const REF = { commit: 'a47ea2bb2dfa4d1408420fdda410b951bad281bf', version: '1.33.0' };
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [1, 5, 12, 15];
 
@@ -135,7 +135,7 @@ for (const variant of ['notes', 'empty', 'hidden'] as Variant[]) {
     for (const n of SIZES) {
       const date = dayWith(n);
       // contexts made here don't get the project's baseURL: the current build's address is spelled out
-      const old = await open(browser, ref!.base + '/', date, variant, viewport);
+      const old = await open(browser, new URL(APP, ref!.base).href, date, variant, viewport);
       const cur = await open(browser, new URL(APP, info.project.use.baseURL).href, date, variant, viewport);
       const screens = [await shoot(old), await shoot(cur)];
       const same = screens[0]!.equals(screens[1]!);
