@@ -2021,6 +2021,21 @@ round 10's 3 tries with a reload and its corner mask are gone locally (the corne
 where logos come over the network). Exact comparison, no retries, no threshold. **20 runs in a row afterwards (both
 projects, 6 tests each, with unit tests and a dev server running on the same PC): 20 / 20 passed.**
 
+**v1.33.0 (items 2–6), decisions only:**
+- **Slate: 3 columns at both 1920 and 1600** (Alex, 2026-11-05: accepted; keep the odds; don't go for 4). Tight cards are
+  509 px (68 px strip, 6 px gap); 4 columns would need ~2070 px. `slate-same.spec.ts` now compares against v1.33.0
+  (a47ea2b) instead of v1.27.0.
+- **Odds: ESPN moneyline**, no key (The Odds API's free tier is 500 credits a month, too few). `api/odds.ts` is a Vercel
+  function: one same-origin request per day shown, `s-maxage` 10 min while any game of the day isn't final, 24 h once
+  all are (`oddsCacheSeconds`); any failure → 502 with no odds, and the Slate shows none. `vite preview` answers no
+  odds, so e2e runs never reach ESPN.
+- **Season-series chip** ("G2/4") on Slate cards and League / Team List rows, also in copied images; left out of the
+  Cup schedule (`series={false}`). Week view and Team Calendar: in the tooltip only.
+- **Days with no games**: every day from opening night to the last game is listed and pickable ("No games" / "No
+  national TV games"); the TV filter no longer skips to the next TV day.
+- **Cup counts (NBA.com "Cup 101")**: a game that goes to overtime counts **0** in the Cup point-differential
+  tiebreaker (it was tied at the end of regulation). Round 11 counts the final score (the feed has no period scores). **Not changed; Alex to decide.**
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip
