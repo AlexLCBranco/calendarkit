@@ -7,5 +7,5 @@ if (!url) {
   console.error('usage: npm run e2e:live -- <base url>');
   process.exit(2);
 }
-const r = spawnSync('npx', ['playwright', 'test', ...process.argv.slice(3)], { stdio: 'inherit', shell: true, env: { ...process.env, E2E_BASE_URL: url } });
+const r = spawnSync('npx', ['playwright', 'test', ...process.argv.slice(3)], { stdio: 'inherit', shell: true, env: { ...process.env, E2E_BASE_URL: url, E2E_LIVE: '1' } });
 process.exit(r.status ?? 1);

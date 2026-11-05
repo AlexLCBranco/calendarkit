@@ -1,0 +1,78 @@
+{
+ "meta": {
+  "version": 1,
+  "code": 200,
+  "request": "https://api.nba.com/statscapture/games/0022600110/boxscore?Format=json",
+  "time": "2026-10-25 02:07:55.795393"
+ },
+ "game": {
+  "gameId": "0022600110",
+  "gameStatus": 3,
+  "gameStatusText": "Final",
+  "period": 5,
+  "homeTeam": {
+   "teamId": 1610612743,
+   "teamTricode": "DEN",
+   "score": 141,
+   "periods": [
+    {
+     "period": 1,
+     "periodType": "REGULAR",
+     "score": 24
+    },
+    {
+     "period": 2,
+     "periodType": "REGULAR",
+     "score": 33
+    },
+    {
+     "period": 3,
+     "periodType": "REGULAR",
+     "score": 32
+    },
+    {
+     "period": 4,
+     "periodType": "REGULAR",
+     "score": 37
+    },
+    {
+     "period": 5,
+     "periodType": "OVERTIME",
+     "score": 15
+    }
+   ]
+  },
+  "awayTeam": {
+   "teamId": 1610612740,
+   "teamTricode": "NOP",
+   "score": 135,
+   "periods": [
+    {
+     "period": 1,
+     "periodType": "REGULAR",
+     "score": 38
+    },
+    {
+     "period": 2,
+     "periodType": "REGULAR",
+     "score": 35
+    },
+    {
+     "period": 3,
+     "periodType": "REGULAR",
+     "score": 35
+    },
+    {
+     "period": 4,
+     "periodType": "REGULAR",
+     "score": 18
+    },
+    {
+     "period": 5,
+     "periodType": "OVERTIME",
+     "score": 9
+    }
+   ]
+  }
+ }
+}

@@ -4,6 +4,7 @@
 
 import type { GameType, Schedule, ScheduleGame } from '../shared/nba-schedule/parse';
 import { metroOf } from './metro';
+import type { RegulationTotals } from './regulation';
 
 /** Game types shown in v1. Preseason, All-Star and unknown types are dropped. */
 export const SHOWN_GAME_TYPES: ReadonlySet<GameType> = new Set<GameType>(['regular', 'cup-final', 'play-in', 'playoffs']);
@@ -22,6 +23,8 @@ export interface CalendarData {
   teamDates: Map<number, Set<string>>;
   /** When the feed was generated (its own `meta.time`, ISO); set by the loader. */
   updatedAt?: string;
+  /** v1.40.0: regulation totals of finished Cup group games (snapshot's `calendarkit.regulation`); set by the loader. */
+  regulation?: RegulationTotals;
 }
 
 export function isShown(g: ScheduleGame): boolean {

@@ -2,7 +2,9 @@
 # public/data/schedule.json to main if it changed (Vercel then redeploys production).
 # The browser can't fetch the feed itself (CORS), so this file is the app's data source.
 # Any failing step fails the run and nothing is committed; GitHub emails the repo owner. After a commit, the job
-# waits until the live site serves the new snapshot (up to ~10 min) and fails if it doesn't (Vercel didn't deploy).
+# waits until the live site serves the new snapshot (up to ~30 min; v1.40.0, was 10) and fails if it doesn't (Vercel didn't deploy).
+# Pushes made with GITHUB_TOKEN don't start other workflows (GitHub docs), so CI doesn't run on these commits; the
+# "npm test" step below is their test run. Vercel deploys them from Git like any push to main.
 name: Daily schedule update
 
 on:
@@ -27,7 +29,7 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -60,3 +62,6 @@ jobs:
       - name: Verify the live site serves the committed snapshot
         if: steps.commit.outputs.committed == 'true'
         run: npx tsx scripts/verify-deploy.ts
+        env:
+          # optional (v1.40.0): a Vercel Deploy Hook, called once if the new snapshot isn't live after 10 minutes
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}

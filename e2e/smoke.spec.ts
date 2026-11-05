@@ -186,8 +186,10 @@ test('deep link opens the team view for a team', async ({ page }) => {
 // Round 14 (v1.33.1): the odds function on the deployed site. v1.33.0's first deploy crashed on load (500
 // FUNCTION_INVOCATION_FAILED: an extensionless ESM import) and nothing noticed: `vite preview` answers no odds without
 // running it. Live only (the CI live job): a season day answers 200 with a games map, a bad date 400.
+// v1.40.0: gated on E2E_LIVE=1 (set by CI's live job and `npm run e2e:live`), not on E2E_BASE_URL alone — a local build
+// served on its own address (E2E_BASE_URL=http://localhost:…) has no odds function, so the test always failed there.
 test('live: /calendar/api/odds answers (200 for a day, 400 without a date)', async ({ request }, info) => {
-  test.skip(!process.env.E2E_BASE_URL, 'the deployed function only');
+  test.skip(process.env.E2E_LIVE !== '1', 'live only: runs only in the CI live job (E2E_LIVE=1); a local build has no odds function (vite preview answers no odds)');
   test.skip(info.project.name !== 'desktop-xl', 'once');
   const day = await request.get('/calendar/api/odds?date=2026-11-04');
   expect(day.status()).toBe(200);

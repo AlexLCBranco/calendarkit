@@ -161,11 +161,19 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
 
   it('rest rows have no fatigue columns; the TV filter never changes the labels', () => {
     render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.LAL, showRest: true }} />);
-    const rest = acrossMonths(data, TEAM.LAL, () => [...document.querySelectorAll('[data-rest]')].map((r) => r.querySelectorAll('.ck-fat, .ck-fx, .ck-b2b-label, .ck-tif, .ck-b2b-opp').length));
+    // v1.40.0: one walk of the season reads both the rest rows and the labels (was a walk each: this test and the next
+    // walked 9 seasons between them and went past Vitest's 5 s under load)
+    const rest: number[] = [];
+    const rows = () => [...document.querySelectorAll('[data-game-id]')].map((r) => [r.getAttribute('data-game-id'), [...r.querySelectorAll('.ck-fat')].map((c) => c.textContent).join('|')] as const);
+    const all = new Map(
+      acrossMonths(data, TEAM.LAL, () => {
+        for (const r of document.querySelectorAll('[data-rest]')) rest.push(r.querySelectorAll('.ck-fat, .ck-fx, .ck-b2b-label, .ck-tif, .ck-b2b-opp').length);
+        return rows();
+      }),
+    );
     expect(rest.length).toBeGreaterThan(60);
     for (const n of rest) expect(n).toBe(0);
-    const labels = (tvOnly: boolean) => new Map(acrossMonths(data, TEAM.LAL, () => [...document.querySelectorAll('[data-game-id]')].map((r) => [r.getAttribute('data-game-id'), [...r.querySelectorAll('.ck-fat')].map((c) => c.textContent).join('|')] as const), tvOnly));
-    const all = labels(false);
+    const labels = (tvOnly: boolean) => new Map(acrossMonths(data, TEAM.LAL, rows, tvOnly));
     fireEvent.click(screen.getByLabelText('TV games only'));
     const tv = labels(true);
     expect(tv.size).toBeLessThan(all.size);
@@ -175,11 +183,13 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
   it('narrower than the 1080 px column (tablet, phone): no columns, B2B labels among the tags as before, no chips', () => {
     for (const size of [NARROW, { width: 390, height: 800 }]) {
       render(<CalendarView data={data} size={size} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS }} />);
-      const n = (sel: string) => acrossMonths(data, TEAM.BOS, () => [document.querySelectorAll(sel).length]).reduce((a, b) => a + b, 0);
-      expect(n('.ck-fat, .ck-fx, .ck-tif, .ck-b2b-opp')).toBe(0);
-      expect(n('.ck-tags .ck-b2b-label')).toBeGreaterThan(5);
+      // one walk of the season per size, counting all three (was three walks per size)
+      const count = (sel: string) => document.querySelectorAll(sel).length;
+      const sum = acrossMonths(data, TEAM.BOS, () => [[count('.ck-fat, .ck-fx, .ck-tif, .ck-b2b-opp'), count('.ck-tags .ck-b2b-label'), count('.ck-opp .ck-b2b-mark')]]).reduce((a, b) => a.map((x, i) => x + b[i]!), [0, 0, 0]);
+      expect(sum[0]).toBe(0);
+      expect(sum[1]).toBeGreaterThan(5);
       // no opponent component here, so the opponent's 2nd night keeps its dot (round 7, 1.4)
-      expect(n('.ck-opp .ck-b2b-mark')).toBeGreaterThan(5);
+      expect(sum[2]).toBeGreaterThan(5);
       cleanup();
     }
   });

@@ -1,7 +1,7 @@
 {
   "name": "calendarkit",
   "private": true,
-  "version": "1.39.0",
+  "version": "1.40.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,7 +17,8 @@
     "check-shared": "tsx scripts/check-shared.ts",
     "check-version": "tsx scripts/check-version.ts",
     "measure-scroll": "tsx scripts/measure-scroll-headed.ts",
-    "e2e:all": "tsx scripts/e2e-all.ts"
+    "e2e:all": "tsx scripts/e2e-all.ts",
+    "perf": "playwright test --project=perf --no-deps"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

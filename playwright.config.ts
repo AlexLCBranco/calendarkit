@@ -1,8 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
+import { freePort } from './scripts/free-port';
 
 // Runs against the production build served by `vite preview` (same files Vercel serves).
 // Set E2E_BASE_URL to run the same tests against a deployed site.
-const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:4180';
+// v1.40.0: the local server takes a free port (was one fixed port with reuseExistingServer, so a run could test — or
+// collide with — another session's leftover server). Chosen once in the runner and handed to the workers through
+// E2E_PORT; `npm run e2e:all` starts the server itself and sets E2E_PORT + E2E_SERVER_UP. Playwright stops the server
+// it started when the run ends, also after failures.
+process.env.E2E_PORT ??= String(await freePort());
+const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${process.env.E2E_PORT}`;
+const ownServer = !process.env.E2E_BASE_URL && !process.env.E2E_SERVER_UP;
 const desktopXl = { ...devices['Desktop Chrome'], viewport: { width: 1920, height: 1080 } };
 
 export default defineConfig({
@@ -17,7 +24,9 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: { baseURL, trace: 'off', timezoneId: 'America/Sao_Paulo' },
-  webServer: process.env.E2E_BASE_URL ? undefined : { command: 'npm run build && npm run preview', url: `${baseURL}/calendar/`, reuseExistingServer: true, timeout: 120_000 },
+  webServer: ownServer
+    ? { command: `npm run build && node node_modules/vite/bin/vite.js preview --port ${process.env.E2E_PORT} --strictPort`, url: `${baseURL}/calendar/`, reuseExistingServer: false, timeout: 120_000 }
+    : undefined,
   projects: [
     { name: 'desktop', testIgnore: 'perf.spec.ts', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 900 } } },
     { name: 'desktop-xl', testIgnore: 'perf.spec.ts', use: desktopXl },

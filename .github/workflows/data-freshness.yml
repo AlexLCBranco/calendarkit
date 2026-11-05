@@ -1,0 +1,24 @@
+# v1.40.0: fails loudly (red run, GitHub emails the repo owner) when the live site's data is more than 1 day behind the
+# latest committed snapshot, or the latest snapshot is more than 2 days old. See scripts/check-live-data.ts.
+name: Live data freshness
+
+on:
+  schedule:
+    - cron: '17 */4 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5 # main: the latest committed snapshot
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsx scripts/check-live-data.ts

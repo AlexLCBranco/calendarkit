@@ -43,7 +43,7 @@ export default function CupView({ data, schedule }: CupViewProps) {
 }
 
 function CupStandingsView({ data }: { data: CalendarData }) {
-  const s = useMemo(() => cupStandings(data.games), [data]);
+  const s = useMemo(() => cupStandings(data.games, data.regulation), [data]);
   return (
     <section className="ck-cupview" aria-label="NBA Cup standings" data-testid="cup">
       <div className="ck-cup-capture" data-testid="cup-grid">
@@ -71,7 +71,7 @@ function CupStandingsView({ data }: { data: CalendarData }) {
         </div>
       </div>
       <div className="ck-cup-panels">
-        <Rules />
+        <Rules otPending={s.otWithoutRegulation} />
         <WildCards races={s.wildCards} />
       </div>
     </section>
@@ -169,7 +169,7 @@ function Slots({ slots }: { slots: readonly CupSlot[] }) {
   );
 }
 
-function Rules() {
+function Rules({ otPending }: { otPending: number }) {
   return (
     <div className="ck-cup-panel" data-testid="cup-rules">
       <h3>Who advances</h3>
@@ -185,7 +185,8 @@ function Rules() {
         </ol>
         <p>If a rule settles only part of a tie, the teams still level start again from rule 1. Wild-card ties use the same list without head-to-head; group ties are settled first.</p>
         <p className="ck-cup-ot" data-testid="cup-ot-note">
-          A game that went to overtime counts 0 in rule 2 (it was tied after regulation). Rule 3 should leave out overtime points too, but the schedule only has final scores, so there OT games count their final score.
+          A game that went to overtime counts 0 in rule 2 (it was tied after regulation) and only its regulation points in rule 3 (from the NBA's box scores).
+          {otPending > 0 && ` ${otPending === 1 ? 'One OT game counts its' : `${otPending} OT games count their`} final score until the next daily update.`}
         </p>
       </div>
     </div>

@@ -34,7 +34,11 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-05, after round 19)
+## Current state / handoff (2026-11-05, after round 20)
+v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
+points left out), test cleanup (fatigue walks, free ports, odds check CI-only). See "### Round 20".
+
+## Previous handoff (2026-11-05, after round 19)
 v1.39.0: **Cup → Schedule → League** redone as "By group | By date" (By group first); rounds are gone. See
 "### Round 19". v1.38.0: **Standings** shows West and East side by side ("### Round 18", "### Round 17").
 
@@ -290,7 +294,7 @@ snapshotted daily at 11:00 UTC by this repo's GitHub Action (`.github/workflows/
 hours late), committed to `public/data/schedule.json`, deployed by Vercel; the action then waits until the live file is
 the committed one (`scripts/verify-deploy.ts`, polling the address above). Final scores therefore appear the morning
 after (live scores would need another source — phase 5). 4.1 MB, ~110 KB brotli; `Cache-Control: public, max-age=300,
-stale-while-revalidate=86400`.
+stale-while-revalidate=86400` until v1.40.0, now `public, max-age=60, stale-while-revalidate=300` (see "### Round 20").
 
 **Must know:**
 - At rest the part starts no timer and asks for no animation frame, and its only requests are the snapshot (once per
@@ -2207,6 +2211,52 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   both views; no mark on the teams but the legend's; copies of both views; fit at both sizes, screenshots
   `test-output/cupschedule-by{group,date}-*.png`), plus `gamelink`, `teamlinks` (both views) and `standings`.
 
+### Round 20 (2026-11-05): data deploys, Cup OT points, test cleanup (v1.40.0)
+- **Do the bot's snapshot commits deploy? Yes, every one.** Checked 2026-11-05 on GitHub commit statuses and Vercel's
+  deployment list (`vercel api /v6/deployments`): each `data: schedule snapshot` commit from Oct 24 to Nov 5 has a
+  Vercel "success" status and a READY production deployment (none skipped, none blocked; the repo is public, so the
+  Hobby rule on other authors' private-repo commits doesn't apply). The Nov 5 one (3a08ce9, pushed 18:28:47 UTC) was
+  slow: Vercel created the deployment at 18:36:05 and started building at 18:48:21 (rotationkit's deployment, created
+  18:35:50, built first — Hobby builds 1 deployment at a time, vercel.com/docs/limits "Concurrent Deployments"), READY
+  18:48:44. The workflow's 10-minute live check had given up at 18:38 — the red run and the "pending" status seen.
+- **Why the live data looked old**: (1) GitHub starts the 11:00 UTC cron 3–10 h late (14:12–20:36 UTC in Oct–Nov;
+  GitHub docs: "The schedule event can be delayed during periods of high loads"), so a day's snapshot lands in the
+  afternoon UTC; (2) a Nov N snapshot holds games through the night of N−1 (Standings "through Nov 2" on the Nov 3
+  snapshot is right); (3) `stale-while-revalidate=86400` on `/data/*`: through the gauntlet's rewrite, the first request
+  after a quiet spell got the previous copy (`X-Vercel-Cache: STALE`, seen at 18:48 on Nov 5) while the edge refetched.
+  Now `max-age=60, stale-while-revalidate=300`, so an old copy is served for minutes at most. (4) Commits pushed with
+  GITHUB_TOKEN start no other workflow (GitHub docs), so CI never runs on the bot's commits; their `npm test` step is
+  their test run.
+- **Fixes**: `scripts/verify-deploy.ts` waits 30 min (was 10; job limit 50 min) and, after 10 min, calls an optional
+  Vercel Deploy Hook (secret `VERCEL_DEPLOY_HOOK_URL`) once. Not needed for deploys today — a belt-and-braces option.
+  **Alarm**: `scripts/check-live-data.ts` fails when the live snapshot's `meta.time` is > 1 day behind the committed
+  one, or the committed one is > 2 days old (the daily job stopped); runs every 4 h (`.github/workflows/data-freshness.yml`)
+  and in CI's live job.
+- **Cup rule 3 without OT points**: the snapshot job fetches the boxscore
+  (`cdn.nba.com/static/json/liveData/boxscore/boxscore_<id>.json`, the module's headers) of each finished Cup group game
+  not yet stored and keeps `calendarkit.regulation` = gameId → [away, home] after 4 periods in `schedule.json` (≤ 60
+  games a season, a few a day; a failed or incomplete boxscore is warned and retried the next day). `cupStandings(games,
+  regulation)` counts an OT game's regulation points; an OT game without them counts its final score and the rules
+  panel says so. No new request from the site (the totals ride in the snapshot, ~1 KB). `src/data/regulation.ts`.
+  Tests `tests/regulation.test.tsx` (real OT boxscore NOP @ DEN 0022600110, 126–126 after regulation; DAL over DEN on
+  rule 3 only with regulation points — 4 tests fail on v1.39.0).
+- **Tests**: `fatigue.test.tsx` walked the season 3× per width in "narrower than the 1080 px column" (one count per walk)
+  and twice in "rest rows" — now one walk each (timed out at 5 s in every loaded run before). **The one-off unit failure** was a 5 s timeout, not a wrong
+  assertion: 8 runs of the full suite on v1.39.0, two at a time on this 4-core machine, gave 27 failures, every one
+  "Test timed out in 5000ms" — fatigue "narrower" 8/8, `lists.test.tsx` "team list markers, national TV badge … B2B"
+  4/8 (the likeliest one-off: 2.4 s quiet, 5–5.8 s loaded, no timeout of its own), slatetight ×2, cupschedule
+  "opens on Standings", gamelink.tz, fatigue LAL, scores, selection, todaycell. **Cause**: opening or closing the Team
+  List's date picker (how the tests walk months) re-rendered the whole Team List — its open state is CalendarView's
+  and `TeamListView` wasn't memo'd: ~140 ms per open, ~90 per close, 85 % of a walk in jsdom (also a slower picker in
+  the app). `TeamListView` is now `memo` (`tests/teamlist-rerender.test.tsx`, fails on v1.39.0): a BOS season walk
+  5.9 s → 0.9 s. Same 8 loaded runs after: 2 failures, both `activeday.test.tsx` "no active-day class" (a getByRole over
+  the XL League view, now a direct selector). No timeout raised.
+  The odds live check (`smoke.spec.ts`) runs only with `E2E_LIVE=1` (CI's live job, `npm run e2e:live`); it used to
+  run whenever `E2E_BASE_URL` was set, which a local build served on its own port also needs — so it failed locally,
+  and the perf guard (which depends on the other projects) never ran. Local servers: Playwright and `npm run e2e:all`
+  take a free port (`scripts/free-port.ts`; was a fixed 4180 with `reuseExistingServer`), Playwright never reuses a
+  server, e2e:all stops its server on exit, signals and errors. `npm run perf` = the perf guard alone.
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip
@@ -2241,7 +2291,8 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   `isRotationkitConfigured()` in `src/config.ts` is the single check, and the shell then passes no `onOpenGame`.
   **To turn it on, set `ROTATIONKIT_BASE_URL` in `src/config.ts` to the real URL — that is the only step.** The
   tests follow the config (the e2e expects the action iff it is configured), so no test edits are needed.
-- **Was 911b638 (the 2026-10-23 bot commit, 15:36 UTC) deployed?** Not by itself: GitHub shows no Vercel status on
+- **Answered in round 20**: every bot snapshot commit from Oct 24 on was deployed by Vercel (see "### Round 20").
+  Old note: **Was 911b638 (the 2026-10-23 bot commit, 15:36 UTC) deployed?** Not by itself: GitHub shows no Vercel status on
   it, and Vercel's first status is on 671e3e4 (15:59 UTC) — the Vercel project didn't exist yet. Its snapshot is live
   (live `meta.time` 2026-10-23T11:29:41.2941Z = the commit's, checked 2026-10-24) because later pushes redeployed it.
   So whether Vercel deploys a **bot-authored** commit is still unproven; the next daily run checks it automatically

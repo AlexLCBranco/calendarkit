@@ -37,7 +37,9 @@ describe('League List', () => {
   it('no active-day class or band: the list shows one day', () => {
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-17' }} />);
     expect(active()).toEqual([]);
-    fireEvent.click(screen.getByRole('tab', { name: /^Thursday, November 19/ }));
+    // v1.40.0: a direct selector, not getByRole over the whole XL League view (the costly part of this test: it timed
+    // out at 5 s in 2 of 8 runs of the suite under load)
+    fireEvent.click([...document.querySelectorAll<HTMLElement>('[role="tab"][aria-label^="Thursday, November 19"]')].at(0)!);
     expect(active()).toEqual([]);
     expect(document.querySelector('[data-testid="league-list"] .ck-hl')).toBeNull();
   });

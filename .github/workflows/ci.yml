@@ -85,3 +85,6 @@ jobs:
       - run: npx playwright test --project=desktop-xl e2e/move.spec.ts e2e/smoke.spec.ts e2e/version.spec.ts
         env:
           E2E_BASE_URL: https://gauntlet-home.vercel.app
+          E2E_LIVE: '1'
+      # v1.40.0: the live data is no more than 1 day behind the latest snapshot (scripts/check-live-data.ts)
+      - run: npx tsx scripts/check-live-data.ts

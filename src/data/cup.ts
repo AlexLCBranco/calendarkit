@@ -5,11 +5,12 @@
 // gameSubLabel "West Group A" … "East Group C"; knockout games "in-season-knockout". Final scores only — no period
 // scores. The Cup rules leave overtime out of point differential and points scored. Differential: an OT game was tied
 // at the end of regulation, so it counts 0 (NBA.com "Cup 101"; v1.34.0, Alex's call — until then its final score).
-// Points scored: regulation points aren't in the feed, so an OT game ("Final/OT", "Final/2OT") counts its final
-// score there, and the view says so.
+// Points scored: v1.40.0 — an OT game ("Final/OT", "Final/2OT") counts its regulation points, which the daily snapshot
+// job takes from the game's boxscore (src/data/regulation.ts); until a game's totals are stored it counts its final score.
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { TEAMS, TEAM_BY_ID, type Conference } from './teams';
+import type { RegulationTotals } from './regulation';
 
 /** Group play runs Oct 30 – Nov 27 (2026-27); only finished group games inside it count. */
 export const CUP_GROUP_START = '2026-10-30';
@@ -39,7 +40,7 @@ export interface CupTeamLine {
   l: number;
   /** Point differential in finished group games (an OT game counts 0 — see above). */
   diff: number;
-  /** Points scored in finished group games. */
+  /** Points scored in finished group games (regulation points of an OT game, once stored). */
   points: number;
   /** Finished group games that went to overtime. */
   otGames: number;
@@ -120,8 +121,10 @@ export interface CupStandings {
   through?: string;
   /** Finished group games counted. */
   games: number;
-  /** Any of them went to overtime (0 in the differential; their OT points are in points scored). */
+  /** Any of them went to overtime (0 in the differential; regulation points in points scored). */
   hasOt: boolean;
+  /** OT games whose regulation totals aren't stored yet: their final score is in points scored. */
+  otWithoutRegulation: number;
 }
 
 /** The wild-card race lists the three 2nd-place teams and then this many of the rest (5 per conference in all). */
@@ -159,7 +162,9 @@ export function cupGroupsOf(games: readonly ScheduleGame[]): Map<CupGroup, numbe
   return new Map([...out].map(([k, v]) => [k, v.size === 5 ? [...v] : CUP_GROUP_TEAMS[k].map((tri) => byTricode.get(tri)!)]));
 }
 
-export function cupStandings(games: readonly ScheduleGame[]): CupStandings {
+/** `regulation`: the snapshot's regulation totals (gameId → [away, home]) for rule 3; OT games without one count their final score. */
+export function cupStandings(games: readonly ScheduleGame[], regulation: RegulationTotals = {}): CupStandings {
+  let otWithoutRegulation = 0;
   const counted = games.filter(isCountedCupGame);
   const acc = new Map<number, Acc>();
   const line = (id: number): Acc => {
@@ -181,8 +186,11 @@ export function cupStandings(games: readonly ScheduleGame[]): CupStandings {
     const margin = isOt(g) ? 0 : hs - as;
     h.diff += margin;
     a.diff -= margin;
-    h.points += hs;
-    a.points += as;
+    // rule 3 leaves overtime points out: an OT game adds its regulation points (equal for both teams)
+    const reg = isOt(g) ? regulation[g.gameId] : undefined;
+    if (isOt(g) && !reg) otWithoutRegulation++;
+    h.points += reg ? reg[1] : hs;
+    a.points += reg ? reg[0] : as;
     if (isOt(g)) {
       h.otGames++;
       a.otGames++;
@@ -227,6 +235,7 @@ export function cupStandings(games: readonly ScheduleGame[]): CupStandings {
     through: counted.reduce<string | undefined>((m, g) => (!m || g.dateEt > m ? g.dateEt : m), undefined),
     games: counted.length,
     hasOt: counted.some(isOt),
+    otWithoutRegulation,
   };
 }
 

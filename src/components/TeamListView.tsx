@@ -80,8 +80,10 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
 /**
  * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
  * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
+ * v1.40.0: memo — the date picker's open state lives in CalendarView, and each open / close redrew the whole month
+ * (tests/teamlist-rerender.test.tsx).
  */
-export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
+export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
@@ -298,7 +300,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
       </div>
     </section>
   );
-}
+});
 
 const rowDateOf = (r: ScheduleGame | string) => (typeof r === 'string' ? r : r.dateEt);
 

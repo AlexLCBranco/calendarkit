@@ -12,6 +12,7 @@
 
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
+import { freePort } from './free-port';
 
 const [limitArg, ...rest] = process.argv.slice(2);
 const LIMIT_S = Number(limitArg ?? 300);
@@ -33,12 +34,21 @@ const sec = (ms: number) => `${(ms / 1000).toFixed(0)} s`;
 console.log('[e2e:all] building…');
 if (spawnSync(npm, ['run', 'build'], { stdio: 'inherit', shell: process.platform === 'win32' }).status !== 0) process.exit(1);
 // node runs vite directly (no shell, no npx in between), so killing this one process stops the server: through a shell
-// the tree kill could miss it and leave port 4180 taken after the run
-const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', '4180', '--strictPort'], { stdio: 'ignore' });
+// the tree kill could miss it and leave the port taken after the run. v1.40.0: a free port (was 4180, which collided
+// with other sessions' leftover servers), and the server is stopped however this script ends (failure, Ctrl+C, error).
+const PORT = await freePort();
+const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
+const stopServer = () => {
+  if (server.exitCode === null && !server.killed) server.kill();
+};
+process.on('exit', stopServer);
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) process.on(sig, () => (stopServer(), process.exit(130)));
+process.on('uncaughtException', (e) => (console.error(e), stopServer(), process.exit(1)));
+console.log(`[e2e:all] serving the build on port ${PORT}`);
 const up = async () => {
   for (let i = 0; i < 100; i++) {
     try {
-      if ((await fetch('http://localhost:4180/calendar/')).ok) return;
+      if ((await fetch(`http://localhost:${PORT}/calendar/`)).ok) return;
     } catch {}
     await new Promise((r) => setTimeout(r, 200));
   }
@@ -58,7 +68,7 @@ try {
       const p = spawn(npx, ['playwright', 'test', ...group, '--reporter=line,blob', ...rest], {
         stdio: 'inherit',
         shell: process.platform === 'win32',
-        env: { ...process.env, PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB, PLAYWRIGHT_BLOB_FILE_NAME: `shard-${i}.zip`, PLAYWRIGHT_BLOB_DO_NOT_REMOVE: '1' },
+        env: { ...process.env, E2E_PORT: String(PORT), E2E_SERVER_UP: '1', PLAYWRIGHT_BLOB_OUTPUT_DIR: BLOB, PLAYWRIGHT_BLOB_FILE_NAME: `shard-${i}.zip`, PLAYWRIGHT_BLOB_DO_NOT_REMOVE: '1' },
       });
       const kill = setTimeout(() => (console.error(`[e2e:all] ${group.join(' ')} over ${LIMIT_S} s — stopped`), killTree(p.pid) ?? p.kill()), LIMIT_S * 1000);
       p.on('exit', (c) => (clearTimeout(kill), resolve(c)));
@@ -67,7 +77,7 @@ try {
     if (code !== 0) failed = true;
   }
 } finally {
-  server.kill();
+  stopServer();
 }
 spawnSync(npx, ['playwright', 'merge-reports', '--reporter=list,html', BLOB], { stdio: 'inherit', shell: process.platform === 'win32' });
 console.log(`[e2e:all] ${times.join(' · ')} · total ${sec(Date.now() - t0)} (build included)`);
