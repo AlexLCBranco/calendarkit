@@ -187,9 +187,12 @@ test.describe('team links', () => {
         const a = linksOf(page, kind).first();
         const teams = await snapshotTeams(page);
         const t = teams[Number(await a.getAttribute('data-team-link'))]!;
+        // scroll first: scrolling the Team List moves the row at the top, i.e. the date the link opens on (the list
+        // reports its top row at most every FOLLOW_MS = 120 ms, so let it settle before reading the date)
+        await a.scrollIntoViewIfNeeded();
+        await page.waitForTimeout(300);
         await a.dispatchEvent('pointerdown', { button: 2 });
         const on = new URL((await a.getAttribute('href'))!, 'https://x').searchParams.get('on')!;
-        await a.scrollIntoViewIfNeeded();
         const p = await a.evaluate((el, src) => (new Function(`return (${src})`)() as (e: Element) => { x: number; y: number } | null | false)(el), hitPoint.toString());
         expect(p, `${kind}: a point a click reaches`).toBeTruthy();
         if (!p) return;
