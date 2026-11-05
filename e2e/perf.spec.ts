@@ -258,12 +258,9 @@ test('League List day by day: 20 × "Next day", frame times and main-thread time
   const runs = await scrollRunsAB('day-nav', [arm('current', page, CURRENT), arm('reference', ref, refBase)]);
   await ref.close();
   checkScroll('day-nav', runs);
-  // 20 game days on from Nov 2 (from the served snapshot: Nov 23, 2026)
-  const want = await page.evaluate(async (from) => {
-    const raw = await (await fetch('/calendar/data/schedule.json')).json();
-    const days = [...new Set((raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string }[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId)).map((g) => g.gameDateEst.slice(0, 10)))].sort();
-    return days[days.indexOf(from) + 20]!;
-  }, BUSY_NIGHT);
+  // 20 days on from Nov 2: Nov 22, 2026 (round 14, item 6: every calendar day of the season, game-less ones too;
+  // until v1.33.0 20 game days, Nov 23)
+  const want = new Date(Date.parse(`${BUSY_NIGHT}T12:00:00Z`) + 20 * 86_400_000).toISOString().slice(0, 10);
   await openBusyNight(page);
   for (let i = 0; i < 20; i++) await page.getByLabel('Next day').click();
   await expect(page.locator('[data-testid="league-list"] [data-day]')).toHaveAttribute('data-day', want);

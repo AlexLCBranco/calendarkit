@@ -1,7 +1,7 @@
 // Slate copies in e2e (round 7, shared since round 9): click a copy button, read the PNG back from the clipboard, measure
 // the capture stage while it is on screen, count transparent / opaque pixels; readPng samples regions of the image.
 
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, type Page } from '@playwright/test';
 
 const OUT = 'test-output/copy-images';
@@ -52,6 +52,8 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
     for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
     return btoa(s);
   });
+  // made here: a CI shard may run no copy.spec.ts, which used to be the only spec creating it
+  mkdirSync(OUT, { recursive: true });
   writeFileSync(`${OUT}/${name}.png`, Buffer.from(png, 'base64'));
   // pixels: alpha 0 everywhere outside the cards (2 px margin for antialiased edges and rounded corners), opaque inside
   const px = await page.evaluate(
