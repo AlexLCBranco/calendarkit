@@ -19,7 +19,7 @@ import type { SlateNotes } from './notes';
 import { SeriesChip } from './series';
 import { leagueSeries } from '../data/series';
 import { fmtOdds, gameOdds, type DayOdds, type GameOdds, type SlateOdds } from './odds';
-import { seasonTip, TeamLogo, TipTime } from './parts';
+import { GameLinkIcon, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
 
 /** The day's games (TV games only when filtered), in tip-off order; [] on a day without games. */
@@ -144,9 +144,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
           <span className="ck-slate-chips">
             {/* round 9 (2.3): the game page is this icon, not the team names; a control, so never in a copy */}
             {url && (
-              <a className="ck-slate-link" href={url} target="_blank" rel="noopener noreferrer" draggable={false} title="Open on hoopsjunkie" aria-label="Open on hoopsjunkie" data-testid="game-link" data-capture-exclude="true" onClick={(e) => e.stopPropagation()}>
-                ↗
-              </a>
+              <GameLinkIcon url={url} />
             )}
             <SeriesChip s={leagueSeries(data).get(game.gameId)} gameId={game.gameId} />
             {tv.length > 0 && (

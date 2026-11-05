@@ -34,7 +34,12 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-05, after round 15)
+## Current state / handoff (2026-11-05, after round 16)
+v1.36.0: League List / Team List rows (and the Cup schedule's) open the game page from a separate "↗" icon — the Slate's —
+first among the tags; their teams are team links only. Team Calendar cells and week lines keep the matchup as the game
+link. See "### Round 15", "List rows: game link = ↗ icon".
+
+## Previous handoff (2026-11-05, after round 15)
 v1.35.0: every team name, logo and tricode links to its Team view (same date, last-used Team mode). See "### Round 15".
 
 ## Previous handoff (2026-11-04, after round 13)
@@ -1155,6 +1160,8 @@ a 1 ms busy-wait per game card fails the scroll and switch checks; 0.5 ms takes 
   `appGameLink` (App.tsx → `gameLinkUrl`, unchanged rule: feed `dateEt`, no link while a team is undecided). Styling:
   text colour as before, pointer + underline on hover, accent ring on keyboard focus; `.ck-capturing` drops underline
   and ring, so images never show link styling.
+  - **Round 16 (v1.36.0): not in List rows any more** — their game link is the Slate's "↗" icon ("### Round 15", "List
+    rows: game link = ↗ icon"); Team Calendar cells and week lines keep the matchup link.
   - **Marquee vs click** (`selection.ts`): a press on a game link may start a box (other links/controls still can't);
     pointer capture is taken only once the press becomes a drag (4 px), so a plain click reaches the link; the click
     that ends a drag started on a link is swallowed (one click, listener removed after that task).
@@ -2062,7 +2069,26 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   **Decided (Alex, 2026-11-05; corrects an earlier "keep it so", a mis-click): League List and Team List rows switch to
   the Slate's style** — team names / logos / tricodes are team links only, and the game link becomes a separate "↗"
   icon (the Slate's icon, tooltip and behaviour). **Calendar cells and week lines stay as they are** (matchup = game
-  link, team link inside). **Not built yet** (as of v1.35.0 the List rows still have the matchup game link): next session.
+  link, team link inside). **Built in v1.36.0** (round 16), next point.
+- **List rows: game link = "↗" icon (v1.36.0, round 16).** League List and Team List rows — also the Cup schedule's
+  League and Team rows, which are those rows — have no anchor around the matchup any more: the teams are team links
+  only, and the game page is `GameLinkIcon` (`src/slate/parts.tsx`: the Slate card's own icon, now shared — "↗",
+  `.ck-slate-link`, tooltip / aria-label "Open on hoopsjunkie", new tab, `data-capture-exclude` so never in a copy, muted
+  → brighter on hover, no underline). Placed **first among the tags** (`.ck-tags`, the Slate's order: ↗, series, TV,
+  tags), after the matchup and the fatigue columns, so the fixed slots (time, tricodes, logos, "@") keep one x on every
+  row. **Room for it** (choice made without asking, easy to undo): the icon adds 18 px, and 14 of the 2400 desktop Team
+  List rows (fatigue columns; a Cup group game on national TV with two networks, "NBA Cup · West Group A" + "NBC ·
+  Peacock") then wrapped — up to 17.4 px over at 1280 and 1920. So in those rows (`fatigueColumns`) a Cup **group** tag
+  drops "Group": "NBA Cup · West A" (~40 px less; the full name stays in its tooltip). League List rows, phones, tablets
+  and knockout tags ("NBA Cup · Quarterfinal") are unchanged. `GameCard` prop `linkIcon` (ListDaySection and TeamListView pass it); without it (Team Calendar cells) the matchup
+  stays the `MatchLink`; week lines use `MatchLink` themselves. The icon is a control (`[data-capture-exclude]` is in
+  selection.ts' INTERACTIVE), so a press on it starts no marquee, as on the Slate; a marquee still starts on a row's
+  team link. Tests: unit `tests/gamelink.test.tsx` (List rows: the icon in `.ck-tags`, no `.ck-mlink`, nothing around
+  the matchup; cells / week lines: the matchup link, no icon; the short Cup tag in desktop Team List rows only); e2e `e2e/gamelink.spec.ts` (icon text / tooltip /
+  capture-exclude / first tag / the Slate icon's size, padding and colour, brighter on hover, no underline; click /
+  Enter / middle / ctrl tabs; Tab reaches it; a drag from a team link selects 3 rows, one from a week line's game link
+  selects, one from the ↗ starts no box; every Cup schedule League and Team row has one icon in its tags),
+  `e2e/teamlinks.spec.ts` hover (a List row's team outside a game link, a week line's inside one).
 - **One piece**: `TeamLink` (`src/slate/teamLink.tsx`) renders an `<a class="ck-tlink" data-team-link>` only under
   `TeamLinkContext` (CalendarView, when the host passes `teamHref`; App.tsx `teamLinkUrl`), else the `<span>` it was —
   so the gauntlet's Slate and unit tests are unchanged. Same element class, so no layout change. No listener per link:

@@ -17,7 +17,7 @@ a.ck-tlink:hover {
 a.ck-tlink.ck-logo-backing:hover {
   box-shadow: 0 0 0 2px var(--ck-tlink-ring, rgba(255, 255, 255, 0.45));
 }
-/* a team inside a game link (List rows, calendar cells, week lines): hovering the team doesn't underline the game */
+/* a team inside a game link (calendar cells, week lines; round 16: not List rows): hovering it doesn't underline the game */
 .ck-mlink:hover:has(a.ck-tlink:hover) {
   text-decoration: none;
 }

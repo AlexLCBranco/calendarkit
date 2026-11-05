@@ -281,6 +281,7 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
                 size={compact ? 'compact' : 'regular'}
                 onOpenGame={onOpenGame}
                 gameLink={gameLink}
+                linkIcon
                 logos
                 dateLabel={rowDate(g.dateEt)}
                 next={markNext && g.gameId === next}

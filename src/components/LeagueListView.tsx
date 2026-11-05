@@ -160,7 +160,7 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
       {/* Cup group rounds (round 12b): two columns, filled top to bottom (date order reads down the first, then the second) */}
       <div className={`ck-daylist${columns ? ' ck-daylist-cols' : ''}`} style={columns ? ({ '--ck-cols': columns, '--ck-col-rows': Math.ceil(day.games.length / columns) } as CSSProperties) : undefined}>
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} gameLink={gameLink} cupTag={cupTag?.(g)} dateLabel={dateLabel?.(g)} tvPill={tvPill} series={series ? leagueSeries(data).get(g.gameId) : undefined} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} gameLink={gameLink} linkIcon cupTag={cupTag?.(g)} dateLabel={dateLabel?.(g)} tvPill={tvPill} series={series ? leagueSeries(data).get(g.gameId) : undefined} copyable />
         ))}
       </div>
     </section>

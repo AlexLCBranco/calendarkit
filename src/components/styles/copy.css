@@ -100,7 +100,8 @@
   font-weight: 600;
 }
 
-/* The matchup as the link to the game's page (round 5, MatchLink in GameCard.tsx; replaced round 4's hover "↗"): text
+/* The matchup as the link to the game's page (round 5, MatchLink in GameCard.tsx; Team Calendar cells and week lines —
+   round 16: List rows use the Slate's "↗" icon instead, .ck-slate-link): text
    colours as before, a pointer and an underline on hover, the accent ring on keyboard focus. Never link-styled in an
    image: .ck-capturing (suspendForCapture) drops the underline and the ring. */
 .ck-mlink {

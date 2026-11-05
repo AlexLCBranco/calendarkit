@@ -34,3 +34,14 @@ export function TipTime({ tip }: { tip: Tipoff }) {
     </>
   );
 }
+
+/**
+ * The game page link as a small "↗" icon (round 9 on the Slate cards; round 16 also the League List / Team List rows):
+ * a real `<a target="_blank">` with the tooltip "Open on hoopsjunkie"; a control, so never in a copy
+ * (`data-capture-exclude`) and a marquee never starts on it. Hover styles: `.ck-slate-link` (styles/slate.css).
+ */
+export const GameLinkIcon = ({ url }: { url: string }) => (
+  <a className="ck-slate-link" href={url} target="_blank" rel="noopener noreferrer" draggable={false} title="Open on hoopsjunkie" aria-label="Open on hoopsjunkie" data-testid="game-link" data-capture-exclude="true" onClick={(e) => e.stopPropagation()}>
+    ↗
+  </a>
+);

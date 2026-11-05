@@ -7,7 +7,7 @@ import type { SeriesGame } from '../data/series';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord } from '../data/model';
 import { mergedChip, mergedDays, mergedTip, type ThreeInFour } from '../data/scheduleTags';
-import { seasonTip, TeamLogo, TipTime } from '../slate/parts';
+import { GameLinkIcon, seasonTip, TeamLogo, TipTime } from '../slate/parts';
 import { TeamLink } from '../slate/teamLink';
 import { CopyButton } from './CopyButton';
 import { FatigueMark } from './FatigueMark';
@@ -78,8 +78,13 @@ export interface GameCardProps {
   records?: ReadonlyMap<number, TeamRecord>;
   /** Team List: the row's date (data-row-date), which the week strip follows while scrolling. */
   rowDate?: string;
-  /** The game page URL: the matchup (teams + scores) links to it in a new tab; no link when it returns undefined. */
+  /** The game page URL, opened in a new tab: by the matchup (teams + scores), or the "↗" with `linkIcon`; no link when it returns undefined. */
   gameLink?: GameLink;
+  /**
+   * Round 16 (League List, Team List rows): the game page as the Slate's separate "↗" icon (first among the tags) instead
+   * of the matchup; the teams are then team links only.
+   */
+  linkIcon?: boolean;
   /** Cup schedule (round 12): the Cup tag's text instead of "NBA Cup · West Group A" ("West A", "Quarterfinal"). */
   cupTag?: string;
   /** Round 14 (item 5): the game's season series — the "G2/4" chip first among the tags (League List, Team List). */
@@ -167,7 +172,10 @@ export function TifChip({ tif }: { tif: ThreeInFour }) {
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
 export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink, cupTag, series, seriesTip }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip }: GameCardProps) {
+  const iconUrl = linkIcon ? gameLinkProp?.(game) : undefined;
+  // the matchup is the game link only without the icon (calendar cells; week lines use MatchLink themselves)
+  const gameLink = linkIcon ? undefined : gameLinkProp;
   const tip = tipoff(game, timeZone);
   const tv = nationalTv(game);
   const marks = markers(game);
@@ -298,12 +306,13 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         </span>
       )}
       <span className="ck-tags">
+        {iconUrl && <GameLinkIcon url={iconUrl} />}
         <SeriesChip s={series} gameId={game.gameId} />
         {!cols && b2bLabels}
         {!cols && tifChip}
         {marks.map((m) => (
           <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
-            {size === 'compact' ? m.short : cupTag && (m.kind === 'cup' || m.kind === 'cup-final') ? cupTag : m.long}
+            {size === 'compact' ? m.short : cupTag && (m.kind === 'cup' || m.kind === 'cup-final') ? cupTag : cols && m.kind === 'cup' ? m.long.replace(' Group ', ' ') : m.long}
           </span>
         ))}
         {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}

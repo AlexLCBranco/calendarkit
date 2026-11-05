@@ -1,10 +1,12 @@
-// Game page link in a real browser, desktop widths (round 5: the matchup itself is the link; round 4's hover "↗" is
-// gone): a real <a> in every view (League List, Team List, Team Calendar, week view) to the game's hoopsjunkie page,
-// looking like text until hovered (pointer + underline), never link-styled in an image; click, middle-click,
-// ctrl-click and Enter open it in a new tab; a drag that starts on it selects games and opens nothing.
+// Game page link in a real browser, desktop widths: a real <a> in every view to the game's hoopsjunkie page; click,
+// middle-click, ctrl-click and Enter open it in a new tab. Team Calendar cells and week lines (round 5): the matchup
+// itself is the link, looking like text until hovered (pointer + underline), never link-styled in an image. League List
+// and Team List rows, also in the Cup schedule (round 16): the Slate's separate "↗" icon among the tags (muted,
+// brightens on hover, never in a copy); the teams are team links only. A drag that starts on a team or matchup link
+// selects games and opens nothing; one on the "↗" starts no box.
 // hoopsjunkie.io is stubbed here: only the URL is checked.
 
-import { expect, test, type Browser, type BrowserContext, type Page } from './fixtures';
+import { expect, test, type Browser, type BrowserContext, type Locator, type Page } from './fixtures';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -53,13 +55,50 @@ const wantUrl = (page: Page, id: string) =>
     return `https://hoopsjunkie.io/games/${gm.gameDateEst.slice(0, 10)}/${gm.awayTeam.teamTricode.toLowerCase()}-vs-${gm.homeTeam.teamTricode.toLowerCase()}`;
   }, id);
 
+type Look = { line: string; cursor: string; color: string; parent: string };
+
+/**
+ * Round 16: a List row's game link is the Slate's icon — "↗", its tooltip, first among the tags, never in a copy, the
+ * Slate's look (muted, no underline; brighter on hover, pointer); no anchor around the matchup, whose teams are team
+ * links (to the Team view) only.
+ */
+async function iconChecks(page: Page, host: Locator, link: Locator, look: () => Promise<Look>, idle: Look) {
+  expect(await link.textContent()).toBe('↗');
+  expect(await link.getAttribute('title')).toBe('Open on hoopsjunkie');
+  expect(await link.getAttribute('aria-label')).toBe('Open on hoopsjunkie');
+  expect(await link.getAttribute('data-capture-exclude')).toBe('true');
+  expect(await link.evaluate((a) => a.parentElement!.classList.contains('ck-tags') && a === a.parentElement!.firstElementChild)).toBe(true);
+  expect(await host.locator('.ck-mlink').count()).toBe(0);
+  expect(await host.locator('.ck-matchup').evaluate((m) => !!m.closest('a') || !!m.querySelector('a:not([data-team-link])'))).toBe(false);
+  expect(await host.locator('.ck-matchup a[data-team-link]').count()).toBeGreaterThan(0);
+  const lum = (c: string) => c.match(/\d+/g)!.slice(0, 3).reduce((t, v) => t + Number(v), 0);
+  // the Slate's .ck-slate-link, measured on a probe in the same root
+  const slate = await page.evaluate(() => {
+    const a = Object.assign(document.createElement('a'), { className: 'ck-slate-link', href: '#', textContent: '↗' });
+    document.querySelector('.ck-root')!.append(a);
+    const c = getComputedStyle(a);
+    const r = { color: c.color, size: c.fontSize, pad: c.padding };
+    a.remove();
+    return r;
+  });
+  expect(await link.evaluate((a) => ({ size: getComputedStyle(a).fontSize, pad: getComputedStyle(a).padding }))).toEqual({ size: slate.size, pad: slate.pad });
+  expect(idle.color).toBe(slate.color);
+  expect(idle.line).toBe('none');
+  await link.hover();
+  const hover = await look();
+  expect(hover.line).toBe('none');
+  expect(hover.cursor).toBe('pointer');
+  expect(lum(hover.color), 'brightens on hover').toBeGreaterThan(lum(idle.color));
+}
+
 for (const [name, search, hostSel] of [
   ['League List', '?view=league&layout=list&date=2026-11-16', '.ck-lday[data-day="2026-11-16"] .ck-card'],
   ['Team List', '?view=team&layout=list&team=LAL', '[data-testid="team-list"] .ck-card[data-next]'],
   ['Team Calendar', '?view=team&layout=calendar&team=LAL', '.ck-day-cell:has(.ck-card)'],
   ['week view', '?view=league&layout=calendar&date=2026-11-16', '.ck-month-game'],
 ] as const) {
-  test(`${name}: the matchup is a link — new tab on click, middle-click, ctrl-click and Enter; pointer + underline on hover only; no "↗"`, async ({ page, context, browser }) => {
+  const icon = name.endsWith('List');
+  test(`${name}: ${icon ? 'a "↗" icon' : 'the matchup'} is the link — new tab on click, middle-click, ctrl-click and Enter; its hover look`, async ({ page, context, browser }) => {
     await open(page, context, search);
     const host = page.locator(hostSel).first();
     await host.scrollIntoViewIfNeeded();
@@ -70,10 +109,12 @@ for (const [name, search, hostSel] of [
     const want = await wantUrl(page, id);
     expect(await link.getAttribute('href')).toBe(want);
     expect(await link.getAttribute('target')).toBe('_blank');
-    // looks like text until hovered: the row's own colour, no underline; then pointer + underline
     const look = () => link.evaluate((a) => ({ line: getComputedStyle(a).textDecorationLine, cursor: getComputedStyle(a).cursor, color: getComputedStyle(a).color, parent: getComputedStyle(a.parentElement!).color }));
     await page.mouse.move(2, 2);
     const idle = await look();
+    if (icon) await iconChecks(page, host, link, look, idle);
+    else {
+    // looks like text until hovered: the row's own colour, no underline; then pointer + underline
     expect(idle.line).toBe('none');
     expect(idle.color).toBe(idle.parent);
     await link.hover();
@@ -88,6 +129,8 @@ for (const [name, search, hostSel] of [
       root.classList.remove('ck-capturing');
       return line;
     })).toBe('none');
+    expect(await host.locator('.ck-slate-link').count()).toBe(0);
+    }
     // click and keyboard (Enter): each opens the page in a new tab; the app stays
     for (const how of ['click', 'enter'] as const) {
       const popup = context.waitForEvent('page');
@@ -126,15 +169,15 @@ for (const [name, search, hostSel] of [
   });
 }
 
-test('keyboard: Tab reaches the matchup link of a row, the row copy button still works', async ({ page, context }) => {
+test('keyboard: Tab reaches the "↗" link of a row, the row copy button still works', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await open(page, context, '?view=team&layout=list&team=LAL');
   const row = page.locator('[data-testid="team-list"] .ck-card[data-next]');
-  // the copy button comes first in the row; the next Tab stops on the row's fatigue column or link
+  // the copy button comes first in the row; the next Tabs stop on the row's fatigue columns, then the "↗"
   await row.hover();
   await row.getByTestId('copy-game').focus();
   let reached = false;
-  for (let i = 0; i < 4 && !reached; i++) {
+  for (let i = 0; i < 6 && !reached; i++) {
     await page.keyboard.press('Tab');
     reached = await row.locator('a[data-testid="game-link"]').evaluate((a) => document.activeElement === a);
   }
@@ -144,22 +187,78 @@ test('keyboard: Tab reaches the matchup link of a row, the row copy button still
   await expect(row.getByTestId('copy-game')).toHaveAttribute('data-state', 'copied');
 });
 
-test('a drag that starts on a matchup link selects games and opens nothing (a click is not a drag)', async ({ page, context }) => {
-  await open(page, context, '?view=team&layout=list&team=LAL');
+/** Press at the middle of `from`, drag 10 px, then to (x, y); returns the tabs the context opened meanwhile. */
+async function drag(page: Page, context: BrowserContext, from: Locator, to: { x: number; y: number }) {
   const opened: string[] = [];
-  context.on('page', (p) => opened.push(p.url()));
-  // the list opens at the next game (earlier rows are above, under the top bar); start a few rows lower, clear of the
-  // band near the list's top edge where a drag auto-scrolls: from the 4th row's link down two rows
-  const rows = page.locator('[data-testid="team-list"] .ck-card[data-next], [data-testid="team-list"] .ck-card[data-next] ~ .ck-card');
-  const a = (await rows.nth(3).locator('a[data-testid="game-link"]').boundingBox())!;
-  const c = (await rows.nth(5).boundingBox())!;
+  const onPage = (p: Page) => opened.push(p.url());
+  context.on('page', onPage);
+  const a = (await from.boundingBox())!;
   await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
   await page.mouse.down();
   await page.mouse.move(a.x + a.width / 2 + 10, a.y + a.height / 2 + 10, { steps: 3 });
-  await page.mouse.move(c.x + 300, c.y + c.height / 2, { steps: 5 });
+  await page.mouse.move(to.x, to.y, { steps: 5 });
   await page.mouse.up();
-  await expect(page.getByTestId('selection-count')).toHaveText('3 games selected');
   await page.waitForTimeout(300); // a tab would have opened by now
+  context.off('page', onPage);
+  return opened;
+}
+
+test('a drag that starts on a team link of a List row selects games and opens nothing (a click is not a drag)', async ({ page, context }) => {
+  await open(page, context, '?view=team&layout=list&team=LAL');
+  // the list opens at the next game (earlier rows are above, under the top bar); start a few rows lower, clear of the
+  // band near the list's top edge where a drag auto-scrolls: from the 4th row's opponent (a team link; round 16: the
+  // matchup is no game link any more) down two rows
+  const rows = page.locator('[data-testid="team-list"] .ck-card[data-next], [data-testid="team-list"] .ck-card[data-next] ~ .ck-card');
+  const c = (await rows.nth(5).boundingBox())!;
+  const opened = await drag(page, context, rows.nth(3).locator('.ck-matchup a[data-team-link].ck-opp'), { x: c.x + 300, y: c.y + c.height / 2 });
+  await expect(page.getByTestId('selection-count')).toHaveText('3 games selected');
   expect(opened).toEqual([]);
   expect(page.url()).not.toContain('hoopsjunkie');
+  await expect(page.getByTestId('team-list')).toBeVisible(); // no team switch either
+});
+
+test('a drag that starts on a week line (the matchup game link) selects games and opens nothing', async ({ page, context }) => {
+  await open(page, context, '?view=league&layout=calendar&date=2026-11-16');
+  const lines = page.locator('.ck-month-game:has(a[data-testid="game-link"])');
+  const from = lines.nth(1).locator('a[data-testid="game-link"] .ck-at').first();
+  const c = (await lines.nth(3).boundingBox())!;
+  const opened = await drag(page, context, from, { x: c.x + c.width / 2, y: c.y + c.height / 2 });
+  await expect(page.getByTestId('selection-count')).toHaveText(/^\d+ games selected$/);
+  expect(opened).toEqual([]);
+  expect(page.url()).not.toContain('hoopsjunkie');
+});
+
+test('a press on a List row\'s "↗" starts no box (a control, like the Slate\'s)', async ({ page, context }) => {
+  await open(page, context, '?view=team&layout=list&team=LAL');
+  const rows = page.locator('[data-testid="team-list"] .ck-card[data-next], [data-testid="team-list"] .ck-card[data-next] ~ .ck-card');
+  const c = (await rows.nth(5).boundingBox())!;
+  const opened = await drag(page, context, rows.nth(3).locator('a[data-testid="game-link"]'), { x: c.x + 300, y: c.y + c.height / 2 });
+  await expect(page.getByTestId('selection-count')).toHaveCount(0);
+  expect(opened).toEqual([]);
+});
+
+test('Cup schedule: League and Team rows get the "↗" icon too, no game link around the teams', async ({ page, context }) => {
+  await open(page, context, '?view=cup');
+  await page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
+  const rowsOk = async (scope: Locator) => {
+    const rows = scope.locator('.ck-card[data-game-id]');
+    await expect(rows.first()).toBeVisible();
+    const bad = await rows.evaluateAll((els) =>
+      els
+        .filter((r) => {
+          const links = r.querySelectorAll('a[data-testid="game-link"]');
+          const decided = !r.querySelector('.ck-matchup')!.textContent!.includes('TBD');
+          return (decided && links.length !== 1) || !!r.querySelector('.ck-mlink') || [...links].some((a) => a.textContent !== '↗' || !a.closest('.ck-tags'));
+        })
+        .map((r) => r.getAttribute('data-game-id')),
+    );
+    expect(bad).toEqual([]);
+    const id = (await rows.first().getAttribute('data-game-id'))!;
+    expect(await rows.first().locator('a[data-testid="game-link"]').getAttribute('href')).toBe(await wantUrl(page, id));
+  };
+  await rowsOk(page.getByTestId('cup-league'));
+  await page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' }).click();
+  await page.getByTestId('team-picker').click();
+  await page.getByRole('option', { name: /Lakers/ }).click();
+  await rowsOk(page.getByTestId('cup-team'));
 });

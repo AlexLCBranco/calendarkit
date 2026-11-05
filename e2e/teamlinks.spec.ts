@@ -284,17 +284,25 @@ test.describe('team links', () => {
     });
 
   test('hover: pointer and a faint tint, no underline (also inside a game link); nothing under .ck-capturing', async ({ page }) => {
-    await open(page, '?view=league&layout=list&date=2026-11-16');
-    const a = page.locator('[data-testid="league-list"] .ck-mlink .ck-team').first();
-    const style = (l: Locator) => l.evaluate((e) => ({ cursor: getComputedStyle(e).cursor, shadow: getComputedStyle(e).boxShadow, deco: getComputedStyle(e.closest('.ck-mlink')!).textDecorationLine, own: getComputedStyle(e).textDecorationLine }));
-    expect((await style(a)).shadow).toBe('none');
-    await a.hover();
-    const on = await style(a);
-    expect(on.cursor).toBe('pointer');
-    expect(on.shadow).not.toBe('none');
-    expect(on.deco).toBe('none');
-    expect(on.own).toBe('none');
-    await page.evaluate(() => document.querySelector('.ck-root')!.classList.add('ck-capturing'));
-    expect((await style(a)).shadow).toBe('none');
+    // a List row (round 16: no game link around it) and a week line (inside the matchup game link)
+    for (const [search, sel, inGame] of [
+      ['?view=league&layout=list&date=2026-11-16', '[data-testid="league-list"] .ck-teams .ck-team', false],
+      ['?view=league&layout=calendar&date=2026-11-16', '.ck-mline.ck-mlink .ck-mtri', true],
+    ] as const) {
+      await open(page, search);
+      const a = page.locator(sel).first();
+      expect(await a.evaluate((e) => !!e.closest('.ck-mlink')), search).toBe(inGame);
+      const style = (l: Locator) => l.evaluate((e) => ({ cursor: getComputedStyle(e).cursor, shadow: getComputedStyle(e).boxShadow, deco: getComputedStyle(e.closest('.ck-mlink') ?? e).textDecorationLine, own: getComputedStyle(e).textDecorationLine }));
+      await page.mouse.move(2, 2);
+      expect((await style(a)).shadow).toBe('none');
+      await a.hover();
+      const on = await style(a);
+      expect(on.cursor).toBe('pointer');
+      expect(on.shadow).not.toBe('none');
+      expect(on.deco).toBe('none');
+      expect(on.own).toBe('none');
+      await page.evaluate(() => document.querySelector('.ck-root')!.classList.add('ck-capturing'));
+      expect((await style(a)).shadow).toBe('none');
+    }
   });
 });

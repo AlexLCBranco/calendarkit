@@ -40,7 +40,7 @@ describe('URL (shell)', () => {
   });
 });
 
-describe('widgets: the matchup is a real <a> to the game page (round 5; replaced the hover "↗")', () => {
+describe('widgets: a real <a> to the game page (round 5: the matchup; round 16: the List rows get the "↗" icon)', () => {
   for (const [name, initial, sel] of [
     ['League List', { date: '2026-11-10' }, '.ck-card'],
     ['Team List', { mode: 'team', layout: 'list', teamId: TEAM.LAL }, '.ck-card'],
@@ -58,8 +58,23 @@ describe('widgets: the matchup is a real <a> to the game page (round 5; replaced
       expect(a.target).toBe('_blank');
       expect(a.rel.split(' ')).toContain('noopener');
       expect(a.draggable).toBe(false);
-      // the link is the matchup: both tricodes (or the opponent, in a narrow calendar cell), nothing hover-only
-      expect(a.textContent).toMatch(/DEN/);
+      const icon = name.endsWith('List');
+      if (icon) {
+        // round 16: List rows — the Slate's "↗" icon among the tags, never in a copy; the matchup is no link
+        expect(a.textContent!.trim()).toBe('↗');
+        expect(a.className).toBe('ck-slate-link');
+        expect(a.title).toBe('Open on hoopsjunkie');
+        expect(a.getAttribute('aria-label')).toBe('Open on hoopsjunkie');
+        expect(a.dataset.captureExclude).toBe('true');
+        expect(a.parentElement!.classList.contains('ck-tags')).toBe(true);
+        expect(target.querySelector('.ck-mlink')).toBeNull();
+        expect(target.querySelector('.ck-matchup')!.closest('a')).toBeNull();
+      } else {
+        // calendar cells and week lines: the link is the matchup — both tricodes (or the opponent), nothing hover-only
+        expect(a.textContent).toMatch(/DEN/);
+        expect(a.classList.contains('ck-mlink')).toBe(true);
+        expect(target.querySelector('.ck-slate-link')).toBeNull();
+      }
       expect(el.querySelector('[data-testid="open-link"], .ck-open-link')).toBeNull();
       // the copy button, fatigue components and records are not inside it
       expect(a.querySelector('button, [data-testid="fatigue"], .ck-rec')).toBeNull();
@@ -75,4 +90,21 @@ describe('widgets: the matchup is a real <a> to the game page (round 5; replaced
       expect(plain.querySelector('.ck-teams, .ck-mline, .ck-matchup .ck-side')).not.toBeNull();
     });
   }
+});
+
+describe('round 16: room for the "↗" in the desktop Team List (fatigue columns)', () => {
+  it('a Cup group tag drops "Group" there ("NBA Cup · West A", full name in its tooltip); the League List keeps it', () => {
+    const cup = game({ date: '2026-11-10', utc: '2026-11-11T02:00:00Z', away: TEAM.LAL, home: TEAM.DEN, subtype: 'in-season', subLabel: 'West Group A', raw: { gameLabel: 'Emirates NBA Cup' } });
+    const d = dataOf([cup]);
+    const team = render(<CalendarView data={d} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.LAL }} gameLink={appGameLink} />).container;
+    const row = team.querySelector(`.ck-card[data-game-id="${cup.gameId}"]`)!;
+    expect(row.querySelector('[data-testid="fatigue-team"]')).not.toBeNull(); // the desktop columns
+    const tag = row.querySelector<HTMLElement>('.ck-tag.ck-cup')!;
+    expect(tag.textContent).toBe('NBA Cup · West A');
+    expect(tag.title).toBe('NBA Cup · West Group A');
+    expect(row.querySelector('.ck-tags')!.firstElementChild!.textContent).toBe('↗');
+    cleanup();
+    const league = render(<CalendarView data={d} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-10' }} gameLink={appGameLink} />).container;
+    expect(league.querySelector('.ck-tag.ck-cup')!.textContent).toBe('NBA Cup · West Group A');
+  });
 });

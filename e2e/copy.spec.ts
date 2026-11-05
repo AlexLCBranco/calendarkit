@@ -418,12 +418,18 @@ async function selectRange(page: Page, sel: string, from: number, to: number) {
   await page.mouse.down();
   await page.mouse.move(b.x, b.y, { steps: 10 });
   await page.mouse.up();
-  // the selected games in on-screen order, with their text as drawn
-  return page.evaluate(() =>
-    [...document.querySelectorAll<HTMLElement>('.ck-select-area [data-game-id]')]
+  // the selected games in on-screen order, with their text as drawn — less the controls an image never has
+  // (data-capture-exclude: copy buttons, round 16's "↗" in List rows)
+  return page.evaluate(() => {
+    const drawn = (e: HTMLElement) => {
+      const c = e.cloneNode(true) as HTMLElement;
+      c.querySelectorAll('[data-capture-exclude="true"]').forEach((x) => x.remove());
+      return c.textContent!;
+    };
+    return [...document.querySelectorAll<HTMLElement>('.ck-select-area [data-game-id]')]
       .filter((e) => getComputedStyle(e).outlineStyle === 'solid')
-      .map((e) => ({ id: e.dataset.gameId!, text: e.textContent!, b2b: e.dataset.b2b ?? null, date: e.closest<HTMLElement>('[data-date]')?.dataset.date ?? e.closest<HTMLElement>('[data-day]')?.dataset.day ?? '' })),
-  );
+      .map((e) => ({ id: e.dataset.gameId!, text: drawn(e), b2b: e.dataset.b2b ?? null, date: e.closest<HTMLElement>('[data-date]')?.dataset.date ?? e.closest<HTMLElement>('[data-day]')?.dataset.day ?? '' }));
+  });
 }
 
 type Shot = Omit<Target, 'ratio'> & { items: { id: string; text: string; b2b: string | null; outline: string }[]; heads: string[]; rest: number; chrome: number };
