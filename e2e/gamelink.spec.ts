@@ -241,14 +241,14 @@ test('Cup schedule: League and Team rows get the "↗" icon too, no game link ar
   await open(page, context, '?view=cup');
   await page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
   const rowsOk = async (scope: Locator) => {
-    const rows = scope.locator('.ck-card[data-game-id]');
+    const rows = scope.locator('[data-game-id]');
     await expect(rows.first()).toBeVisible();
     const bad = await rows.evaluateAll((els) =>
       els
         .filter((r) => {
           const links = r.querySelectorAll('a[data-testid="game-link"]');
-          const decided = !r.querySelector('.ck-matchup')!.textContent!.includes('TBD');
-          return (decided && links.length !== 1) || !!r.querySelector('.ck-mlink') || [...links].some((a) => a.textContent !== '↗' || !a.closest('.ck-tags'));
+          const decided = !r.querySelector('.ck-matchup, .ck-cg-match')!.textContent!.includes('TBD');
+          return (decided && links.length !== 1) || !!r.querySelector('.ck-mlink') || [...links].some((a) => a.textContent !== '↗' || !a.closest('.ck-tags, .ck-cg-link'));
         })
         .map((r) => r.getAttribute('data-game-id')),
     );
@@ -256,7 +256,12 @@ test('Cup schedule: League and Team rows get the "↗" icon too, no game link ar
     const id = (await rows.first().getAttribute('data-game-id'))!;
     expect(await rows.first().locator('a[data-testid="game-link"]').getAttribute('href')).toBe(await wantUrl(page, id));
   };
+  await rowsOk(page.getByTestId('cup-league')); // By group
+  await expect(page.getByTestId('cup-league').locator('[data-game-id]')).toHaveCount(67);
+  await page.getByRole('tablist', { name: 'Cup layout' }).getByRole('tab', { name: 'By date' }).click();
+  await expect(page.getByTestId('cup-league')).toHaveAttribute('data-by', 'date');
   await rowsOk(page.getByTestId('cup-league'));
+  await page.getByRole('tablist', { name: 'Cup layout' }).getByRole('tab', { name: 'By group' }).click();
   await page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' }).click();
   await page.getByTestId('team-picker').click();
   await page.getByRole('option', { name: /Lakers/ }).click();

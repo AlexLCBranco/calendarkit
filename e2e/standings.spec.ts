@@ -295,7 +295,7 @@ const VIEWS: { name: string; url: string; marker: string; then?: (p: Page) => Pr
   { name: 'Team List', url: '?view=team&layout=list&team=BOS', marker: '[data-testid="team-list"]' },
   { name: 'Team Calendar', url: '?view=team&layout=calendar&team=BOS', marker: '.ck-team-grid' },
   { name: 'Cup standings', url: '?view=cup', marker: '[data-testid="cup-grid"]' },
-  { name: 'Cup schedule', url: '?view=cup', marker: '[data-testid="cup-night"]', then: (p) => p.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click() },
+  { name: 'Cup schedule', url: '?view=cup', marker: '[data-testid="cup-board"]', then: (p) => p.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click() },
   { name: 'Standings', url: '?view=standings', marker: '[data-testid="standings-table"]' },
 ];
 

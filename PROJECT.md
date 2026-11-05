@@ -34,10 +34,9 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-05, after round 18)
-v1.38.0: **Standings** shows West and East side by side, one column set at a time (Main | Splits | Form & scoring |
-Schedule & B2B) for both; the West | East | League toggle and the League table are gone. See "### Round 18" (and
-"### Round 17" for the data, tiebreakers and popup).
+## Current state / handoff (2026-11-05, after round 19)
+v1.39.0: **Cup → Schedule → League** redone as "By group | By date" (By group first); rounds are gone. See
+"### Round 19". v1.38.0: **Standings** shows West and East side by side ("### Round 18", "### Round 17").
 
 ## Previous handoff (2026-11-05, after round 16)
 v1.36.0: League List / Team List rows (and the Cup schedule's) open the game page from a separate "↗" icon — the Slate's —
@@ -1966,7 +1965,7 @@ pixel checks, tablet + phone 55 — all pass (after the live-site handling of th
   row vs the snapshot's dates; Team list on "full Cup" data; copies read back from the clipboard + marquee; the fit rule +
   top bar). Screenshots `test-output/cupschedule-*.png`.
 
-- **12b, group play by round (v1.31.0; Alex: "give me what round of the group play it is … sort by round 1 2 3 4, the dates
+- **12b, group play by round (v1.31.0; replaced in round 19 by By group / By date; Alex: "give me what round of the group play it is … sort by round 1 2 3 4, the dates
   are just confusing").** The feed has no rounds: group games are on shared Cup nights, and 16 of the 60 are one team's Nth
   group game and the other's (N+1)th (e.g. Nov 6 CHA @ WAS: CHA's 2nd, WAS's 1st). **Alex's choices (asked):** Round N =
   every team's Nth group game — each team exactly once per round, a split game in both rounds (18 / 20 / 20 / 18 games) —
@@ -2173,6 +2172,40 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
 - **Tests** (`e2e/standings.spec.ts`): side by side, 15 rows each, no scroll at 1600 × 1000 and 1920 × 950 in all 4 sets;
   no toggle / League view; each set's exact columns in both tables; sorting both; set kept until reload; copy (Main,
   Schedule & B2B) has both tables and both playoff lines. Popup unchanged.
+
+### Round 19 (2026-11-05): Cup schedule By group / By date (v1.39.0)
+- **Why** (Alex): the round view (12b) mixed dates inside a "Round", listed the 16 split games twice with a footnote,
+  mixed "Round N" and dates in the strip, had wide rows with far-off pills, an empty bottom and unexplained marks. Rounds
+  are gone as navigation (`cupStops`, `cupLeagueTag`, the round tabs, the G2/G1 tag, ListDaySection `columns` /
+  `dateLabel` / `tvPill`, WeekStrip `top` / `num` / `aria` removed). A team's group game number stays in the row's
+  tooltip ("CHA's 2nd group game, WAS's 1st") and the Team list's tag ("Group round 2 · East C"). Cup Team view unchanged.
+- **Toggle** "Cup layout" (By group | By date) in the top bar, League only, By group first; CupState `by`, reset when the
+  Cup view is left, never stored.
+- **By group**: a 4-column grid — West A/B/C over East A/B/C, each panel its group's 10 games in date / tip-off order:
+  date "Fri 30/10" · logo AWAY @ HOME logo · score (away–home, winner bold, OT) or local tip-off · ↗. **The knockout is
+  beside it, as the 4th column** (Quarterfinals · Dec 4 – 5; Semifinals · Dec 8 + Final · Dec 11). Data: `cupBoard`.
+- **By date**: the strip = every Cup night (7 group + 4 knockout, all as dates, game count under each; ‹ › and ← / →).
+  **Every night is shown at once** in 4 balanced CSS columns (one night alone left most of the screen empty); the
+  strip's night is marked (accent heading + bar, `aria-current`). A night's games grouped by group (West A … East C,
+  tip-off order inside; `nightByGroup`), the group pill right after the teams. The 4 knockout nights share one card (each
+  with its own heading; 4 cards overflowed 950 px by ~100 px); knockout rows have no pill (the heading names the round,
+  and it didn't fit at 1600).
+- **Rows** (`CupRow`: one line, 24 px; text = the League List's 14 px × its zoom): tricodes are `TeamLink`s with the
+  League views' `FatigueMark` (yellow fill = 2nd night, yellow outline = 1st, plane, purple underline = 3-in-4) and one
+  `FatigueLegend` line under the view; the game link = `GameLinkIcon` "↗"; undecided sides are plain muted "TBD".
+  Tooltip: date · matchup · stage, result or tip-off, group game numbers, season series (`seriesLine`), national TV.
+  No chips on the rows.
+- **Copy view** = `[data-testid="cup-copy"]`: every panel + the legend (By group), every night + the legend (By date; the
+  strip is navigation and stays out). The marquee still works (rows carry `data-game-id`).
+- **Fit** (e2e, real and full-Cup data): view bottom 814 / 950 (By group) and 939 / 950 (By date) at 1920; 730 / 842 of
+  1000 at 1600. Width is the tight side at 1600: ~12 px spare per By group row. At 1280 the top bar takes 2 rows with
+  the toggle (the Cup Team view already did); the view still fits.
+- **Tests**: unit `tests/cupschedule.test.tsx` (board; numbers line; 6 panels × 10 from the real feed with dates and
+  results; knockout TBD; tooltip; strip = the nights as dates; each night grouped, no game twice; opening night, ‹ ›,
+  keys; B2B marks + one legend; switches and the default); e2e `e2e/cupschedule.spec.ts` (both views against the
+  snapshot worked out in the test, real and full Cup; the tooltip's numbers for all 60 games, 16 split; B2B per row in
+  both views; no mark on the teams but the legend's; copies of both views; fit at both sizes, screenshots
+  `test-output/cupschedule-by{group,date}-*.png`), plus `gamelink`, `teamlinks` (both views) and `standings`.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

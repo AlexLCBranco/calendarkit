@@ -1,61 +1,190 @@
-// Cup → Schedule (round 12): the NBA Cup's games as lists, from the schedule already loaded (src/data/cupSchedule.ts).
-// League: one Cup night at a time (round tabs, a strip of the Cup nights, ← / →), drawn with the League List's day
-// section and rows. Team: one team's Cup games under "Played" and "Remaining", drawn with the Team List. Every row is
-// the existing one, with the facts it has elsewhere; back-to-backs, 3-in-4s and records come from the whole schedule
-// (leagueFatigue, teamB2BPairs, teamSeason read `data`, not the Cup games). Part of the Cup view's chunk; nothing here
-// runs until the Schedule tab is opened.
+// Cup → Schedule (round 12; League list redone in round 18): the NBA Cup's games from the schedule already loaded
+// (src/data/cupSchedule.ts).
+// League, two layouts (the top bar's "By group | By date", By group first):
+//  - By group: six panels (West A/B/C over East A/B/C), each its group's 10 games in date order, and a fourth column with
+//    the knockout (quarterfinals; semifinals + Final). Every game on one screen, no scrolling.
+//  - By date: the strip of every Cup night (group and knockout, all dates), ‹ › and ← / → step them; the night's games
+//    grouped by group, the group pill beside the teams.
+//  Rows are compact (one line): the tricodes carry the League views' fatigue marks (FatigueMark: yellow back-to-back,
+//  purple 3-in-4) with one legend line; the teams are team links, the game page the shared "↗" icon; the rest (each
+//  team's group game number, season series, national TV) is in the row's tooltip.
+// Team: one team's Cup games under "Played" and "Remaining", drawn with the Team List (unchanged since round 12).
+// Fatigue and records come from the whole schedule (leagueFatigue reads `data`, not the Cup games). Part of the Cup
+// view's chunk; nothing here runs until the Schedule tab is opened.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import type { CalendarData } from '../data/model';
+import { cupTag, finalScore, nationalTv, overtime, teamLabel, tipoff, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { CUP_ROUNDS, cupLeagueTag, cupOpeningStop, cupStopHeading, cupStops, cupTeamTag, teamCupGames } from '../data/cupSchedule';
+import { cupBoard, cupNightHeading, cupNights, cupOpeningNight, cupTeamTag, type CupNight, groupNumberLine, groupShort, nightByGroup, teamCupGames } from '../data/cupSchedule';
+import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
+import { GameLinkIcon, TeamLogo, TipTime } from '../slate/parts';
+import { seriesLine } from '../slate/series';
+import { TeamLink } from '../slate/teamLink';
 import type { GameLink } from './GameCard';
-import { FatigueLegend } from './FatigueMark';
-import { FATIGUE_SLOTS_MIN_WIDTH, leagueListStyle, ListDaySection } from './LeagueListView';
-import { Segmented } from './Segmented';
+import { FatigueLegend, FatigueMark } from './FatigueMark';
 import { TeamHeader } from './TeamHeader';
 import { rowDate, TeamListView } from './TeamListView';
 import { WeekStrip } from './WeekStrip';
-import type { WidgetSize } from './widget';
+import { fmtDate, leagueZoom, plural, type WidgetSize } from './widget';
+
+export type CupLayout = 'group' | 'date';
 
 export interface CupScheduleProps {
   data: CalendarData;
   list: 'league' | 'team';
+  /** League list: By group (the default) or By date. */
+  by?: CupLayout;
   /** Team list: the picked team; none until one is picked (no default, nothing remembered). */
   teamId?: number;
   size: WidgetSize;
   now: number;
-  /** Local date (the clock's): the League list opens on the Cup night of today, else the next one. */
+  /** Local date (the clock's): By date opens on the Cup night of today, else the next one. */
   today: string;
   timeZone?: string;
   onOpenGame?: (gameId: string) => void;
   gameLink?: GameLink;
-  /** Told the night on show (the host clears a marquee selection when it changes). */
+  /** By date: told the night on show (the host clears a marquee selection when it changes). */
   onNight?: (date: string) => void;
 }
 
 export default function CupSchedule(p: CupScheduleProps) {
-  return p.list === 'league' ? <CupLeague {...p} /> : <CupTeam {...p} />;
+  if (p.list === 'team') return <CupTeam {...p} />;
+  return p.by === 'date' ? <CupByDate {...p} /> : <CupByGroup {...p} />;
 }
 
-const dateLabel = (g: ScheduleGame) => rowDate(g.dateEt);
-/** Group rounds (18–20 games) in two columns: every Cup night fits the window without scrolling (round 12b). */
-export const CUP_ROUND_COLUMNS = 2;
-const COL_GAP = 16;
-const ordinal = (n: number) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
+type Fatigue = Map<string, Map<number, TeamFatigue>>;
 
-function CupLeague({ data, size, now, today, timeZone, onOpenGame, gameLink, onNight }: CupScheduleProps) {
-  const stops = useMemo(() => cupStops(data), [data]);
-  const tag = useMemo(() => cupLeagueTag(data), [data]);
-  const [key, setKey] = useState(() => cupOpeningStop(stops, today));
-  const i = stops.findIndex((x) => x.key === key);
-  const n = stops[i];
+/** The row's tooltip: date and matchup, result or tip-off, each team's group game number, season series, TV, the Cup stage. */
+function rowTip(data: CalendarData, g: ScheduleGame, timeZone?: string) {
+  const away = teamLabel(g.awayTeam);
+  const home = teamLabel(g.homeTeam);
+  const r = finalScore(g, g.awayTeam.teamId);
+  const ot = r && overtime(g);
+  const tip = tipoff(g, timeZone);
+  const tv = nationalTv(g);
+  const stage = g.isCupGroupGame ? `Group play · ${groupShort(g.gameSubLabel)}` : cupTag(g);
+  return [
+    `${fmtDate(g.dateEt, { weekday: 'short', month: 'short', day: 'numeric' })} · ${away} @ ${home} · ${stage}`,
+    r ? `Final: ${away} ${r.score}, ${home} ${r.oppScore}${ot ? ` (${ot})` : ''}` : tip.tbd ? 'Tip-off: TBD' : `Tip-off: ${tip.label}`,
+    groupNumberLine(data, g),
+    seriesLine(data, g),
+    tv.length ? `US national TV: ${tv.join(' · ')}` : undefined,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+/**
+ * One game on one line. By group: date · matchup · score or time · ↗. By date: time or score · matchup · group pill · ↗.
+ * The cells sit in the list's grid columns (subgrid), so every row of a list lines up.
+ */
+function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: { g: ScheduleGame; data: CalendarData; fatigue: Fatigue; by: CupLayout; pill?: string; timeZone?: string; gameLink?: GameLink; groupStart?: boolean }) {
+  const r = finalScore(g, g.awayTeam.teamId);
+  const ot = r && overtime(g);
+  const tip = tipoff(g, timeZone);
+  const f = fatigue.get(g.gameId);
+  const url = gameLink?.(g);
+  // an undecided side is plain text (no team to link to)
+  const team = (t: ScheduleGame['homeTeam'], win: boolean) => !t.teamId ? <span className="ck-cg-tbd">TBD</span> : (
+    <TeamLink teamId={t.teamId} className={`ck-team${r ? (win ? ' ck-win' : ' ck-loss') : ''}`}>
+      {f?.get(t.teamId) ? <FatigueMark f={f.get(t.teamId)}>{teamLabel(t)}</FatigueMark> : teamLabel(t)}
+    </TeamLink>
+  );
+  const result = (
+    <span className={`ck-cg-res${r ? '' : ' ck-cg-time'}${!r && tip.tbd ? ' ck-tbd' : ''}`} data-testid="cup-result">
+      {r ? (
+        <>
+          <span className={r.win ? 'ck-score-win' : undefined}>{r.score}</span>–<span className={r.win ? undefined : 'ck-score-win'}>{r.oppScore}</span>
+          {ot && <span className="ck-ot"> {ot}</span>}
+        </>
+      ) : (
+        <TipTime tip={tip} />
+      )}
+    </span>
+  );
+  const label = `${teamLabel(g.awayTeam)} at ${teamLabel(g.homeTeam)}, ${fmtDate(g.dateEt, { month: 'short', day: 'numeric' })}, ${r ? `final ${r.score}–${r.oppScore}${ot ? ` (${ot})` : ''}` : tip.label}`;
+  return (
+    <article className={`ck-cg${r ? ' ck-cg-final' : ''}${groupStart ? ' ck-cg-newgroup' : ''}`} data-game-id={g.gameId} data-tip={rowTip(data, g, timeZone)} aria-label={label}>
+      {by === 'group' ? <span className="ck-cg-date">{rowDate(g.dateEt)}</span> : result}
+      <span className="ck-cg-match">
+        <TeamLogo team={g.awayTeam} />
+        {team(g.awayTeam, !!r?.win)} <span className="ck-vsat">@</span> {team(g.homeTeam, !!r && !r.win)}
+        <TeamLogo team={g.homeTeam} />
+      </span>
+      {by === 'group' ? result : pill ? <span className="ck-tag ck-cup ck-cg-pill">{pill}</span> : <span />}
+      <span className="ck-cg-link">{url && <GameLinkIcon url={url} />}</span>
+    </article>
+  );
+}
+
+const zoomStyle = (width: number) => {
+  const zoom = leagueZoom(width);
+  return { zoom, width: Math.floor(width / zoom) } as CSSProperties;
+};
+
+/** "Dec 4 – 5", "Dec 8": the ET dates a set of games spans. */
+const span = (games: ScheduleGame[]) => {
+  if (!games.length) return '';
+  const a = games[0]!.dateEt;
+  const b = games.at(-1)!.dateEt;
+  const md = (d: string) => fmtDate(d, { month: 'short', day: 'numeric' });
+  return a === b ? md(a) : a.slice(0, 7) === b.slice(0, 7) ? `${md(a)} – ${Number(b.slice(8))}` : `${md(a)} – ${md(b)}`;
+};
+
+function Panel({ title, games, testId, group, ...row }: { title: string; games: ScheduleGame[]; testId: string; group?: string; data: CalendarData; fatigue: Fatigue; timeZone?: string; gameLink?: GameLink }) {
+  return (
+    <section className="ck-cg-panel" data-testid={testId} data-group={group} aria-label={title}>
+      <h3 className="ck-cg-head">{title}</h3>
+      <div className="ck-cg-list">
+        {games.length ? games.map((g) => <CupRow key={g.gameId} g={g} by="group" {...row} />) : <p className="ck-cg-none">Not in the schedule yet</p>}
+      </div>
+    </section>
+  );
+}
+
+function CupByGroup({ data, size, timeZone, gameLink }: CupScheduleProps) {
+  const board = useMemo(() => cupBoard(data), [data]);
+  const fatigue = leagueFatigue(data); // once per data set
+  if (!board.groups.length) return <p className="ck-empty">The schedule has no Cup games.</p>;
+  const row = { data, fatigue, timeZone, gameLink };
+  const panel = (i: number) => {
+    const grp = board.groups[i];
+    return grp ? <Panel key={grp.label} title={groupShort(grp.label)} games={grp.games} testId="cup-group" group={grp.label} {...row} /> : <div key={i} />;
+  };
+  const ko = (title: string, games: ScheduleGame[], testId: string) => <Panel title={games.length ? `${title} · ${span(games)}` : title} games={games} testId={testId} {...row} />;
+  return (
+    <section className="ck-cup-sched ck-cup-bygroup" aria-label="NBA Cup schedule by group" data-testid="cup-league" data-by="group" style={zoomStyle(size.width)}>
+      <div className="ck-cup-copy" data-testid="cup-copy">
+        <div className="ck-cup-board" data-testid="cup-board" data-select-scroller>
+          {[0, 1, 2].map(panel)}
+          <div className="ck-cg-ko" data-testid="cup-knockout">
+            {ko('Quarterfinals', board.qf, 'cup-qf')}
+          </div>
+          {[3, 4, 5].map(panel)}
+          <div className="ck-cg-ko">
+            {ko('Semifinals', board.sf, 'cup-sf')}
+            {ko('Final', board.final, 'cup-final')}
+          </div>
+          {board.groups.slice(6).map((_, k) => panel(6 + k))}
+        </div>
+        <FatigueLegend />
+      </div>
+    </section>
+  );
+}
+
+function CupByDate({ data, size, today, timeZone, gameLink, onNight }: CupScheduleProps) {
+  const nights = useMemo(() => cupNights(data), [data]);
+  const fatigue = leagueFatigue(data);
+  const [date, setDate] = useState(() => cupOpeningNight(nights, today));
+  const i = nights.findIndex((n) => n.date === date);
+  const n = nights[i];
   const onNightRef = useRef(onNight);
   onNightRef.current = onNight;
-  useEffect(() => void (key && onNightRef.current?.(key)), [key]);
+  useEffect(() => void (date && onNightRef.current?.(date)), [date]);
 
-  const go = (k: number) => stops[k] && setKey(stops[k].key);
-  // ← / → step the rounds and nights, with the League List's rules (not in a field, a tab row, a listbox, an open picker, or with a modifier)
+  const go = (k: number) => nights[k] && setDate(nights[k].date);
+  // ← / → step the nights, with the League List's rules (not in a field, a tab row, a listbox, an open picker, or with a modifier)
   const goRef = useRef(go);
   goRef.current = go;
   const at = useRef(i);
@@ -71,47 +200,48 @@ function CupLeague({ data, size, now, today, timeZone, onOpenGame, gameLink, onN
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  const strip = useMemo(
-    () =>
-      stops.map((x) =>
-        x.group !== undefined
-          ? { date: x.key, top: 'Round', num: String(x.group), aria: `Group play, round ${x.group}`, sub: String(x.games.length), disabled: false }
-          : { date: x.key, sub: String(x.games.length), disabled: false },
-      ),
-    [stops],
-  );
-  const day = useMemo(() => n && { date: n.first, games: n.games }, [n]);
-  if (!n || !day) return <p className="ck-empty">The schedule has no Cup games.</p>;
-  const base = leagueListStyle(size.width);
-  const cols = n.group !== undefined ? CUP_ROUND_COLUMNS : undefined;
-  const zoom = (base?.zoom as number | undefined) ?? 1;
-  // two columns take the whole widget width (at the List's zoom, so the text keeps its size)
-  const style = base && cols ? ({ ...base, width: Math.floor(size.width / zoom), maxWidth: Math.floor(size.width / zoom), '--ck-col-gap': `${COL_GAP}px` } as CSSProperties) : base;
+  const strip = useMemo(() => nights.map((x) => ({ date: x.date, sub: String(x.games.length), disabled: false })), [nights]);
+  // one card per group night; the knockout nights (2, 2, 2, 1 games) share one card, so every night fits the window
+  const cards = useMemo(() => {
+    const out: { night: CupNight; games: ScheduleGame[] }[][] = [];
+    for (const x of nights) {
+      const item = { night: x, games: nightByGroup(x) };
+      const last = out.at(-1);
+      if (x.round !== 'group' && last && last[0]!.night.round !== 'group') last.push(item);
+      else out.push([item]);
+    }
+    return out;
+  }, [nights]);
+  if (!n) return <p className="ck-empty">The schedule has no Cup games.</p>;
+  // the group pill; a knockout row has none (its night's heading names the round, and the pill would not fit at 1600 px)
+  const pillOf = (g: ScheduleGame) => (g.isCupGroupGame ? groupShort(g.gameSubLabel) : undefined);
   return (
-    <section className={`ck-league-list ck-cup-sched${base ? ' ck-league-side' : ''}${cols ? ' ck-cup-rounds-view' : ''}`} aria-label="NBA Cup schedule" data-testid="cup-league" data-stop={n.key} style={style}>
-      <div className="ck-cup-rounds">
-        <Segmented
-          label="Round"
-          value={n.round}
-          options={CUP_ROUNDS.map((r) => [r.round, r.label])}
-          onChange={(r) => {
-            const d = stops.find((x) => x.round === r);
-            if (d) setKey(d.key);
-          }}
-        />
+    <section className="ck-cup-sched ck-cup-bydate" aria-label="NBA Cup schedule by date" data-testid="cup-league" data-by="date" data-night={n.date} style={zoomStyle(size.width)}>
+      <div className="ck-cup-strip" style={{ '--ck-nights': nights.length } as CSSProperties}>
+        <WeekStrip days={strip} selected={n.date} today={today} onPick={setDate} onPrev={() => go(i - 1)} onNext={() => go(i + 1)} prevDisabled={i <= 0} nextDisabled={i >= nights.length - 1} unit="night" label="Cup nights" />
       </div>
-      <div className="ck-cup-strip" style={{ '--ck-nights': stops.length } as CSSProperties}>
-        <WeekStrip days={strip} selected={n.key} today={today} onPick={setKey} onPrev={() => go(i - 1)} onNext={() => go(i + 1)} prevDisabled={i <= 0} nextDisabled={i >= stops.length - 1} unit="stop" label="Cup rounds and nights" />
+      <div className="ck-cup-copy" data-testid="cup-copy">
+        {/* every night at once, in date order down four balanced columns; the strip's night is outlined */}
+        <div className="ck-cup-nights" data-select-scroller>
+          {cards.map((card) => (
+            <div key={card[0]!.night.date} className={`ck-cg-panel ck-cg-card${card.length > 1 ? ' ck-cg-kocard' : ''}`}>
+              {card.map(({ night, games }) => (
+                <section key={night.date} className={`ck-cg-night${night.date === n.date ? ' ck-cg-picked' : ''}`} data-testid="cup-night" data-night={night.date} aria-label={cupNightHeading(night)} aria-current={night.date === n.date || undefined}>
+                  <h3 className="ck-cg-head">
+                    {cupNightHeading(night)} · {plural(games.length)}
+                  </h3>
+                  <div className="ck-cg-list">
+                    {games.map((g, k) => (
+                      <CupRow key={g.gameId} g={g} data={data} fatigue={fatigue} by="date" pill={pillOf(g)} timeZone={timeZone} gameLink={gameLink} groupStart={k > 0 && pillOf(games[k - 1]!) !== pillOf(g)} />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ))}
+        </div>
+        <FatigueLegend />
       </div>
-      <div className="ck-llist" data-testid="cup-night" data-select-scroller>
-        <ListDaySection key={n.key} day={day} data={data} compact={false} fatigueSlots={!cols && size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} heading={cupStopHeading(n)} cupTag={tag} dateLabel={cols ? dateLabel : undefined} columns={cols} tvPill={!!cols} />
-      </div>
-      {cols && (
-        <p className="ck-cup-note" data-testid="cup-round-note">
-          Round {n.group} = every team’s {ordinal(n.group!)} Cup group game. “G2/G1”: the away team’s 2nd group game and the home team’s 1st — a game like that is in both rounds.
-        </p>
-      )}
-      <FatigueLegend component={!cols && size.width >= FATIGUE_SLOTS_MIN_WIDTH} />
     </section>
   );
 }

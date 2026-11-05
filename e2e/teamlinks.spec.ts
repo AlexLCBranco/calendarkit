@@ -146,14 +146,26 @@ const VIEWS: { name: string; search: string; scope: string; layout?: 'calendar';
   { name: 'Team Calendar (2 weeks)', search: '?view=team&layout=calendar&team=LAL&span=2w', scope: '.ck-team-grid', layout: 'calendar', title: 'Nov 15 – 28, 2026', date: TODAY, kinds: ['.ck-team-grid .ck-team.ck-opp'] },
   { name: 'Cup standings', search: '?view=cup', scope: '[data-testid="cup"]', date: TODAY, kinds: ['.ck-cup-name', '.ck-cup-row .ck-logo-backing', '.ck-cup-tri'] },
   {
-    name: 'Cup schedule, League',
+    name: 'Cup schedule, League by group',
     search: '?view=cup',
     scope: '[data-testid="cup-league"]',
-    date: (d) => d >= '2026-10-30' && d <= '2026-12-31',
-    kinds: ['[data-testid="cup-league"] .ck-team'],
+    date: TODAY, // no night on show: today
+    kinds: ['[data-testid="cup-league"] .ck-team', '[data-testid="cup-league"] .ck-logo-backing'],
     prepare: async (p) => {
       await p.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
-      await expect(p.getByTestId('cup-league')).toBeVisible();
+      await expect(p.getByTestId('cup-board')).toBeVisible();
+    },
+  },
+  {
+    name: 'Cup schedule, League by date',
+    search: '?view=cup',
+    scope: '[data-testid="cup-league"]',
+    date: '2026-11-20', // the night on show: the next Cup night after Sun Nov 15
+    kinds: ['[data-testid="cup-league"] .ck-team', '[data-testid="cup-league"] .ck-logo-backing'],
+    prepare: async (p) => {
+      await p.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
+      await p.getByRole('tablist', { name: 'Cup layout' }).getByRole('tab', { name: 'By date' }).click();
+      await expect(p.getByTestId('cup-league')).toHaveAttribute('data-by', 'date');
     },
   },
   {

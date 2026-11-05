@@ -5,8 +5,8 @@
 
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { hasNationalTv, opponentSecondNight, type CalendarData } from '../data/model';
-import { cupLeagueTag, cupNightHeading, cupNights, cupTeamTag } from '../data/cupSchedule';
+import { cupTag, hasNationalTv, opponentSecondNight, type CalendarData } from '../data/model';
+import { cupNightHeading, cupNights, cupTeamTag } from '../data/cupSchedule';
 import { teamThreeInFour } from '../data/scheduleTags';
 import { timeGroups } from './dayflow';
 import { GameCard } from './GameCard';
@@ -64,7 +64,7 @@ export function SelectionCapture(p: SelectionCaptureProps) {
       <section className={`ck-league-list${leagueListStyle(size.width) ? ' ck-league-side' : ''}`} aria-label="Selected games" style={leagueListStyle(size.width)}>
         <div className="ck-llist">
           {days.map((d) => (
-            <ListDaySection key={d.date} day={d} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} heading={nights && cupNightHeading(nights.get(d.date)!)} cupTag={cup ? cupLeagueTag(data) : undefined} series={!cup} />
+            <ListDaySection key={d.date} day={d} data={data} compact={false} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} heading={nights && cupNightHeading(nights.get(d.date)!)} cupTag={cup ? cupTag : undefined} series={!cup} />
           ))}
         </div>
       </section>

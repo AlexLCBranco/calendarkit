@@ -278,18 +278,148 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Cup → Schedule (round 12): the League List's rows (League) and the Team List's (Team), centered; the whole view fits
-   the window (1920 × 950, 1600 × 1000; e2e/cupschedule.spec.ts) — the busiest night and a team's 7 Cup games. */
-.ck-league-list.ck-cup-sched {
-  flex: none;
-  margin-left: auto;
-  margin-right: auto;
-}
-.ck-cup-rounds {
+/* Cup → Schedule, League (round 18): By group (3 × 2 group panels + a knockout column) and By date (the Cup nights'
+   strip, one night grouped by group). Rows at the League List's text size (its zoom, set inline); every row one line;
+   the whole view fits the window without scrolling (1920 × 950, 1600 × 1000; e2e/cupschedule.spec.ts). */
+.ck-cup-sched {
   flex: none;
   display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  font-size: 14px;
+}
+.ck-cup-copy {
+  background: var(--ck-bg);
+}
+.ck-cup-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+}
+.ck-cg-ko {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ck-cg-panel {
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  padding: 4px 5px 6px;
+  min-width: 0;
+}
+.ck-cg-head {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 20px;
+  letter-spacing: 0.04em;
+  color: var(--ck-muted);
+  white-space: nowrap;
+}
+.ck-cg-none {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ck-muted);
+}
+/* one grid per list; each row a subgrid of it, so the columns line up and every row is one line */
+.ck-cg-list {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  column-gap: 5px;
+}
+.ck-cg {
+  --ck-logo: 16px;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  height: 24px;
+  white-space: nowrap;
+  border-radius: 4px;
+}
+.ck-cg:hover {
+  background: var(--ck-surface-2);
+}
+.ck-cg + .ck-cg {
+  border-top: 1px solid color-mix(in srgb, var(--ck-border) 55%, transparent);
+}
+.ck-cg-date,
+.ck-cg-res {
+  font-variant-numeric: tabular-nums;
+}
+.ck-cg-date,
+.ck-cg-time {
+  color: var(--ck-muted);
+}
+.ck-cg-res {
+  text-align: right;
+}
+.ck-cg-res .ck-score-win,
+.ck-cg-final .ck-win {
+  font-weight: 700;
+}
+.ck-cg-res .ck-ot {
+  font-size: 11px;
+  color: var(--ck-muted);
+}
+.ck-cg-match {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+/* tricodes in a fixed slot (MEM, the widest, 2.6 em as in the List rows) so the "@" sits at one x on every row */
+.ck-cg-match .ck-team,
+.ck-cg-tbd {
+  display: inline-block;
+  min-width: 2.6em;
+}
+.ck-cg-match > :nth-child(2) {
+  text-align: right;
+}
+.ck-cg-tbd {
+  color: var(--ck-muted);
+}
+.ck-cg-link {
+  display: inline-flex;
+  width: 1.2em;
   justify-content: center;
-  margin-bottom: 6px;
+}
+/* By date: every night at once, down four balanced columns; the time first, the group pill right after the teams, a
+   little air between groups; the strip's night outlined */
+.ck-cup-nights {
+  columns: 4;
+  column-gap: 10px;
+}
+.ck-cg-card {
+  break-inside: avoid;
+  margin-bottom: 10px;
+}
+.ck-cg-night + .ck-cg-night {
+  margin-top: 4px;
+}
+/* the strip's night: its heading in the accent colour, a thin accent bar on its left */
+.ck-cg-night.ck-cg-picked {
+  box-shadow: -4px 0 0 -1px var(--ck-accent);
+}
+.ck-cg-night.ck-cg-picked > .ck-cg-head {
+  color: var(--ck-accent);
+}
+.ck-cg-night .ck-cg-list {
+  grid-template-columns: auto auto auto 1fr;
+}
+.ck-cg-night .ck-cg-res {
+  text-align: left;
+}
+.ck-cg-night .ck-cg.ck-cg-newgroup {
+  margin-top: 4px;
+}
+.ck-cg-pill {
+  justify-self: start;
+}
+.ck-cup-sched .ck-fm-legend {
+  height: auto;
 }
 /* every Cup night in one row (11 in 2026-27), not the strip's fixed week */
 .ck-cup-strip {
@@ -320,21 +450,4 @@
 .ck-cup-none,
 .ck-cup-pick {
   text-align: center;
-}
-/* group rounds: the round's games in two columns, filled top to bottom */
-.ck-daylist.ck-daylist-cols {
-  display: grid;
-  grid-template-columns: repeat(var(--ck-cols), minmax(0, 1fr));
-  grid-template-rows: repeat(var(--ck-col-rows), auto);
-  grid-auto-flow: column;
-  column-gap: var(--ck-col-gap, 16px);
-}
-.ck-daylist.ck-daylist-cols {
-  align-items: start; /* a row never takes the height of its neighbour in the other column */
-}
-.ck-cup-note {
-  flex: none;
-  margin: 2px 0 4px;
-  font-size: 11px;
-  color: var(--ck-muted);
 }
