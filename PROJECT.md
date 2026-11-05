@@ -2028,7 +2028,9 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
 - **Odds: ESPN moneyline**, no key (The Odds API's free tier is 500 credits a month, too few). `api/odds.ts` is a Vercel
   function: one same-origin request per day shown, `s-maxage` 10 min while any game of the day isn't final, 24 h once
   all are (`oddsCacheSeconds`); any failure → 502 with no odds, and the Slate shows none. `vite preview` answers no
-  odds, so e2e runs never reach ESPN.
+  odds, so e2e runs never reach ESPN. **v1.33.1:** the function crashed on Vercel (500 on every request: an
+  extensionless relative import is fatal in plain Node ESM); imports under `api/` name `.js` files
+  (`tests/api-imports.test.ts`), and the CI live job now calls the deployed function (`smoke.spec.ts`).
 - **Season-series chip** ("G2/4") on Slate cards and League / Team List rows, also in copied images; left out of the
   Cup schedule (`series={false}`). Week view and Team Calendar: in the tooltip only.
 - **Days with no games**: every day from opening night to the last game is listed and pickable ("No games" / "No
