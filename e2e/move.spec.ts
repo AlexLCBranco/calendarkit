@@ -32,6 +32,8 @@ async function serveBuild(ctx: BrowserContext, headers: Record<string, string> =
     const old = u.origin === OLD;
     let f: string | null = null;
     // calendarkit's vercel.json: /calendar, /calendar/ → index.html; /calendar/* → the file; anything else: the file
+    // round 14: the odds function (api/odds.ts) answers as under vite preview: no odds (the live run reaches the real one)
+    if (u.pathname === '/calendar/api/odds') return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ date: u.searchParams.get('date'), games: {} }) });
     if (u.pathname === '/calendar' || u.pathname === '/calendar/') f = file('index.html');
     else if (u.pathname.startsWith('/calendar/')) f = file(u.pathname.slice('/calendar/'.length));
     else if (old) f = u.pathname === '/' ? file('index.html') : file(u.pathname.slice(1));

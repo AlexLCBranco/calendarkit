@@ -182,3 +182,22 @@ test('deep link opens the team view for a team', async ({ page }) => {
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+// Round 14 (v1.33.1): the odds function on the deployed site. v1.33.0's first deploy crashed on load (500
+// FUNCTION_INVOCATION_FAILED: an extensionless ESM import) and nothing noticed: `vite preview` answers no odds without
+// running it. Live only (the CI live job): a season day answers 200 with a games map, a bad date 400.
+test('live: /calendar/api/odds answers (200 for a day, 400 without a date)', async ({ request }, info) => {
+  test.skip(!process.env.E2E_BASE_URL, 'the deployed function only');
+  test.skip(info.project.name !== 'desktop-xl', 'once');
+  const day = await request.get('/calendar/api/odds?date=2026-11-04');
+  expect(day.status()).toBe(200);
+  const body = (await day.json()) as { date: string; games: Record<string, { away: number; home: number }> };
+  expect(body.date).toBe('2026-11-04');
+  expect(typeof body.games).toBe('object');
+  for (const [k, o] of Object.entries(body.games)) {
+    expect(k).toMatch(/^[A-Z]{2,3}@[A-Z]{2,3}$/);
+    expect(o.away).toBeGreaterThan(1);
+    expect(o.home).toBeGreaterThan(1);
+  }
+  expect((await request.get('/calendar/api/odds')).status()).toBe(400);
+});
