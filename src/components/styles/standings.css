@@ -1,13 +1,17 @@
-/* Standings (round 17): one table, one line per row, text at the app's sizes (13 px cells, 11 px headers). Every
-   column fits at 1600 × 1000 without shrinking text (e2e/standings.spec.ts), so no column set is hidden. */
+/* Standings (round 17; round 18: West and East side by side): one line per row, text at the app's sizes (13 px cells,
+   11 px headers). Both tables in every column set fit at 1600 × 1000 without shrinking text (e2e/standings.spec.ts). */
 .ck-standings {
   display: flex;
   flex-direction: column;
+  overflow-x: auto; /* narrow desktop widgets (< ~1400 px) scroll both tables sideways; 1600 and up fit */
 }
+/* always as wide as both tables, so a copy holds West and East whole even when the view scrolls sideways */
 .ck-st-capture {
   background: var(--ck-bg);
   padding: 4px 0;
-  overflow-x: auto; /* narrow desktop widgets (< ~1400 px) scroll the table sideways; 1600 and up fit */
+  width: max-content;
+  min-width: 100%;
+  box-sizing: border-box;
 }
 .ck-st-head,
 .ck-st-pop-head {
@@ -31,6 +35,12 @@
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+.ck-st-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
 }
 .ck-st-table {
   width: 100%;
@@ -59,6 +69,14 @@
 .ck-st-groups th {
   padding-top: 6px;
   height: 18px;
+}
+.ck-st-table th.ck-st-conf {
+  padding-left: 10px;
+  color: var(--ck-text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: left;
 }
 .ck-st-group {
   color: var(--ck-text) !important;
@@ -130,6 +148,7 @@
   border-bottom: 2px dashed var(--ck-playin);
 }
 .ck-st-legend {
+  contain: inline-size; /* wraps to the tables' width instead of widening the capture to one long line */
   margin: 8px 0 0;
   color: var(--ck-muted);
   font-size: 12px;

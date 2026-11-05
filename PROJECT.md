@@ -34,9 +34,10 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-05, after round 17)
-v1.37.0: **Standings** — a 4th View tab (desktop) with West | East | League tables, and a "Standings" button in the top
-bar that opens a condensed popup over any view. See "### Round 17".
+## Current state / handoff (2026-11-05, after round 18)
+v1.38.0: **Standings** shows West and East side by side, one column set at a time (Main | Splits | Form & scoring |
+Schedule & B2B) for both; the West | East | League toggle and the League table are gone. See "### Round 18" (and
+"### Round 17" for the data, tiebreakers and popup).
 
 ## Previous handoff (2026-11-05, after round 16)
 v1.36.0: League List / Team List rows (and the Cup schedule's) open the game page from a separate "↗" icon — the Slate's —
@@ -2153,6 +2154,25 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   13 px cells / 11 px headers, "Minnesota Timberwolves" + a clinch code in every row); the popup over all 8 views (League
   List / Calendar / Slate, Team List / Calendar, Cup standings / schedule, Standings) opening and closing by button, Esc
   and outside click; no tab / button on tablet and phone.
+- **Superseded by round 18**: the West | East | League toggle, the League table and the one-table-at-a-time layout.
+
+### Round 18 (2026-11-05): both conferences side by side (v1.38.0)
+- **Layout**: West (left) and East (right), always together, in a 2-column grid; "Standings" + "Through …" once, each
+  table's conference name in its group-header row (13 px). The West | East | League toggle, the League table
+  (`Standings.League` in `src/data/standings.ts` too) and their tests are removed.
+- **Column sets** (top bar "Standings columns", both tables at once; seed + team always): Main = W L Pct GB Conf Home
+  Road L10 Strk Diff · Splits = W-L Home Road Conf Div .500+ Close OT · Form & scoring = W-L L10 Strk PF PA Diff ·
+  Schedule & B2B = W-L Left Home Road B2B 1st 2nd. In `src/components/standingsSets.ts` (outside the lazy chunk: the
+  toggle needs the labels first). Kept in CalendarView state while the page is open; a reload starts on Main.
+  **No set had to be split**: at 1600 the widest table (Main, "Minnesota Timberwolves" + clinch) is 665 px of 769.
+- **Sorting**: one sort for both tables, each within its conference; a set without the sorted column goes back to
+  seeds. Lines after 6 and 10 in both, in seed order, as before.
+- **Copy view as image**: the capture node is always as wide as both tables (`width: max-content; min-width: 100%`; the
+  section scrolls sideways on narrow desktops instead; legend `contain: inline-size`), so the copy holds West and East
+  whole in the current set, at 1280 too.
+- **Tests** (`e2e/standings.spec.ts`): side by side, 15 rows each, no scroll at 1600 × 1000 and 1920 × 950 in all 4 sets;
+  no toggle / League view; each set's exact columns in both tables; sorting both; set kept until reload; copy (Main,
+  Schedule & B2B) has both tables and both playoff lines. Popup unchanged.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

@@ -22,7 +22,7 @@ import { hoverHandlers, useClearHover, useHoverRow } from './MapHover';
 import { MonthNavigator } from './MonthNavigator';
 import { monthNav, PeriodNav, TodayButton, type PeriodNavProps } from './PeriodNav';
 import { Segmented } from './Segmented';
-import type { StandingsTable } from './Standings';
+import { SET_OPTIONS, type StandingsSet } from './standingsSets';
 import { createSelectionStore, useMarqueeSelection } from './selection';
 import { SelectionBar, SelectionStyle } from './SelectionBar';
 import { SelectionCapture, type SelectionKind } from './SelectionCapture';
@@ -220,7 +220,8 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const standings = state.mode === 'standings' && slateFits;
   /** A desktop view that isn't a schedule (Cup, Standings): no layout, period, weeks or TV switches. */
   const other = cup || standings;
-  const [stTable, setStTable] = useState<StandingsTable>('West');
+  // round 18: the column set both conference tables show — kept while the page is open, never stored
+  const [stSet, setStSet] = useState<StandingsSet>('main');
   // the condensed popup over any view (desktop)
   const [stPop, setStPop] = useState(false);
   const closeStPop = useCallback(() => setStPop(false), []);
@@ -417,7 +418,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   // "Copy view as image": render the view off-screen (CaptureStage), copy it, remove it.
   const [capture, setCapture] = useState<(node: HTMLElement) => void>();
   // The button records the size copied (CSS px) and the pixel ratio used: data-captured="1840x1010@4".
-  // Standings (round 17): the heading, the whole table and its legend, as on screen (the League table's 30 rows too)
+  // Standings (round 17/18): the heading, both conference tables in the current column set and the legend, as on screen
   const copyStandings = (button: HTMLButtonElement) => {
     const node = root.current?.querySelector<HTMLElement>('[data-testid="standings-capture"]');
     if (!node) return Promise.reject(new Error('the standings are not on screen yet'));
@@ -581,7 +582,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
           <Segmented label="View" className=" ck-tabs-view" value={cup ? 'cup' : standings ? 'standings' : state.mode === 'cup' || state.mode === 'standings' ? 'league' : state.mode} options={[['league', 'League'], ['team', 'Team'], ...(slateFits ? ([['cup', 'Cup'], ['standings', 'Standings']] as [CalendarMode, string][]) : [])]} onChange={(mode) => update({ mode })} />
           {cup && <Segmented label="Cup view" value={cupView.tab} options={[['standings', 'Standings'], ['schedule', 'Schedule']]} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />}
           {cupSchedule && <Segmented label="Cup list" value={cupView.list} options={[['league', 'League'], ['team', 'Team']]} onChange={(list) => setCupView((v) => ({ ...v, list }))} />}
-          {standings && <Segmented label="Standings table" value={stTable} options={[['West', 'West'], ['East', 'East'], ['League', 'League']]} onChange={setStTable} />}
+          {standings && <Segmented label="Standings columns" value={stSet} options={SET_OPTIONS} onChange={setStSet} />}
           {cupTeam && <TeamPicker teamId={cupView.teamId} onChange={(teamId) => setCupView((v) => ({ ...v, teamId }))} />}
           {!other && <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(team || !slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />}
           {team && <TeamPicker teamId={state.teamId} onChange={pickTeam} compact={compact} />}
@@ -681,7 +682,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? fmtMonth(teamListMonth) : undefined} />}
         {standings ? (
           <Suspense fallback={<p className="ck-empty">Loading the standings…</p>}>
-            <StandingsView data={data} table={stTable} />
+            <StandingsView data={data} set={stSet} />
           </Suspense>
         ) : cup ? (
           <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>

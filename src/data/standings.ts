@@ -140,7 +140,6 @@ export interface SeededTeam extends TeamStanding {
 export interface Standings {
   West: SeededTeam[];
   East: SeededTeam[];
-  League: SeededTeam[];
   /** ET date of the last finished game counted. */
   through?: string;
   games: number;
@@ -292,9 +291,7 @@ export function computeStandings(games: readonly ScheduleGame[]): Standings {
   const West = seed([...lines.values()].filter((t) => t.conference === 'West'));
   const East = seed([...lines.values()].filter((t) => t.conference === 'East'));
   for (const conf of [West, East]) markClinches(conf);
-  const clinchOf = new Map([...West, ...East].map((t) => [t.teamId, t.clinch]));
-  const League = seed([...lines.values()]).map((t) => ({ ...t, clinch: clinchOf.get(t.teamId) }));
-  return { West, East, League, through, games: counted.length };
+  return { West, East, through, games: counted.length };
 }
 
 /**

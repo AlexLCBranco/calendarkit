@@ -1,8 +1,8 @@
-// Standings (round 17): the League standings worked out from the schedule already loaded (src/data/standings.ts,
-// computed once per data set) — a full table per conference (West | East) or the whole league, sortable, with the
-// playoff (after 6) and play-in (after 10) lines, clinch markers, and each tied seed's tiebreakers on hover. Plus the
-// condensed popup (both conferences side by side) that the top bar's "Standings" button opens over any view.
-// Desktop only; its own chunk, loaded (and computed) only when the view or the popup is opened.
+// Standings (round 17; round 18: both conferences side by side): the standings worked out from the schedule already
+// loaded (src/data/standings.ts, computed once per data set) — West and East tables next to each other, in one of four
+// column sets (both tables at once), one sort for both, with the playoff (after 6) and play-in (after 10) lines, clinch
+// markers, and each tied seed’s tiebreakers on hover. Plus the condensed popup the top bar’s "Standings" button opens
+// over any view. Desktop only; its own chunk, loaded (and computed) only when the view or the popup is opened.
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CalendarData } from '../data/model';
@@ -11,9 +11,8 @@ import { CLINCH_TEXT, fmtPct, fmtRec, leagueStandings, PLAY_IN_SEEDS, PLAYOFF_SE
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { TeamLink } from '../slate/teamLink';
 import { CopyButton } from './CopyButton';
+import { COLUMN_SETS, type StandingsSet } from './standingsSets';
 import './styles/standings.css';
-
-export type StandingsTable = 'West' | 'East' | 'League';
 
 const fmtThrough = (date: string) => dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 const fmtGb = (gb: number) => (gb === 0 ? '—' : gb.toFixed(1).replace(/\.0$/, ''));
@@ -43,8 +42,9 @@ interface Column {
 const rec = (key: string, label: string, group: string, tip: string, get: (t: SeededTeam) => Rec): Column => ({ key, label, group, tip, cell: (t) => fmtRec(get(t)), sort: (t) => recPct(get(t)) * 1000 + get(t).w });
 const num = (key: string, label: string, group: string, tip: string, get: (t: SeededTeam) => number, opts: Partial<Column> = {}): Column => ({ key, label, group, tip, cell: (t) => get(t), sort: get, ...opts });
 
-/** Every column after the team, left to right; `group` heads a run of columns. */
-export const COLUMNS: Column[] = [
+/** Every column after the team; `group` heads a run of adjacent columns in a set. */
+const COLUMNS: Column[] = [
+  { key: 'wl', label: 'W-L', group: '', tip: 'Record', cell: (t) => fmtRec(t), sort: (t) => t.pct * 1000 + t.w },
   num('w', 'W', '', 'Wins', (t) => t.w),
   num('l', 'L', '', 'Losses', (t) => t.l, { asc: true }),
   { key: 'pct', label: 'Pct', group: '', tip: 'Win %', cell: (t) => fmtPct(t.pct), sort: (t) => t.pct },
@@ -72,6 +72,8 @@ export const COLUMNS: Column[] = [
   rec('b2b1', '1st', 'B2B legs', 'Record on the 1st night of back-to-backs', (t) => t.b2bFirst),
   rec('b2b2', '2nd', 'B2B legs', 'Record on the 2nd night of back-to-backs', (t) => t.b2bSecond),
 ];
+const COLUMN_BY_KEY = new Map(COLUMNS.map((c) => [c.key, c]));
+
 
 type Sort = { key: string; asc: boolean };
 const SEED_SORT: Sort = { key: 'seed', asc: true };
@@ -117,104 +119,104 @@ const lineClass = (i: number, lines: boolean) => (!lines ? '' : i + 1 === PLAYOF
 
 export interface StandingsViewProps {
   data: CalendarData;
-  table: StandingsTable;
+  /** The column set both tables show. */
+  set: StandingsSet;
 }
 
-export default function StandingsView({ data, table }: StandingsViewProps) {
+/** West and East side by side, one column set for both, one sort for both (each within its own conference). */
+export default function StandingsView({ data, set }: StandingsViewProps) {
   const s = leagueStandings(data);
+  const cols = useMemo(() => COLUMN_SETS[set].keys.map((k) => COLUMN_BY_KEY.get(k)!), [set]);
   const [sort, setSort] = useState<Sort>(SEED_SORT);
-  useEffect(() => setSort(SEED_SORT), [table]);
-  const teams = s[table];
-  const rows = useMemo(() => {
-    if (sort.key === 'seed') return sort.asc ? teams : [...teams].reverse();
-    const col = COLUMNS.find((c) => c.key === sort.key)!;
-    return [...teams].sort((a, b) => (sort.asc ? col.sort(a) - col.sort(b) : col.sort(b) - col.sort(a)) || a.seed - b.seed);
-  }, [teams, sort]);
-  const lines = table !== 'League' && sort.key === 'seed' && sort.asc;
-  const groups: { group: string; span: number }[] = [];
-  for (const c of COLUMNS) {
+  // a sort by a column the new set doesn't show goes back to seeds
+  useEffect(() => setSort((cur) => (cur.key === 'seed' || COLUMN_SETS[set].keys.includes(cur.key) ? cur : SEED_SORT)), [set]);
+  const lines = sort.key === 'seed' && sort.asc;
+  const groups: { group: string; span: number; start: number }[] = [];
+  cols.forEach((c, i) => {
     const last = groups[groups.length - 1];
     if (last && last.group === c.group) last.span++;
-    else groups.push({ group: c.group, span: 1 });
-  }
+    else groups.push({ group: c.group, span: 1, start: i });
+  });
+  const gstart = (i: number) => i > 0 && cols[i - 1]!.group !== cols[i]!.group;
   const click = (key: string, asc: boolean) => setSort((cur) => (cur.key === key ? { key, asc: !cur.asc } : { key, asc }));
   const aria = (key: string) => (sort.key === key ? (sort.asc ? 'ascending' : 'descending') : undefined);
   const arrow = (key: string) => (sort.key === key ? (sort.asc ? ' ▲' : ' ▼') : '');
-  const title = table === 'League' ? 'League standings' : `${table}ern Conference`;
+  const sorted = (teams: SeededTeam[]) => {
+    if (sort.key === 'seed') return sort.asc ? teams : [...teams].reverse();
+    const col = COLUMN_BY_KEY.get(sort.key)!;
+    return [...teams].sort((a, b) => (sort.asc ? col.sort(a) - col.sort(b) : col.sort(b) - col.sort(a)) || a.seed - b.seed);
+  };
   return (
     <section className="ck-standings" aria-label="Standings" data-testid="standings">
-      <div className="ck-st-capture" data-testid="standings-capture">
+      <div className="ck-st-capture" data-testid="standings-capture" data-set={set}>
         <header className="ck-st-head">
-          <h2 className="ck-st-title">{title}</h2>
+          <h2 className="ck-st-title">Standings</h2>
           <span className="ck-st-through" data-testid="standings-through">
             {s.through ? `Through ${fmtThrough(s.through)} · ${s.games} games` : 'No games played yet'}
           </span>
         </header>
-        <table className="ck-st-table" data-table={table} data-testid="standings-table">
-          <thead>
-            <tr className="ck-st-groups">
-              <th colSpan={2} />
-              {groups.map((g, i) => (
-                <th key={i} colSpan={g.span} className={g.group ? 'ck-st-group' : ''}>
-                  {g.group}
-                </th>
-              ))}
-            </tr>
-            <tr className="ck-st-cols">
-              <th aria-sort={aria('seed')} className="ck-st-seed">
-                <button type="button" onClick={() => click('seed', true)} data-tip={table === 'League' ? 'League rank' : 'Seed'}>
-                  {table === 'League' ? '#' : 'Seed'}
-                  {arrow('seed')}
-                </button>
-              </th>
-              <th className="ck-st-team">Team</th>
-              {COLUMNS.map((c) => (
-                <th key={c.key} aria-sort={aria(c.key)} className={`${groupStart(c) ? 'ck-st-gstart' : ''}`}>
-                  <button type="button" onClick={() => click(c.key, !!c.asc)} data-tip={c.tip} data-col={c.key}>
-                    {c.label}
-                    {arrow(c.key)}
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((t, i) => (
-              <tr key={t.teamId} data-team={t.tricode} data-seed={t.seed} className={`ck-st-row${lineClass(i, lines)}`}>
-                <td className="ck-st-seed">
-                  <Seed t={t} />
-                </td>
-                <td className="ck-st-team">
-                  <TeamCell t={t} />
-                </td>
-                {COLUMNS.map((c) => (
-                  <td key={c.key} data-col={c.key} className={groupStart(c) ? 'ck-st-gstart' : undefined}>
-                    {c.cell(t)}
-                  </td>
+        <div className="ck-st-pair">
+          {(['West', 'East'] as const).map((conf) => (
+            <table key={conf} className="ck-st-table" data-conference={conf} data-testid="standings-table">
+              <thead>
+                <tr className="ck-st-groups">
+                  <th colSpan={2} className="ck-st-conf">
+                    {conf}ern Conference
+                  </th>
+                  {groups.map((g) => (
+                    <th key={g.start} colSpan={g.span} className={`${g.group ? 'ck-st-group' : ''}${gstart(g.start) ? ' ck-st-gstart' : ''}`}>
+                      {g.group}
+                    </th>
+                  ))}
+                </tr>
+                <tr className="ck-st-cols">
+                  <th aria-sort={aria('seed')} className="ck-st-seed">
+                    <button type="button" onClick={() => click('seed', true)} data-tip="Seed">
+                      Seed
+                      {arrow('seed')}
+                    </button>
+                  </th>
+                  <th className="ck-st-team">Team</th>
+                  {cols.map((c, i) => (
+                    <th key={c.key} aria-sort={aria(c.key)} className={gstart(i) ? 'ck-st-gstart' : undefined}>
+                      <button type="button" onClick={() => click(c.key, !!c.asc)} data-tip={c.tip} data-col={c.key}>
+                        {c.label}
+                        {arrow(c.key)}
+                      </button>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sorted(s[conf]).map((t, i) => (
+                  <tr key={t.teamId} data-team={t.tricode} data-seed={t.seed} className={`ck-st-row${lineClass(i, lines)}`}>
+                    <td className="ck-st-seed">
+                      <Seed t={t} />
+                    </td>
+                    <td className="ck-st-team">
+                      <TeamCell t={t} />
+                    </td>
+                    {cols.map((c, j) => (
+                      <td key={c.key} data-col={c.key} className={gstart(j) ? 'ck-st-gstart' : undefined}>
+                        {c.cell(t)}
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <Legend lines={table !== 'League'} />
+              </tbody>
+            </table>
+          ))}
+        </div>
+        <Legend />
       </div>
     </section>
   );
 }
 
-const groupStart = (c: Column) => {
-  const i = COLUMNS.indexOf(c);
-  return i > 0 && COLUMNS[i - 1]!.group !== c.group;
-};
-
-function Legend({ lines }: { lines: boolean }) {
+function Legend() {
   return (
     <p className="ck-st-legend" data-testid="standings-legend">
-      {lines && (
-        <>
-          <span className="ck-st-key ck-st-key-playoffs" /> Playoffs (1–6) <span className="ck-st-key ck-st-key-playin" /> Play-in (7–10) ·{' '}
-        </>
-      )}
+      <span className="ck-st-key ck-st-key-playoffs" /> Playoffs (1–6) <span className="ck-st-key ck-st-key-playin" /> Play-in (7–10) ·{' '}
       x playoffs · pi play-in · o eliminated · w / e conference · a c se nw p sw division · Underlined seed: tied, hover for the tiebreakers (NBA
       rules, L.2) · Cup games count, the Cup Championship doesn’t
     </p>
