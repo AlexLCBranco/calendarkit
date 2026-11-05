@@ -129,7 +129,7 @@ function CupTeam({ data, teamId, size, now, timeZone, onOpenGame, gameLink }: Cu
   const rows = { width: size.width, height: 1e6 }; // every row shown: the page never scrolls (at most 7 Cup games)
   return (
     <section className="ck-cup-team" aria-label="NBA Cup games" data-testid="cup-team">
-      <TeamHeader teamId={teamId} period="NBA Cup" />
+      <TeamHeader teamId={teamId} period="NBA Cup" link />
       {games.played.length > 0 && (
         <div className="ck-cup-section" data-testid="cup-played">
           <h3 className="ck-cup-sec-head">Played</h3>

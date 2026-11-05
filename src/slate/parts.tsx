@@ -4,18 +4,19 @@
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { SeasonLine, Tipoff } from '../data/model';
 import { teamLogo } from '../data/teams';
+import { TeamLink } from './teamLink';
 
 /** The season line's tooltip: "Game 2, record 0-1 going in, on a 1-game losing streak" ('' without a game number). */
 export const seasonTip = ({ game, record, streak }: SeasonLine) =>
   game ? `Game ${game}${record ? `, record ${record.wins}-${record.losses} going in` : ''}${streak ? `, on a ${streak.n}-game ${streak.kind === 'W' ? 'winning' : 'losing'} streak` : ''}` : '';
 
-/** Team logo on its light disc; an undecided team gets an empty slot of the same size. */
-export function TeamLogo({ team }: { team: ScheduleGame['homeTeam'] }) {
+/** Team logo on its light disc (round 15: a team link); an undecided team gets an empty slot of the same size. */
+export function TeamLogo({ team, link = true }: { team: ScheduleGame['homeTeam']; /** false: never a link (the team picker) */ link?: boolean }) {
   const src = teamLogo(team.teamId);
   return src ? (
-    <span className="ck-logo-backing">
+    <TeamLink teamId={link ? team.teamId : 0} className="ck-logo-backing" aria-label={team.teamTricode || undefined}>
       <img src={src} alt="" width={16} height={16} />
-    </span>
+    </TeamLink>
   ) : (
     <span className="ck-logo-empty" aria-hidden="true" />
   );

@@ -3,7 +3,8 @@
 // numbered stops at the feed's arenas, the route home → stops → home, and the trip's numbers under the map. Hovering a
 // row lights its stop; hovering a stop lights its row (MapHover.tsx). Desktop, beside the Team List; never in a copy.
 
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
+import { TeamLink } from '../slate/teamLink';
 import type { CalendarData } from '../data/model';
 import { teamLabel } from '../data/model';
 import { TEAM_BY_ID } from '../data/teams';
@@ -72,7 +73,16 @@ export default function TeamMap({ data, teamId, now, room, hover }: TeamMapProps
   const hotStop = stops.find((s) => s.games.some((x) => x.game.gameId === hotGame));
   const hotInfo = hotStop && hotStop.games.find((x) => x.game.gameId === hotGame)!;
   const unknown = stops.filter((s) => !placed(s.loc));
-  const opp = (g: (typeof stops)[number]['games'][number]['game']) => (g.awayTeam.teamId === teamId ? `@ ${teamLabel(g.homeTeam)}` : `vs ${teamLabel(g.awayTeam)}`);
+  // round 15: the opponent's tricode is a team link — not in the labels on the map (`link` false: they stay
+  // click-through, or a label would take a nearby pin's hover)
+  const opp = (g: (typeof stops)[number]['games'][number]['game'], link = true) => {
+    const o = g.awayTeam.teamId === teamId ? g.homeTeam : g.awayTeam;
+    return (
+      <>
+        {o === g.homeTeam ? '@' : 'vs'} <TeamLink teamId={link ? o.teamId : 0}>{teamLabel(o)}</TeamLink>
+      </>
+    );
+  };
   return (
     <aside className="ck-map ck-team-map" data-testid="team-map" data-capture-exclude="true" aria-label={`${tri} road trip`} style={{ width }} data-trip={trip?.index}>
       <div className={`ck-map-box${hotStop ? ' ck-map-dimmed' : ''}`} style={{ height: (width * MAP_H) / MAP_W }}>
@@ -109,7 +119,12 @@ export default function TeamMap({ data, teamId, now, room, hover }: TeamMapProps
                 {s.games.map((x) => x.n).join('·')}
               </span>
               <span className="ck-map-code">
-                {s.games.map((x) => `${opp(x.game)} ${md(x.game.dateEt)}`).join(', ')}
+                {s.games.map((x, i) => (
+                  <Fragment key={x.game.gameId}>
+                    {i > 0 && ', '}
+                    {opp(x.game, false)} {md(x.game.dateEt)}
+                  </Fragment>
+                ))}
                 {loc.kind === 'edge' ? ` · ${loc.arena.city} ${loc.arrow}` : ''}
               </span>
             </div>

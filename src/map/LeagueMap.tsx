@@ -4,6 +4,7 @@
 // copied image (outside the copied nodes, and data-capture-exclude).
 
 import { useMemo } from 'react';
+import { TeamLink } from '../slate/teamLink';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import type { CalendarData } from '../data/model';
@@ -129,6 +130,13 @@ function hoverInfo(m: MapGame, lines: TravelLine[]): { place: string; travel: st
   return { place, travel: travel.join(' · ') || 'no back-to-back travel' };
 }
 
+/** "BOS @ DET", each tricode a team link (round 15). */
+const Teams = ({ game }: { game: MapGame['game'] }) => (
+  <>
+    <TeamLink teamId={game.awayTeam.teamId}>{teamLabel(game.awayTeam)}</TeamLink> @ <TeamLink teamId={game.homeTeam.teamId}>{teamLabel(game.homeTeam)}</TeamLink>
+  </>
+);
+
 export default function LeagueMap({ data, games, room, hover }: LeagueMapProps) {
   const width = Math.max(0, Math.floor(Math.min(room.width, ((room.height - LEGEND_H - INFO_H) * MAP_W) / MAP_H)));
   const items = useMemo(() => mapGames(data, games), [data, games]);
@@ -153,6 +161,7 @@ export default function LeagueMap({ data, games, room, hover }: LeagueMapProps) 
               title={`${teamLabel(m.game.awayTeam)} @ ${teamLabel(m.game.homeTeam)} · ${m.loc.label}${m.loc.kind === 'edge' ? ' (off this map)' : ''}`}
             >
               <span className="ck-map-pin" aria-hidden="true" />
+              {/* round 15: plain text, click-through (as a link it would take a nearby pin's hover where labels overlap pins) */}
               <span className="ck-map-code">{m.loc.kind === 'edge' ? `${teamLabel(m.game.homeTeam)} · ${m.loc.arena.city} ${m.loc.arrow}` : teamLabel(m.game.homeTeam)}</span>
             </div>
           ),
@@ -161,7 +170,7 @@ export default function LeagueMap({ data, games, room, hover }: LeagueMapProps) 
           <div className="ck-map-unknown" data-testid="map-unknown">
             {unknown.map((m) => (
               <div key={m.game.gameId} className={m === hot ? 'ck-map-hot' : undefined} data-map-game={m.game.gameId} data-kind="unknown">
-                {teamLabel(m.game.awayTeam)} @ {teamLabel(m.game.homeTeam)}: location unknown ({m.loc.label})
+                <Teams game={m.game} />: location unknown ({m.loc.label})
               </div>
             ))}
           </div>
@@ -172,7 +181,7 @@ export default function LeagueMap({ data, games, room, hover }: LeagueMapProps) 
           <>
             <div className="ck-map-info-place">
               <b>
-                {teamLabel(hot!.game.awayTeam)} @ {teamLabel(hot!.game.homeTeam)}
+                <Teams game={hot!.game} />
               </b>{' '}
               {info.place}
             </div>

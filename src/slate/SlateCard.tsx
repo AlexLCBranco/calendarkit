@@ -20,6 +20,7 @@ import { SeriesChip } from './series';
 import { leagueSeries } from '../data/series';
 import { fmtOdds, gameOdds, type DayOdds, type GameOdds, type SlateOdds } from './odds';
 import { seasonTip, TeamLogo, TipTime } from './parts';
+import { TeamLink } from './teamLink';
 
 /** The day's games (TV games only when filtered), in tip-off order; [] on a day without games. */
 export const slateGames = (data: CalendarData, date: string, tvOnly = false) => {
@@ -187,9 +188,9 @@ function TeamRow({ team, f, line, score, odds, provider, home = false }: { team:
         {home ? '@' : ''}
       </span>
       <TeamLogo team={team} />
-      <span className="ck-slate-name" data-tricode={teamLabel(team)}>
+      <TeamLink teamId={team.teamId} className="ck-slate-name" data-tricode={teamLabel(team)}>
         {t?.name ?? teamLabel(team)}
-      </span>
+      </TeamLink>
       <span className="ck-slate-rec" data-tip={rec ? tip : undefined}>
         {rec ? `${rec.wins}-${rec.losses}` : ''}
       </span>

@@ -3,7 +3,7 @@
 
 import { liveOddsStore } from './slate/odds';
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { CalendarView, type CalendarState } from './components/CalendarView';
+import { CalendarView, type CalendarState, type TeamTarget } from './components/CalendarView';
 import { gameLinkUrl, isGameLinkConfigured, isRotationkitConfigured } from './config';
 import { BUILD_INFO } from './build-info';
 import { SiteVersion } from './SiteVersion';
@@ -26,7 +26,7 @@ export const appGameLink = isGameLinkConfigured() ? (g: Parameters<typeof gameLi
  * team month grid (→ Calendar), ?view=league the day list (→ List). "Show rest days" is not in it (round 7, 2.2: on at
  * every load, unchecking lasts until a reload; an old link's `rest=` is ignored).
  */
-export function readUrlState(search = window.location.search): Partial<CalendarState> {
+export function readUrlState(search = window.location.search): Partial<CalendarState> & { teamDate?: string } {
   const p = new URLSearchParams(search);
   const team = TEAMS.find((t) => t.tricode === p.get('team')?.toUpperCase());
   const view = p.get('view');
@@ -39,7 +39,25 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     tvOnly: p.get('tv') === '1' ? true : undefined,
     teamSpan: p.get('span') === '1w' ? 1 : p.get('span') === '2w' ? 2 : undefined,
     weeks: p.get('weeks') === '2' ? 2 : p.get('weeks') === '1' ? 1 : undefined,
+    teamDate: /^d{4}-d{2}-d{2}$/.test(p.get('on') ?? '') ? p.get('on')! : undefined,
   };
+}
+
+/**
+ * Round 15: a team link's URL — that team's Team view in the last-used Team mode, the other toggles as now, and
+ * `on=` the date being looked at. `on` is read once at load (the Team view opens there) and dropped from the address
+ * then, so a reload opens on today as always (round 6).
+ */
+export function teamLinkUrl({ teamId, layout, date, state }: TeamTarget, pathname = window.location.pathname): string {
+  const p = new URLSearchParams();
+  p.set('view', 'team');
+  p.set('layout', layout);
+  p.set('team', TEAM_BY_ID.get(teamId)?.tricode ?? '');
+  if (state.weeks === 2) p.set('weeks', '2');
+  if (state.tvOnly) p.set('tv', '1');
+  if (state.teamSpan !== 'month') p.set('span', `${state.teamSpan}w`);
+  p.set('on', date);
+  return `${pathname}?${p}`;
 }
 
 /**
@@ -105,6 +123,13 @@ export function App() {
   // Round 6 (B2): the page always opens on today. An old link's `date=` is never read back (and since round 8 never
   // written), so a bookmark or a reloaded tab doesn't pin an old day; view, layout, team, weeks and the toggles still come from it.
   const [initial] = useState(() => ({ ...readUrlState(), date: e2eOpenDate() }));
+  // round 15: a team link's `on=` is for this load only
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (!p.has('on')) return;
+    p.delete('on');
+    window.history.replaceState(null, '', `${window.location.pathname}?${p}`);
+  }, []);
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
   const onOpenGame = isRotationkitConfigured() ? (id: string) => openGameInRotationkit(id) : undefined;
@@ -135,6 +160,7 @@ export function App() {
             initial={initial}
             onOpenGame={onOpenGame}
             gameLink={appGameLink}
+            teamHref={teamLinkUrl}
             onStateChange={writeUrlState}
             title={`NBA schedule ${data.seasonYear}`}
             note={`Times in your time zone (${timeZone})`}

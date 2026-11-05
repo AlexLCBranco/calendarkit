@@ -105,7 +105,7 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
           }
         }}
       >
-        {team && <TeamLogo team={{ teamId } as ScheduleGame['homeTeam']} />}
+        {team && <TeamLogo team={{ teamId } as ScheduleGame['homeTeam']} link={false} />}
         <span className="ck-picker-name">{!team ? 'Pick a team' : compact ? team.tricode : fullName(team)}</span>
         <span className="ck-caret" aria-hidden="true">
           ▾
@@ -142,7 +142,7 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
                   // overwrite a keyboard choice made just before (round 6: the flaky "Miami instead of Orlando")
                   onMouseMove={(e) => (e.movementX || e.movementY) && setActive(t.id)}
                 >
-                  <TeamLogo team={{ teamId: t.id } as ScheduleGame['homeTeam']} />
+                  <TeamLogo team={{ teamId: t.id } as ScheduleGame['homeTeam']} link={false} />
                   {fullName(t)}
                 </div>
               ))}

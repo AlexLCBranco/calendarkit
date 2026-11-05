@@ -172,11 +172,12 @@ test('the link is a "↗" after the time: tooltip, no underline (brightens), cli
     const g = (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).find((x) => x.gameId === id)!;
     return `https://hoopsjunkie.io/games/${g.gameDateEst.slice(0, 10)}/${g.awayTeam.teamTricode.toLowerCase()}-vs-${g.homeTeam.teamTricode.toLowerCase()}`;
   }, id);
-  // no anchor around the names anywhere; no link cursor or underline on them
-  expect(await page.locator('[data-testid="slate"] .ck-slate-teams a, [data-testid="slate"] a:has(.ck-slate-name)').count()).toBe(0);
+  // no game link around the names anywhere (round 15: the only anchors there are team links, to the Team view —
+  // e2e/teamlinks.spec.ts); never underlined
+  expect(await page.locator('[data-testid="slate"] .ck-slate-teams a:not([data-team-link]), [data-testid="slate"] a:not([data-team-link]):has(.ck-slate-name)').count()).toBe(0);
   const name = card.locator('.ck-slate-name').first();
   await name.hover();
-  expect(await name.evaluate((n) => [getComputedStyle(n).cursor, getComputedStyle(n).textDecorationLine])).toEqual(['auto', 'none']);
+  expect(await name.evaluate((n) => [getComputedStyle(n).cursor, getComputedStyle(n).textDecorationLine])).toEqual(['pointer', 'none']);
   // one icon per card, in the strip right under the start time (round 14; was beside it), with its tooltip
   expect(await cards(page).count()).toBe(await page.locator('[data-testid="slate"] a[data-testid="game-link"]').count());
   const link = card.locator('a[data-testid="game-link"]');

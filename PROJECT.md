@@ -34,7 +34,10 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-04, after round 13)
+## Current state / handoff (2026-11-05, after round 15)
+v1.35.0: every team name, logo and tricode links to its Team view (same date, last-used Team mode). See "### Round 15".
+
+## Previous handoff (2026-11-04, after round 13)
 v1.32.0: the Cup Standings' team rows show each team's 4 group games (opponent + W / L, upcoming muted, final score as
 tooltip). The per-game differential didn't fit at 1600 × 1000, so it is left out everywhere. See "### Round 13".
 
@@ -2037,6 +2040,36 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   national TV games"); the TV filter no longer skips to the next TV day.
 - **Cup counts (NBA.com "Cup 101")**: a game that goes to overtime counts **0** in the Cup point-differential
   tiebreaker (it was tied at the end of regulation). **v1.34.0 (Alex: yes): an OT game ("Final/OT", "Final/2OT") adds 0 to the differential**; points scored (rule 3) still counts its final score, since the feed has no regulation totals, and the view says so. Until v1.34.0 the final score counted in both.
+
+### Round 15 (2026-11-05): team links (v1.35.0)
+- **Every team name, logo and tricode is a link** to that team's Team view, in the Team mode used last (List or
+  Calendar; this page only, nothing stored — a page opened on a Team view starts from its mode, else List), on the date
+  being looked at (League List / Slate: the day; week views and Team Calendar: today if shown, else the first day; Team
+  List: the row at the top; a Cup night; Cup standings: today). Plain click: switches here. Ctrl / middle-click / context
+  menu: a real `<a href>` → new tab at `?view=team&layout=…&team=…&on=<date>`; `on` is read once and dropped from the
+  address (a reload still opens on today).
+- Where: League List (+ its map's "location unknown" list and info line), Slate, League week / 2-week, Team List (+ the
+  same on the road-trip map), Team Calendar (month / weeks, detail
+  card), Cup standings (names, logos, wild-card tricodes), Cup schedule (League rows; Team rows + its team header), the
+  season-series popup's title. **Not links:** the Cup standings' game slots (a later round: the game's hoopsjunkie page),
+  the team pickers, the Team view's own header (it would link to itself), the series popup's squares (each is a "show
+  this day" button), tooltip text (it vanishes when the mouse leaves), **the labels beside the map pins** (tried: labels
+  overlap neighbouring pins, so a label link took the pin's hover — `map.spec.ts` caught it at 1280; they stay
+  click-through text). Copies: `CaptureStage` renders without the provider, so an image's DOM has no team anchors.
+- **Inside a game link** (List rows, calendar cells, week lines: since round 5 the matchup is the hoopsjunkie link) the
+  team is a nested `<a>`: the team part opens the Team view, the "@" / "vs" / scores still open the game page; hovering
+  the team doesn't underline the game. (Invalid HTML strictly — React warns in dev only; browsers follow the innermost link.)
+- **One piece**: `TeamLink` (`src/slate/teamLink.tsx`) renders an `<a class="ck-tlink" data-team-link>` only under
+  `TeamLinkContext` (CalendarView, when the host passes `teamHref`; App.tsx `teamLinkUrl`), else the `<span>` it was —
+  so the gauntlet's Slate and unit tests are unchanged. Same element class, so no layout change. No listener per link:
+  CalendarView's root has one capture-phase `click` + `pointerdown` pair; the context value never changes (no
+  re-render on a new date), and `pointerdown` rewrites the pressed link's `href` with the current date / mode. Links are
+  `tabIndex=-1` (Tab order unchanged: note boxes, chips) and `draggable=false`; a marquee may start on one, like on a
+  game link (`selection.ts`).
+- Hover (`src/slate/styles/team-link.css`): pointer + a faint inset tint (logos: a thin ring); no underline; none under
+  `.ck-capturing`, so never in images. The test checks every link in view has a point a click reaches.
+- Tests: `e2e/teamlinks.spec.ts` (every view and the popup: no plain team element, each link's team / mode / date,
+  a reachable click point, a real click per kind of link; slots not links; last-used mode; Ctrl- and middle-click tab).
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

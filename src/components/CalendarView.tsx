@@ -3,7 +3,9 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { cupStops } from '../data/cupSchedule';
+import { TeamLinkContext, teamLinkTarget, type TeamLinks } from '../slate/teamLink';
 import { addDays, addMonths, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
@@ -28,7 +30,7 @@ import type { SlateOdds } from '../slate/odds';
 import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
 import { localNotesStore } from '../slate/notes';
 import { TeamHeader } from './TeamHeader';
-import { TeamListView, type TeamListHandle } from './TeamListView';
+import { TeamListView, type TeamListHandle, type TeamListOpen } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
 import { TeamPicker } from './TeamPicker';
 import { useTooltip } from '../slate/tooltip';
@@ -77,8 +79,16 @@ export interface CalendarViewProps {
   /** Round 14: the Slate's moneyline odds (the app shell passes liveOddsStore()); none: no odds, no request. */
   odds?: SlateOdds;
   size: WidgetSize;
-  /** Initial state; anything missing gets a default (League → List, default day). */
-  initial?: Partial<CalendarState>;
+  /**
+   * Initial state; anything missing gets a default (League → List, default day). `teamDate` (round 15, a team link
+   * opened in a new tab): the Team view opens on this date instead of the next game.
+   */
+  initial?: Partial<CalendarState> & { teamDate?: string };
+  /**
+   * Round 15: the URL of a team's Team view (team links: Ctrl / middle-click → new tab). Given → every team name, logo
+   * and tricode is a link (a plain click switches to that Team view here); none → no team links.
+   */
+  teamHref?: (to: TeamTarget) => string;
   /** Fixed clock (ms) for tests or replays; default: live clock. */
   now?: number;
   timeZone?: string;
@@ -93,6 +103,17 @@ export interface CalendarViewProps {
   note?: string;
   /** When the data was generated (ISO): "Data updated …" under the note, orange (--ck-stale) once older than STALE_AFTER_MS. */
   updatedAt?: string;
+}
+
+/** Team List or Team Calendar: the Team mode a team link opens (the one used last). */
+export type TeamLayout = 'list' | 'calendar';
+
+/** Where a team link goes: the team, in the Team mode used last, on the date being looked at; `state` for the rest of the URL. */
+export interface TeamTarget {
+  teamId: number;
+  layout: TeamLayout;
+  date: string;
+  state: CalendarState;
 }
 
 /** Older than this, the "Data updated" stamp turns orange: the daily update (~11:00 UTC) may have failed. */
@@ -112,7 +133,7 @@ const CUP_START: CupState = { tab: 'standings', list: 'league' };
 const teamMapFits = (width: number) => width >= TEAM_LIST_MAX_WIDTH + LEAGUE_MAP_GAP + LEAGUE_MAP_MIN;
 
 
-export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt }: CalendarViewProps) {
+export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref }: CalendarViewProps) {
   // The clock (round 7: moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
   // `now` (the default day, the next game, games over) is the time the widget opened.
   const clock = useClock(fixedNow, timeZone, localDate);
@@ -130,9 +151,13 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     teamSpan: initial?.teamSpan === 1 || initial?.teamSpan === 2 ? initial.teamSpan : 'month',
   }));
   const [leagueMonth, setLeagueMonth] = useState(() => monthOf(state.date));
-  const [teamMonth, setTeamMonth] = useState(() => monthOf(teamDefaultDate(data, state.teamId, now) ?? state.date));
+  // round 15: a team link opened in a new tab names the date to open the Team view on
+  const initialTeamDate = initial?.teamDate && /^\d{4}-\d{2}-\d{2}$/.test(initial.teamDate) ? initial.teamDate : undefined;
+  const [teamMonth, setTeamMonth] = useState(() => monthOf(initialTeamDate ?? teamDefaultDate(data, state.teamId, now) ?? state.date));
   // Team week views: the first shown day (a Sunday)
-  const [teamWeek, setTeamWeek] = useState(() => weekOf(teamDefaultDate(data, state.teamId, now) ?? state.date)[0]!);
+  const [teamWeek, setTeamWeek] = useState(() => weekOf(initialTeamDate ?? teamDefaultDate(data, state.teamId, now) ?? state.date)[0]!);
+  // Team List: the row a team link asked for (once; the list scrolls it to the top)
+  const [teamOpen, setTeamOpen] = useState<TeamListOpen | undefined>(() => (initialTeamDate ? { date: teamListTarget(data, state.teamId, state.tvOnly, state.showRest && !compact, initialTeamDate) } : undefined));
   const [picking, setPicking] = useState(false);
   // the lists' date picker (round 4)
   const [datePick, setDatePick] = useState(false);
@@ -249,7 +274,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   // Team List (round 9): one calendar month at a time. Opening the list, another team or the TV filter → the month of
   // the next game not over (the row the list opens at); the strip, the date picker and Today move it from there.
   const teamListKey = `${state.teamId}|${state.tvOnly}|${team && list}`;
-  const [teamListAt, setTeamListAt] = useState(() => ({ key: teamListKey, month: teamListMonthOf(data, state.teamId, state.tvOnly, now) }));
+  const [teamListAt, setTeamListAt] = useState(() => ({ key: teamListKey, month: teamOpen ? monthOf(teamOpen.date) : teamListMonthOf(data, state.teamId, state.tvOnly, now) }));
   let teamListMonth = teamListAt.month;
   if (teamListAt.key !== teamListKey) {
     teamListMonth = teamListMonthOf(data, state.teamId, state.tvOnly, now);
@@ -440,10 +465,84 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     );
   };
 
+  // Round 15: team links. The Team mode used last (List or Calendar; this page only — nothing is stored, as for the
+  // other toggles; a page opened on a Team view starts from its mode, else List) and the date being looked at are read
+  // when a link is pressed, never rendered into the links (no re-render of the cards when they change).
+  const lastTeamLayout = useRef<TeamLayout>(initial?.mode === 'team' && initial.layout === 'calendar' ? 'calendar' : 'list');
+  const shownTeamLayout: TeamLayout | undefined = team ? (list ? 'list' : 'calendar') : undefined;
+  if (shownTeamLayout) lastTeamLayout.current = shownTeamLayout;
+  /** The date on show: the day (League List / Slate, a Cup night), the row at the top (Team List), today if it is in the shown week or month, else its first day. */
+  const lookingAt = (): string => {
+    const inRange = (from: string, to: string) => (today >= from && today <= to ? today : from);
+    if (cup) {
+      const night = cupSchedule && cupView.list === 'league' ? cupView.night : undefined;
+      const stop = night ? cupStops(data).find((s) => s.key === night) : undefined;
+      return stop ? inRange(stop.first, stop.last) : seasonDay(data, today);
+    }
+    if (team) {
+      if (list) return teamTop.get() || `${teamListMonth}-01`;
+      if (teamWeeks) return inRange(teamWeek, addDays(teamWeek, 7 * teamWeeks - 1));
+      return inRange(`${teamMonth}-01`, `${teamMonth}-31`);
+    }
+    if (list || slate) return nearestDay(days, state.date);
+    if (weekView) {
+      const start = weekOf(state.date)[0]!;
+      return inRange(start, addDays(start, 7 * state.weeks - 1));
+    }
+    return inRange(`${leagueMonth}-01`, `${leagueMonth}-31`);
+  };
+  const lookingAtRef = useRef(lookingAt);
+  lookingAtRef.current = lookingAt;
+  const teamHrefRef = useRef(teamHref);
+  teamHrefRef.current = teamHref;
+  const [teamLinks] = useState<TeamLinks>(() => ({
+    href: (teamId) => teamHrefRef.current?.({ teamId, layout: lastTeamLayout.current, date: lookingAtRef.current(), state: stateRef.current }) ?? '',
+  }));
+  /** A team link's plain click: that team's Team view here, in the last-used mode, on the date being looked at. */
+  const openTeam = (teamId: number) => {
+    const date = lookingAtRef.current();
+    const layout = lastTeamLayout.current;
+    const s = stateRef.current;
+    // League's Slate stays League's layout (Team shows its List meanwhile), so League comes back to the Slate
+    update({ mode: 'team', teamId, layout: layout === 'list' && s.layout === 'slate' ? 'slate' : layout });
+    setTeamMonth(monthOf(date));
+    setTeamWeek(weekOf(date)[0]!);
+    const target = teamListTarget(data, teamId, s.tvOnly, s.showRest && !compact, date);
+    setTeamListAt({ key: `${teamId}|${s.tvOnly}|${layout === 'list'}`, month: monthOf(target) });
+    setTeamOpen({ date: target });
+    setPicking(false);
+  };
+  const openTeamRef = useRef(openTeam);
+  openTeamRef.current = openTeam;
+  // One handler pair for every team link of the widget (popups included: they render inside it), capture phase so it
+  // runs before the game link around a team (MatchLink) or a calendar cell's own click.
+  const teamPress = useCallback(
+    (e: ReactPointerEvent) => {
+      const hit = teamLinkTarget(e.target);
+      if (hit) hit.a.href = teamLinks.href(hit.teamId); // fresh for the click, middle-click or context menu that follows
+    },
+    [teamLinks],
+  );
+  const teamClick = useCallback(
+    (e: ReactMouseEvent) => {
+      const hit = teamLinkTarget(e.target);
+      if (!hit) return;
+      e.stopPropagation();
+      hit.a.href = teamLinks.href(hit.teamId);
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; // the browser's new tab / window
+      e.preventDefault();
+      openTeamRef.current(hit.teamId);
+    },
+    [teamLinks],
+  );
+
   return (
+    <TeamLinkContext.Provider value={teamHref ? teamLinks : undefined}>
     <ClockProvider clock={clock}>
       <div
         ref={root}
+        onPointerDownCapture={teamHref ? teamPress : undefined}
+        onClickCapture={teamHref ? teamClick : undefined}
         className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${teamMap ? ' ck-team-side' : ''}${list || slate ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={selKind ? onMarquee : undefined}
         style={{ maxWidth: size.width, height: list || slate ? size.height : undefined, minHeight: list || slate || compact ? undefined : size.height }}
@@ -556,7 +655,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         ) : team ? (
           teamMap ? (
             <div className="ck-league-split" {...hoverHandlers(mapHover)}>
-              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} month={teamListMonth} onMonthChange={setTeamListMonth} />
+              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} openAt={teamOpen} onAtNext={teamAtNext.set} topStore={teamTop} today={today} month={teamListMonth} onMonthChange={setTeamListMonth} />
               <div className="ck-map-slot">
                 <NextFrame>
                   <Suspense fallback={null}>
@@ -566,7 +665,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
               </div>
             </div>
           ) : list ? (
-            <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} onAtNext={teamAtNext.set} topStore={teamTop} today={today} month={teamListMonth} onMonthChange={setTeamListMonth} />
+            <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} handle={teamList} openAt={teamOpen} onAtNext={teamAtNext.set} topStore={teamTop} today={today} month={teamListMonth} onMonthChange={setTeamListMonth} />
           ) : (
             <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
           )
@@ -660,6 +759,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         )}
       </div>
     </ClockProvider>
+    </TeamLinkContext.Provider>
   );
 }
 
@@ -704,6 +804,19 @@ function teamWeekOf(data: CalendarData, today: string): string {
 function teamListMonthOf(data: CalendarData, teamId: number, tvOnly: boolean, now: number): string {
   const games = teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g));
   return monthOf((games.find((g) => !isOver(g, now)) ?? games.at(-1))?.dateEt ?? data.dates[0] ?? localDate(now));
+}
+
+/**
+ * Round 15: the Team List row a team link opens at for `date`: that day (a game, or a rest day while rest days show and it
+ * is inside the team's season), else the team's next game after it, else its last game.
+ */
+export function teamListTarget(data: CalendarData, teamId: number, tvOnly: boolean, showRest: boolean, date: string): string {
+  const games = teamGames(data, teamId).filter((g) => !tvOnly || hasNationalTv(g));
+  const first = games[0]?.dateEt;
+  const last = games.at(-1)?.dateEt;
+  if (!first || !last) return date;
+  if (showRest && date >= first && date <= last) return date;
+  return games.find((g) => g.dateEt >= date)?.dateEt ?? last;
 }
 
 /** The months from a team's first to its last game. */

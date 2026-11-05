@@ -8,6 +8,7 @@ import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord } from '../data/model';
 import { mergedChip, mergedDays, mergedTip, type ThreeInFour } from '../data/scheduleTags';
 import { seasonTip, TeamLogo, TipTime } from '../slate/parts';
+import { TeamLink } from '../slate/teamLink';
 import { CopyButton } from './CopyButton';
 import { FatigueMark } from './FatigueMark';
 import { Fatigue } from './Fatigue';
@@ -219,10 +220,10 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
       <span className="ck-matchup">
         <MatchLink game={game} gameLink={gameLink} className="ck-side">
           <span className="ck-vsat">{side.home ? 'vs' : '@'}</span> {logos && <TeamLogo team={side.opponent} />}
-          <span className={`ck-team ck-opp${loss(false)}`}>
+          <TeamLink teamId={side.opponent.teamId} className={`ck-team ck-opp${loss(false)}`}>
             {teamLabel(side.opponent)}
             {oppDot && <B2BDot tip={oppDot} />}
-          </span>
+          </TeamLink>
           {result && ' '}
           {result && score(result.oppScore, !result.win)}
           {otMark}
@@ -236,7 +237,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         <MatchLink game={game} gameLink={gameLink} className="ck-teams">
           <span className="ck-side">
             {logos && <TeamLogo team={first} />}
-            <span className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} component={fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</span>
+            <TeamLink teamId={first.teamId} className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} component={fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</TeamLink>
             {result && ' '}
             {score(result?.score, !!result?.win)}
           </span>{' '}
@@ -244,10 +245,10 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
             <span className="ck-vsat">{side ? (side.home ? 'vs' : '@') : '@'}</span>{' '}
             {score(result?.oppScore, !!result && !result.win)}
             {result && ' '}
-            <span className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
+            <TeamLink teamId={second.teamId} className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
               {fatigue ? <FatigueMark f={fatigue.get(second.teamId)} component={fx}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
               {side && oppDot && <B2BDot tip={oppDot} />}
-            </span>{' '}
+            </TeamLink>{' '}
             {logos && <TeamLogo team={second} />}
           </span>
         </MatchLink>

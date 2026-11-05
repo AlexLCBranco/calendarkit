@@ -45,12 +45,21 @@ export interface TeamListViewProps {
    * still come from the whole season; a B2B whose other night is in another month keeps its marks but no bracket.
    */
   month?: string;
+  /** Round 15: open at this row (a team link) instead of the next game. */
+  openAt?: TeamListOpen;
   /** The strip, the picker or "Today" asked for a row in another month: the host shows that month (then the row is put at the top). */
   onMonthChange?: (month: string) => void;
   /** Mark the next game not over (accent border; default). The Cup Team list's "Played" section has none to mark. */
   markNext?: boolean;
   /** Cup schedule (round 12): the Cup tag's text per game ("Group play · West A"). */
   cupTag?: (g: ScheduleGame) => string | undefined;
+}
+
+/** Round 15: a row asked for by a team link (put at the top once, on the render that brings it). */
+export interface TeamListOpen {
+  date: string;
+  /** set by the list once it has scrolled there (a remount or a later change of rows doesn't go back to it) */
+  done?: boolean;
 }
 
 export interface TeamListHandle {
@@ -72,7 +81,7 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
  * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
  */
-export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, onAtNext, topStore, today, month, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
+export function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
@@ -183,11 +192,14 @@ export function TeamListView({ data, teamId, tvOnly, showRest = false, only, siz
     measure();
     const p = pending.current;
     pending.current = undefined;
-    if (p && 'date' in p) {
-      const row = tops.current.find((r) => r.date >= p.date);
+    const open = openAt && !openAt.done ? openAt : undefined;
+    if (open) open.done = true;
+    const date = p && 'date' in p ? p.date : open?.date;
+    if (date) {
+      const row = tops.current.find((r) => r.date >= date) ?? tops.current.at(-1);
       scrollTo(row?.top ?? 0);
     } else scrollTo(nextTop() ?? 0);
-  }, [rows]);
+  }, [rows, openAt]);
   // rows change size after the first layout (the font arriving, another width): measure again whenever the list does;
   // and when the scroller does (round 9: the week strip mounts above it after the first render, so the room after the
   // last row, sized from the scroller's height, was short and a month's last row couldn't reach the top)

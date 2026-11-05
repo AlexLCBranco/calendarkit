@@ -13,6 +13,7 @@ import { TEAM_BY_ID } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from './links';
 import { clampX } from './tooltip';
+import { TeamLink } from './teamLink';
 
 const CLOSE_MS = 180;
 const fmtDate = (date: string, opts: Intl.DateTimeFormatOptions) => dateFormat('en-US', { ...opts, timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
@@ -68,7 +69,7 @@ function Popup({ s, current, onPick, gameLink }: { s: SeriesGame; current: strin
     <>
       <div className="ck-series-head">
         <span className="ck-series-title">
-          {tri(a)} – {tri(b)} · {s.series.games.length} meeting{s.series.games.length === 1 ? '' : 's'}
+          <TeamLink teamId={a}>{tri(a)}</TeamLink> – <TeamLink teamId={b}>{tri(b)}</TeamLink> · {s.series.games.length} meeting{s.series.games.length === 1 ? '' : 's'}
         </span>
         <span className="ck-series-status" data-testid="series-status">
           {seriesStatus(s.series, tri)}

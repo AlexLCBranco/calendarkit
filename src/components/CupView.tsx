@@ -8,6 +8,7 @@ import { useMemo, type CSSProperties } from 'react';
 import { cupStandings, type CupSlot, type CupTeamLine, type Tiebreak, type WildCardRace } from '../data/cup';
 import { dateFormat, type CalendarData } from '../data/model';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
+import { TeamLink } from '../slate/teamLink';
 import CupSchedule, { type CupScheduleProps } from './CupSchedule';
 import './styles/cup.css';
 
@@ -99,7 +100,11 @@ function DiffChip({ diff }: { diff: number }) {
 
 function Logo({ teamId }: { teamId: number }) {
   const src = teamLogo(teamId);
-  return <span className="ck-logo-backing">{src && <img src={src} alt="" width={20} height={20} />}</span>;
+  return (
+    <TeamLink teamId={teamId} className="ck-logo-backing" aria-label={TEAM_BY_ID.get(teamId)?.tricode}>
+      {src && <img src={src} alt="" width={20} height={20} />}
+    </TeamLink>
+  );
 }
 
 function TeamPill({ t }: { t: CupTeamLine }) {
@@ -121,7 +126,7 @@ function TeamPill({ t }: { t: CupTeamLine }) {
       </span>
       <Logo teamId={t.teamId} />
       <span className="ck-cup-main">
-        <span className="ck-cup-name">{team ? `${team.city} ${team.name}` : t.tricode}</span>
+        <TeamLink teamId={t.teamId} className="ck-cup-name">{team ? `${team.city} ${team.name}` : t.tricode}</TeamLink>
         <Slots slots={t.slots} />
       </span>
       <span className="ck-cup-num">{t.w}</span>
@@ -199,7 +204,7 @@ function WildCards({ races }: { races: WildCardRace[] }) {
               <div key={t.teamId} className={`ck-cup-race-row${i === 0 ? ' ck-cup-holder' : ''}`} data-team={t.tricode} title={t.wcTied ? 'Tied: no tiebreaker separates them yet' : t.wcTiebreak ? `Placed by ${TIEBREAK_TEXT[t.wcTiebreak]}` : undefined}>
                 <span className="ck-cup-mark">{i === 0 ? 'WC' : ''}</span>
                 <Logo teamId={t.teamId} />
-                <span className="ck-cup-tri">{t.tricode}</span>
+                <TeamLink teamId={t.teamId} className="ck-cup-tri">{t.tricode}</TeamLink>
                 <span className="ck-cup-sub">2nd, {t.group.replace(' Group ', ' ')}</span>
                 <span className="ck-cup-rec">
                   {t.w}-{t.l}
@@ -211,7 +216,7 @@ function WildCards({ races }: { races: WildCardRace[] }) {
               <div key={t.teamId} className="ck-cup-race-row ck-cup-chaser" data-team={t.tricode} title={`${ordinal(t.rank)} in its group today: in the race only by moving up to 2nd`}>
                 <span className="ck-cup-mark" />
                 <Logo teamId={t.teamId} />
-                <span className="ck-cup-tri">{t.tricode}</span>
+                <TeamLink teamId={t.teamId} className="ck-cup-tri">{t.tricode}</TeamLink>
                 <span className="ck-cup-sub">
                   {ordinal(t.rank)}, {t.group.replace(' Group ', ' ')}
                 </span>

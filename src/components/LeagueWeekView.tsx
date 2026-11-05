@@ -10,6 +10,7 @@ import { hasFatigue, leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { Fatigue } from './Fatigue';
 import { FATIGUE_LEGEND_H, FatigueLegend, FatigueMark } from './FatigueMark';
 import { MatchLink, TeamLogo, type GameLink } from './GameCard';
+import { TeamLink } from '../slate/teamLink';
 import { fmtDate, plural, type WidgetSize } from './widget';
 
 export type WeekCount = 1 | 2;
@@ -35,11 +36,11 @@ export interface LeagueWeekViewProps {
 function MonthTri({ team, fatigue, score, component }: { team: ScheduleGame['homeTeam']; fatigue?: TeamFatigue; score?: { n: number; win: boolean }; component: boolean }) {
   const label = teamLabel(team);
   return (
-    <span className={`ck-mtri${score ? (score.win ? ' ck-win' : ' ck-loss') : ''}`} data-tricode={label}>
+    <TeamLink teamId={team.teamId} className={`ck-mtri${score ? (score.win ? ' ck-win' : ' ck-loss') : ''}`} data-tricode={label}>
       <FatigueMark f={fatigue} className="ck-mtri-text" component={component}>
         {label}
       </FatigueMark>
-    </span>
+    </TeamLink>
   );
 }
 

@@ -1,0 +1,26 @@
+/* Round 15: team links (TeamLink, src/slate/teamLink.tsx) — every team name, tricode and logo opens that team's Team
+   view. They look exactly like the text / logo they were (colour inherited, no underline, layout untouched); hover: a
+   pointer and a faint tint (an inset shadow: over the element's own background, under its text, no layout change);
+   logos get a thin ring instead (their disc keeps its colour). Never in an image: .ck-capturing drops the hover. */
+:where(a.ck-tlink) {
+  color: inherit;
+  text-decoration: none;
+  border-radius: 3px;
+}
+a.ck-tlink {
+  cursor: pointer;
+  -webkit-user-drag: none;
+}
+a.ck-tlink:hover {
+  box-shadow: inset 0 0 0 100vmax var(--ck-tlink-hover, rgba(255, 255, 255, 0.12));
+}
+a.ck-tlink.ck-logo-backing:hover {
+  box-shadow: 0 0 0 2px var(--ck-tlink-ring, rgba(255, 255, 255, 0.45));
+}
+/* a team inside a game link (List rows, calendar cells, week lines): hovering the team doesn't underline the game */
+.ck-mlink:hover:has(a.ck-tlink:hover) {
+  text-decoration: none;
+}
+.ck-capturing a.ck-tlink {
+  box-shadow: none !important;
+}
