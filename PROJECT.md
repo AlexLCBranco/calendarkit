@@ -2141,7 +2141,7 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   West | East side by side: seed, team, W-L, GB, L10, Strk, the two lines, tie hovers, clinch codes; its own copy button
   (copies both tables). Closes on the button, Esc, a press outside it, or a team link in it (`openTeam` closes it — the
   root's capture-phase handler stops that click before the popup sees it). Opening it changes nothing underneath.
-- **Top bar** (choice made without asking, easy to undo): the 4th tab and the button made the busiest rows too wide at 1920 —
+- **Top bar** (made without asking; **kept — Alex, 2026-11-05**): the 4th tab and the button made the busiest rows too wide at 1920 —
   Team → List 26 px over, Team → Calendar 135 px (it had 14 px spare). Text sizes unchanged; won back by column gaps
   8 → 6 px (rows stay 8 px apart, so 2-row bars at 1280 keep their height — `slate-same.spec` caught a 2 px change),
   View tabs' side padding 10 → 8 px, and **in the Team views on desktop the page title "NBA schedule 2026-27" is
