@@ -2036,7 +2036,7 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
 - **Days with no games**: every day from opening night to the last game is listed and pickable ("No games" / "No
   national TV games"); the TV filter no longer skips to the next TV day.
 - **Cup counts (NBA.com "Cup 101")**: a game that goes to overtime counts **0** in the Cup point-differential
-  tiebreaker (it was tied at the end of regulation). Round 11 counts the final score (the feed has no period scores). **Not changed; Alex to decide.**
+  tiebreaker (it was tied at the end of regulation). **v1.34.0 (Alex: yes): an OT game ("Final/OT", "Final/2OT") adds 0 to the differential**; points scored (rule 3) still counts its final score, since the feed has no regulation totals, and the view says so. Until v1.34.0 the final score counted in both.
 
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in

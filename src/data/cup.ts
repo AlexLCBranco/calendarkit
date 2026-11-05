@@ -3,8 +3,10 @@
 //
 // What the feed gives (checked 2026-10-31 against the live feed): group games have gameSubtype "in-season" and
 // gameSubLabel "West Group A" … "East Group C"; knockout games "in-season-knockout". Final scores only — no period
-// scores, so overtime points can't be taken out (the Cup rules leave them out of point differential and points
-// scored); an OT game ("Final/OT", "Final/2OT") counts with its final score and the view says so.
+// scores. The Cup rules leave overtime out of point differential and points scored. Differential: an OT game was tied
+// at the end of regulation, so it counts 0 (NBA.com "Cup 101"; v1.34.0, Alex's call — until then its final score).
+// Points scored: regulation points aren't in the feed, so an OT game ("Final/OT", "Final/2OT") counts its final
+// score there, and the view says so.
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { TEAMS, TEAM_BY_ID, type Conference } from './teams';
@@ -35,7 +37,7 @@ export interface CupTeamLine {
   tricode: string;
   w: number;
   l: number;
-  /** Point differential in finished group games (final scores, OT included — see above). */
+  /** Point differential in finished group games (an OT game counts 0 — see above). */
   diff: number;
   /** Points scored in finished group games. */
   points: number;
@@ -62,7 +64,7 @@ export interface CupSlot {
   /** Counted in the standings (finished, inside group play): only then are the result and scores known. */
   played: boolean;
   win?: boolean;
-  /** This team's points minus the opponent's (OT included, as in the standings). */
+  /** What the game adds to the differential: this team's points minus the opponent's; 0 after overtime (as in the standings). */
   diff?: number;
   score?: number;
   oppScore?: number;
@@ -86,7 +88,7 @@ export function cupSlots(games: readonly ScheduleGame[]): Map<number, CupSlot[]>
       [g.awayTeam, g.homeTeam, false],
     ] as const) {
       const slot: CupSlot = { gameId: g.gameId, opponent: opp.teamTricode, home, played };
-      if (played) Object.assign(slot, { win: me.score > opp.score, diff: me.score - opp.score, score: me.score, oppScore: opp.score, final });
+      if (played) Object.assign(slot, { win: me.score > opp.score, diff: isOt(g) ? 0 : me.score - opp.score, score: me.score, oppScore: opp.score, final });
       let list = out.get(me.teamId);
       if (!list) out.set(me.teamId, (list = []));
       list.push(slot);
@@ -118,7 +120,7 @@ export interface CupStandings {
   through?: string;
   /** Finished group games counted. */
   games: number;
-  /** Any of them went to overtime (their OT points are in the numbers). */
+  /** Any of them went to overtime (0 in the differential; their OT points are in points scored). */
   hasOt: boolean;
 }
 
@@ -175,8 +177,10 @@ export function cupStandings(games: readonly ScheduleGame[]): CupStandings {
     h.l += homeWon ? 0 : 1;
     a.w += homeWon ? 0 : 1;
     a.l += homeWon ? 1 : 0;
-    h.diff += hs - as;
-    a.diff += as - hs;
+    // an OT game was level after regulation: 0 to the differential (see above)
+    const margin = isOt(g) ? 0 : hs - as;
+    h.diff += margin;
+    a.diff -= margin;
     h.points += hs;
     a.points += as;
     if (isOt(g)) {

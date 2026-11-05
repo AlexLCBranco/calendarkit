@@ -180,7 +180,7 @@ function Rules() {
         </ol>
         <p>If a rule settles only part of a tie, the teams still level start again from rule 1. Wild-card ties use the same list without head-to-head; group ties are settled first.</p>
         <p className="ck-cup-ot" data-testid="cup-ot-note">
-          Overtime points should not count in rules 2 and 3, but the schedule only has final scores, so OT games are counted with their final score.
+          A game that went to overtime counts 0 in rule 2 (it was tied after regulation). Rule 3 should leave out overtime points too, but the schedule only has final scores, so there OT games count their final score.
         </p>
       </div>
     </div>

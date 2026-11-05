@@ -11,7 +11,7 @@ const OUT = 'test-output/copy-images';
 const desktop = (name: string) => ['desktop', 'desktop-xl'].includes(name);
 
 type RawTeam = { teamId: number; teamTricode: string; score: number };
-type RawGame = { gameDateEst: string; gameStatus: number; gameSubtype: string; gameSubLabel: string; awayTeam: RawTeam; homeTeam: RawTeam };
+type RawGame = { gameDateEst: string; gameStatus: number; gameStatusText: string; gameSubtype: string; gameSubLabel: string; awayTeam: RawTeam; homeTeam: RawTeam };
 
 /** Per tricode: W, L, DIFF from the snapshot's finished group games (Oct 30 – Nov 27), and the last such date. */
 const snapshotTable = (page: Page) =>
@@ -29,8 +29,10 @@ const snapshotTable = (page: Page) =>
         const h = t[g.homeTeam.teamTricode]!;
         const a = t[g.awayTeam.teamTricode]!;
         const m = g.homeTeam.score - g.awayTeam.score;
-        h.diff += m;
-        a.diff -= m;
+        // NBA.com Cup rules (v1.34.0): an OT game counts 0 in the differential
+        const d = /^Final\/\d*OT$/i.test(g.gameStatusText.trim()) ? 0 : m;
+        h.diff += d;
+        a.diff -= d;
         if (m > 0) (h.w++, a.l++);
         else (a.w++, h.l++);
       }
@@ -143,7 +145,7 @@ test.describe('Cup view', () => {
 
     // panels: the rules with the OT note; the wild-card race, its holders = the WC pills
     await expect(page.getByTestId('cup-rules')).toContainText('Head-to-head record among the tied teams');
-    await expect(page.getByTestId('cup-ot-note')).toContainText('OT games are counted with their final score');
+    await expect(page.getByTestId('cup-ot-note')).toContainText('counts 0 in rule 2');
     const holders = await page.locator('.ck-cup-holder').evaluateAll((els) => els.map((e) => e.getAttribute('data-team')));
     expect(holders).toEqual(wc.map((p) => p.tri));
     await expect(page.locator('.ck-cup-race-row')).toHaveCount(10); // per conference: the three 2nd-place teams + 2 more

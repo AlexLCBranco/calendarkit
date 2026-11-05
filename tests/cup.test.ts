@@ -74,9 +74,10 @@ describe('cupStandings: records', () => {
     expect(s.through).toBeUndefined();
   });
 
-  it('an OT game counts with its final score (the feed has no period scores) and is flagged', () => {
-    const s = cupStandings([cup('DEN', 'PHX', 130, 125, { ot: true })]);
-    expect(team(s, 'DEN')).toMatchObject({ diff: 5, points: 130, otGames: 1 });
+  it('an OT game counts 0 in point differential (tied after regulation, NBA.com Cup rules), its final score in points scored; flagged', () => {
+    const s = cupStandings([cup('DEN', 'PHX', 130, 125, { ot: true }), cup('DEN', 'UTA', 110, 100)]);
+    expect(team(s, 'DEN')).toMatchObject({ diff: 10, points: 240, otGames: 1, w: 2, l: 0 });
+    expect(team(s, 'PHX')).toMatchObject({ diff: 0, points: 125, otGames: 1, w: 0, l: 1 });
     expect(s.hasOt).toBe(true);
     expect(cupStandings([cup('DEN', 'PHX', 130, 125)]).hasOt).toBe(false);
   });

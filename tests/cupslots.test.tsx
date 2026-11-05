@@ -57,7 +57,7 @@ describe('cupSlots', () => {
       ['HOU', 'away', true, true, 7],
       ['PHX', 'away', true, false, -11],
       ['DAL', 'home', true, true, 22],
-      ['UTA', 'away', true, true, 12],
+      ['UTA', 'away', true, true, 0], // 128-116 in OT: 0 to the differential (v1.34.0, NBA.com Cup rules)
     ]);
   });
 
