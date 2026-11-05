@@ -3,7 +3,7 @@
 // the browser makes one small same-origin request and the CDN caches it (src/data/odds.ts: oddsCacheSeconds); ESPN
 // needs no key, so nothing secret lives here. Any failure answers 502 with no odds: the Slate then shows none.
 
-import { dayOdds, espnDate, oddsCacheSeconds, type EspnEvent } from '../src/data/odds';
+import { dayOdds, espnDate, oddsCacheSeconds, type EspnEvent } from '../src/data/odds.js';
 
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
