@@ -2257,6 +2257,26 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   take a free port (`scripts/free-port.ts`; was a fixed 4180 with `reuseExistingServer`), Playwright never reuses a
   server, e2e:all stops its server on exit, signals and errors. `npm run perf` = the perf guard alone.
 
+### Week view load time (2026-11-05, v1.40.1)
+- **Question**: the local perf guard's `load-week-view` measured ~410–430 ms against its Windows baseline of 253 ms
+  (set at 4f040c0, Oct 24). Machine or code? **Code.** The Oct 24 build still measures 248–259 ms on the same PC.
+- **When**: the current perf test against old builds served side by side, interleaved, medians of 8–10 loads
+  (the old builds' own `dist`, same static server): Oct 24 286 · 92e8203 260 · ea8f142 288 · **71de8aa 351** ·
+  118dd8d 359 · v1.19.0 370 · v1.24.0 392 · v1.32.0 384 · v1.40.0 405 ms (one loaded run; quieter runs read ~60 ms lower
+  throughout). **The jump is 71de8aa (v1.16.0, Oct 29): "B2B fatigue component"**, +30–60 ms; after it only a slow
+  creep (+10–20 ms per few versions, under the guard's 403 ms limit, so nothing failed — and locally perf hadn't run).
+- **Why**: 71de8aa put a Fatigue row under every 1-week line (DOM 1013 → 1256 nodes) and had the view compute every
+  team's fatigue for the whole season (busiest-day height) on the first render. The CPU profile of the load showed the
+  biggest cost in the grid-top measure: the view rendered and laid out every line at scale 1, measured, changed the
+  scale and rendered and laid out everything again — the second pass grew with the new rows.
+- **Fix (v1.40.1)**: the days' games render only once the grid's top is measured (one pass instead of two; both run
+  before the first paint) — `tests/weekview-renders.test.tsx` (lines rendered once; 107 renders for 53 lines before);
+  and `leagueFatigue` is lazy (a team's season worked out when one of its games is first read, records and tooltip
+  texts on first read) — `tests/fatigue-lazy.test.ts` (identical to the v1.40.0 results, frozen in
+  `tests/fatigue-eager.ts`). Interleaved: v1.40.0 403 → 359 ms (ea8f142 328 in the same run). Perf guard locally:
+  load-week-view 339 / 343 ms (limit 403). **Baseline not changed**: the remaining ~30 ms over the pre-71de8aa build is
+  the Fatigue rows themselves (a feature).
+
 ### Site version (2026-10-28)
 - **"v1.3.0"** (MAJOR.MINOR.PATCH, from package.json) in the **bottom-right corner** of the window, small and muted, in
   every view and width, inside the page's bottom padding so it covers no row, cell or control (e2e checks); tooltip

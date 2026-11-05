@@ -115,14 +115,19 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
   }, [data]);
   const busiest = useMemo(() => busiestDayHeight(data.byDate, timeZone, weeks === 1 ? fxGame : undefined), [data, timeZone, weeks, fxGame]);
   const grid = useRef<HTMLDivElement>(null);
-  const [gridTop, setGridTop] = useState(0);
+  // v1.40.1: undefined until measured, and the days' games render only then. Before, the first render laid out every
+  // line at scale 1, the measure (a forced layout) changed the scale and everything rendered and laid out again — on
+  // the load path; the second pass grew with the Fatigue rows of 71de8aa (v1.16.0). Both passes run before the first
+  // paint, so nothing visible changes.
+  const [gridTop, setGridTop] = useState<number | undefined>(undefined);
   useLayoutEffect(() => {
     const el = grid.current;
     const root = el?.closest('.ck-root') ?? el?.parentElement;
-    if (el && root) setGridTop(el.getBoundingClientRect().top - root.getBoundingClientRect().top);
+    setGridTop(el && root ? el.getBoundingClientRect().top - root.getBoundingClientRect().top : 0);
   }, [size.width, size.height]);
+  const measured = gridTop !== undefined;
   const pad = size.width < ROOMY_WIDTH ? 2 : 4;
-  const scale = weeks === 1 ? weekScale(monthCellInner(size.width), size.height - gridTop - FATIGUE_LEGEND_H - 2 * pad - 2, busiest) : 1;
+  const scale = weeks === 1 ? weekScale(monthCellInner(size.width), size.height - (gridTop ?? 0) - FATIGUE_LEGEND_H - 2 * pad - 2, busiest) : 1;
   const L = weeks === 1 ? scaleLine(scale) : { ...MONTH_LINE, ...TWO_WEEK_SPACING };
   const vars = {
     '--ck-logo': `${L.logo}px`,
@@ -178,7 +183,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
                 {games.length > 0 && <span className="ck-wday-count">{plural(games.length)}</span>}
               </button>
               {games.length > 0 && <CopyButton hover label="Copy day as image" of=".ck-month-cell" testId="copy-day" />}
-              {games.length > 0 && (
+              {games.length > 0 && measured && (
                 <div className="ck-month-day" data-cols={cols} style={{ gridTemplateColumns: `repeat(${cols}, var(--ck-line))` }}>
                   {flowDay(timeGroups(games, timeZone), cols, L).map((col, ci) => (
                     <div key={ci} className="ck-mcol">
