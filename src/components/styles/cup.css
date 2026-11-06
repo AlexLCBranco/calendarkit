@@ -824,3 +824,9 @@
   padding: 0;
   border: 0;
 }
+/* round 21 (item 14): the prize per player under each knockout round */
+.ck-prize {
+  margin: 0 0 4px;
+  color: var(--ck-muted);
+  font-size: 10px;
+}

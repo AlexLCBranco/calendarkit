@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup), item 10 (v1.51.0, venue markers), item 13 (v1.52.0, rest / travel).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup), item 10 (v1.51.0, venue markers), item 13 (v1.52.0, rest / travel), item 14 (v1.53.0, prize money).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2480,3 +2480,10 @@ zones). "TBD" without a date. Shown on the Slate's knockout cards (the Cup track
 Dec 4–5 not yet assigned), and the Cup schedule rows' tooltips (the rows keep one line). The map's pure arena data moved
 to the data layer (src/data/arenas.ts, zones.ts, geo.ts; src/map re-exports them) so the Slate part, which may only use
 src/slate, src/data and src/shared, has them without the map's drawing code (tests/slatepart.test.tsx).
+
+**Item 14 (v1.53.0): prize money.** `src/data/cupPrize.ts`: per season, per player (full share; two-way players half),
+each with its source — 2023 $500,000 / $200,000 / $100,000 / $50,000 and 2024 $514,970 / $205,988 / $102,994 / $51,497
+(Hoops Rumors; others round 2024's champion share to $514,971), 2025 $530,933 / $212,373 / $106,187 / $53,093 (CBS
+Sports), 2026 $604,985 / $241,994 / $120,997 / $60,499 (BVM Sports, 2026-10-30 — the amounts Alex gave; not found on an
+NBA.com page yet). A small muted line under each knockout round of the simulator's bracket (the source in its tooltip);
+item 9's history uses each season's own amounts.

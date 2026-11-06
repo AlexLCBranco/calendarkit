@@ -15,6 +15,14 @@ import type { GameLink } from '../slate/links';
 import { TeamLink } from '../slate/teamLink';
 import { HostTag, VenueBadge, type Venue } from '../slate/VenueMarker';
 import { hostArena, prepFor, type Prep } from '../data/knockout';
+import { prizeLines } from '../data/cupPrize';
+
+/** Round 21 (item 14): a small muted line under a knockout round — the prize per player; the source in its tooltip. */
+export const PrizeLine = ({ text, source }: { text: string; source: string }) => (
+  <p className="ck-prize" data-testid="cup-prize" title={`Per player (two-way players: half). Source: ${source}`}>
+    {text}
+  </p>
+);
 import { TEAM_COLOR } from './CupView';
 
 export interface SimPick {
@@ -317,6 +325,8 @@ function SeedTeam({ s, host, prep }: { s?: Seed; host?: boolean; prep?: Prep }) 
 /** The bracket from the seeds: per conference 1 v 4 and 2 v 3 (the better record hosts), the semifinal at the higher seed, the final neutral. */
 function Bracket({ data, seeds, quarterfinals, finalVenue }: { data: CalendarData; seeds: Record<Conference, Seed[]>; quarterfinals: { conference: Conference; high: Seed; low: Seed; host: number }[]; finalVenue: Venue }) {
   void semifinal;
+  // round 21 (item 14): what each round is worth per player this season (with its source), or nothing without one
+  const prize = prizeLines(Number(data.seasonYear.slice(0, 4)));
   // round 21 (item 13): rest / travel before the quarterfinal, from the real schedule: the trip to the host's arena from
   // the team's last game; the rest only once the feed gives this matchup its night (QF nights: Dec 4–5, not yet assigned)
   const qfDates = [...new Set(data.games.filter((g) => g.isCupKnockout && /quarter/i.test(g.gameSubLabel ?? '')).map((g) => g.dateEt))].sort();
@@ -338,10 +348,12 @@ function Bracket({ data, seeds, quarterfinals, finalVenue }: { data: CalendarDat
                   <SeedTeam s={q.low} prep={prep(q.low.teamId, q.host)} />
                 </div>
               ))}
+              {prize && <PrizeLine text={prize.qf} source={prize.source} />}
               <div className="ck-sim-bgame ck-sim-bsf" data-testid="sim-sf">
                 <span className="ck-sim-bround">SF</span>
                 <span className="ck-sim-bteam">QF winners · the higher seed hosts</span>
               </div>
+              {prize && <PrizeLine text={prize.sf} source={prize.source} />}
               {!seeds[c].length && <span className="ck-sim-bteam">TBD</span>}
             </div>
           );
@@ -350,6 +362,7 @@ function Bracket({ data, seeds, quarterfinals, finalVenue }: { data: CalendarDat
           <span className="ck-sim-bround">Final</span>
           <span className="ck-sim-bteam">West winner vs East winner</span>
           <VenueBadge venue={finalVenue} />
+          {prize && <PrizeLine text={prize.final} source={prize.source} />}
         </div>
       </div>
     </div>
