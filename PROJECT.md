@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2431,3 +2431,15 @@ Bracket: QF 1 v 4 and 2 v 3 with the host (seeds 1 and 2) tagged HOST; SF "the h
 the feed (Neutral · Hinkle Fieldhouse, Indianapolis), via the shared `VenueMarker` (src/slate). Picks live in
 CalendarView (kept when leaving the Cup, gone on reload), never stored. Fits one screen at 1920 × 950 and 1600 × 1000
 with every game picked (e2e/simulator.spec.ts). Rest/travel on the bracket comes with item 13.
+
+**Item 2 (v1.48.0): Cup "decided" tags.** On the Slate's Cup rows, after the squares: "IN" (green) when a team has
+mathematically clinched a knockout spot, "OUT" (muted gray, the row dimmed) when it can no longer qualify; nothing while
+alive. `src/data/cupDecide.ts`: every win/loss completion of the conference's remaining group games goes through the
+shared engine with the margins unknown; a completion where a margin (an undecided tie) or a random drawing (a tie no rule
+breaks) could change the team's spot counts as "could go either way". IN = in every completion, OUT = in none. Exhaustive,
+so only with ≤ `MAX_OPEN` = 12 games left in the conference (in practice the last two group nights); with more, no tag.
+That is exact, not a shortcut: the wild-card ties are decided by the engine's own rules in every completion.
+- Speed: up to ~260 ms late in group play (~12 ms when nothing is certain, with an early exit), so `useCupFates` works
+  it out in an idle moment after the Slate is on screen and caches it per data set; the first render never waits.
+- Width: the tag column (24 px) is only there on nights where a team on show is decided; the note boxes give those 24 px
+  (~183 px at 1920; `SLATE_NOTE_MIN_CUP` 200 → 175 so the 2 columns stay) — flagged to Alex.

@@ -462,3 +462,29 @@ a.ck-streak-game:hover {
 .ck-cup-neg-text {
   color: var(--ck-playoffs);
 }
+
+/* round 21 (item 2): the IN / OUT tag after the squares; an eliminated team's row slightly dimmed */
+.ck-slate-cup-fate {
+  width: 20px;
+  display: flex;
+  justify-content: center;
+}
+.ck-cup-fate-in,
+.ck-cup-fate-out {
+  padding: 1px 3px;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.ck-cup-fate-in {
+  background: #1f8f5f;
+  color: #fff;
+}
+.ck-cup-fate-out {
+  background: rgb(255 255 255 / 0.12);
+  color: var(--ck-muted);
+}
+.ck-slate-row.ck-cup-out-row {
+  opacity: 0.6;
+}

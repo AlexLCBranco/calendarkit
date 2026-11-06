@@ -66,7 +66,7 @@ export const SLATE_CARD_BORDER = 1;
 /** An info-only card's width (notes hidden): the info block and the card's padding and border, nothing stretched. */
 export const SLATE_CARD_WIDTH = SLATE_INFO_WIDTH + 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER);
 /** Notes hidden: as many info-only cards per row as fit `width`, SLATE_GRID_GAP apart (at least 1). */
-export const slateInfoColumns = (width: number, cup = false) => Math.max(1, Math.floor((width + SLATE_GRID_GAP) / (slateCardWidth(cup) + SLATE_GRID_GAP)));
+export const slateInfoColumns = (width: number, cup: CupTrackKind = false) => Math.max(1, Math.floor((width + SLATE_GRID_GAP) / (slateCardWidth(cup) + SLATE_GRID_GAP)));
 
 /**
  * Round 9 (Part 3): each card is the game's info at its old size (the round 7 card's content width) beside a note box
@@ -86,14 +86,23 @@ export const SLATE_NOTE_MIN = 300;
  * 300 px minimum waived down to SLATE_NOTE_MIN_CUP), so the cards keep 2 columns and their height.
  */
 export const SLATE_CUP_TRACK = 4 * 37 + 3 * 2 + 4 + 22;
-export const SLATE_NOTE_MIN_CUP = 200;
+export const SLATE_NOTE_MIN_CUP = 175;
+/**
+ * Round 21 (item 2): on a Cup night where a team on show has clinched ("IN") or is out ("OUT"), the track gets the tag
+ * after the squares (only those nights: the last group nights). The note boxes give those 24 px too (~183 px at 1920;
+ * SLATE_NOTE_MIN_CUP 200 → 175 for that, so 2 columns stay).
+ */
+export const SLATE_CUP_TAG = 24;
+/** 0: no Cup track; 1: the Cup track; 2: the Cup track with the IN / OUT tag column. */
+export type CupTrackKind = 0 | 1 | 2 | boolean;
+const cupWidth = (cup: CupTrackKind) => (!cup ? 0 : SLATE_CUP_TRACK + SLATE_ROW_GAP + (cup === 2 ? SLATE_CUP_TAG : 0));
 /** The info block's width on a Cup night or not. */
-export const slateInfoWidth = (cup = false) => SLATE_INFO_WIDTH + (cup ? SLATE_CUP_TRACK + SLATE_ROW_GAP : 0);
+export const slateInfoWidth = (cup: CupTrackKind = false) => SLATE_INFO_WIDTH + cupWidth(cup);
 /** An info-only card's width on a Cup night or not. */
-export const slateCardWidth = (cup = false) => slateInfoWidth(cup) + 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER);
+export const slateCardWidth = (cup: CupTrackKind = false) => slateInfoWidth(cup) + 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER);
 
 /** The note box's width in a card `card` px wide. */
-export const slateNoteWidth = (card: number, cup = false) => card - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - slateInfoWidth(cup) - SLATE_NOTE_GAP;
+export const slateNoteWidth = (card: number, cup: CupTrackKind = false) => card - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - slateInfoWidth(cup) - SLATE_NOTE_GAP;
 
 /** Columns of cards for a widget `width` px wide: 2 when each card's note box keeps SLATE_NOTE_MIN (Cup nights: SLATE_NOTE_MIN_CUP), else 1. */
-export const slateColumns = (width: number, cup = false) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2, cup) >= (cup ? SLATE_NOTE_MIN_CUP : SLATE_NOTE_MIN) ? 2 : 1);
+export const slateColumns = (width: number, cup: CupTrackKind = false) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2, cup) >= (cup ? SLATE_NOTE_MIN_CUP : SLATE_NOTE_MIN) ? 2 : 1);
