@@ -254,3 +254,25 @@
   width: 244px;
   flex: none;
 }
+
+/* round 21 (item 3): Load earlier / more games, the season's edges and the month dividers in the Team List */
+.ck-load-more {
+  display: block;
+  margin: 6px auto;
+}
+.ck-list-edge {
+  margin: 8px 0;
+  text-align: center;
+  color: var(--ck-muted);
+  font-size: 12px;
+}
+.ck-month-divider {
+  margin: 6px 0 2px;
+  padding: 2px 8px;
+  border-bottom: 1px solid var(--ck-border);
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

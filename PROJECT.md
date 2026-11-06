@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2381,3 +2381,14 @@ included); a game to come: the opponent alone, muted; `tonight` rings it; the to
 it is an `<a target="_blank">` to the game's hoopsjunkie page (the Cup standings pass `gameLink`). To keep "Minnesota
 Timberwolves" + four prefixed squares on one row at 1600 × 1000, the Cup rows' W / L columns are 18 px (were 22) and DIFF
 42 px (50; its chip 40 px min, was 44).
+
+**Item 3 (v1.44.0): Team List — load earlier / more.** The list still opens on one month; "Load earlier games" (above
+the rows) adds the month before, "Load more games" (below) the month after, one month per click (`TeamListView`
+`monthTo` + `onLoadMonths`; CalendarView's `teamListAt.to`). At the team's first month the button is a quiet
+"Season start", after its last "End of schedule". A divider row names each month after the first; the header reads
+"October – November 2026" (`fmtMonthSpan`). The row on screen stays put: `load` remembers the first row on screen and
+its y, and the rows effect puts it back after layout. Loading is the same page in the history (replace), so back to it
+restores the months. Phones keep one month (their ‹ › months).
+- Row positions are now measured from the scroller's content top (`scrollPos`: the button / "Season start" sit above the
+  rows), and the bottom spacer leaves out what sits under the last row, so the last row still reaches the top with
+  "Load more games" under it (found by the new e2e: the button pushed the last row off screen).

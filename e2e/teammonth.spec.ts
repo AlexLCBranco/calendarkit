@@ -151,7 +151,11 @@ test.describe('desktop and tablet: strip, picker, Today', () => {
     await expect(page.getByTestId('team-month')).toHaveText('November 2026');
     for (let i = 0; i < 10; i++) await page.mouse.wheel(0, -2000);
     await page.waitForTimeout(300);
-    await expect.poll(() => topRow(page)).toBe(dates[0]);
+    // round 21 (item 3): at the very top, "Load earlier games", then the month's first row
+    await expect(page.getByTestId('load-earlier')).toBeInViewport();
+    const first = page.locator(`.ck-team-rows > [data-row-date="${dates[0]}"]`);
+    await expect(first).toBeInViewport();
+    expect(await page.getByTestId('team-list').evaluate((l) => l.scrollTop)).toBe(0);
   });
 
   test('month change: click → next frame (printed), guarded', async ({ page }, info) => {

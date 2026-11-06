@@ -2,7 +2,7 @@
 
 import { leagueSeries } from '../data/series';
 import { memo, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type RefObject } from 'react';
-import { hasNationalTv, isOver, monthOf, opponentSecondNight, sideLabel, teamGames, teamRestDays, teamSeason, weekOf, type CalendarData } from '../data/model';
+import { addMonths, hasNationalTv, isOver, monthOf, opponentSecondNight, sideLabel, teamGames, teamRestDays, teamSeason, weekOf, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import { TEAM_BY_ID } from '../data/teams';
@@ -11,7 +11,7 @@ import { useActiveHighlight } from './ActiveHighlight';
 import { ACTIVE_DAY } from './copyAsImage';
 import type { ValueStore } from './valueStore';
 import { WeekStrip } from './WeekStrip';
-import { fmtDate, isCompact, TEAM_LIST_MAX_WIDTH, useTeamB2B, type WidgetSize } from './widget';
+import { fmtDate, fmtMonth as fmtMonthLong, isCompact, TEAM_LIST_MAX_WIDTH, useTeamB2B, type WidgetSize } from './widget';
 
 export interface TeamListViewProps {
   data: CalendarData;
@@ -45,6 +45,13 @@ export interface TeamListViewProps {
    * still come from the whole season; a B2B whose other night is in another month keeps its marks but no bracket.
    */
   month?: string;
+  /**
+   * Round 21 (item 3): the last month shown (default `month`): "Load earlier games" / "Load more games" add a month
+   * before `month` / after it, one at a time, a divider row between months.
+   */
+  monthTo?: string;
+  /** The buttons asked for a range of months (`from`–`to`); none: no buttons. */
+  onLoadMonths?: (from: string, to: string) => void;
   /** Round 15: open at this row (a team link) instead of the next game. */
   openAt?: TeamListOpen;
   /** The strip, the picker or "Today" asked for a row in another month: the host shows that month (then the row is put at the top). */
@@ -83,12 +90,17 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * v1.40.0: memo — the date picker's open state lives in CalendarView, and each open / close redrew the whole month
  * (tests/teamlist-rerender.test.tsx).
  */
-export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
+export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, monthTo, onLoadMonths, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
   const allRows = useMemo(() => (showRest && !only ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, data, teamId]);
-  const rows = useMemo(() => (month ? allRows.filter((r) => monthOf(rowDateOf(r)) === month) : allRows), [allRows, month]);
+  const last = monthTo ?? month;
+  const inRange = (m: string) => !month || (m >= month && m <= last!);
+  const rows = useMemo(() => (month ? allRows.filter((r) => monthOf(rowDateOf(r)) >= month && monthOf(rowDateOf(r)) <= last!) : allRows), [allRows, month, last]);
+  // the team's first and last month with a game (TV filter applied): no button past them
+  const firstMonth = games[0] && monthOf(games[0].dateEt);
+  const lastMonth = games.at(-1) && monthOf(games.at(-1)!.dateEt);
   const b2b = useTeamB2B(data, teamId);
   const season = useMemo(() => teamSeason(data, teamId), [data, teamId]);
   const fatigue = leagueFatigue(data); // once per data set: both teams' Fatigue columns
@@ -101,7 +113,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
   const nextTop = () => {
     const el = scroller.current;
     const row = el?.querySelector<HTMLElement>('[data-next]');
-    return el && row ? Math.min(row.offsetTop - el.querySelector<HTMLElement>('.ck-daylist')!.offsetTop, el.scrollHeight - el.clientHeight) : undefined;
+    return el && row ? Math.min(scrollPos(el, row), el.scrollHeight - el.clientHeight) : undefined;
   };
   const nextAt = useRef<number | undefined>(0); // nextTop(), as of the last measure
   const report = () => onAtNext?.(nextAt.current !== undefined && Math.abs((scroller.current?.scrollTop ?? 0) - nextAt.current) < 1);
@@ -113,10 +125,17 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     const list = el?.querySelector<HTMLElement>('.ck-daylist');
     if (!el || !list) return;
     const rows = [...list.querySelectorAll<HTMLElement>(':scope > [data-row-date]')];
-    tops.current = rows.map((r) => ({ top: r.offsetTop - list.offsetTop, date: r.dataset.rowDate! }));
+    // round 21 (item 3): from the scroller's own top (a "Load earlier games" button or "Season start" sits above the rows)
+    tops.current = rows.map((r) => ({ top: scrollPos(el, r), date: r.dataset.rowDate! }));
     // room after the last row so every row can reach the top (a strip day click, ‹ ›), as in the League List; written
     // straight to the spacer, no render
-    if (tail.current) tail.current.style.height = `${Math.max(0, el.clientHeight - (rows.at(-1)?.offsetHeight ?? 0))}px`;
+    // (round 21: less whatever sits between the last row and the spacer — "Load more games" / "End of schedule" — so the
+    // last row still reaches the top, the button under it, when scrolled to the bottom)
+    const lastRow = rows.at(-1);
+    if (tail.current) {
+      const between = lastRow ? tail.current.getBoundingClientRect().top - lastRow.getBoundingClientRect().bottom : 0;
+      tail.current.style.height = `${Math.max(0, el.clientHeight - (lastRow?.offsetHeight ?? 0) - Math.max(0, between))}px`;
+    }
     nextAt.current = nextTop();
   };
   /** The date of the row at the top → the store (a no-op while it stays the same row's date). */
@@ -141,7 +160,19 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
   };
   // A row in another month: the host switches months first, then the layout effect below puts it at the top.
   const pending = useRef<{ next: true } | { date: string }>(undefined);
-  const otherMonth = (date: string) => !!month && !!onMonthChange && monthOf(date) !== month;
+  const otherMonth = (date: string) => !!month && !!onMonthChange && !inRange(monthOf(date));
+  // Round 21 (item 3): a month added above or below keeps the row on screen where it was (the row at the top and how far
+  // into it the list was scrolled, put back after the new rows are laid out)
+  const anchor = useRef<{ date: string; at: number }>(undefined);
+  /** A row's top on screen, relative to the scroller's top (what must not change). */
+  const screenTop = (el: HTMLElement, row: HTMLElement) => row.getBoundingClientRect().top - el.getBoundingClientRect().top;
+  const load = (from: string, to: string) => {
+    const el = scroller.current;
+    const rowsNow = el ? [...el.querySelectorAll<HTMLElement>('.ck-daylist > [data-row-date]')] : [];
+    const row = rowsNow.find((r) => screenTop(el!, r) >= -1) ?? rowsNow[0];
+    anchor.current = el && row ? { date: row.dataset.rowDate!, at: screenTop(el, row) } : undefined;
+    onLoadMonths!(from, to);
+  };
   const toNext = () => {
     if (nextGame && otherMonth(nextGame.dateEt)) {
       pending.current = { next: true };
@@ -192,6 +223,18 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
   // month change asked for by the strip, the picker or Today, at that row. A month without the next game opens at its 1st.
   useLayoutEffect(() => {
     measure();
+    const a = anchor.current;
+    anchor.current = undefined;
+    if (a) {
+      const el = scroller.current;
+      const row = el?.querySelector<HTMLElement>(`.ck-daylist > [data-row-date="${a.date}"]`);
+      if (el && row) {
+        el.scrollTop += screenTop(el, row) - a.at;
+        report();
+        track();
+        return;
+      }
+    }
     const p = pending.current;
     pending.current = undefined;
     const open = openAt && !openAt.done ? openAt : undefined;
@@ -249,8 +292,23 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
       {topStore && !compact && <TeamStrip store={topStore} byDate={byDate} gameDates={gameDates} today={today} onPick={toDate} />}
       <div className="ck-llist" ref={scroller} data-testid="team-list" onScroll={onScroll} data-select-scroller>
         {games.length === 0 && <p className="ck-empty">No games.</p>}
+        {onLoadMonths && month && games.length > 0 &&
+          (firstMonth && month > firstMonth ? (
+            <button type="button" className="ck-button ck-load-more" data-testid="load-earlier" data-capture-exclude="true" onClick={() => load(addMonths(month, -1), last!)}>
+              Load earlier games
+            </button>
+          ) : (
+            <p className="ck-list-edge" data-testid="season-start">
+              Season start
+            </p>
+          ))}
         <div className="ck-daylist ck-team-rows">
-          {rows.map((g) =>
+          {rows.map((g, i) => [
+            month !== last && i > 0 && monthOf(rowDateOf(g)) !== monthOf(rowDateOf(rows[i - 1]!)) && (
+              <div key={`m-${rowDateOf(g).slice(0, 7)}`} className="ck-month-divider" data-month={rowDateOf(g).slice(0, 7)} role="separator" aria-label={fmtMonthLong(rowDateOf(g).slice(0, 7))}>
+                {fmtMonthLong(rowDateOf(g).slice(0, 7))}
+              </div>
+            ),
             typeof g === 'string' ? (
               <div key={g} className="ck-rest-row" data-rest={g} data-row-date={g} aria-label={`${rowDate(g)}, rest day`}>
                 <span className="ck-date">{rowDate(g)}</span>
@@ -269,7 +327,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
                         .get(g.gameId)
                         ?.filter((n) => {
                           const other = n.night === 1 ? n.pair.second : n.pair.first;
-                          return only ? only.has(other.gameId) : monthOf(other.dateEt) === month;
+                          return only ? only.has(other.gameId) : inRange(monthOf(other.dateEt));
                         })
                         .map((n) => n.night)
                     : undefined
@@ -293,14 +351,36 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
                 rowDate={g.dateEt}
               />
             ),
-          )}
+          ])}
         </div>
+        {onLoadMonths && month && games.length > 0 &&
+          (lastMonth && last! < lastMonth ? (
+            <button type="button" className="ck-button ck-load-more" data-testid="load-more" data-capture-exclude="true" onClick={() => load(month, addMonths(last!, 1))}>
+              Load more games
+            </button>
+          ) : (
+            <p className="ck-list-edge" data-testid="schedule-end">
+              End of schedule
+            </p>
+          ))}
         {handle && <div ref={tail} aria-hidden="true" />}
         {topStore && highlight.layers}
       </div>
     </section>
   );
 });
+
+/**
+ * The scrollTop that puts `row` at the scroller's top: its place in the list (offsetTop, as before round 21) plus where
+ * the list starts inside the scroller (below "Load earlier games" / "Season start").
+ */
+const scrollPos = (el: HTMLElement, row: HTMLElement) => {
+  const list = row.parentElement!;
+  const box = el.getBoundingClientRect();
+  // (no layout at all — jsdom — : the list starts at the top)
+  const start = box.height ? list.getBoundingClientRect().top - box.top + el.scrollTop : 0;
+  return row.offsetTop - list.offsetTop + start;
+};
 
 const rowDateOf = (r: ScheduleGame | string) => (typeof r === 'string' ? r : r.dateEt);
 
