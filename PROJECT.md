@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2443,3 +2443,15 @@ That is exact, not a shortcut: the wild-card ties are decided by the engine's ow
   it out in an idle moment after the Slate is on screen and caches it per data set; the first render never waits.
 - Width: the tag column (24 px) is only there on nights where a team on show is decided; the note boxes give those 24 px
   (~183 px at 1920; `SLATE_NOTE_MIN_CUP` 200 → 175 so the 2 columns stay) — flagged to Alex.
+
+**Item 11 (v1.49.0): Cup stakes chips.** `src/data/cupStakes.ts`: one pass over every completion of the conference's
+remaining games (the shared engine, margins unknown), grouped by each team's game tonight: "Win = clinch", "Loss = out",
+"Win + help" (tooltip: the other result needed tonight, "A win and DAL loses"), "+11 to pass DAL" when, with a win, only the
+team's own margin is open (the threshold from the differentials, the opponent's −m counted; tooltip: "Point differential:
+DEN +10, DAL +30 — a win by 11 or more takes 1st in West A"), "depends on HOU–UTA" when another game tonight shares that
+margin. Nothing before the decisive nights (the MAX_OPEN rule) or for teams already settled. Worked out idle, cached per
+data set and date (`useCupStakes`).
+- Slate: in the IN / OUT column, which is 72 px on nights with chips; the note boxes give it (~135 px at 1920;
+  `SLATE_NOTE_MIN_STAKES` 130 those nights) — flagged to Alex. Cup schedule: rows keep one line (the By date view fits the
+  window with 0 px to spare), so a row with stakes shows a small "stakes" mark and the chips are in its tooltip; item 12's
+  strip shows them in full on the Cup page.

@@ -15,6 +15,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { cupTag, finalScore, nationalTv, overtime, teamLabel, tipoff, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
+import { cupStakesNow } from '../data/cupStakes';
+import { useCupStakes } from '../slate/cupFates';
 import { cupBoard, cupNightHeading, cupNights, cupOpeningNight, cupTeamTag, type CupNight, groupNumberLine, groupShort, nightByGroup, teamCupGames } from '../data/cupSchedule';
 import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { GameLinkIcon, TeamLogo, TipTime } from '../slate/parts';
@@ -48,6 +50,8 @@ export interface CupScheduleProps {
 }
 
 export default function CupSchedule(p: CupScheduleProps) {
+  // round 21 (item 11): tonight's stakes, worked out after the first render; the rows read them (cupStakesNow)
+  useCupStakes(p.data, p.today, true);
   if (p.list === 'team') return <CupTeam {...p} />;
   return p.by === 'date' ? <CupByDate {...p} /> : <CupByGroup {...p} />;
 }
@@ -79,6 +83,10 @@ function rowTip(data: CalendarData, g: ScheduleGame, timeZone?: string) {
  * The cells sit in the list's grid columns (subgrid), so every row of a list lines up.
  */
 function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: { g: ScheduleGame; data: CalendarData; fatigue: Fatigue; by: CupLayout; pill?: string; timeZone?: string; gameLink?: GameLink; groupStart?: boolean }) {
+  // round 21 (item 11): tonight's stakes (worked out after the first render, cached): a compact mark on the row (the
+  // view must keep its one-line rows and fit the window), the chips themselves in the row's tooltip
+  const chips = cupStakesNow(data, g.dateEt);
+  const stakes = chips && g.isCupGroupGame ? [g.awayTeam, g.homeTeam].flatMap((t) => (chips.get(t.teamId) ?? []).map((c) => `${teamLabel(t)}: ${c.text} (${c.tip})`)) : [];
   const r = finalScore(g, g.awayTeam.teamId);
   const ot = r && overtime(g);
   const tip = tipoff(g, timeZone);
@@ -104,7 +112,7 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
   );
   const label = `${teamLabel(g.awayTeam)} at ${teamLabel(g.homeTeam)}, ${fmtDate(g.dateEt, { month: 'short', day: 'numeric' })}, ${r ? `final ${r.score}–${r.oppScore}${ot ? ` (${ot})` : ''}` : tip.label}`;
   return (
-    <article className={`ck-cg${r ? ' ck-cg-final' : ''}${groupStart ? ' ck-cg-newgroup' : ''}`} data-game-id={g.gameId} data-tip={rowTip(data, g, timeZone)} aria-label={label}>
+    <article className={`ck-cg${r ? ' ck-cg-final' : ''}${groupStart ? ' ck-cg-newgroup' : ''}`} data-game-id={g.gameId} data-tip={stakes.length ? `${rowTip(data, g, timeZone)} · Stakes tonight — ${stakes.join(' · ')}` : rowTip(data, g, timeZone)} aria-label={label}>
       {by === 'group' ? <span className="ck-cg-date">{rowDate(g.dateEt)}</span> : result}
       <span className="ck-cg-match">
         <TeamLogo team={g.awayTeam} />
@@ -112,7 +120,14 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
         <TeamLogo team={g.homeTeam} />
       </span>
       {by === 'group' ? result : pill ? <span className="ck-tag ck-cup ck-cg-pill">{pill}</span> : <span />}
-      <span className="ck-cg-link">{url && <GameLinkIcon url={url} />}</span>
+      <span className="ck-cg-link">
+        {stakes.length > 0 && (
+          <span className="ck-stake" data-testid="cg-stakes" title={stakes.join(' · ')}>
+            stakes
+          </span>
+        )}
+        {url && <GameLinkIcon url={url} />}
+      </span>
     </article>
   );
 }

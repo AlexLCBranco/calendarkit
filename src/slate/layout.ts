@@ -93,9 +93,17 @@ export const SLATE_NOTE_MIN_CUP = 175;
  * SLATE_NOTE_MIN_CUP 200 → 175 for that, so 2 columns stay).
  */
 export const SLATE_CUP_TAG = 24;
-/** 0: no Cup track; 1: the Cup track; 2: the Cup track with the IN / OUT tag column. */
-export type CupTrackKind = 0 | 1 | 2 | boolean;
-const cupWidth = (cup: CupTrackKind) => (!cup ? 0 : SLATE_CUP_TRACK + SLATE_ROW_GAP + (cup === 2 ? SLATE_CUP_TAG : 0));
+/**
+ * Round 21 (item 11): on a night where tonight can settle something for a team on show, that column holds the stakes
+ * chips ("Win = clinch", "+8 to pass ORL", two lines at most) and is 72 px; the note boxes give it (~135 px at 1920;
+ * SLATE_NOTE_MIN_STAKES 130 those nights, so the 2 columns stay) — flagged to Alex.
+ */
+export const SLATE_CUP_CHIPS = 72;
+export const SLATE_NOTE_MIN_STAKES = 130;
+/** 0: no Cup track; 1: the Cup track; 2: with the IN / OUT tag column; 3: with the stakes chips column. */
+export type CupTrackKind = 0 | 1 | 2 | 3 | boolean;
+export const cupExtra = (cup: CupTrackKind) => (cup === 2 ? SLATE_CUP_TAG : cup === 3 ? SLATE_CUP_CHIPS : 0);
+const cupWidth = (cup: CupTrackKind) => (!cup ? 0 : SLATE_CUP_TRACK + SLATE_ROW_GAP + cupExtra(cup));
 /** The info block's width on a Cup night or not. */
 export const slateInfoWidth = (cup: CupTrackKind = false) => SLATE_INFO_WIDTH + cupWidth(cup);
 /** An info-only card's width on a Cup night or not. */
@@ -105,4 +113,4 @@ export const slateCardWidth = (cup: CupTrackKind = false) => slateInfoWidth(cup)
 export const slateNoteWidth = (card: number, cup: CupTrackKind = false) => card - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - slateInfoWidth(cup) - SLATE_NOTE_GAP;
 
 /** Columns of cards for a widget `width` px wide: 2 when each card's note box keeps SLATE_NOTE_MIN (Cup nights: SLATE_NOTE_MIN_CUP), else 1. */
-export const slateColumns = (width: number, cup: CupTrackKind = false) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2, cup) >= (cup ? SLATE_NOTE_MIN_CUP : SLATE_NOTE_MIN) ? 2 : 1);
+export const slateColumns = (width: number, cup: CupTrackKind = false) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2, cup) >= (cup === 3 ? SLATE_NOTE_MIN_STAKES : cup ? SLATE_NOTE_MIN_CUP : SLATE_NOTE_MIN) ? 2 : 1);

@@ -488,3 +488,33 @@ a.ck-streak-game:hover {
 .ck-slate-row.ck-cup-out-row {
   opacity: 0.6;
 }
+
+/* round 21 (item 11): the stakes chips (the 3-in-4 chip's look), two lines at most in the row */
+.ck-slate-cup-chips {
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+.ck-stake {
+  max-width: 68px;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 8.5px;
+  line-height: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: rgb(160 110 255 / 0.22);
+  color: #d9c7ff;
+}
+.ck-stake-clinch {
+  background: rgb(31 143 95 / 0.3);
+  color: #8ff0c3;
+}
+.ck-stake-out {
+  background: rgb(194 65 59 / 0.3);
+  color: #ffb3ae;
+}
