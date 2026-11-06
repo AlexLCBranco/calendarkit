@@ -310,6 +310,7 @@ test.describe('Standings popup', () => {
       await v.then?.(page);
       const marker = page.locator(v.marker).first();
       await expect(marker).toBeVisible();
+      await page.waitForFunction(() => (history.state as { ck?: number } | null)?.ck === 1); // round 21: the first page has its entry
       const url = page.url();
       const button = page.getByTestId('standings-button');
       const pop = page.getByTestId('standings-popup');

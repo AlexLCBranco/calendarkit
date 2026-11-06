@@ -190,7 +190,7 @@ test('league list: one day at a time, never changed by scrolling, every navigati
   await settle(page);
   await expect.poll(() => shownList(page).then((x) => [x.days, x.ids])).toEqual([[DEFAULT_DAY], await feedDay(page, DEFAULT_DAY)]);
   await expect(page.getByTestId('day-title')).toHaveText(/Nov(ember)? 15, 2026/);
-  expect(page.url()).not.toMatch(/date=/);
+  expect(new URL(page.url()).searchParams.get('date')).toBe(DEFAULT_DAY); // round 21: the address names the day on show
 
   // every way to change the day; a new day starts at its top
   await page.getByLabel('Next day').click();
@@ -219,7 +219,7 @@ test('league list: one day at a time, never changed by scrolling, every navigati
     await page.getByTestId('date-picker').locator('[data-date="2026-11-27"]').click();
     await expectDay('2026-11-27');
   }
-  expect(page.url()).not.toMatch(/date=/);
+  expect(new URL(page.url()).searchParams.get('date')).toBe(desktop ? '2026-11-27' : '2026-11-22'); // round 21
   expect(cdn).toEqual([]);
   expect(errors).toEqual([]);
 });

@@ -110,7 +110,8 @@ describe('App: URL state for the List | Calendar switch', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'List' }));
     expect(window.location.search).toMatch(/weeks=2/); // kept from the URL
     expect(screen.getByTestId('day-title').textContent).toMatch(/^Fri(day)?, Oct(ober)? 23, 2026$/); // today, not the URL's Dec 1
-    expect(window.location.search).not.toMatch(/date=/); // round 8: the day is never written to the URL
+    // round 21 (item 6): the address names the day on show (today), though a load never reads it
+    expect(new URLSearchParams(window.location.search).get('date')).toBe('2026-10-23');
   });
 
   it('new links: ?view=team&layout=list and ?view=league&layout=calendar', async () => {

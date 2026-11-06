@@ -139,7 +139,7 @@ const PILL_ORDER = ['West A', 'West B', 'West C', 'East A', 'East B', 'East C'];
 test.describe('Cup schedule', () => {
   test.beforeEach(({}, info) => test.skip(!desktop(info.project.name), 'desktop only'));
 
-  test('opens on Standings; Schedule on League By group; the switches; not remembered across a reload', async ({ page }) => {
+  test('opens on Groups; Schedule on League By group; the switches; a reload keeps the sub-view (round 21), leaving the Cup resets it', async ({ page }) => {
     await page.goto(`${APP}?view=cup`);
     await expect(page.getByTestId('cup-group')).toHaveCount(6);
     await expect(page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Groups' })).toHaveAttribute('aria-selected', 'true');
@@ -158,10 +158,15 @@ test.describe('Cup schedule', () => {
     await expect(page.getByRole('tablist', { name: 'Cup layout' })).toHaveCount(0);
     await expect(page.getByTestId('team-picker')).toHaveText(/Pick a team/);
     await expect(page.getByTestId('cup-pick')).toBeVisible();
+    // round 21 (item 6): the address names the sub-view, so a reload keeps it (no team picked yet: none in the address)
     await page.reload();
+    await expect(page.getByTestId('cup-pick')).toBeVisible();
+    await expect(page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' })).toHaveAttribute('aria-selected', 'true');
+    // leaving the Cup and coming back opens on Groups (the sub-view isn't remembered past the Cup)
+    await page.getByRole('tablist', { name: 'Destination' }).getByRole('tab', { name: 'Schedule' }).click();
+    await page.getByRole('tablist', { name: 'Destination' }).getByRole('tab', { name: 'Cup' }).click();
     await expect(page.getByTestId('cup-group')).toHaveCount(6);
     await expect(page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Groups' })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByTestId('cup-league')).toHaveCount(0);
     await page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
     await expect(page.getByTestId('cup-league')).toHaveAttribute('data-by', 'group');
   });

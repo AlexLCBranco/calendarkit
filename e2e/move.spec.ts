@@ -44,9 +44,17 @@ async function serveBuild(ctx: BrowserContext, headers: Record<string, string> =
 }
 
 /** Every top-level navigation of `page`, in order. */
+/** Real navigations (round 21: the app writes its own address once it renders — `date=` and the like —, a same-document
+ * change Playwright also reports; such a follow-up of the same page is left out). */
 const navigations = (page: Page) => {
   const urls: string[] = [];
-  page.on('framenavigated', (f) => f === page.mainFrame() && urls.push(f.url()));
+  page.on('framenavigated', (f) => {
+    if (f !== page.mainFrame()) return;
+    const u = f.url();
+    const last = urls.at(-1);
+    if (last && new URL(last).origin + new URL(last).pathname === new URL(u).origin + new URL(u).pathname && u.startsWith(last)) return;
+    urls.push(u);
+  });
   return urls;
 };
 

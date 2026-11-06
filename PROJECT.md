@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2357,3 +2357,19 @@ width (`data-text` + `::after`), so selecting one never moves its neighbours.
   (no backslashes), so a team link opened in a new tab showed the next game instead of the date looked at.
 - slate-same.spec.ts takes its screenshots with the top bar out of the layout in both builds (a Slate 42 px lower is
   rasterized up to 1 level apart).
+
+**Item 6 (v1.42.0): page history.** Every page is a real history entry (`history.pushState`) whose state is the whole page
+(`ViewSnapshot`: CalendarState, the league / team months and week, the Team List's month and top row, the Cup's sub-view,
+the scroller's position), so the browser's back / forward, Alt+← / → and the mouse's side buttons walk them; back puts the
+page back without a reload (`CalendarHandle.restore`). New pages: a destination, a team, a view, an option, a Cup
+sub-view, a picked date, Today. Not pages (`replaceState`): ‹ › / ← → day steps, the strip, scrolling, midnight. The
+in-app ← → (`PageArrows`, row 1's far left; a joined pill of long arrows, unlike the date block's round ‹ ›) are greyed at
+the ends and name the page ("Back to Boston Celtics, Nov 2026"); each entry carries its index, the furthest index and every
+page's label (`HistEntry` in App.tsx), so after a reload they still know. Their labels are a value store read only by
+the buttons (a React state in the shell re-rendered the widget after its first render, on the load path).
+- The address: `urlOf` (App.tsx) — view, layout, team, `date=` (the date looked at), weeks, span, tv, and for the Cup
+  `cup=` (standings | schedule), `cl=` (league | team), `by=`, `ct=` (the Cup Team list's team). A load still ignores
+  `date=` (round 6, Alex's answer this round): a bookmark or a reload opens on today; the Cup's sub-view is kept.
+- Leaving the Cup by its destination still resets the sub-view (Groups, League, By group).
+- Tests: tests/history.test.tsx (round-trips for every view, push / replace, restore, the app's real entries and arrows,
+  Alt+arrows left to the browser), e2e/history.spec.ts (scroll and top row restored on a real layout).

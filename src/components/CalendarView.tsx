@@ -3,7 +3,7 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react';
 import { TeamLinkContext, teamLinkTarget, type TeamLinks } from '../slate/teamLink';
 import { addDays, addMonths, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
@@ -84,7 +84,7 @@ export interface CalendarViewProps {
    * Initial state; anything missing gets a default (League → List, default day). `teamDate` (round 15, a team link
    * opened in a new tab): the Team view opens on this date instead of the next game.
    */
-  initial?: Partial<CalendarState> & { teamDate?: string };
+  initial?: Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState> };
   /**
    * Round 15: the URL of a team's Team view (team links: Ctrl / middle-click → new tab). Given → every team name, logo
    * and tricode is a link (a plain click switches to that Team view here); none → no team links.
@@ -104,6 +104,49 @@ export interface CalendarViewProps {
   note?: string;
   /** When the data was generated (ISO): "Data updated …" under the note, orange (--ck-stale) once older than STALE_AFTER_MS. */
   updatedAt?: string;
+  /**
+   * Round 21 (item 6): told after every change of the view, as a whole snapshot: "push" for a new page (a destination,
+   * a team, a view, an option, a picked date, Today), "replace" for a day step (‹ ›, ← →, the strip) or the first render.
+   * `prev` (with push): the page being left, with its scroll position, for its history entry.
+   */
+  onNavigate?: (snap: ViewSnapshot, how: 'push' | 'replace', prev?: ViewSnapshot) => void;
+  /** Set to a handle that puts a snapshot back on screen (the shell's back / forward). */
+  handle?: RefObject<CalendarHandle | null>;
+  /** The in-app ← → (page history), at the far left of the top bar; none: not shown. */
+  pageHistory?: PageHistory;
+}
+
+/** Round 21 (item 6): everything a page of the widget is — enough to put it back as it was. */
+export interface ViewSnapshot {
+  state: CalendarState;
+  leagueMonth: string;
+  teamMonth: string;
+  teamWeek: string;
+  teamListMonth: string;
+  cup: CupState;
+  /** Team List: the row at the top. */
+  top?: string;
+  /** The view's scroller (by its data-testid) and how far it was scrolled. */
+  scroll?: { id: string; top: number };
+  /** The date looked at (YYYY-MM-DD), for the address. */
+  at: string;
+  /** For the ← → tooltips: "Boston Celtics, Oct 2026". */
+  label: string;
+}
+
+export interface CalendarHandle {
+  restore: (snap: ViewSnapshot) => void;
+}
+
+/** The in-app ← →: the labels of the pages before / after (undefined: nothing there), in a store only the buttons read. */
+export interface PageHistoryLabels {
+  back?: string;
+  forward?: string;
+}
+export interface PageHistory {
+  labels: ValueStore<PageHistoryLabels>;
+  onBack: () => void;
+  onForward: () => void;
 }
 
 /** Team List or Team Calendar: the Team mode a team link opens (the one used last). */
@@ -135,12 +178,12 @@ const StandingsView = lazy(standingsChunk);
 const StandingsPopup = lazy(() => standingsChunk().then((m) => ({ default: m.StandingsPopup })));
 /** Round 21 (item 7): the top bar's destinations; Schedule is League or Team by the scope picker. */
 export type Destination = 'schedule' | 'cup' | 'standings';
-type CupState = { tab: 'standings' | 'schedule'; list: 'league' | 'team'; by: 'group' | 'date'; teamId?: number; night?: string };
+export type CupState = { tab: 'standings' | 'schedule'; list: 'league' | 'team'; by: 'group' | 'date'; teamId?: number; night?: string };
 const CUP_START: CupState = { tab: 'standings', list: 'league', by: 'group' };
 const teamMapFits = (width: number) => width >= TEAM_LIST_MAX_WIDTH + LEAGUE_MAP_GAP + LEAGUE_MAP_MIN;
 
 
-export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref }: CalendarViewProps) {
+export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
   // The clock (round 7: moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
   // `now` (the default day, the next game, games over) is the time the widget opened.
   const clock = useClock(fixedNow, timeZone, localDate);
@@ -243,7 +286,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const goDestination = (d: Destination) => update({ mode: d === 'schedule' ? lastScope.current : d });
   // Cup (round 12): Standings | Schedule, the schedule's League | Team, its team and night — never remembered: leaving the
   // Cup view resets them, so it always opens on Standings (then League; no team until one is picked).
-  const [cupView, setCupView] = useState<CupState>(CUP_START);
+  const [cupView, setCupView] = useState<CupState>(() => (initial?.cup ? { ...CUP_START, ...initial.cup } : CUP_START));
   useEffect(() => {
     if (!cup) setCupView(CUP_START);
   }, [cup]);
@@ -360,18 +403,19 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   // today (the day strip's today, kept inside the season — the rule the page opens with, round 6); Team Calendar: the
   // current month; Team List: the next game.
   const def = seasonDay(data, today);
+  const asJump = (fn: () => void) => () => ((jump.current = true), fn());
   if (nav && !compact) {
     if (teamWeeks) {
       const w = teamWeekOf(data, today);
-      nav = { ...nav, onToday: () => setTeamWeek(w), todayDisabled: teamWeek === w };
+      nav = { ...nav, onToday: asJump(() => setTeamWeek(w)), todayDisabled: teamWeek === w };
     } else if (team) {
       const m = teamMonthOf(data, today);
-      nav = { ...nav, onToday: () => setTeamMonth(m), todayDisabled: teamMonth === m };
+      nav = { ...nav, onToday: asJump(() => setTeamMonth(m)), todayDisabled: teamMonth === m };
     } else if (list || slate) {
       const day = nearestDay(days, def);
-      nav = { ...nav, onToday: () => update({ date: day }), todayDisabled: nearestDay(days, state.date) === day };
-    } else if (weekView) nav = { ...nav, onToday: () => update({ date: def }), todayDisabled: weekOf(state.date)[0] === weekOf(def)[0] };
-    else nav = { ...nav, onToday: () => setLeagueMonth(monthOf(def)), todayDisabled: leagueMonth === monthOf(def) };
+      nav = { ...nav, onToday: asJump(() => update({ date: day })), todayDisabled: nearestDay(days, state.date) === day };
+    } else if (weekView) nav = { ...nav, onToday: asJump(() => update({ date: def })), todayDisabled: weekOf(state.date)[0] === weekOf(def)[0] };
+    else nav = { ...nav, onToday: asJump(() => setLeagueMonth(monthOf(def))), todayDisabled: leagueMonth === monthOf(def) };
   }
 
   // Slate (round 7) and the League List (round 8): the day changes with ← / → — the top bar's arrows, or the arrow keys
@@ -585,6 +629,112 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     [teamLinks],
   );
 
+  // ---- Round 21 (item 6): page history. Each render's page as a snapshot; after a render that changed it, the host is
+  // told: a new page (push) or the same page moved by a day step (replace). A restore (back / forward) is told nothing.
+  const scrollAt = useRef<{ id: string; top: number }>(undefined);
+  const jump = useRef(false); // a picked date or Today: a new page although only the date changed
+  const restoring = useRef(false);
+  const pendingScroll = useRef<{ id: string; top: number }>(undefined);
+  const snapNow = (): ViewSnapshot => ({
+    state: stateRef.current,
+    leagueMonth,
+    teamMonth,
+    teamWeek,
+    teamListMonth,
+    cup: cupView,
+    top: team && list ? teamTop.get() || undefined : undefined,
+    at: lookingAt(),
+    label: pageLabel(),
+  });
+  const pageLabel = (): string => {
+    const t = TEAM_BY_ID.get(state.teamId);
+    if (standings) return 'Standings';
+    if (cup) {
+      const ct = cupView.teamId !== undefined ? TEAM_BY_ID.get(cupView.teamId)?.tricode : undefined;
+      return cupView.tab === 'standings' ? 'Cup · Groups' : `Cup · Schedule · ${cupView.list === 'team' ? ct ?? 'Team' : cupView.by === 'date' ? 'By date' : 'By group'}`;
+    }
+    if (team) {
+      const period = list ? fmtShortMonth(teamListMonth) : teamWeeks ? fmtRange(teamWeek, addDays(teamWeek, 7 * teamWeeks - 1)) : fmtShortMonth(teamMonth);
+      return `${t ? `${t.city} ${t.name}` : 'Team'}, ${period}`;
+    }
+    const view = slate ? 'Slate' : list ? 'List' : 'Calendar';
+    const when = list || slate ? listTitle(nearestDay(days, state.date), true) : weekView ? fmtRange(weekOf(state.date)[0]!, addDays(weekOf(state.date)[0]!, 7 * state.weeks - 1)) : fmtShortMonth(leagueMonth);
+    return `All teams, ${view} · ${when}`;
+  };
+  // what makes a new page vs. a day step (the date-only fields); a view's parts that aren't on show don't count
+  const pageKey = JSON.stringify([state.mode, cup || standings ? '' : state.layout, team || (cup && cupView.list === 'team') ? state.teamId : 0, state.tvOnly, state.weeks, state.teamSpan, state.showRest, cup ? [cupView.tab, cupView.list, cupView.by, cupView.teamId] : '']);
+  const dateKey = JSON.stringify([state.date, leagueMonth, teamMonth, teamWeek, teamListMonth, cup ? cupView.night : '']);
+  const last = useRef<{ page: string; date: string; snap?: ViewSnapshot }>({ page: '', date: '' });
+  const onNavigateRef = useRef(onNavigate);
+  onNavigateRef.current = onNavigate;
+  useEffect(() => {
+    const was = last.current;
+    if (was.page === pageKey && was.date === dateKey) return;
+    const snap = snapNow();
+    const how = !was.snap ? 'replace' : was.page !== pageKey || jump.current ? 'push' : 'replace';
+    const prev = was.snap && { ...was.snap, scroll: scrollAt.current };
+    last.current = { page: pageKey, date: dateKey, snap };
+    jump.current = false;
+    if (restoring.current) return void (restoring.current = false);
+    if (how === 'push') scrollAt.current = undefined;
+    onNavigateRef.current?.(snap, how, how === 'push' ? prev : undefined);
+  });
+  // the Team List's row at the top follows the scrolling into the page's snapshot — only while the page on screen is the
+  // one last told (a new list writes the store in its own effects, before the change is told)
+  const rendered = useRef('');
+  rendered.current = pageKey + dateKey;
+  useEffect(
+    () =>
+      teamTop.subscribe(() => {
+        const l = last.current;
+        if (l.snap?.top !== undefined && rendered.current === l.page + l.date) l.snap = { ...l.snap, top: teamTop.get() || l.snap.top };
+      }),
+    [teamTop],
+  );
+  // a restored page's scroll position, once its rows are on screen
+  useEffect(() => {
+    const want = pendingScroll.current;
+    if (!want) return;
+    pendingScroll.current = undefined;
+    const id = requestAnimationFrame(() => {
+      const el = root.current?.querySelector<HTMLElement>(`[data-testid="${want.id}"]`);
+      if (el) el.scrollTop = want.top;
+    });
+    return () => cancelAnimationFrame(id);
+  });
+  const restore = (snap: ViewSnapshot) => {
+    restoring.current = true;
+    const s = snap.state;
+    const sTeam = s.mode === 'team';
+    const sList = s.layout === 'list' || (s.layout === 'slate' && (sTeam || !slateFits));
+    stateRef.current = s;
+    setState(s);
+    onStateChange?.(s);
+    setLeagueMonth(snap.leagueMonth);
+    setTeamMonth(snap.teamMonth);
+    setTeamWeek(snap.teamWeek);
+    setTeamListAt({ key: `${s.teamId}|${s.tvOnly}|${sTeam && sList}`, month: snap.teamListMonth });
+    setTeamOpen(sTeam && sList && snap.top ? { date: snap.top } : undefined);
+    setCupView(snap.cup);
+    setPicking(false);
+    setDatePick(false);
+    setStPop(false);
+    pendingScroll.current = snap.scroll && snap.scroll.id !== 'team-list' ? snap.scroll : undefined;
+    scrollAt.current = undefined;
+  };
+  const restoreRef = useRef(restore);
+  restoreRef.current = restore;
+  useEffect(() => {
+    if (!handle) return;
+    handle.current = { restore: (snap) => restoreRef.current(snap) };
+    return () => void (handle.current = null);
+  }, [handle]);
+  const onScrollCapture = (e: { target: EventTarget }) => {
+    const el = e.target as HTMLElement;
+    const id = el.dataset?.testid;
+    if (id && el.hasAttribute('data-select-scroller')) scrollAt.current = { id, top: el.scrollTop };
+  };
+
   return (
     <TeamLinkContext.Provider value={teamHref ? teamLinks : undefined}>
     <ClockProvider clock={clock}>
@@ -599,6 +749,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e))}
         onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave())}
         onBlur={tooltip.handlers.onBlur}
+        onScrollCapture={onScrollCapture}
       >
         <div className="ck-toolbar" data-testid="top-bar">
           {/* round 21 (item 7): two rows. Row 1 is the same everywhere: page history, the destinations, then the notes,
@@ -606,6 +757,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
               scope picker (fixed width), date block (fixed width), views, then the view's options on the right. */}
           {title && <h1 className="ck-title ck-sr">{title}</h1>}
           <div className="ck-bar-row" data-testid="bar-global">
+            {pageHistory && <PageArrows h={pageHistory} />}
             <Segmented label="Destination" className=" ck-tabs-dest" value={destination} options={[['schedule', 'Schedule'], ...(slateFits ? ([['cup', 'Cup'], ['standings', 'Standings']] as [Destination, string][]) : [])]} onChange={goDestination} />
             <span className="ck-bar-right">
               {note &&
@@ -635,7 +787,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
                 <TeamPicker allTeams teamId={team ? state.teamId : undefined} onChange={team ? pickTeam : (id) => openTeam(id, state.layout === 'calendar' && !slate ? 'calendar' : 'list')} onClear={toAllTeams} compact={compact} />
                 <div className="ck-period-wrap ck-date-block" data-testid="date-block">
                   {team && list && !compact ? (
-                    <TeamListNav store={teamTop} games={teamPickGames} atNext={teamAtNext} pick={{ open: datePick, onToggle: () => setDatePick((o) => !o) }} onDate={(d) => teamList.current?.toDate(d)} onToday={() => teamList.current?.toNext()} />
+                    <TeamListNav store={teamTop} games={teamPickGames} atNext={teamAtNext} pick={{ open: datePick, onToggle: () => setDatePick((o) => !o) }} onDate={(d) => teamList.current?.toDate(d)} onToday={() => ((jump.current = true), teamList.current?.toNext())} />
                   ) : (
                     nav && <PeriodNav {...nav} />
                   )}
@@ -649,6 +801,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
                       today={today}
                       onPick={(date) => {
                         setPicking(false);
+                        jump.current = true;
                         update({ date: weekOf(date)[0]! });
                       }}
                       onClose={() => setPicking(false)}
@@ -663,6 +816,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
                       cell={team && list ? teamPickCell : undefined}
                       onPick={(date) => {
                         setDatePick(false);
+                        jump.current = true;
                         if (team && list) teamList.current?.toDate(date);
                         else if (team) {
                           setTeamMonth(monthOf(date));
@@ -949,5 +1103,25 @@ function TeamListNav({ store, games, atNext, pick, onDate, onToday }: { store: V
       onToday={onToday}
       todayDisabled={at}
     />
+  );
+}
+
+const fmtShortMonth = (month: string) => dateFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${month}-15T12:00:00Z`));
+
+/**
+ * Round 21 (item 6): the page history's ← →, at the far left of the top bar — long arrows in one joined pill, unlike the
+ * date block's round ‹ › (a day); greyed out when there is nothing there; the tooltip names the page.
+ */
+function PageArrows({ h: { labels, onBack, onForward } }: { h: PageHistory }) {
+  const h = { ...useValue(labels), onBack, onForward };
+  return (
+    <span className="ck-hist" role="group" aria-label="Page history" data-testid="page-history">
+      <button type="button" className="ck-hist-btn" aria-label={h.back ? `Back to ${h.back}` : 'Back'} title={h.back ? `Back to ${h.back}` : 'Nothing to go back to'} disabled={!h.back} onClick={h.onBack} data-testid="page-back">
+        ←
+      </button>
+      <button type="button" className="ck-hist-btn" aria-label={h.forward ? `Forward to ${h.forward}` : 'Forward'} title={h.forward ? `Forward to ${h.forward}` : 'Nothing to go forward to'} disabled={!h.forward} onClick={h.onForward} data-testid="page-forward">
+        →
+      </button>
+    </span>
   );
 }

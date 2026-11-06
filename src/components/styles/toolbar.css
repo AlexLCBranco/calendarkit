@@ -228,3 +228,38 @@
 .ck-compact .ck-picker-scope {
   width: auto;
 }
+
+/* round 21 (item 6): page history ← → — long arrows in one joined, square-cornered pill at the far left; the date
+   block's ‹ › (a day) are separate round-cornered buttons, so the two never look alike */
+.ck-hist {
+  display: inline-flex;
+  flex: none;
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-right: 4px;
+}
+.ck-hist-btn {
+  width: 34px;
+  background: var(--ck-surface-2, var(--ck-surface));
+  color: var(--ck-text);
+  border: 0;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+.ck-hist-btn + .ck-hist-btn {
+  border-left: 1px solid var(--ck-border);
+}
+.ck-hist-btn:hover:not(:disabled) {
+  color: var(--ck-accent);
+}
+.ck-hist-btn:disabled {
+  color: var(--ck-muted);
+  opacity: 0.4;
+  cursor: default;
+}

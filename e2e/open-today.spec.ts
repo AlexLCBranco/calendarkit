@@ -33,10 +33,10 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
       await ready(page);
       await expect(title(page)).toHaveText('Sunday, November 15, 2026');
       await expect(page.getByTestId('today')).toBeDisabled();
-      // move to another day: the URL carries no date (round 8); a reload still opens on today
+      // move to another day: the URL names it (round 21), and a reload still opens on today
       await page.getByLabel('Next day').click();
       await expect(title(page)).toHaveText('Monday, November 16, 2026');
-      expect(page.url()).not.toMatch(/date=/);
+      expect(new URL(page.url()).searchParams.get('date')).toBe('2026-11-16');
       await page.reload();
       await ready(page);
       await expect(title(page)).toHaveText('Sunday, November 15, 2026');

@@ -2,8 +2,9 @@
 // handles onOpenGame by opening rotationkit and gives the widgets the game-page URL rule (gameLink: hoopsjunkie). Everything else lives in the self-contained components.
 
 import { liveOddsStore } from './slate/odds';
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
-import { CalendarView, type CalendarState, type TeamTarget } from './components/CalendarView';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { CalendarView, type CalendarHandle, type CalendarState, type CupState, type PageHistory, type PageHistoryLabels, type TeamTarget, type ViewSnapshot } from './components/CalendarView';
+import { createValueStore } from './components/valueStore';
 import { gameLinkUrl, isGameLinkConfigured, isRotationkitConfigured } from './config';
 import { BUILD_INFO } from './build-info';
 import { SiteVersion } from './SiteVersion';
@@ -26,8 +27,9 @@ export const appGameLink = isGameLinkConfigured() ? (g: Parameters<typeof gameLi
  * team month grid (→ Calendar), ?view=league the day list (→ List). "Show rest days" is not in it (round 7, 2.2: on at
  * every load, unchecking lasts until a reload; an old link's `rest=` is ignored).
  */
-export function readUrlState(search = window.location.search): Partial<CalendarState> & { teamDate?: string } {
+export function readUrlState(search = window.location.search): Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState> } {
   const p = new URLSearchParams(search);
+  const cupTeam = TEAMS.find((t) => t.tricode === p.get('ct')?.toUpperCase());
   const team = TEAMS.find((t) => t.tricode === p.get('team')?.toUpperCase());
   const view = p.get('view');
   const layout = p.get('layout');
@@ -40,6 +42,8 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     teamSpan: p.get('span') === '1w' ? 1 : p.get('span') === '2w' ? 2 : undefined,
     weeks: p.get('weeks') === '2' ? 2 : p.get('weeks') === '1' ? 1 : undefined,
     teamDate: /^\d{4}-\d{2}-\d{2}$/.test(p.get('on') ?? '') ? p.get('on')! : undefined,
+    // round 21 (item 6): the Cup's sub-view
+    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : 'standings', list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id } : undefined,
   };
 }
 
@@ -66,16 +70,99 @@ export function teamLinkUrl({ teamId, layout, date, state }: TeamTarget, pathnam
  */
 const e2eOpenDate = () => (window as { __ckOpenDate?: unknown }).__ckOpenDate as string | undefined;
 
-function writeUrlState(s: CalendarState) {
+/**
+ * Round 21 (item 6): a page's address — the view, the team, the date looked at (`date=`: written for the record, but a
+ * load still opens on today, round 6), the options, and the Cup's sub-view (`cup=`, `cl=`, `by=`, `ct=`).
+ */
+export function urlOf(snap: ViewSnapshot, pathname = window.location.pathname): string {
+  const s = snap.state;
   const p = new URLSearchParams();
+  const schedule = s.mode !== 'cup' && s.mode !== 'standings';
   p.set('view', s.mode);
-  p.set('layout', s.layout);
-  // no `date=` (round 8): the page always opens on today (round 6) and the League List no longer scrolls across days
+  if (schedule) p.set('layout', s.layout);
   if (s.mode === 'team') p.set('team', TEAM_BY_ID.get(s.teamId)?.tricode ?? '');
+  if (schedule) p.set('date', snap.at);
   if (s.weeks === 2) p.set('weeks', '2');
   if (s.tvOnly) p.set('tv', '1');
   if (s.teamSpan !== 'month') p.set('span', `${s.teamSpan}w`);
-  window.history.replaceState(null, '', `${window.location.pathname}?${p}`);
+  if (s.mode === 'cup') {
+    p.set('cup', snap.cup.tab);
+    if (snap.cup.tab === 'schedule') {
+      p.set('cl', snap.cup.list);
+      if (snap.cup.list === 'league') p.set('by', snap.cup.by);
+      else if (snap.cup.teamId !== undefined) p.set('ct', TEAM_BY_ID.get(snap.cup.teamId)?.tricode ?? '');
+    }
+  }
+  return `${pathname}?${p}`;
+}
+
+/** One history entry of ours: its place in this tab's pages, the furthest page known, every page's label, the page. */
+export interface HistEntry {
+  ck: 1;
+  i: number;
+  max: number;
+  trail: string[];
+  snap: ViewSnapshot;
+}
+const isEntry = (x: unknown): x is HistEntry => !!x && (x as HistEntry).ck === 1 && typeof (x as HistEntry).i === 'number';
+
+/**
+ * Round 21 (item 6): the widget's pages as real history entries, so the browser's back / forward (buttons, Alt+← →, the
+ * mouse's side buttons) and the in-app ← → walk them; back / forward puts the whole page back (handle.restore).
+ */
+export function usePageHistory(handle: RefObject<CalendarHandle | null>) {
+  // the position lives outside React state: only the ← → buttons read it (a state here re-rendered the whole widget
+  // after its first render, on the load path)
+  const [arrows] = useState(() => createValueStore<PageHistoryLabels>({}));
+  const posRef = useRef<{ i: number; max: number; trail: string[] }>(undefined!);
+  if (!posRef.current) {
+    const e: unknown = window.history.state;
+    posRef.current = isEntry(e) ? { i: e.i, max: e.max, trail: e.trail } : { i: 0, max: 0, trail: [] };
+  }
+  const setPos = (p: { i: number; max: number; trail: string[] }) => {
+    const back = p.i > 0 ? p.trail[p.i - 1] ?? 'the previous page' : undefined;
+    const forward = p.i < p.max ? p.trail[p.i + 1] ?? 'the next page' : undefined;
+    const was = arrows.get();
+    if (was.back !== back || was.forward !== forward) arrows.set({ back, forward });
+  };
+  const onNavigate = useCallback((snap: ViewSnapshot, how: 'push' | 'replace', prev?: ViewSnapshot) => {
+    const cur = posRef.current;
+    let next: typeof cur;
+    if (how === 'push') {
+      // the page being left keeps its scroll position and top row
+      const was: unknown = window.history.state;
+      if (isEntry(was) && prev) window.history.replaceState({ ...was, snap: prev }, '');
+      const i = cur.i + 1;
+      next = { i, max: i, trail: [...cur.trail.slice(0, i), snap.label] };
+      window.history.pushState({ ck: 1, ...next, snap } satisfies HistEntry, '', urlOf(snap));
+    } else {
+      const trail = [...cur.trail];
+      trail[cur.i] = snap.label;
+      next = { ...cur, trail };
+      window.history.replaceState({ ck: 1, ...next, snap } satisfies HistEntry, '', urlOf(snap));
+    }
+    posRef.current = next;
+    setPos(next);
+  }, [arrows]);
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      const st: unknown = e.state;
+      if (!isEntry(st)) return;
+      const cur = posRef.current;
+      const max = Math.max(cur.max, st.max);
+      const trail = cur.trail.length > st.trail.length ? cur.trail : st.trail;
+      const next = { i: st.i, max, trail };
+      // this entry remembers how far the pages go (after a reload of it, forward still knows)
+      window.history.replaceState({ ...st, max, trail }, '');
+      posRef.current = next;
+      setPos(next);
+      handle.current?.restore(st.snap);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [handle, arrows]);
+  const [pageHistory] = useState<PageHistory>(() => ({ labels: arrows, onBack: () => window.history.back(), onForward: () => window.history.forward() }));
+  return { onNavigate, pageHistory };
 }
 
 /** Page content width cap (app.css `.app` max-width minus its padding): ~40 px side margins at a 1920 px window. */
@@ -123,13 +210,10 @@ export function App() {
   // Round 6 (B2): the page always opens on today. An old link's `date=` is never read back (and since round 8 never
   // written), so a bookmark or a reloaded tab doesn't pin an old day; view, layout, team, weeks and the toggles still come from it.
   const [initial] = useState(() => ({ ...readUrlState(), date: e2eOpenDate() }));
-  // round 15: a team link's `on=` is for this load only
-  useEffect(() => {
-    const p = new URLSearchParams(window.location.search);
-    if (!p.has('on')) return;
-    p.delete('on');
-    window.history.replaceState(null, '', `${window.location.pathname}?${p}`);
-  }, []);
+  // round 15: a team link's `on=` is for this load only — round 21: the widget's first page replaces the address (its
+  // own URL, without `on=`) as it renders
+  const view = useRef<CalendarHandle>(null);
+  const { onNavigate, pageHistory } = usePageHistory(view);
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
   const onOpenGame = isRotationkitConfigured() ? (id: string) => openGameInRotationkit(id) : undefined;
@@ -161,7 +245,9 @@ export function App() {
             onOpenGame={onOpenGame}
             gameLink={appGameLink}
             teamHref={teamLinkUrl}
-            onStateChange={writeUrlState}
+            onNavigate={onNavigate}
+            handle={view}
+            pageHistory={pageHistory}
             title={`NBA schedule ${data.seasonYear}`}
             note={`Times in your time zone (${timeZone})`}
             updatedAt={data.updatedAt}
