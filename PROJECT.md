@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup), item 10 (v1.51.0, venue markers).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup), item 10 (v1.51.0, venue markers), item 13 (v1.52.0, rest / travel).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2471,3 +2471,12 @@ rules say hosts, live), the Slate's knockout cards (they use the Cup track's roo
 first row), the Cup schedule (HOST after the host team; "venue TBD" in the row; the Championship's badge in its night's
 heading, since the rows keep one line). Past seasons (item 9) store their own venues. slate-same.spec.ts now also leaves
 the knockout nights out (their cards change on purpose) and takes the closest night size when none has exactly n games.
+
+**Item 13 (v1.52.0): rest and travel before knockout games.** `prepFor` (src/data/knockout.ts): the team's days off since
+its previous game in the schedule and, for the road team, the trip from that game's arena to the venue — miles and the
+time-zone change, from the map's arenas ("2d rest · ✈ 1,140 mi, ET→CT"; details on hover: last game, days off, miles,
+zones). "TBD" without a date. Shown on the Slate's knockout cards (the Cup track's room), the simulator's quarterfinals
+(the trip to the host's arena — the host updates with the seeds; "rest TBD" until the feed gives the matchups their nights,
+Dec 4–5 not yet assigned), and the Cup schedule rows' tooltips (the rows keep one line). The map's pure arena data moved
+to the data layer (src/data/arenas.ts, zones.ts, geo.ts; src/map re-exports them) so the Slate part, which may only use
+src/slate, src/data and src/shared, has them without the map's drawing code (tests/slatepart.test.tsx).

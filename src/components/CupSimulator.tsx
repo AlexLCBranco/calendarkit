@@ -14,6 +14,7 @@ import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from '../slate/links';
 import { TeamLink } from '../slate/teamLink';
 import { HostTag, VenueBadge, type Venue } from '../slate/VenueMarker';
+import { hostArena, prepFor, type Prep } from '../data/knockout';
 import { TEAM_COLOR } from './CupView';
 
 export interface SimPick {
@@ -155,7 +156,7 @@ export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onM
             ))}
           </div>
         </div>
-        <Bracket seeds={res.seeds} quarterfinals={res.quarterfinals} finalVenue={finalVenue} />
+        <Bracket data={data} seeds={res.seeds} quarterfinals={res.quarterfinals} finalVenue={finalVenue} />
       </div>
     </section>
   );
@@ -292,7 +293,7 @@ function SimGame({ g, real, pick, mode, needsMargin, url, onPick }: { g: Schedul
   );
 }
 
-function SeedTeam({ s, host }: { s?: Seed; host?: boolean }) {
+function SeedTeam({ s, host, prep }: { s?: Seed; host?: boolean; prep?: Prep }) {
   if (!s) return <span className="ck-sim-bteam">TBD</span>;
   return (
     <span className="ck-sim-bteam" data-team={tri(s.teamId)}>
@@ -304,13 +305,22 @@ function SeedTeam({ s, host }: { s?: Seed; host?: boolean }) {
       {s.wildCard && <span className="ck-cup-wc">WC</span>}
       {host && <HostTag />}
       {s.undecided && <Depends u={s.undecided} />}
+      {prep && (
+        <span className="ck-ko-prep" data-testid="ko-prep" title={prep.tip}>
+          {prep.text}
+        </span>
+      )}
     </span>
   );
 }
 
 /** The bracket from the seeds: per conference 1 v 4 and 2 v 3 (the better record hosts), the semifinal at the higher seed, the final neutral. */
-function Bracket({ seeds, quarterfinals, finalVenue }: { seeds: Record<Conference, Seed[]>; quarterfinals: { conference: Conference; high: Seed; low: Seed; host: number }[]; finalVenue: Venue }) {
+function Bracket({ data, seeds, quarterfinals, finalVenue }: { data: CalendarData; seeds: Record<Conference, Seed[]>; quarterfinals: { conference: Conference; high: Seed; low: Seed; host: number }[]; finalVenue: Venue }) {
   void semifinal;
+  // round 21 (item 13): rest / travel before the quarterfinal, from the real schedule: the trip to the host's arena from
+  // the team's last game; the rest only once the feed gives this matchup its night (QF nights: Dec 4–5, not yet assigned)
+  const qfDates = [...new Set(data.games.filter((g) => g.isCupKnockout && /quarter/i.test(g.gameSubLabel ?? '')).map((g) => g.dateEt))].sort();
+  const prep = (team: number, host: number) => (qfDates[0] ? prepFor(data, team, qfDates[0], hostArena(data, host), qfDates.length === 1) : prepFor(data, team, undefined, undefined));
   return (
     <div className="ck-sim-panel ck-sim-bracket" data-testid="sim-bracket">
       <h3>Knockout bracket</h3>
@@ -323,9 +333,9 @@ function Bracket({ seeds, quarterfinals, finalVenue }: { seeds: Record<Conferenc
               {qf.map((q, k) => (
                 <div key={k} className="ck-sim-bgame" data-testid="sim-qf" data-host={tri(q.host)}>
                   <span className="ck-sim-bround">QF</span>
-                  <SeedTeam s={q.high} host />
+                  <SeedTeam s={q.high} host prep={prep(q.high.teamId, q.host)} />
                   <span className="ck-sim-vs">vs</span>
-                  <SeedTeam s={q.low} />
+                  <SeedTeam s={q.low} prep={prep(q.low.teamId, q.host)} />
                 </div>
               ))}
               <div className="ck-sim-bgame ck-sim-bsf" data-testid="sim-sf">

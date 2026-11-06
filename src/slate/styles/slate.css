@@ -547,3 +547,10 @@ a.ck-streak-game:hover {
   gap: 2px 4px;
   font-size: 10px;
 }
+
+/* round 21 (item 13): rest / travel before a knockout game ("2d rest · ✈ 1,140 mi, ET→CT"; details on hover) */
+.ck-ko-prep {
+  color: var(--ck-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}

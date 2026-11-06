@@ -18,7 +18,7 @@ import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { cupStakesNow } from '../data/cupStakes';
 import { useCupStakes } from '../slate/cupFates';
 import { HostTag, VenueBadge } from '../slate/VenueMarker';
-import { knockoutVenue } from '../data/knockout';
+import { knockoutVenue, prepFor, venueArena } from '../data/knockout';
 import { cupBoard, cupNightHeading, cupNights, cupOpeningNight, cupTeamTag, type CupNight, groupNumberLine, groupShort, nightByGroup, teamCupGames } from '../data/cupSchedule';
 import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { GameLinkIcon, TeamLogo, TipTime } from '../slate/parts';
@@ -90,6 +90,8 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
   const chips = cupStakesNow(data, g.dateEt);
   // round 21 (item 10): a knockout game's venue (the feed's: HOST on the host team, the Championship's neutral arena, or TBD)
   const venue = g.isCupKnockout || g.gameType === 'cup-final' ? knockoutVenue(g) : undefined;
+  // round 21 (item 13): rest / travel before a knockout game — in the row's tooltip (the rows keep one line)
+  const preps = venue ? [g.awayTeam, g.homeTeam].filter((t) => t.teamId).map((t) => prepFor(data, t.teamId, g.dateEt, venueArena(g)).tip) : [];
   const stakes = chips && g.isCupGroupGame ? [g.awayTeam, g.homeTeam].flatMap((t) => (chips.get(t.teamId) ?? []).map((c) => `${teamLabel(t)}: ${c.text} (${c.tip})`)) : [];
   const r = finalScore(g, g.awayTeam.teamId);
   const ot = r && overtime(g);
@@ -116,7 +118,7 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
   );
   const label = `${teamLabel(g.awayTeam)} at ${teamLabel(g.homeTeam)}, ${fmtDate(g.dateEt, { month: 'short', day: 'numeric' })}, ${r ? `final ${r.score}–${r.oppScore}${ot ? ` (${ot})` : ''}` : tip.label}`;
   return (
-    <article className={`ck-cg${r ? ' ck-cg-final' : ''}${groupStart ? ' ck-cg-newgroup' : ''}`} data-game-id={g.gameId} data-tip={stakes.length ? `${rowTip(data, g, timeZone)} · Stakes tonight — ${stakes.join(' · ')}` : rowTip(data, g, timeZone)} aria-label={label}>
+    <article className={`ck-cg${r ? ' ck-cg-final' : ''}${groupStart ? ' ck-cg-newgroup' : ''}`} data-game-id={g.gameId} data-tip={[rowTip(data, g, timeZone), ...(stakes.length ? [`Stakes tonight — ${stakes.join(' · ')}`] : []), ...preps].join(' · ')} aria-label={label}>
       {by === 'group' ? <span className="ck-cg-date">{rowDate(g.dateEt)}</span> : result}
       <span className="ck-cg-match">
         <TeamLogo team={g.awayTeam} />

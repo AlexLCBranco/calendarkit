@@ -19,7 +19,7 @@ import { cupStakesNow, type StakeChip } from '../data/cupStakes';
 import { cupFatesNow, type Decided } from '../data/cupDecide';
 import { CupSquare } from './CupSquare';
 import { HostTag, VenueBadge } from './VenueMarker';
-import { knockoutVenue } from '../data/knockout';
+import { knockoutVenue, prepFor, venueArena } from '../data/knockout';
 import type { GameLink } from './links';
 import { NoteBox, NoteCopy } from './NoteBox';
 import type { SlateNotes } from './notes';
@@ -222,7 +222,7 @@ function TeamRow({ cup, team, gameId, f, line, score, odds, provider, home = fal
       <span className={`ck-slate-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-testid="slate-streak" data-streak={streak ? streakAttr(team.teamId, gameId) : undefined} tabIndex={streak ? 0 : undefined} aria-label={streak ? tip : undefined}>
         {streak ? `${streak.kind}${streak.n}` : ''}
       </span>
-      {cup && (isKnockout(cup.game) ? <KoTrack game={cup.game} teamId={team.teamId} home={home} /> : <CupTrack {...cup} teamId={team.teamId} />)}
+      {cup && (isKnockout(cup.game) ? <KoTrack data={cup.data} game={cup.game} teamId={team.teamId} home={home} /> : <CupTrack {...cup} teamId={team.teamId} />)}
       <Fatigue f={f} team={teamLabel(team)} shortChip />
       <span className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>{score?.n ?? ''}</span>
       {/* round 14 (item 4): the moneyline, decimal; its column is reserved, empty until (unless) the odds come */}
@@ -298,12 +298,19 @@ export function StakeChips({ chips, fate }: { chips?: StakeChip[]; fate?: 'in' |
  * the Championship's "Neutral · Hinkle Fieldhouse, Indianapolis" on the first row (neither team gets HOST); "venue TBD"
  * while the feed hasn't set it.
  */
-function KoTrack({ game, teamId, home }: { game: ScheduleGame; teamId: number; home: boolean }) {
+function KoTrack({ data, game, teamId, home }: { data: CalendarData; game: ScheduleGame; teamId: number; home: boolean }) {
   const venue = knockoutVenue(game);
+  // round 21 (item 13): the team's rest and (for the road team) travel before the game
+  const prep = teamId ? prepFor(data, teamId, game.dateEt, venueArena(game)) : undefined;
   return (
     <span className="ck-slate-cup ck-slate-ko" data-testid="slate-ko">
       {venue.kind === 'host' && venue.teamId === teamId && teamId !== 0 && <HostTag />}
       {!home && venue.kind !== 'host' && <VenueBadge venue={venue} />}
+      {prep && (
+        <span className="ck-ko-prep" data-testid="ko-prep" data-tip={prep.tip} title={prep.tip}>
+          {prep.text}
+        </span>
+      )}
     </span>
   );
 }

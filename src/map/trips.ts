@@ -7,7 +7,7 @@ import { daysBetween, isOver, teamB2BPairs, teamGames, type CalendarData } from 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { Arena } from './arenas';
 import { arenaOf, gameLocation, type GameLocation } from './location';
-import { STATE_ZONE, type Zone } from './zones';
+import type { Zone } from './zones';
 
 export interface Trip {
   /** The trip's games in order (1 or more). */
@@ -33,16 +33,9 @@ export interface TripStats {
   b2b: number;
 }
 
-/** The team's home arena: where most of its home games in the feed are played. */
-export function homeArena(data: CalendarData, teamId: number): Arena | undefined {
-  const counts = new Map<Arena, number>();
-  for (const g of teamGames(data, teamId)) {
-    if (g.homeTeam.teamId !== teamId) continue;
-    const a = arenaOf(g);
-    if (a) counts.set(a, (counts.get(a) ?? 0) + 1);
-  }
-  return [...counts].sort((x, y) => y[1] - x[1])[0]?.[0];
-}
+/** The team's home arena, miles and time zones: src/data/geo.ts (round 21), re-exported. */
+export { homeArena, miles, zoneOf } from '../data/geo';
+import { homeArena, miles, zoneOf } from '../data/geo';
 
 /** The game is in the team's home metro (unknown places count as away: they aren't home). */
 export function atHome(g: ScheduleGame, home: Arena | undefined): boolean {
@@ -72,17 +65,6 @@ export function currentTrip(trips: Trip[], now: number): Trip | undefined {
 
 /** The trip a game belongs to (undefined for a home game). */
 export const tripOf = (trips: Trip[], gameId: string) => trips.find((t) => t.games.some((g) => g.gameId === gameId));
-
-const R_MI = 3958.8;
-const rad = (d: number) => (d * Math.PI) / 180;
-/** Great-circle distance in miles. */
-export function miles(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
-  const h = Math.sin(rad(b.lat - a.lat) / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(rad(b.lon - a.lon) / 2) ** 2;
-  return 2 * R_MI * Math.asin(Math.sqrt(h));
-}
-
-/** A place's time zone: US states from zones.ts, Toronto (ON) ET; elsewhere unknown. */
-export const zoneOf = (a: Arena): Zone | undefined => (a.state === 'ON' ? 'ET' : STATE_ZONE[a.state]);
 
 export function tripStats(data: CalendarData, teamId: number, trip: Trip): TripStats {
   const home = homeArena(data, teamId);

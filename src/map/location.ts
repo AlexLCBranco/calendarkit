@@ -2,7 +2,7 @@
 // arenaState) — not the home team's usual arena, so neutral-site and international games land where they're played.
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { ARENAS, type Arena } from './arenas';
+import type { Arena } from './arenas';
 import { MAP_H, MAP_W } from './basemap';
 import { inMap, project } from './project';
 
@@ -14,11 +14,9 @@ export type GameLocation =
   /** The feed names no arena (e.g. Cup knockout games not scheduled yet) or one not in ARENAS: never guessed. */
   | { kind: 'unknown'; label: string };
 
-const key = (name: string, city: string) => `${name.trim().toLowerCase()}|${city.trim().toLowerCase()}`;
-const BY_KEY = new Map(ARENAS.map((a) => [key(a.arena, a.city), a]));
-
-/** The table entry for the feed's arena, if any. */
-export const arenaOf = (g: Pick<ScheduleGame, 'arenaName' | 'arenaCity'>) => BY_KEY.get(key(g.arenaName ?? '', g.arenaCity ?? ''));
+/** The table entry for the feed's arena, if any (round 21: src/data/geo.ts). */
+export { arenaOf } from '../data/geo';
+import { arenaOf } from '../data/geo';
 
 /** "Oklahoma City, OK", "Toronto, ON", "Paris, France". */
 export const placeName = (a: Arena) => a.place ?? (a.state ? `${a.city}, ${a.state}` : a.city);
