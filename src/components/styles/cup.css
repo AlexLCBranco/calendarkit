@@ -47,7 +47,9 @@
 /* one grid for the header and every pill, so W, L and DIFF line up */
 .ck-cup-row {
   display: grid;
-  grid-template-columns: 26px 24px minmax(0, 1fr) 22px 22px 50px;
+  /* round 21 (item 5): W and L 22 → 18 px, DIFF 50 → 42 px (its chip 44 → 40 px), so the squares' "vs" / "@" fit beside
+     "Minnesota Timberwolves" at 1600 × 1000 */
+  grid-template-columns: 26px 24px minmax(0, 1fr) 18px 18px 42px;
   align-items: center;
   /* round 13: gaps 6 → 4 px and side padding 8 → 6 px (column widths unchanged) give the name's column the 14 px the
      game slots need beside "Minnesota Timberwolves" at 1600 × 1000 */
@@ -90,7 +92,11 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+}
+.ck-cup-pill .ck-cup-chip {
+  min-width: 40px;
+  padding: 2px 4px;
 }
 .ck-cup-name {
   flex: none;
@@ -100,36 +106,13 @@
   margin-left: auto;
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 30px;
+  grid-auto-columns: minmax(30px, max-content);
   gap: 2px;
   font-size: 12px;
   line-height: 13px;
   font-weight: 600;
 }
-.ck-cup-slot {
-  height: 30px;
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-shadow: none;
-}
-.ck-cup-slot-w {
-  background: #1f8f5f;
-}
-.ck-cup-slot-l {
-  background: #c2413b;
-}
-.ck-cup-slot-res {
-  font-weight: 800;
-}
-/* not played yet: the opponent alone, outlined and faded */
-.ck-cup-slot-next {
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3);
-  background: rgb(0 0 0 / 0.18);
-  color: rgb(255 255 255 / 0.55);
-}
+/* the squares themselves: src/slate/styles/cup-square.css (round 21, item 5: one square everywhere) */
 .ck-cup-markcell {
   display: flex;
   flex-direction: column;

@@ -71,6 +71,10 @@ export interface CupSlot {
   oppScore?: number;
   /** The full final score, away team first: "HOU 105 @ DEN 112 · Final/OT". */
   final?: string;
+  /** Round 21: the game's real margin from this team's side (an OT game's too; `diff` counts it 0). */
+  margin?: number;
+  /** Round 21: the game itself (its hoopsjunkie link). */
+  game: ScheduleGame;
 }
 
 const tipOrder = (g: ScheduleGame) => (g.startTimeUtc ? Date.parse(g.startTimeUtc) : Number.MAX_SAFE_INTEGER);
@@ -88,8 +92,8 @@ export function cupSlots(games: readonly ScheduleGame[]): Map<number, CupSlot[]>
       [g.homeTeam, g.awayTeam, true],
       [g.awayTeam, g.homeTeam, false],
     ] as const) {
-      const slot: CupSlot = { gameId: g.gameId, opponent: opp.teamTricode, home, played };
-      if (played) Object.assign(slot, { win: me.score > opp.score, diff: isOt(g) ? 0 : me.score - opp.score, score: me.score, oppScore: opp.score, final });
+      const slot: CupSlot = { gameId: g.gameId, opponent: opp.teamTricode, home, played, game: g };
+      if (played) Object.assign(slot, { win: me.score > opp.score, diff: isOt(g) ? 0 : me.score - opp.score, margin: me.score - opp.score, score: me.score, oppScore: opp.score, final });
       let list = out.get(me.teamId);
       if (!list) out.set(me.teamId, (list = []));
       list.push(slot);

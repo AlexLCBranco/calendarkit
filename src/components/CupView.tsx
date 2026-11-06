@@ -9,6 +9,8 @@ import { cupStandings, type CupSlot, type CupTeamLine, type Tiebreak, type WildC
 import { dateFormat, type CalendarData } from '../data/model';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { TeamLink } from '../slate/teamLink';
+import { CupSquare } from '../slate/CupSquare';
+import type { GameLink } from '../slate/links';
 import CupSchedule, { type CupScheduleProps } from './CupSchedule';
 import './styles/cup.css';
 
@@ -34,15 +36,17 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 export interface CupViewProps {
   data: CalendarData;
+  /** Round 21: every game square is its game page (new tab). */
+  gameLink?: GameLink;
   /** Round 12: the schedule instead of the standings (default: standings). */
   schedule?: Omit<CupScheduleProps, 'data'>;
 }
 
-export default function CupView({ data, schedule }: CupViewProps) {
-  return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} />;
+export default function CupView({ data, schedule, gameLink }: CupViewProps) {
+  return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} gameLink={gameLink} />;
 }
 
-function CupStandingsView({ data }: { data: CalendarData }) {
+function CupStandingsView({ data, gameLink }: { data: CalendarData; gameLink?: GameLink }) {
   const s = useMemo(() => cupStandings(data.games, data.regulation), [data]);
   return (
     <section className="ck-cupview" aria-label="NBA Cup standings" data-testid="cup">
@@ -64,7 +68,7 @@ function CupStandingsView({ data }: { data: CalendarData }) {
                 <span className="ck-cup-num ck-cup-diff-col">DIFF</span>
               </div>
               {g.teams.map((t) => (
-                <TeamPill key={t.teamId} t={t} />
+                <TeamPill key={t.teamId} t={t} gameLink={gameLink} />
               ))}
             </div>
           ))}
@@ -107,7 +111,7 @@ function Logo({ teamId }: { teamId: number }) {
   );
 }
 
-function TeamPill({ t }: { t: CupTeamLine }) {
+function TeamPill({ t, gameLink }: { t: CupTeamLine; gameLink?: GameLink }) {
   const team = TEAM_BY_ID.get(t.teamId);
   const why = t.tied ? 'Tied: no tiebreaker separates them yet' : t.tiebreak ? `Placed by ${TIEBREAK_TEXT[t.tiebreak]}` : undefined;
   return (
@@ -127,7 +131,7 @@ function TeamPill({ t }: { t: CupTeamLine }) {
       <Logo teamId={t.teamId} />
       <span className="ck-cup-main">
         <TeamLink teamId={t.teamId} className="ck-cup-name">{team ? `${team.city} ${team.name}` : t.tricode}</TeamLink>
-        <Slots slots={t.slots} />
+        <Slots slots={t.slots} gameLink={gameLink} />
       </span>
       <span className="ck-cup-num">{t.w}</span>
       <span className="ck-cup-num">{t.l}</span>
@@ -139,32 +143,16 @@ function TeamPill({ t }: { t: CupTeamLine }) {
 }
 
 /**
- * Round 13: the team's 4 group games in date order, between the name and W / L — opponent over the result ("W" / "L"),
- * upcoming games the opponent alone, muted. No per-game differential and no "@" / "vs": they don't fit beside the longest
- * name at 1600 × 1000 (e2e/cup.spec.ts), so the full final score is in each played slot's tooltip.
+ * Round 13: the team's 4 group games in date order, between the name and W / L — round 21 (item 5): the shared CupSquare
+ * ("@PHX" / "vs HOU" over W / L; upcoming games the opponent alone, muted), each one its game page. No per-game margin
+ * here (it doesn't fit beside the longest name at 1600 × 1000, e2e/cup.spec.ts); the full final score is the tooltip.
  */
-function Slots({ slots }: { slots: readonly CupSlot[] }) {
+function Slots({ slots, gameLink }: { slots: readonly CupSlot[]; gameLink?: GameLink }) {
   return (
     <span className="ck-cup-slots" data-testid="cup-slots">
-      {slots.map((s) =>
-        s.played ? (
-          <span
-            key={s.gameId}
-            className={`ck-cup-slot ${s.win ? 'ck-cup-slot-w' : 'ck-cup-slot-l'}`}
-            data-game-id={s.gameId}
-            data-tip={s.final}
-            tabIndex={0}
-            aria-label={`${s.win ? 'Won' : 'Lost'} ${s.home ? 'vs' : 'at'} ${s.opponent}: ${s.final}`}
-          >
-            <span className="ck-cup-slot-opp">{s.opponent}</span>
-            <span className="ck-cup-slot-res">{s.win ? 'W' : 'L'}</span>
-          </span>
-        ) : (
-          <span key={s.gameId} className="ck-cup-slot ck-cup-slot-next" data-game-id={s.gameId} aria-label={`${s.home ? 'vs' : 'at'} ${s.opponent}, not played yet`}>
-            <span className="ck-cup-slot-opp">{s.opponent}</span>
-          </span>
-        ),
-      )}
+      {slots.map((s) => (
+        <CupSquare key={s.gameId} g={s} url={gameLink?.(s.game)} />
+      ))}
     </span>
   );
 }

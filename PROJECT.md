@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2373,3 +2373,11 @@ the buttons (a React state in the shell re-rendered the widget after its first r
 - Leaving the Cup by its destination still resets the sub-view (Groups, League, By group).
 - Tests: tests/history.test.tsx (round-trips for every view, push / replace, restore, the app's real entries and arrows,
   Alt+arrows left to the browser), e2e/history.spec.ts (scroll and top row restored on a real layout).
+
+**Item 5 (v1.43.0): one Cup game square.** `src/slate/CupSquare.tsx` (+ `src/slate/styles/cup-square.css`, the
+round-13 slot styles moved out of cup.css so the Slate part has them) is the only Cup group-game square: "vs" / "@" at
+0.64 em, muted, before the tricode; W / L below (`margin` adds "W +12": the game's real margin, `CupSlot.margin`, OT
+included); a game to come: the opponent alone, muted; `tonight` rings it; the tooltip stays the final score. With a URL
+it is an `<a target="_blank">` to the game's hoopsjunkie page (the Cup standings pass `gameLink`). To keep "Minnesota
+Timberwolves" + four prefixed squares on one row at 1600 × 1000, the Cup rows' W / L columns are 18 px (were 22) and DIFF
+42 px (50; its chip 40 px min, was 44).

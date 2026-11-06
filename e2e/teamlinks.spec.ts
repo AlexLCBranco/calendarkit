@@ -242,14 +242,21 @@ test.describe('team links', () => {
     }
   });
 
-  test('the Cup standings game slots are not team links', async ({ page }) => {
+  test('the Cup standings game slots are not team links: each is its game page (round 21), in a new tab', async ({ page, context }) => {
     await open(page, '?view=cup');
     const slots = page.getByTestId('cup-slots');
     expect(await slots.count()).toBeGreaterThan(20);
-    await expect(slots.locator('a')).toHaveCount(0);
     await expect(slots.locator('[data-team-link]')).toHaveCount(0);
-    // and a click on one goes nowhere
-    await slots.first().locator('.ck-cup-slot').first().click();
+    expect(await slots.locator('a.ck-cup-slot').count()).toBe(120);
+    for (const a of await slots.locator('a.ck-cup-slot').all()) {
+      expect(await a.getAttribute('target')).toBe('_blank');
+      expect(await a.getAttribute('href')).toMatch(/^https:\/\/hoopsjunkie\.io\/games\/2026-\d\d-\d\d\/[a-z]{3}-vs-[a-z]{3}$/);
+    }
+    // a click opens the game page in a new tab; this page stays on the Cup
+    await context.route('https://hoopsjunkie.io/**', (r) => r.fulfill({ status: 200, body: 'ok' }));
+    const [tab] = await Promise.all([context.waitForEvent('page'), slots.first().locator('.ck-cup-slot').first().click()]);
+    expect(tab.url()).toMatch(/^https:\/\/hoopsjunkie\.io\/games\//);
+    await tab.close();
     await expect(destination(page, 'Cup')).toHaveAttribute('aria-selected', 'true');
   });
 

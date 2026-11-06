@@ -1,0 +1,55 @@
+/* Round 21 (item 5): the one NBA Cup group-game square (src/slate/CupSquare.tsx) — Cup standings, the Slate's Cup rows,
+   the simulator, Cup history. Moved here from cup.css (round 13's slots), so the Slate part has it too. */
+.ck-cup-slot {
+  height: 30px;
+  min-width: 30px;
+  padding: 0 1px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-shadow: none;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+a.ck-cup-slot {
+  cursor: pointer;
+}
+a.ck-cup-slot:hover,
+a.ck-cup-slot:focus-visible {
+  box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.85);
+  outline: none;
+}
+.ck-cup-slot-w {
+  background: #1f8f5f;
+}
+.ck-cup-slot-l {
+  background: #c2413b;
+}
+.ck-cup-slot-res {
+  font-weight: 800;
+}
+/* "vs" / "@": smaller and muted, so the square barely widens; the tricode and W / L stay dominant */
+.ck-cup-slot-at {
+  font-size: 0.64em;
+  font-weight: 600;
+  opacity: 0.7;
+  margin-right: 0.5px;
+}
+.ck-cup-slot-margin {
+  font-weight: 700;
+}
+/* not played yet: the opponent alone, outlined and faded */
+.ck-cup-slot-next {
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3);
+  background: rgb(0 0 0 / 0.18);
+  color: rgb(255 255 255 / 0.55);
+}
+/* tonight's game: a bright ring, so the square of tonight is easy to find */
+.ck-cup-slot.ck-cup-slot-tonight {
+  box-shadow: inset 0 0 0 2px var(--ck-accent);
+  color: var(--ck-text);
+}

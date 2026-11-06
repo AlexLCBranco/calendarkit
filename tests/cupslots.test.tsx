@@ -122,37 +122,49 @@ describe('Cup standings rows: the slots on screen', () => {
   const rowOf = (tri: string) => document.querySelector<HTMLElement>(`.ck-cup-pill[data-team="${tri}"]`)!;
   const slotsOf = (tri: string) =>
     [...rowOf(tri).querySelectorAll<HTMLElement>('.ck-cup-slot')].map((e) => ({
-      opp: e.querySelector('.ck-cup-slot-opp')!.textContent,
+      opp: e.querySelector('.ck-cup-slot-opp')!.textContent!.replace(e.querySelector('.ck-cup-slot-at')!.textContent!, ''),
+      at: e.querySelector('.ck-cup-slot-at')!.textContent,
       res: e.querySelector('.ck-cup-slot-res')?.textContent ?? null,
       kind: e.classList.contains('ck-cup-slot-next') ? 'next' : e.classList.contains('ck-cup-slot-w') ? 'w' : e.classList.contains('ck-cup-slot-l') ? 'l' : '?',
       tip: e.dataset.tip ?? null,
     }));
 
-  it('4 played: opponent and W / L, the full final score in the tooltip; no differential, no "@" / "vs"', () => {
+  it('4 played: "@" / "vs" (round 21, item 5) and the opponent over W / L, the full final score in the tooltip; no differential', () => {
     render(<CupView data={dataOf(GAMES)} />);
     expect(slotsOf('DEN')).toEqual([
-      { opp: 'HOU', res: 'W', kind: 'w', tip: 'DEN 118 @ HOU 111 · Final' },
-      { opp: 'PHX', res: 'L', kind: 'l', tip: 'DEN 101 @ PHX 112 · Final' },
-      { opp: 'DAL', res: 'W', kind: 'w', tip: 'DAL 99 @ DEN 121 · Final' },
-      { opp: 'UTA', res: 'W', kind: 'w', tip: 'DEN 128 @ UTA 116 · Final/OT' },
+      { at: '@', opp: 'HOU', res: 'W', kind: 'w', tip: 'DEN 118 @ HOU 111 · Final' },
+      { at: '@', opp: 'PHX', res: 'L', kind: 'l', tip: 'DEN 101 @ PHX 112 · Final' },
+      { at: 'vs', opp: 'DAL', res: 'W', kind: 'w', tip: 'DAL 99 @ DEN 121 · Final' },
+      { at: '@', opp: 'UTA', res: 'W', kind: 'w', tip: 'DEN 128 @ UTA 116 · Final/OT' },
     ]);
-    expect(rowOf('DEN').querySelector('[data-testid="cup-slots"]')!.textContent).toBe('HOUWPHXLDALWUTAW');
+    expect(rowOf('DEN').querySelector('[data-testid="cup-slots"]')!.textContent).toBe('@HOUW@PHXLvsDALW@UTAW');
+  });
+
+  it('every square is its game page, in a new tab (round 21: no dead clicks)', () => {
+    render(<CupView data={dataOf(GAMES)} gameLink={(game) => `https://hj.test/${game.gameId}`} />);
+    const squares = [...rowOf('DAL').querySelectorAll<HTMLAnchorElement>('.ck-cup-slot')];
+    expect(squares).toHaveLength(4);
+    for (const a of squares) {
+      expect(a.tagName).toBe('A');
+      expect([a.target, a.rel]).toEqual(['_blank', 'noopener noreferrer']);
+      expect(a.href).toBe(`https://hj.test/${a.dataset.gameId}`);
+    }
   });
 
   it('2 played: two results, then two upcoming slots — opponent only, muted, no result, no tooltip', () => {
     render(<CupView data={dataOf(GAMES)} />);
     expect(slotsOf('DAL')).toEqual([
-      { opp: 'PHX', res: 'W', kind: 'w', tip: 'PHX 104 @ DAL 109 · Final' },
-      { opp: 'DEN', res: 'L', kind: 'l', tip: 'DAL 99 @ DEN 121 · Final' },
-      { opp: 'UTA', res: null, kind: 'next', tip: null },
-      { opp: 'HOU', res: null, kind: 'next', tip: null },
+      { at: 'vs', opp: 'PHX', res: 'W', kind: 'w', tip: 'PHX 104 @ DAL 109 · Final' },
+      { at: '@', opp: 'DEN', res: 'L', kind: 'l', tip: 'DAL 99 @ DEN 121 · Final' },
+      { at: 'vs', opp: 'UTA', res: null, kind: 'next', tip: null },
+      { at: '@', opp: 'HOU', res: null, kind: 'next', tip: null },
     ]);
     expect(rowOf('DAL').querySelector('.ck-cup-slot-next')!.getAttribute('aria-label')).toBe('vs UTA, not played yet');
   });
 
   it('0 played: four upcoming slots', () => {
     render(<CupView data={dataOf(GAMES)} />);
-    expect(slotsOf('MIN')).toEqual(['OKC', 'NOP', 'MEM', 'LAC'].map((opp) => ({ opp, res: null, kind: 'next', tip: null })));
+    expect(slotsOf('MIN')).toEqual([['@', 'OKC'], ['vs', 'NOP'], ['@', 'MEM'], ['vs', 'LAC']].map(([at, opp]) => ({ at, opp, res: null, kind: 'next', tip: null })));
   });
 
   it('"tied" moved under the rank marker, out of the name', () => {

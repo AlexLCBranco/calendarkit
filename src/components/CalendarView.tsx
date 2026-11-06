@@ -871,7 +871,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
           </Suspense>
         ) : cup ? (
           <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>
-            <CupView data={data} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
+            <CupView data={data} gameLink={gameLink} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
           </Suspense>
         ) : team ? (
           teamMap ? (

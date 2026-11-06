@@ -237,7 +237,8 @@ test.describe('Cup standings: game slots', () => {
         const played = g.gameStatus === 3 && date >= '2026-10-30' && date <= '2026-11-27';
         const tip = played ? `${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.teamTricode} ${g.homeTeam.score} · ${g.gameStatusText.trim()}` : null;
         for (const [me, opp] of [[g.homeTeam, g.awayTeam], [g.awayTeam, g.homeTeam]] as const)
-          (out[me.teamTricode] ??= []).push({ opp: opp.teamTricode, res: played ? (me.score > opp.score ? 'W' : 'L') : null, tip });
+          // round 21 (item 5): "vs" (home) / "@" (away) before the opponent
+          (out[me.teamTricode] ??= []).push({ opp: `${me === g.homeTeam ? 'vs' : '@'}${opp.teamTricode}`, res: played ? (me.score > opp.score ? 'W' : 'L') : null, tip });
       }
       return out;
     }, APP);
