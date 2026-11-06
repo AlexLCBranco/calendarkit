@@ -19,7 +19,19 @@ const XL = { width: 1840, height: 1000 };
 const LEGEND = '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4';
 /** Views with the Fatigue component: League List (desktop) and the 1-week view. Round 6: the leg dot, the merged chip; no
  * tricode keys (the tricodes there have no yellow marks). */
-const LEGEND_FX = 'B2B back-to-back, 1st night (again tomorrow) · B2B 2nd night (played yesterday) ·  home  away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd';
+const LEGEND_FX = 'B2B back-to-back, 1st night (again tomorrow) · B2B 2nd night (played yesterday) ·  home  away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next';
+/** Round 22 (item 15): gameId → the 3+ day gaps before / after it, worked out here from the dates. */
+function breaks(teamId: number) {
+  const games = teamGames(data, teamId);
+  const gap = (a: (typeof games)[number], b: (typeof games)[number]) => Math.round((Date.parse(b.dateEt) - Date.parse(a.dateEt)) / 86_400_000);
+  const out = new Map<string, { after?: number; before?: number }>();
+  games.forEach((g, i) => {
+    const a = i > 0 ? gap(games[i - 1]!, g) : 0;
+    const b = i + 1 < games.length ? gap(g, games[i + 1]!) : 0;
+    if (a >= 3 || b >= 3) out.set(g.gameId, { ...(a >= 3 ? { after: a } : {}), ...(b >= 3 ? { before: b } : {}) });
+  });
+  return out;
+}
 /** gameId → "4in6 · 2nd" for a team, worked out here: sets chained while one starts inside the stretch (round 6). */
 function stretches(teamId: number) {
   const games = teamGames(data, teamId);
@@ -86,14 +98,20 @@ describe('leagueFatigue (model)', () => {
           expect(got.tip).not.toContain('3 games in 4 days — ');
           expect(got.days!.split(' ').filter((d) => d.endsWith(':t'))).toHaveLength(1);
         }
-        if (!got.nights.length && !got.tif) {
+        // round 22: the breaks, and their tooltip lines
+        const br = breaks(t.id).get(id);
+        expect({ after: got.rest?.after?.days, before: got.rest?.before?.days }, `${t.tricode} ${id} break`).toEqual({ after: br?.after, before: br?.before });
+        if (br?.after) expect(got.tip).toContain(`${br.after} days off, last played `);
+        if (br?.before) expect(got.tip).toContain(`${br.before} days off next, plays again `);
+        if (!got.nights.length && !got.tif && br) expect(got.tip.startsWith(`${t.tricode} — ${br.after ?? br.before} days off`)).toBe(true);
+        if (!got.nights.length && !got.tif && !br) {
           rested++;
           expect(got.tip.split('\n')[0]).toBe(`${t.tricode} — rested`);
         }
       }
     }
     expect(b2b).toBeGreaterThan(400);
-    expect(rested).toBeGreaterThan(400);
+    expect(rested).toBeGreaterThan(200);
   });
 
   it('record on the tooltip: after the game once final (round 22), going in on a game to come', () => {
@@ -166,7 +184,7 @@ describe('Fatigue component (round 5)', () => {
         const fx = fxs[i]!;
         const want = f.get(g.gameId)!.get(t.teamId)!;
         const pair = want.pairs[0];
-        expect(fx.classList.contains('ck-fx-empty'), `${g.gameId} ${i}`).toBe(!pair && !want.tif);
+        expect(fx.classList.contains('ck-fx-empty'), `${g.gameId} ${i}`).toBe(!pair && !want.tif && !breaks(t.teamId).has(g.gameId));
         if (fx.classList.contains('ck-fx-empty')) return;
         shown++;
         // badge next to the logo: the away column mirrored, the home column not
@@ -208,7 +226,7 @@ describe('Fatigue component (round 5)', () => {
     const f = leagueFatigue(data);
     const has = (id: string, t: number) => {
       const x = f.get(id)!.get(t)!;
-      return x.nights.length > 0 || !!x.tif;
+      return x.nights.length > 0 || !!x.tif || breaks(t).has(id);
     };
     const one = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ layout: 'calendar', date: '2026-11-01', weeks: 1 }} />).container;
     let rows = 0;

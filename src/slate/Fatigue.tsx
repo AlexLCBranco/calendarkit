@@ -6,10 +6,15 @@
 // Round 6: a dot in the badge says which leg tonight is — beside the first B on the 1st night (they play again
 // tomorrow), beside the second B on the 2nd night (they played yesterday); it never flips with the column. The chip is
 // the merged 3-in-4 stretch: "4in6 · 2nd" (compact size: "4in6", see fatigue.css).
-// Few elements on purpose (every list row has two): a grid of at most 4 children, the icons drawn by CSS (fatigue.css).
+// Few elements on purpose (every list row has two): a grid of at most 5 children, the icons drawn by CSS (fatigue.css).
+// Round 22 (item 15): an abnormal break (3+ days between game dates, rest.ts) — a teal badge with the days ("4d"): filled
+// when this game comes off the break, outlined when the break follows it; its own tooltip gives the exact count and the
+// game on the other side ("4 days off, last played Mon, Nov 4 @ PHI"). It takes no width: it sits in the B2B badge's
+// track when tonight isn't a back-to-back night, else in the 3-in-4 chip's; with both taken, a teal corner tick.
 
 import type { TeamFatigue } from '../data/fatigue';
 import { mergedChip, mergedLabel, ordinal } from '../data/scheduleTags';
+import { restLines, type RestFlag } from '../data/rest';
 
 /** House (home) or plane (away) for one night; solid on tonight's game, faded on the other. Drawn in CSS. */
 export const NightIcon = ({ home, tonight }: { home: boolean; tonight: boolean }) => (
@@ -37,6 +42,8 @@ function label(team: string, f: TeamFatigue): string {
     parts.push(`back-to-back, ${ORD[night]} night: ${where(pair.code[0]!)} then ${where(pair.code[1]!)}`);
   }
   if (f.tif) parts.push(`${f.tif.merged.ids.length} games in ${f.tif.merged.days} days, tonight the ${ordinal(f.tif.merged.position)}`);
+  if (f.rest?.after) parts.push(`${f.rest.after.days} days since the last game`);
+  if (f.rest?.before) parts.push(`${f.rest.before.days} days until the next game`);
   return `${team}: ${parts.join(', ')}`;
 }
 
@@ -52,7 +59,7 @@ export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = fa
   const cls = `ck-fx ck-fx-${size}${badge === 'right' ? ' ck-fx-mirror' : ''}${shortChip && size === 'full' ? ' ck-fx-short' : ''}`;
   const pair = f?.pairs[0];
   const night = f?.nights[0];
-  if (!f || (!pair && !f.tif)) return <span className={`${cls} ck-fx-empty`} data-testid="fatigue" aria-hidden="true" />;
+  if (!f || (!pair && !f.tif && !f.rest)) return <span className={`${cls} ck-fx-empty`} data-testid="fatigue" aria-hidden="true" />;
   const m = f.tif?.merged;
   return (
     <span
@@ -76,6 +83,22 @@ export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = fa
         </>
       )}
       {m && <span className={`ck-fx-chip ck-tif-pos-${Math.min(3, m.position)}`}>{size === 'compact' || shortChip ? mergedLabel(m) : mergedChip(m)}</span>}
+      {f.rest && <RestChip rest={f.rest} slot={!pair ? 'b' : !m ? 'c' : 'tick'} />}
+    </span>
+  );
+}
+
+/**
+ * Round 22 (item 15): the break badge — "4d", the days between the game dates, in a free track (`slot`). Filled: this game comes off the break;
+ * outlined: the break follows it; a game with a break on both sides shows the one it comes off (filled) and has both
+ * lines in its tooltip. Its own data-tip (the floating tooltip takes the nearest one).
+ */
+export function RestChip({ rest, slot }: { rest: RestFlag; slot: 'b' | 'c' | 'tick' }) {
+  const side = rest.after ? 'after' : 'before';
+  const days = (rest.after ?? rest.before)!.days;
+  return (
+    <span className={`ck-fx-rest ck-fx-rest-${side} ck-fx-rest-${slot}`} data-break={side} data-break-both={rest.after && rest.before ? '' : undefined} data-days={days} data-tip={restLines(rest).join('\n')}>
+      {days}d
     </span>
   );
 }

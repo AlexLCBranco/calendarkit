@@ -6,6 +6,7 @@ import { leagueRecords, sideLabel, teamB2BPairs, type B2BPair, type CalendarData
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { mergedChip, mergedDays, mergedTip, teamThreeInFour, type ThreeInFour } from './scheduleTags';
 import { TEAM_BY_ID } from './teams';
+import { restLines, teamRestFlags, type RestFlag } from './rest';
 
 export interface TeamFatigue {
   /** The back-to-back nights this game is for the team (usually none or one; 3 days in a row make it both). */
@@ -15,6 +16,8 @@ export interface TeamFatigue {
   /** The team changes metro between the two nights of one of those pairs. */
   travels: boolean;
   tif?: ThreeInFour;
+  /** Round 22 (item 15): a break of 3+ days before or after this game (rest.ts). */
+  rest?: RestFlag;
   /** Tooltip: leg and code, both games with dates and opponents, travel, the merged 3-in-4 stretch, record going in. */
   tip: string;
   /** The tooltip's day strip for the 3-in-4 stretch (mergedDays: "YYYY-MM-DD:g|r|t …"), when there is one. */
@@ -22,7 +25,7 @@ export interface TeamFatigue {
 }
 
 /** The team has something to show in this game: a back-to-back night or a 3-in-4 set (the Fatigue component isn't empty). */
-export const hasFatigue = (f?: TeamFatigue) => !!f && (f.nights.length > 0 || !!f.tif);
+export const hasFatigue = (f?: TeamFatigue) => !!f && (f.nights.length > 0 || !!f.tif || !!f.rest);
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const md = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`;
@@ -52,11 +55,13 @@ function teamFatigue(data: CalendarData, teamId: number, records: () => ReturnTy
     for (const [g, night] of [[pair.first, 1], [pair.second, 2]] as const) pairsByGame.set(g.gameId, [...(pairsByGame.get(g.gameId) ?? []), { pair, night }]);
   }
   const tifs = teamThreeInFour(data, teamId);
+  const rests = teamRestFlags(data, teamId);
   const out = new Map<string, TeamFatigue>();
   for (const g of data.games) {
     if (g.homeTeam.teamId !== teamId && g.awayTeam.teamId !== teamId) continue;
     const legs = pairsByGame.get(g.gameId) ?? [];
     const tif = tifs.get(g.gameId);
+    const rest = rests.get(g.gameId);
     const tip = () => {
       const rec = records().get(g.gameId)?.get(teamId);
       const lines = legs.flatMap(({ pair, night }) => [
@@ -64,13 +69,17 @@ function teamFatigue(data: CalendarData, teamId: number, records: () => ReturnTy
         `${md(pair.first.dateEt)} ${sideLabel(pair.first, teamId)} (${where(pair.first, teamId)}) → ${md(pair.second.dateEt)} ${sideLabel(pair.second, teamId)} (${where(pair.second, teamId)})`,
         ...(pair.travels ? [`Travels ${pair.fromCity} → ${pair.toCity}`] : []),
       ]);
-      if (!legs.length) lines.push(`${tri} — ${tif ? mergedChip(tif.merged) : 'rested'}`);
+      // round 22 (item 15): the break's lines ("4 days off, last played Mon, Nov 4 @ PHI"); alone, they open the tip
+      const breaks = rest ? restLines(rest, teamId) : [];
+      if (!legs.length && !tif && breaks.length) breaks[0] = `${tri} — ${breaks[0]}`;
+      else if (!legs.length) lines.push(`${tri} — ${tif ? mergedChip(tif.merged) : 'rested'}`);
+      lines.push(...breaks);
       // round 6: overlapping 3-in-4 sets as one stretch (was a line per set); the tooltip draws its days under the text
       if (tif) lines.push(`${mergedChip(tif.merged)}: ${mergedTip(tif.merged)}`);
       if (rec) lines.push(`${g.status === 'final' ? 'Record after the game' : 'Record going in'}: ${rec.wins}-${rec.losses}`);
       return lines.join('\n');
     };
-    out.set(g.gameId, lazyTexts({ nights: legs.map((l) => l.night), pairs: legs.map((l) => l.pair), travels: legs.some((l) => l.pair.travels), tif }, tip, () => tif && mergedDays(tif.merged)));
+    out.set(g.gameId, lazyTexts({ nights: legs.map((l) => l.night), pairs: legs.map((l) => l.pair), travels: legs.some((l) => l.pair.travels), tif, ...(rest ? { rest } : {}) }, tip, () => tif && mergedDays(tif.merged)));
   }
   return out;
 }

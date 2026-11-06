@@ -10,7 +10,16 @@ import { parseSchedule } from '../src/shared/nba-schedule/parse';
 import feed from './fixtures/feed-2026-10-23.json';
 import { data } from './feed';
 
-const plain = (f: TeamFatigue | undefined) => f && { nights: f.nights, pairs: f.pairs.map((p) => [p.first.gameId, p.second.gameId, p.code, p.travels]), travels: f.travels, tif: f.tif, tip: f.tip.replace('Record after the game:', 'Record going in:'), days: f.days }; // round 22 renamed the line on final games; the frozen copy has the old label
+// round 22 changed the tooltip on purpose — the record line's label on final games (item 13) and the break lines (item 15,
+// "BOS — 4 days off, …" opening a tip that was "BOS — rested") — so those are put back to the frozen copy's form here
+const oldTip = (tip: string) =>
+  tip
+    .replace('Record after the game:', 'Record going in:')
+    .split('\n')
+    .filter((l) => !/^\d+ days off/.test(l))
+    .map((l) => l.replace(/^([A-Z]{3}) — \d+ days off.*$/, '$1 — rested'))
+    .join('\n');
+const plain = (f: TeamFatigue | undefined) => f && { nights: f.nights, pairs: f.pairs.map((p) => [p.first.gameId, p.second.gameId, p.code, p.travels]), travels: f.travels, tif: f.tif, tip: oldTip(f.tip), days: f.days };
 const fresh = () => buildCalendarData(parseSchedule(feed)); // a new data set = a new cache entry
 
 describe('lazy leagueFatigue', () => {

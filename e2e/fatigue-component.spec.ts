@@ -247,7 +247,7 @@ for (const size of SIZES) {
     const yellow = (sel: string) =>
       page.locator(sel).evaluateAll((els) => els.filter((e) => getComputedStyle(e).backgroundColor === 'rgb(245, 224, 66)' || (getComputedStyle(e).outlineStyle !== 'none' && getComputedStyle(e).outlineColor === 'rgb(245, 224, 66)')).length);
     const legend = page.getByTestId('fatigue-legend');
-    const FX = /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd$/;
+    const FX = /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next$/;
     const MARKS = '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4';
     // League List (a component for each team) and the 1-week view (the component row)
     for (const search of ['?view=league&layout=list&date=2026-10-24', '?view=league&layout=calendar&date=2026-11-01&weeks=1']) {
@@ -322,8 +322,9 @@ for (const size of SIZES) {
     });
     expect(row.bad).toEqual([]);
     // game text: 1-week scale 1 at 1280 × 900; at 1920 × 911 1.05 since round 21 (the two-row top bar leaves the week 42 px
-    // less height; round 5 left it at 1.1)
-    expect(row.scale).toBe(size.width === 1920 ? '1.05' : '1');
-    expect(row.tri).toBe(size.width === 1920 ? '11.55px' : '11px');
+    // less height; round 5 left it at 1.1); round 22 (item 15): 1 — games with only a break now get the fatigue row too,
+    // so the busiest day is taller
+    expect(row.scale).toBe('1');
+    expect(row.tri).toBe('11px');
   });
 }

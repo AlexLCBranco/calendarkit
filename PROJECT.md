@@ -2519,3 +2519,26 @@ season block, the League List records, the Slate cards' record + streak, the str
 gameId)` now runs through a final game), the fatigue tooltip ("Record after the game" / "Record going in"). Tooltips say
 which ("record 0-1 after it" / "going in"). Tests: season, records, slatecard, streak, leaguefatigue, mirror, overtime
 (unit) and lists, slatecards, league-fatigue (e2e) — 15 of the unit tests fail on v1.54.1.
+
+**Item 15 (v1.55.0): abnormal rest flag.** `src/data/rest.ts`: rest = the difference of two game dates (the NBA's ET game
+date; tip-off time never counts, a ~1 pm tip is a full day): B2B 1, one empty day 2, two empty days 3. A gap of
+`REST_FLAG_DAYS` = 3 or more flags BOTH games — the one before the break (`before`) and the one after it (`after`), each
+with the game on the other side (DET: PHI Nov 4, LAL Nov 8 = 4 → both). From all of a team's shown games, never a
+filter. On the 2026-11-06 snapshot: 785 of 2,400 team-games (3 days is common), 224 of them also a B2B night, 313 in a
+3-in-4 stretch, 166 both.
+- Shown in the Fatigue component (League List, Team List, 1-week view, Slate cards — the B2B / 3-in-4 area): a teal
+  (`--ck-rest` #3fc8d8) badge with the days, "4d". Filled = the game comes off the break; outlined = the break follows
+  it; a game with a break on both sides shows the one it comes off (both lines in the tooltip). It takes **no width**: it
+  sits in the B2B badge's track when tonight isn't a back-to-back night (a teal badge where the yellow one would be),
+  else in the 3-in-4 chip's track; with both taken (166 games) a small teal corner tick, the count in its tooltip. Its
+  own tooltip: "4 days off, last played Wed, Nov 4 @ PHI" / "4 days off next, plays again Sun, Nov 8 vs LAL"; the
+  component's tooltip and aria-label have them too. Legend: "4d since last game · 4d until next". Where only tricode
+  marks are drawn (2-week view, Cup schedule rows) the lines are in the tooltip only.
+- Tried first: a 5th track ("4d", 1.75 em, then the number alone, 1.2 em). The e2e fits failed — Team List rows wrapped at
+  1280, League List rows at 1600, the 1-week view's compact pairs collided, the Slate lost a column at 1600 with notes
+  hidden — so the zero-width placement.
+- 1-week view at 1920 × 911: the text scale is 1 (was 1.05) — rest-only games now get the fatigue row too, so the busiest
+  day is taller.
+- Tests: tests/restflag.test.tsx (B2B / 2 / 3 days, the DET example, around midnight — a 10:30 pm ET tip on Nov 4 to a
+  1 pm tip on Nov 7 is 3; the whole feed against an independent count; badge placement b / c / tick), fatigue and
+  leaguefatigue counts extended; e2e fits unchanged (fatigue, fatigue-component, notes, slate-tight, series).

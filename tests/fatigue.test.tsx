@@ -70,7 +70,14 @@ function expected(teamId: number, g: ScheduleGame) {
   const icons = prev ? [[home(prev), false], [home(g), true]] : next ? [[home(g), true], [home(next), false]] : [];
   const [pos] = tifOf(teamId).get(g.gameId) ?? [0, 0];
   const st = stretchOf(teamId).get(g.gameId);
-  return { night: prev ? '2' : next ? '1' : null, icons, pos, chip: st ? `${st[0]}in${st[1]} · ${ord(st[2])}` : '', place: st?.[2] ?? 0 };
+  // round 22 (item 15): the break chip — days to the team's previous / next game by date, 3+ flagged (filled: after)
+  const all = gamesOf(teamId).map((x) => x.dateEt).sort();
+  const i = all.indexOf(g.dateEt);
+  const gap = (a?: string, b?: string) => (a && b ? Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000) : 0);
+  const gin = gap(all[i - 1], g.dateEt);
+  const gout = gap(g.dateEt, all[i + 1]);
+  const rest = gin >= 3 ? `after ${gin}d` : gout >= 3 ? `before ${gout}d` : '';
+  return { night: prev ? '2' : next ? '1' : null, icons, pos, chip: st ? `${st[0]}in${st[1]} · ${ord(st[2])}` : '', place: st?.[2] ?? 0, rest };
 }
 
 /** What a rendered Fatigue component shows: badge text, icons in DOM order (= left to right), chip, mirrored. */
@@ -88,6 +95,10 @@ function shown(fx: Element) {
     chipPos: fx.querySelector('.ck-fx-chip')?.className.match(/ck-tif-pos-(\d)/)?.[1],
     night: fx.getAttribute('data-night'),
     empty: fx.classList.contains('ck-fx-empty'),
+    rest: (() => {
+      const r = fx.querySelector<HTMLElement>('.ck-fx-rest');
+      return r ? `${r.dataset.break} ${r.textContent}` : '';
+    })(),
     mirror: fx.classList.contains('ck-fx-mirror'),
   };
 }
@@ -103,7 +114,8 @@ function checkFatigue(fx: Element, teamId: number, g: ScheduleGame, label: strin
   expect(!!want.pos, `${label} in a 3-in-4 set iff in a stretch`).toBe(!!want.chip);
   expect(got.chip, `${label} merged 3in4 chip`).toBe(want.chip);
   if (want.chip) expect(got.chipPos).toBe(String(Math.min(3, want.place)));
-  expect(got.empty, `${label} empty slot`).toBe(!want.night && !want.pos);
+  expect(got.rest, `${label} break chip`).toBe(want.rest);
+  expect(got.empty, `${label} empty slot`).toBe(!want.night && !want.pos && !want.rest);
   return want;
 }
 

@@ -85,7 +85,7 @@ for (const [name, search] of [
     // legend: visible, inside the window, under the grid / list
     const legend = page.getByTestId('fatigue-legend');
     // round 5: the views with the Fatigue component (League List, 1 week) explain it; 2 weeks keeps the tricode legend
-    await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd$/);
+    await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next$/);
     const lb = (await legend.boundingBox())!;
     expect(lb.y + lb.height).toBeLessThanOrEqual(page.viewportSize()!.height);
     const above = (await page.locator(list ? '[data-testid="league-list"]' : '.ck-week-grid').boundingBox())!;
