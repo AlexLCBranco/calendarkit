@@ -4,7 +4,8 @@
 // Round 12: Standings | Schedule (the switch is in the top bar); the Schedule (CupSchedule.tsx) is worked out only once
 // its tab is opened.
 
-import { useMemo, type CSSProperties } from 'react';
+import { useMemo, type CSSProperties, type ReactNode } from 'react';
+import { CupTonight } from './CupTonight';
 import { cupStandings, type CupSlot, type CupTeamLine, type Tiebreak, type WildCardRace } from '../data/cup';
 import { dateFormat, type CalendarData } from '../data/model';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
@@ -39,18 +40,27 @@ export interface CupViewProps {
   data: CalendarData;
   /** Round 21: every game square is its game page (new tab). */
   gameLink?: GameLink;
+  /** Round 21 (item 12): the local date — "Tonight in the Cup" on a night with Cup games. */
+  today?: string;
   /** Round 12: the schedule instead of the standings (default: standings). */
   schedule?: Omit<CupScheduleProps, 'data'>;
   /** Round 21 (item 4): the simulator instead. */
   sim?: Omit<CupSimulatorProps, 'data' | 'gameLink'>;
 }
 
-export default function CupView({ data, schedule, gameLink, sim }: CupViewProps) {
-  if (sim) return <CupSimulator data={data} gameLink={gameLink} {...sim} />;
-  return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} gameLink={gameLink} />;
+export default function CupView({ data, schedule, gameLink, sim, today }: CupViewProps) {
+  const tonight = today ? <CupTonight data={data} today={today} gameLink={gameLink} /> : null;
+  if (sim)
+    return (
+      <>
+        {tonight}
+        <CupSimulator data={data} gameLink={gameLink} {...sim} />
+      </>
+    );
+  return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} gameLink={gameLink} tonight={today ? <CupTonight data={data} today={today} gameLink={gameLink} inline /> : null} />;
 }
 
-function CupStandingsView({ data, gameLink }: { data: CalendarData; gameLink?: GameLink }) {
+function CupStandingsView({ data, gameLink, tonight }: { data: CalendarData; gameLink?: GameLink; tonight?: ReactNode }) {
   const s = useMemo(() => cupStandings(data.games, data.regulation), [data]);
   return (
     <section className="ck-cupview" aria-label="NBA Cup standings" data-testid="cup">
@@ -61,6 +71,7 @@ function CupStandingsView({ data, gameLink }: { data: CalendarData; gameLink?: G
             {s.through ? `Through ${fmtThrough(s.through)}` : 'No group games played yet'}
           </span>
           <span className="ck-cup-ifended">If group play ended today</span>
+          {tonight}
         </header>
         <div className="ck-cup-grid">
           {s.groups.map((g) => (

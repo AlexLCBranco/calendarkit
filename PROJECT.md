@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2455,3 +2455,9 @@ data set and date (`useCupStakes`).
   `SLATE_NOTE_MIN_STAKES` 130 those nights) — flagged to Alex. Cup schedule: rows keep one line (the By date view fits the
   window with 0 px to spare), so a row with stakes shows a small "stakes" mark and the chips are in its tooltip; item 12's
   strip shows them in full on the Cup page.
+
+**Item 12 (v1.50.0): "Tonight in the Cup".** On a night with Cup group games (`CupTonight`): tonight's Cup games in the
+Cup header's row of the Groups page (and above the Simulator): each team's tricode (a team link), Cup record and
+differential, its stakes chips (item 11), the game's ↗ link. Not there on other nights, and no room kept. To keep the
+Groups page on one screen at 1920 × 950 it sits in the header's free row space (no logos; it wraps inside the header): 0 px
+to spare there on a 9-game night; a decisive night with long chips could need one more line — flagged. Never in a copy.

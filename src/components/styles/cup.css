@@ -794,3 +794,55 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* round 21 (item 12): Tonight in the Cup — one compact row of tonight's Cup games (wraps only if it must) */
+.ck-tonight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  font-size: 12px;
+  --ck-logo: 16px;
+}
+.ck-tonight-title {
+  color: var(--ck-cup);
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ck-tonight-lead {
+  color: var(--ck-muted);
+}
+.ck-tonight-game {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.ck-tonight-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.ck-tonight-tri {
+  font-weight: 700;
+}
+.ck-tonight-rec {
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.ck-tonight .ck-stake {
+  max-width: none;
+}
+/* in the Cup header's row: no frame, pushed right */
+.ck-tonight.ck-tonight-inline {
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+}

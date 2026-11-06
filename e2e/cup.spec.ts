@@ -165,6 +165,8 @@ test.describe('Cup view', () => {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await allPlayed(page); // every slot played: 120 W / L slots to find in the image
     await openCup(page);
+    // round 21 (item 12): "Tonight in the Cup" (in the header's row on a Cup night) is left out of the copy: measured as copied
+    await page.addStyleTag({ content: '[data-testid="cup-tonight"] { display: none !important; }' });
     const grid = await page.getByTestId('cup-grid').boundingBox();
     // each slot: its top-centre (1 px inside, above its text) relative to the grid, and its colour on screen
     const slots = await page.locator('.ck-cup-slot').evaluateAll((els, g) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2 - g.x, y: r.top + 1.5 - g.y, w: e.classList.contains('ck-cup-slot-w') }; }), grid!);
