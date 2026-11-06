@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2392,3 +2392,12 @@ restores the months. Phones keep one month (their ‹ › months).
 - Row positions are now measured from the scroller's content top (`scrollPos`: the button / "Season start" sit above the
   rows), and the bottom spacer leaves out what sits under the last row, so the last row still reaches the top with
   "Load more games" under it (found by the new e2e: the button pushed the last row off screen).
+
+**Item 8 (v1.45.0): streak popup.** Hovering a streak ("W6", "L2") — Slate cards, Team List rows, Standings' Strk (view
+and Quick standings) — opens the streak's games, newest first: date, "vs" / "@" + opponent (logo, tricode: team link),
+"W 118–104, +14", OT; each game its hoopsjunkie page in a new tab. `streakGames` (src/data/streak.ts: regular-season
+finals, the rule of the season lines) needs no request. Alex's answer: built on the season-series popup — its hover /
+stay-open / Escape / position logic is now `useHoverPopup` (src/slate/hoverPopup.tsx), used by both. A streak element
+carries `data-streak="teamId|gameId"` (gameId empty: the current streak) and no tooltip any more (its text is its
+aria-label); the popup is `data-capture-exclude`, never in a copy. The gauntlet's Slate widget shows the attribute but
+has no popup unless it renders `useStreakPopup` (see the gauntlet notes at the end of round 21).

@@ -14,6 +14,7 @@ import { FatigueMark } from './FatigueMark';
 import { Fatigue } from './Fatigue';
 import type { TeamFatigue } from '../data/fatigue';
 import './calendar.css';
+import { streakAttr } from '../slate/streakPopup';
 
 /** The selected team's side of a back-to-back, as shown on one of its two nights. */
 export interface B2BNight {
@@ -336,7 +337,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         <span className="ck-season" data-tip={seasonText} data-testid="season">
           <span className="ck-gnum">G{season.game}</span>
           <span className="ck-record">{season.record ? `${season.record.wins}-${season.record.losses}` : ''}</span>
-          <span className={`ck-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`}>{streak ? `${streak.kind}${streak.n}` : ''}</span>
+          <span className={`ck-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-streak={streak && teamId ? streakAttr(teamId, game.gameId) : undefined} tabIndex={streak && teamId ? 0 : undefined}>{streak ? `${streak.kind}${streak.n}` : ''}</span>
         </span>
       )}
       {canOpen && (

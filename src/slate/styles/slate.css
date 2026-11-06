@@ -361,3 +361,54 @@
 .ck-series-link:hover {
   color: var(--ck-text);
 }
+
+/* round 21 (item 8): the streak popup's rows (its box is the series popup's) */
+.ck-streak-rows {
+  display: grid;
+  grid-template-columns: auto 18px auto auto;
+  gap: 4px 6px;
+  align-items: center;
+  margin-top: 6px;
+  --ck-logo: 16px;
+}
+.ck-streak-row {
+  display: contents;
+}
+.ck-streak-at {
+  color: var(--ck-muted);
+  font-size: 10px;
+  text-align: right;
+}
+.ck-streak-opp {
+  font-weight: 700;
+}
+.ck-streak-game {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--ck-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+a.ck-streak-game:hover {
+  background: var(--ck-surface-2, rgb(255 255 255 / 0.08));
+}
+.ck-streak-date {
+  color: var(--ck-muted);
+  min-width: 82px;
+}
+.ck-streak-res {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ck-streak-w {
+  color: var(--ck-tv);
+}
+.ck-streak-l {
+  color: var(--ck-playoffs);
+}
+[data-streak] {
+  cursor: default;
+}

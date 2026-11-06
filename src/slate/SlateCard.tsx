@@ -21,6 +21,7 @@ import { leagueSeries } from '../data/series';
 import { fmtOdds, gameOdds, type DayOdds, type GameOdds, type SlateOdds } from './odds';
 import { GameLinkIcon, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
+import { streakAttr } from './streakPopup';
 
 /** The day's games (TV games only when filtered), in tip-off order; [] on a day without games. */
 export const slateGames = (data: CalendarData, date: string, tvOnly = false) => {
@@ -161,8 +162,8 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
           </span>
         </div>
         <div className="ck-slate-teams">
-          <TeamRow team={game.awayTeam} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} score={result && { n: result.score, win: result.win }} odds={odds?.away} provider={odds?.provider} />
-          <TeamRow team={game.homeTeam} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} score={result && { n: result.oppScore, win: !result.win }} odds={odds?.home} provider={odds?.provider} home />
+          <TeamRow team={game.awayTeam} gameId={game.gameId} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} score={result && { n: result.score, win: result.win }} odds={odds?.away} provider={odds?.provider} />
+          <TeamRow team={game.homeTeam} gameId={game.gameId} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} score={result && { n: result.oppScore, win: !result.win }} odds={odds?.home} provider={odds?.provider} home />
         </div>
       </div>
       {notes && (copy ? <NoteCopy note={notes.get(game.gameId)} /> : <NoteBox store={notes} gameId={game.gameId} label={`${away} at ${home}`} />)}
@@ -174,7 +175,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
  * "[@] [logo] Wizards 3-1 W2 [fatigue] 113": one team; the home team's row starts with the "@" (the away row keeps its
  * room). Record and streak going in (round 9, 2.1): the Team List season line's rule, colours and tooltip.
  */
-function TeamRow({ team, f, line, score, odds, provider, home = false }: { team: ScheduleGame['homeTeam']; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
+function TeamRow({ team, gameId, f, line, score, odds, provider, home = false }: { team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
   const t = TEAM_BY_ID.get(team.teamId);
   const rec = line?.record;
   const streak = line?.streak;
@@ -192,7 +193,7 @@ function TeamRow({ team, f, line, score, odds, provider, home = false }: { team:
       <span className="ck-slate-rec" data-tip={rec ? tip : undefined}>
         {rec ? `${rec.wins}-${rec.losses}` : ''}
       </span>
-      <span className={`ck-slate-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-testid="slate-streak" data-tip={streak ? tip : undefined}>
+      <span className={`ck-slate-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-testid="slate-streak" data-streak={streak ? streakAttr(team.teamId, gameId) : undefined} tabIndex={streak ? 0 : undefined} aria-label={streak ? tip : undefined}>
         {streak ? `${streak.kind}${streak.n}` : ''}
       </span>
       <Fatigue f={f} team={teamLabel(team)} shortChip />

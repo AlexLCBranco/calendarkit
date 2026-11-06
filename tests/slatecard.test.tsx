@@ -63,8 +63,10 @@ describe('streak going in', () => {
           expect(s.textContent, `${date} ${side}`).toBe(want);
           expect(s.classList.contains('ck-streak-w'), `${date} ${side} green`).toBe(want.startsWith('W'));
           expect(s.classList.contains('ck-streak-l'), `${date} ${side} red`).toBe(want.startsWith('L'));
-          if (want) expect(s.dataset.tip).toMatch(new RegExp(`^${t.teamTricode}: Game \\d+, record \\d+-\\d+ going in, on a ${want.slice(1)}-game ${want[0] === 'W' ? 'winning' : 'losing'} streak$`));
-          else expect(s.dataset.tip).toBeUndefined();
+          // round 21 (item 8): the text is the aria-label; hovering opens the streak popup (data-streak), not a tooltip
+          if (want) expect(s.dataset.streak).toBe(`${t.teamId}|${g.gameId}`);
+          if (want) expect(s.getAttribute('aria-label')).toMatch(new RegExp(`^${t.teamTricode}: Game \\d+, record \\d+-\\d+ going in, on a ${want.slice(1)}-game ${want[0] === 'W' ? 'winning' : 'losing'} streak$`));
+          else expect(s.dataset.streak).toBeUndefined();
         }
       }
       cleanup();

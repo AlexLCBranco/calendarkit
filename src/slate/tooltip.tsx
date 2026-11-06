@@ -39,7 +39,8 @@ export function useTooltip() {
   const ref = useRef<HTMLDivElement>(null);
   const show = (e: SyntheticEvent) => {
     const el = (e.target as Element).closest?.('[data-tip]');
-    if (!el) return setTip(undefined);
+    // round 21 (item 8): a streak has its popup instead
+    if (!el || (e.target as Element).closest?.('[data-streak]')) return setTip(undefined);
     const r = el.getBoundingClientRect();
     const text = el.getAttribute('data-tip')!;
     const days = el.getAttribute('data-tip-days') ?? undefined;

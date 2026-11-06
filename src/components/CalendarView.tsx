@@ -36,6 +36,7 @@ import { TeamMonthGrid } from './TeamMonthGrid';
 import { TeamPicker } from './TeamPicker';
 import { useTooltip } from '../slate/tooltip';
 import { useSeriesPopup } from '../slate/series';
+import { useStreakPopup } from '../slate/streakPopup';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
 import { fmtMonth, fmtRange, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
@@ -264,6 +265,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     row.classList.add('ck-series-picked');
     row.scrollIntoView?.({ block: 'nearest' });
   });
+  const streakPop = useStreakPopup(data, { gameLink });
   const series = useSeriesPopup(data, { gameLink, onPick: (g) => (setPicked(g.gameId), update({ mode: 'league', layout: 'list', date: g.dateEt })) });
   const team = state.mode === 'team';
   // League → Slate (round 7): desktop only. A Team view, or a widget too narrow for it, shows the List meanwhile (the
@@ -754,9 +756,9 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${teamMap ? ' ck-team-side' : ''}${list || slate ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={selKind ? onMarquee : undefined}
         style={{ maxWidth: size.width, height: list || slate ? size.height : undefined, minHeight: list || slate || compact ? undefined : size.height }}
-        onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e))}
-        onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e))}
-        onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave())}
+        onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e), streakPop.handlers.onMouseOver(e))}
+        onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e), streakPop.handlers.onFocus(e))}
+        onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave(), streakPop.handlers.onMouseLeave())}
         onBlur={tooltip.handlers.onBlur}
         onScrollCapture={onScrollCapture}
       >
@@ -927,6 +929,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         )}
         {tooltip.node}
         {series.node}
+        {streakPop.node}
         <div ref={marquee} className="ck-marquee" aria-hidden="true" data-testid="marquee" />
         <SelectionStyle store={selection} scope=".ck-select-area" />
         {selKind && <SelectionBar store={selection} copy={copySelection} />}

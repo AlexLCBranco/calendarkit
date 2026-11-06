@@ -6,16 +6,14 @@
 // stays open while the pointer is on the chip or on the popup, so its squares can be clicked; Escape closes it. It
 // starts no timer at rest (only the short close delay after the pointer leaves).
 
-import { useEffect, useLayoutEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { dateFormat, finalScore, overtime, type CalendarData } from '../data/model';
 import { leagueSeries, seriesChip, seriesStatus, type SeriesGame } from '../data/series';
 import { TEAM_BY_ID } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from './links';
-import { clampX } from './tooltip';
+import { useHoverPopup } from './hoverPopup';
 import { TeamLink } from './teamLink';
 
-const CLOSE_MS = 180;
 const fmtDate = (date: string, opts: Intl.DateTimeFormatOptions) => dateFormat('en-US', { ...opts, timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 const tri = (id: number) => TEAM_BY_ID.get(id)?.tricode ?? '?';
 
@@ -84,51 +82,15 @@ function Popup({ s, current, onPick, gameLink }: { s: SeriesGame; current: strin
   );
 }
 
-/** The widget's one series popup: spread `handlers` on the wrapper, render `node` inside it. */
+/** The widget's one series popup: spread `handlers` on the wrapper, render `node` inside it (round 21: on useHoverPopup). */
 export function useSeriesPopup(data: CalendarData | undefined, opts: { onPick?: (g: ScheduleGame) => void; gameLink?: GameLink } = {}) {
-  const [open, setOpen] = useState<{ gameId: string; x: number; top: number; bottom: number }>();
-  const ref = useRef<HTMLDivElement>(null);
-  const closer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const keep = () => clearTimeout(closer.current);
-  const later = () => {
-    keep();
-    closer.current = setTimeout(() => setOpen(undefined), CLOSE_MS);
-  };
-  const over = (e: SyntheticEvent) => {
-    const t = e.target as Element;
-    if (ref.current?.contains(t)) return keep();
-    const chip = t.closest?.('[data-series-game]');
-    if (!chip) return open && later();
-    keep();
-    const r = chip.getBoundingClientRect();
-    const gameId = chip.getAttribute('data-series-game')!;
-    setOpen((o) => (o && o.gameId === gameId && o.top === r.top && o.x === r.left + r.width / 2 ? o : { gameId, x: r.left + r.width / 2, top: r.top, bottom: r.bottom }));
-  };
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || !open) return;
-    el.style.left = `${clampX(open.x - el.offsetWidth / 2, el.offsetWidth)}px`;
-    const below = open.bottom + 6;
-    el.style.top = `${below + el.offsetHeight <= window.innerHeight - 4 ? below : Math.max(4, open.top - el.offsetHeight - 6)}px`;
-  });
-  useEffect(() => {
-    if (!open) return;
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(undefined);
-    window.addEventListener('keydown', esc);
-    return () => (window.removeEventListener('keydown', esc), keep());
-  }, [open]);
-  const s = open && data ? leagueSeries(data).get(open.gameId) : undefined;
-  const pick = opts.onPick && ((g: ScheduleGame) => (setOpen(undefined), opts.onPick!(g)));
-  return {
-    handlers: {
-      onMouseOver: over,
-      onFocus: (e: SyntheticEvent) => ((e.target as Element).closest?.('[data-series-game]') || ref.current?.contains(e.target as Node) ? over(e) : undefined),
-      onMouseLeave: () => open && later(),
+  return useHoverPopup(
+    'data-series-game',
+    (gameId, close) => {
+      const s = data ? leagueSeries(data).get(gameId) : undefined;
+      const pick = opts.onPick && ((g: ScheduleGame) => (close(), opts.onPick!(g)));
+      return s ? <Popup s={s} current={gameId} onPick={pick} gameLink={opts.gameLink} /> : null;
     },
-    node: s && (
-      <div ref={ref} className="ck-series-pop" role="dialog" aria-label="Season series" data-testid="series-popup" data-capture-exclude="true" onMouseEnter={keep} onMouseLeave={later}>
-        <Popup s={s} current={open!.gameId} onPick={pick} gameLink={opts.gameLink} />
-      </div>
-    ),
-  };
+    { className: 'ck-series-pop', label: 'Season series', testId: 'series-popup' },
+  );
 }
