@@ -41,11 +41,13 @@ const nights: Record<string, string[]> = {};
 const cupNights = new Set<string>();
 for (const d of raw.leagueSchedule.gameDates)
   for (const g of d.games) {
-    if (g.gameSubtype === 'in-season') cupNights.add(g.gameDateEst.slice(0, 10));
+    // (and knockout nights: their cards have the venue track, item 10)
+    if (g.gameSubtype === 'in-season' || g.gameSubtype === 'in-season-knockout' || /^006/.test(g.gameId)) cupNights.add(g.gameDateEst.slice(0, 10));
     if (/^00[2456]/.test(g.gameId)) (nights[g.gameDateEst.slice(0, 10)] ??= []).push(g.gameId);
   }
 for (const d of cupNights) delete nights[d];
-const dayWith = (n: number) => Object.keys(nights).sort().find((d) => nights[d]!.length === n)!;
+// a night of n games, else the night with the closest count (round 21: the only 1-game night is the Cup final, left out)
+const dayWith = (n: number) => Object.keys(nights).sort().find((d) => nights[d]!.length === n) ?? Object.keys(nights).sort().reduce((b, d) => (Math.abs(nights[d]!.length - n) < Math.abs(nights[b]!.length - n) ? d : b));
 
 /** Notes on the first three games of each night: one per slot on show, the third long enough to grow its card. */
 const NOTES: Record<string, { pre: string; live: string; post: string; shown: string }> = {};
@@ -165,7 +167,7 @@ for (const variant of ['notes', 'empty', 'hidden'] as Variant[]) {
       const copies: [Awaited<ReturnType<typeof copySlate>>, Awaited<ReturnType<typeof copySlate>>] = [await copySlate(old, 'copy-view', `same-ref-${n}-${variant}-${viewport.width}`), await copySlate(cur, 'copy-view', `same-cur-${n}-${variant}-${viewport.width}`)];
       const sameCopy = copies[0].png === copies[1].png;
       expect(sameCopy || (await diff(cur, copies[0].png, copies[1].png)), `copy, ${n} games, ${variant}: differing pixels`).toBe(true);
-      expect(copies[1].stage.cards.length).toBe(n);
+      expect(copies[1].stage.cards.length).toBe(nights[date]!.length);
       console.log(`[same] ${viewport.width} ${n} games ${variant}: screen ${screens[1]!.length} B identical=${same ? 'yes' : 'outside the corners (live)'}, copy ${copies[1].px.width}×${copies[1].px.height} identical=${sameCopy}`);
       await Promise.all([old.context().close(), cur.context().close()]);
     }

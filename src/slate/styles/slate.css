@@ -518,3 +518,32 @@ a.ck-streak-game:hover {
   background: rgb(194 65 59 / 0.3);
   color: #ffb3ae;
 }
+
+/* round 21 (items 4, 10): the one venue marker (VenueMarker.tsx): HOST on the host team, a high-contrast NEUTRAL badge with the arena */
+.ck-venue-host {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--ck-accent);
+  color: #06121f;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.ck-venue-neutral {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f5f5f5;
+  color: #111;
+  font-size: 10px;
+  font-weight: 800;
+}
+.ck-venue-tbd {
+  color: var(--ck-muted);
+  font-size: 10px;
+  font-style: italic;
+}
+.ck-slate-ko {
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  font-size: 10px;
+}

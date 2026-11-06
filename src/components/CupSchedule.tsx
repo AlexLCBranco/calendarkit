@@ -17,6 +17,8 @@ import { cupTag, finalScore, nationalTv, overtime, teamLabel, tipoff, type Calen
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { cupStakesNow } from '../data/cupStakes';
 import { useCupStakes } from '../slate/cupFates';
+import { HostTag, VenueBadge } from '../slate/VenueMarker';
+import { knockoutVenue } from '../data/knockout';
 import { cupBoard, cupNightHeading, cupNights, cupOpeningNight, cupTeamTag, type CupNight, groupNumberLine, groupShort, nightByGroup, teamCupGames } from '../data/cupSchedule';
 import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { GameLinkIcon, TeamLogo, TipTime } from '../slate/parts';
@@ -86,6 +88,8 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
   // round 21 (item 11): tonight's stakes (worked out after the first render, cached): a compact mark on the row (the
   // view must keep its one-line rows and fit the window), the chips themselves in the row's tooltip
   const chips = cupStakesNow(data, g.dateEt);
+  // round 21 (item 10): a knockout game's venue (the feed's: HOST on the host team, the Championship's neutral arena, or TBD)
+  const venue = g.isCupKnockout || g.gameType === 'cup-final' ? knockoutVenue(g) : undefined;
   const stakes = chips && g.isCupGroupGame ? [g.awayTeam, g.homeTeam].flatMap((t) => (chips.get(t.teamId) ?? []).map((c) => `${teamLabel(t)}: ${c.text} (${c.tip})`)) : [];
   const r = finalScore(g, g.awayTeam.teamId);
   const ot = r && overtime(g);
@@ -118,8 +122,9 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
         <TeamLogo team={g.awayTeam} />
         {team(g.awayTeam, !!r?.win)} <span className="ck-vsat">@</span> {team(g.homeTeam, !!r && !r.win)}
         <TeamLogo team={g.homeTeam} />
+        {venue?.kind === 'host' && <HostTag />}
       </span>
-      {by === 'group' ? result : pill ? <span className="ck-tag ck-cup ck-cg-pill">{pill}</span> : <span />}
+      {by === 'group' ? result : pill ? <span className="ck-tag ck-cup ck-cg-pill">{pill}</span> : venue?.kind === 'tbd' ? <VenueBadge venue={venue} /> : <span />}
       <span className="ck-cg-link">
         {stakes.length > 0 && (
           <span className="ck-stake" data-testid="cg-stakes" title={stakes.join(' · ')}>
@@ -244,6 +249,13 @@ function CupByDate({ data, size, today, timeZone, gameLink, onNight }: CupSchedu
                 <section key={night.date} className={`ck-cg-night${night.date === n.date ? ' ck-cg-picked' : ''}`} data-testid="cup-night" data-night={night.date} aria-label={cupNightHeading(night)} aria-current={night.date === n.date || undefined}>
                   <h3 className="ck-cg-head">
                     {cupNightHeading(night)} · {plural(games.length)}
+                    {/* round 21 (item 10): a neutral-court night's venue, once (the rows keep one line) */}
+                    {night.round === 'final' && games[0] && knockoutVenue(games[0]).kind === 'neutral' && (
+                      <>
+                        {' '}
+                        <VenueBadge venue={knockoutVenue(games[0])} />
+                      </>
+                    )}
                   </h3>
                   <div className="ck-cg-list">
                     {games.map((g, k) => (

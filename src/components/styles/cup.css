@@ -761,29 +761,7 @@
   flex-direction: column;
   align-items: flex-start;
 }
-/* the venue marker (VenueMarker.tsx) */
-.ck-venue-host {
-  padding: 0 4px;
-  border-radius: 4px;
-  background: var(--ck-accent);
-  color: #06121f;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-}
-.ck-venue-neutral {
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #f5f5f5;
-  color: #111;
-  font-size: 10px;
-  font-weight: 800;
-}
-.ck-venue-tbd {
-  color: var(--ck-muted);
-  font-size: 10px;
-  font-style: italic;
-}
+
 /* narrower windows (1600): West's three tables over East's (room for "depends on margin"); the race and the bracket half each */
 @media (max-width: 1800px) {
   .ck-sim-groups {

@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup), item 10 (v1.51.0, venue markers).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2461,3 +2461,13 @@ Cup header's row of the Groups page (and above the Simulator): each team's trico
 differential, its stakes chips (item 11), the game's ↗ link. Not there on other nights, and no room kept. To keep the
 Groups page on one screen at 1920 × 950 it sits in the header's free row space (no logos; it wraps inside the header): 0 px
 to spare there on a 9-game night; a decisive night with long chips could need one more line — flagged. Never in a copy.
+
+**Item 10 (v1.51.0): knockout venue markers.** One marker (`src/slate/VenueMarker.tsx`: `HostTag` "HOST" on the host
+team, `VenueBadge` "Neutral · Hinkle Fieldhouse, Indianapolis" in white, or "venue TBD"), its styles in slate.css. The
+venue is the feed's (`knockoutVenue`, src/data/knockout.ts): the Championship neutral at the feed's arena (checked: Hinkle
+Fieldhouse, Indianapolis), a quarterfinal / semifinal hosted by the feed's home team once the feed has both teams and the
+arena, TBD before (as now: the feed's QF / SF have no teams or arena). Where: the simulator's bracket (host = the seed the
+rules say hosts, live), the Slate's knockout cards (they use the Cup track's room: HOST on the host's row, the badge on the
+first row), the Cup schedule (HOST after the host team; "venue TBD" in the row; the Championship's badge in its night's
+heading, since the rows keep one line). Past seasons (item 9) store their own venues. slate-same.spec.ts now also leaves
+the knockout nights out (their cards change on purpose) and takes the closest night size when none has exactly n games.

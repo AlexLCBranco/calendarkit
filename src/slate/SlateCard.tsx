@@ -18,6 +18,8 @@ import { useCupFates, useCupStakes } from './cupFates';
 import { cupStakesNow, type StakeChip } from '../data/cupStakes';
 import { cupFatesNow, type Decided } from '../data/cupDecide';
 import { CupSquare } from './CupSquare';
+import { HostTag, VenueBadge } from './VenueMarker';
+import { knockoutVenue } from '../data/knockout';
 import type { GameLink } from './links';
 import { NoteBox, NoteCopy } from './NoteBox';
 import type { SlateNotes } from './notes';
@@ -94,7 +96,9 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
 }
 
 /** Round 21 (item 1): a night with Cup group games — every card gets the Cup track (layout.ts SLATE_CUP_TRACK). */
-export const isCupNight = (games: readonly ScheduleGame[]) => games.some((g) => g.isCupGroupGame);
+export const isCupNight = (games: readonly ScheduleGame[]) => games.some((g) => g.isCupGroupGame || isKnockout(g));
+/** Round 21 (item 10): a Cup knockout game (quarterfinal, semifinal, Championship). */
+export const isKnockout = (g: ScheduleGame) => g.isCupKnockout || g.gameType === 'cup-final';
 /** The night's Cup track: none, the squares, or the squares and the IN / OUT column (a Cup team on show is decided). */
 export const cupKind = (games: readonly ScheduleGame[], fates?: Decided, chips?: Map<number, StakeChip[]>): 0 | 1 | 2 | 3 => {
   if (!isCupNight(games)) return 0;
@@ -218,7 +222,7 @@ function TeamRow({ cup, team, gameId, f, line, score, odds, provider, home = fal
       <span className={`ck-slate-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-testid="slate-streak" data-streak={streak ? streakAttr(team.teamId, gameId) : undefined} tabIndex={streak ? 0 : undefined} aria-label={streak ? tip : undefined}>
         {streak ? `${streak.kind}${streak.n}` : ''}
       </span>
-      {cup && <CupTrack {...cup} teamId={team.teamId} />}
+      {cup && (isKnockout(cup.game) ? <KoTrack game={cup.game} teamId={team.teamId} home={home} /> : <CupTrack {...cup} teamId={team.teamId} />)}
       <Fatigue f={f} team={teamLabel(team)} shortChip />
       <span className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>{score?.n ?? ''}</span>
       {/* round 14 (item 4): the moneyline, decimal; its column is reserved, empty until (unless) the odds come */}
@@ -285,6 +289,21 @@ export function StakeChips({ chips, fate }: { chips?: StakeChip[]; fate?: 'in' |
           {c.text}
         </span>
       ))}
+    </span>
+  );
+}
+
+/**
+ * Round 21 (item 10): a knockout card's track — the venue, from the feed (knockoutVenue): "HOST" on the host team's row;
+ * the Championship's "Neutral · Hinkle Fieldhouse, Indianapolis" on the first row (neither team gets HOST); "venue TBD"
+ * while the feed hasn't set it.
+ */
+function KoTrack({ game, teamId, home }: { game: ScheduleGame; teamId: number; home: boolean }) {
+  const venue = knockoutVenue(game);
+  return (
+    <span className="ck-slate-cup ck-slate-ko" data-testid="slate-ko">
+      {venue.kind === 'host' && venue.teamId === teamId && teamId !== 0 && <HostTag />}
+      {!home && venue.kind !== 'host' && <VenueBadge venue={venue} />}
     </span>
   );
 }

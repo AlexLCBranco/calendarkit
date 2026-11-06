@@ -13,12 +13,12 @@ export const HostTag = () => (
 );
 
 /** The game's venue badge: neutral (with the arena) or TBD; a hosted game shows nothing here (its HostTag is on the team). */
-export function VenueBadge({ venue }: { venue: Venue }) {
+export function VenueBadge({ venue, compact = false }: { venue: Venue; /** the arena without its city (in the tooltip) */ compact?: boolean }) {
   if (venue.kind === 'neutral')
     return (
-      <span className="ck-venue-neutral" data-testid="venue-neutral" title="Neutral court: neither team is at home">
+      <span className="ck-venue-neutral" data-testid="venue-neutral" title={`Neutral court: neither team is at home${venue.city ? ` (${venue.arena}, ${venue.city})` : ''}`}>
         Neutral · {venue.arena}
-        {venue.city ? `, ${venue.city}` : ''}
+        {venue.city && !compact ? `, ${venue.city}` : ''}
       </span>
     );
   if (venue.kind === 'tbd')
