@@ -1,4 +1,4 @@
-// Round 10 (1.4): the Slate drawn from its self-contained part (src/slate/) is pixel for pixel the reference Slate (REF below; v1.27.0 until round 14, v1.33.0 until round 22 — tight cards, odds, series chip —, now v1.55.0: records / streaks through a final game, the break badge) — on
+// Round 10 (1.4): the Slate drawn from its self-contained part (src/slate/) is pixel for pixel the reference Slate (REF below; v1.27.0 until round 14, v1.33.0 until round 22 — tight cards, odds, series chip —, now v1.57.0: records / streaks through a final game, the break badge, the copies' larger info) — on
 // screen and in its copied images — measured in the same run against that build (scripts/perf-ref.ts, served with the
 // same snapshot). At 1280 × 900 (desktop) and 1920 × 1080 (desktop-xl); days of 1, 5, 12 and 15 games; with notes, with
 // no notes at all, and with notes but "Hide all notes". Move REF on purpose only when the Slate is meant to change.
@@ -10,7 +10,7 @@ import { APP } from './app';
 import { serveRef } from './refbuild';
 import { copySlate } from './slatecopy';
 
-const REF = { commit: 'c60bc9248770a749d98a4228d9dc9790bc706b92', version: '1.55.0' };
+const REF = { commit: 'e667036f80594a0940113d0003db6c2edf0050fb', version: '1.57.0' };
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [1, 5, 12, 15];
 
