@@ -81,7 +81,7 @@ for (const [name, search] of [
     await page.mouse.move(2, 2);
     const plain = page.locator(`${scope}.ck-fm:not(.ck-fm-n1):not(.ck-fm-n2):not(.ck-fm-tif)`).first();
     await plain.focus();
-    await expect(tip).toHaveText(/^[A-Z]{3} — rested( Record going in: \d+-\d+)?$/);
+    await expect(tip).toHaveText(/^[A-Z]{3} — rested( Record (going in|after the game): \d+-\d+)?$/);
     // legend: visible, inside the window, under the grid / list
     const legend = page.getByTestId('fatigue-legend');
     // round 5: the views with the Fatigue component (League List, 1 week) explain it; 2 weeks keeps the tricode legend

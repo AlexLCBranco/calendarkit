@@ -1,4 +1,4 @@
-// Round 9, Part 2: Slate cards in a real browser against the served snapshot — the streak going in after each record
+// Round 9, Part 2: Slate cards in a real browser against the served snapshot — the streak (through a final game, round 22) after each record
 // (as of that night: a past night's streaks, not today's), national TV games outlined and tinted green (only they, and
 // in copies), and the hoopsjunkie link as a "↗" icon after the time: click / middle / ctrl open the game page in a new
 // tab, no underline, never in a copy; the team names are no link. Desktop widths.
@@ -21,7 +21,7 @@ const snapshot = (page: Page) =>
     const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const games = (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
     games.sort((a, b) => a.gameDateTimeUTC.localeCompare(b.gameDateTimeUTC));
-    // streak going in, per game and team: regular-season games (002) only, while every earlier one is final
+    // streak per game and team (through it once final, round 22; going in before): regular-season games (002) only, while every earlier one is final
     const streak: Record<string, string> = {};
     const state = new Map<number, { known: boolean; last?: 'W' | 'L'; n: number }>();
     for (const g of games) {
@@ -32,12 +32,13 @@ const snapshot = (page: Page) =>
           continue;
         }
         const s = state.get(t.teamId) ?? { known: true, n: 0 };
-        streak[`${g.gameId}:${t.teamId}`] = s.known && s.last ? `${s.last}${s.n}` : '';
         if (g.gameStatus === 3 && s.known) {
           const r = t.score > o.score ? 'W' : 'L';
           s.n = s.last === r ? s.n + 1 : 1;
           s.last = r;
-        } else s.known = false;
+        }
+        streak[`${g.gameId}:${t.teamId}`] = s.known && s.last ? `${s.last}${s.n}` : '';
+        if (g.gameStatus !== 3) s.known = false;
         state.set(t.teamId, s);
       }
     }

@@ -96,9 +96,13 @@ describe('leagueFatigue (model)', () => {
     expect(rested).toBeGreaterThan(400);
   });
 
-  it('record going in on the tooltip (known on each team\'s first game: 0-0)', () => {
+  it('record on the tooltip: after the game once final (round 22), going in on a game to come', () => {
     const g = data.games.find((x) => x.gameType === 'regular')!;
-    expect(leagueFatigue(data).get(g.gameId)!.get(g.homeTeam.teamId)!.tip).toContain('Record going in: 0-0');
+    expect(g.status).toBe('final');
+    const home = g.homeTeam.score > g.awayTeam.score;
+    expect(leagueFatigue(data).get(g.gameId)!.get(g.homeTeam.teamId)!.tip).toContain(`Record after the game: ${home ? '1-0' : '0-1'}`);
+    const next = data.games.find((x) => x.gameType === 'regular' && x.status !== 'final')!;
+    expect(leagueFatigue(data).get(next.gameId)!.get(next.homeTeam.teamId)!.tip).toMatch(/Record going in: \d+-\d+/);
   });
 });
 

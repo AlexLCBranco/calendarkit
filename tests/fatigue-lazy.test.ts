@@ -10,7 +10,7 @@ import { parseSchedule } from '../src/shared/nba-schedule/parse';
 import feed from './fixtures/feed-2026-10-23.json';
 import { data } from './feed';
 
-const plain = (f: TeamFatigue | undefined) => f && { nights: f.nights, pairs: f.pairs.map((p) => [p.first.gameId, p.second.gameId, p.code, p.travels]), travels: f.travels, tif: f.tif, tip: f.tip, days: f.days };
+const plain = (f: TeamFatigue | undefined) => f && { nights: f.nights, pairs: f.pairs.map((p) => [p.first.gameId, p.second.gameId, p.code, p.travels]), travels: f.travels, tif: f.tif, tip: f.tip.replace('Record after the game:', 'Record going in:'), days: f.days }; // round 22 renamed the line on final games; the frozen copy has the old label
 const fresh = () => buildCalendarData(parseSchedule(feed)); // a new data set = a new cache entry
 
 describe('lazy leagueFatigue', () => {

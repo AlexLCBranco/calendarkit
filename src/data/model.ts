@@ -360,22 +360,27 @@ export function overtime(g: ScheduleGame): string | undefined {
 export interface SeasonLine {
   /** Regular-season game number (1–82); undefined for the Cup Final, play-in and playoff games. */
   game?: number;
-  /** Regular-season record going into the game; undefined while an earlier regular-season game isn't final. */
+  /**
+   * Regular-season record: after the game once it is final (its own result counted), else going into it (= the team's
+   * current record for its next game). Undefined while an earlier regular-season game isn't final.
+   */
   record?: { wins: number; losses: number };
-  /** Win/loss streak going into the game (W3 = won the last 3); undefined before the first result or with the record. */
+  /** Win/loss streak with the same rule (a final win after a loss: W1); undefined before the first result or with the record. */
   streak?: { kind: 'W' | 'L'; n: number };
+  /** The game is final and record / streak include it (round 22, item 13; before, every line was "going in"). */
+  after?: boolean;
 }
 
 /**
- * A team's regular-season game numbers and the record and streak it takes into each game, counted from the final
- * scores (the Cup Final doesn't count, as in the standings). Both are known up to the first game not yet final,
- * inclusive.
+ * A team's regular-season game numbers and its record and streak in each game, counted from the final scores (the Cup
+ * Final doesn't count, as in the standings): after the game when it is final, going in when it isn't (round 22).
+ * Both are known up to the first game not yet final, inclusive.
  */
 export type TeamRecord = NonNullable<SeasonLine['record']>;
 const recordsCache = new WeakMap<CalendarData, Map<string, Map<number, TeamRecord>>>();
 
 /**
- * Every game's records going in, for both teams (gameId → teamId → W-L): the Team List season line's rule (teamSeason)
+ * Every game's records (after it once final, else going in), for both teams (gameId → teamId → W-L): the Team List season line's rule (teamSeason)
  * for all 30 teams. Computed once per data set (League List rows read it while scrolling).
  */
 export function leagueRecords(data: CalendarData): Map<string, Map<number, TeamRecord>> {
@@ -425,13 +430,17 @@ export function teamSeason(data: CalendarData, teamId: number): Map<string, Seas
       out.set(g.gameId, {});
       continue;
     }
-    out.set(g.gameId, { game: ++n, record: rec && { ...rec }, streak: rec && streak && { ...streak } });
+    // round 22 (item 13): a final game's line includes its own result (no one-game lag); a game to come keeps the
+    // line going in, which is the team's current record and streak for its next game
     const r = finalScore(g, teamId);
-    rec = rec && r ? { wins: rec.wins + (r.win ? 1 : 0), losses: rec.losses + (r.win ? 0 : 1) } : undefined;
+    if (rec && r) rec = { wins: rec.wins + (r.win ? 1 : 0), losses: rec.losses + (r.win ? 0 : 1) };
     if (r) {
       const kind = r.win ? 'W' : 'L';
       streak = streak?.kind === kind ? { kind, n: streak.n + 1 } : { kind, n: 1 };
     }
+    out.set(g.gameId, { game: ++n, record: rec && { ...rec }, streak: rec && streak && { ...streak }, ...(r && rec ? { after: true } : {}) });
+    // a game not final leaves every later record unknown (as before: known up to the first game not final, inclusive)
+    if (!r) rec = undefined;
   }
   return out;
 }

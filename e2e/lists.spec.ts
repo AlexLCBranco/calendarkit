@@ -349,13 +349,13 @@ test('team list: every game in order, opens at the next game, earlier games abov
   expect(errors).toEqual([]);
 });
 
-test('team list season line: game number + record + streak going in on the right, final score beside the names', async ({ page }, info) => {
+test('team list season line: game number + record + streak on the right (after a final game, going in before), final score beside the names', async ({ page }, info) => {
   const errors = collectErrors(page);
   await open(page, '?view=team&layout=list&team=BOS');
   const list = page.getByTestId('team-list');
   await expect(list.locator('article').first()).toBeAttached();
-  // expected straight from the served snapshot: regular games (002…) numbered in order; record going in = the
-  // feed's own W-L on the previous game once that game is Final (gameStatus 3)
+  // expected straight from the served snapshot: regular games (002…) numbered in order; a Final game (gameStatus 3) shows
+  // the feed's own W-L on it and the streak through it (round 22, item 13); a game to come, the last Final's
   const want = await page.evaluate(async () => {
     const BOS = 1610612738;
     const raw = await (await fetch('/calendar/data/schedule.json')).json();
@@ -371,14 +371,13 @@ test('team list season line: game number + record + streak going in on the right
       const [self, opp] = g.homeTeam.teamId === BOS ? [g.homeTeam, g.awayTeam] : [g.awayTeam, g.homeTeam];
       const final = g.gameStatus === 3;
       const regular = g.gameId.startsWith('002');
-      const row = { id: g.gameId, game: regular ? `G${++n}` : null, record: regular ? (rec ?? '') : null, streak: regular ? (rec === null ? '' : streak) : null, scores: final ? [String(self.score), String(opp.score)] : [] };
-      if (regular) {
-        rec = final && rec !== null ? `${self.wins}-${self.losses}` : null;
-        if (final) {
-          const k = self.score > opp.score ? 'W' : 'L';
-          streak = streak.startsWith(k) ? `${k}${Number(streak.slice(1)) + 1}` : `${k}1`;
-        }
+      if (regular && final && rec !== null) {
+        rec = `${self.wins}-${self.losses}`;
+        const k = self.score > opp.score ? 'W' : 'L';
+        streak = streak.startsWith(k) ? `${k}${Number(streak.slice(1)) + 1}` : `${k}1`;
       }
+      const row = { id: g.gameId, game: regular ? `G${++n}` : null, record: regular ? (rec ?? '') : null, streak: regular ? (rec === null ? '' : streak) : null, scores: final ? [String(self.score), String(opp.score)] : [] };
+      if (regular && !final) rec = null;
       return row;
     });
   });

@@ -45,7 +45,7 @@ test('League List: mirrored matchup, one x per part down every day, one line per
           col(kind + 'at').push(round(m.querySelector('.ck-vsat')!.getBoundingClientRect().left));
           col(kind + 'home').push(round(teams[1]!.right));
           col(kind + 'logo2').push(round(logos[1]!.left));
-          // records going in (round 4, item 5): slots outside the logos, desktop/tablet only
+          // records (round 4, item 5; after the game once final, round 22): slots outside the logos, desktop/tablet only
           const recs = [...m.querySelectorAll('.ck-rec')].map((r) => r.getBoundingClientRect());
           if (recs.length === 2) col(kind + 'rec1').push(round(recs[0]!.right)), col(kind + 'rec2').push(round(recs[1]!.left));
           else if (recs.length || !phone) out.bad.push(`${c.dataset.gameId}: ${recs.length} record slots`);

@@ -67,7 +67,7 @@ function teamFatigue(data: CalendarData, teamId: number, records: () => ReturnTy
       if (!legs.length) lines.push(`${tri} — ${tif ? mergedChip(tif.merged) : 'rested'}`);
       // round 6: overlapping 3-in-4 sets as one stretch (was a line per set); the tooltip draws its days under the text
       if (tif) lines.push(`${mergedChip(tif.merged)}: ${mergedTip(tif.merged)}`);
-      if (rec) lines.push(`Record going in: ${rec.wins}-${rec.losses}`);
+      if (rec) lines.push(`${g.status === 'final' ? 'Record after the game' : 'Record going in'}: ${rec.wins}-${rec.losses}`);
       return lines.join('\n');
     };
     out.set(g.gameId, lazyTexts({ nights: legs.map((l) => l.night), pairs: legs.map((l) => l.pair), travels: legs.some((l) => l.pair.travels), tif }, tip, () => tif && mergedDays(tif.merged)));

@@ -2508,3 +2508,14 @@ named "In-Season Tournament" (Alex's brief).
 out of its square in Minnesota's Cup row on the CI runner — the Cup rows' side padding 6 → 4 px and the squares' padding 0
 there (13 px to spare beside "Minnesota Timberwolves" on Windows, was ~6). (2) The live job's hand-off test waited for
 the exact old URL; since v1.42.0 the page then adds its own `date=`.
+
+### Round 22 (2026-11-06): improvement batch (15 items, desktop)
+Items 1–8 (Cup) and 11 (streak popup) were already built in round 21 (v1.46.0 – v1.54.0); this round builds the rest.
+
+**Item 13 (v1.54.2): records and streaks without the one-game lag.** `teamSeason` (model.ts) now gives a final game's
+line *after* it (its own result counted: a win → W1, the next win → W2, a loss → L1; `SeasonLine.after`), and a game to
+come the line going in (= the team's current record and streak). Same rule everywhere the lines are read: the Team List
+season block, the League List records, the Slate cards' record + streak, the streak popup (`streakGames(data, team,
+gameId)` now runs through a final game), the fatigue tooltip ("Record after the game" / "Record going in"). Tooltips say
+which ("record 0-1 after it" / "going in"). Tests: season, records, slatecard, streak, leaguefatigue, mirror, overtime
+(unit) and lists, slatecards, league-fatigue (e2e) — 15 of the unit tests fail on v1.54.1.

@@ -42,7 +42,7 @@ describe('League List', () => {
       }
     }
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: played.dateEt }} />).container;
-    expect(text(el.querySelector(`.ck-card[data-game-id="${played.gameId}"] .ck-matchup`)!)).toBe('0-0 BOS 113 @ 121 NYK 0-0'); // records going in (item 5): both teams' first game
+    expect(text(el.querySelector(`.ck-card[data-game-id="${played.gameId}"] .ck-matchup`)!)).toBe('0-1 BOS 113 @ 121 NYK 1-0'); // records after the game (round 22, item 13): both teams' first game, BOS lost
   });
 
   it('phone: mirrored logos, natural widths (no score on phones)', () => {

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 9, Part 2: Slate cards — the streak going in after each team's record (as of that game), national TV games
+// Round 9, Part 2: Slate cards — the streak after each team's record (as of that game: through it once final, round 22), national TV games
 // outlined and tinted green (only they), and the hoopsjunkie link as a "↗" icon after the time (team names no link).
 // Expected streaks are worked out here from the scores, independently of model.ts.
 
@@ -19,13 +19,17 @@ const NOW = Date.parse('2026-11-15T15:00:00Z');
 const DESKTOP = { width: 1280, height: 900 };
 const cards = () => [...document.querySelectorAll<HTMLElement>('[data-testid="slate"] .ck-slate-card')];
 
-/** A team's streak going into `g`: the run of equal results over its regular-season games final before `g`. */
+/**
+ * A team's streak on `g`'s card: the run of equal results over its regular-season games final up to `g` — `g` itself
+ * included once it is final (round 22, item 13: no one-game lag), the streak going in while it isn't.
+ */
 function streakInto(games: ScheduleGame[], teamId: number, g: ScheduleGame): string {
   if (g.gameType !== 'regular') return '';
   const mine = games.filter((x) => x.gameType === 'regular' && (x.homeTeam.teamId === teamId || x.awayTeam.teamId === teamId)).sort((a, b) => (a.startTimeUtc ?? a.dateEt).localeCompare(b.startTimeUtc ?? b.dateEt));
-  const before = mine.slice(0, mine.indexOf(g));
+  const earlier = mine.slice(0, mine.indexOf(g));
   // the record must be known: every earlier game final
-  if (before.some((x) => x.status !== 'final')) return '';
+  if (earlier.some((x) => x.status !== 'final')) return '';
+  const before = g.status === 'final' ? [...earlier, g] : earlier;
   const results = before.map((x) => {
     const own = x.homeTeam.teamId === teamId ? x.homeTeam.score : x.awayTeam.score;
     const opp = x.homeTeam.teamId === teamId ? x.awayTeam.score : x.homeTeam.score;
@@ -40,7 +44,7 @@ function streakInto(games: ScheduleGame[], teamId: number, g: ScheduleGame): str
 const streaksOn = () =>
   cards().flatMap((c) => [...c.querySelectorAll<HTMLElement>('.ck-slate-row')].map((r) => `${c.dataset.gameId} ${r.dataset.side} ${r.querySelector('[data-testid="slate-streak"]')!.textContent}`));
 
-describe('streak going in', () => {
+describe('streak on the card (through the game once final, going in before)', () => {
   // BOS: W W L (Nov 1–3), then Nov 5 at NYK; NYK: L (Nov 1), W (Nov 3) …
   const games = [
     game({ id: '0022600001', date: '2026-11-01', utc: '2026-11-01T23:00:00Z', home: TEAM.BOS, away: TEAM.NYK, final: [100, 110] }),
@@ -65,7 +69,7 @@ describe('streak going in', () => {
           expect(s.classList.contains('ck-streak-l'), `${date} ${side} red`).toBe(want.startsWith('L'));
           // round 21 (item 8): the text is the aria-label; hovering opens the streak popup (data-streak), not a tooltip
           if (want) expect(s.dataset.streak).toBe(`${t.teamId}|${g.gameId}`);
-          if (want) expect(s.getAttribute('aria-label')).toMatch(new RegExp(`^${t.teamTricode}: Game \\d+, record \\d+-\\d+ going in, on a ${want.slice(1)}-game ${want[0] === 'W' ? 'winning' : 'losing'} streak$`));
+          if (want) expect(s.getAttribute('aria-label')).toMatch(new RegExp(`^${t.teamTricode}: Game \\d+, record \\d+-\\d+ ${g.status === 'final' ? 'after it' : 'going in'}, on a ${want.slice(1)}-game ${want[0] === 'W' ? 'winning' : 'losing'} streak$`));
           else expect(s.dataset.streak).toBeUndefined();
         }
       }
@@ -79,8 +83,9 @@ describe('streak going in', () => {
     cleanup();
     render(<SlateView data={d} date="2026-11-05" tvOnly={false} timeZone="UTC" />);
     const nov5 = streaksOn();
-    // BOS beat NYK (Nov 1) and won at MIA (Nov 2): W2 going into Nov 3; lost to LAL there: L1 going into Nov 5
-    expect(nov3).toContain('0022600003 home W2');
+    // BOS beat NYK (Nov 1), won at MIA (Nov 2), lost to LAL on Nov 3: L1 on that card (the loss counted), L1 going into Nov 5
+    expect(nov3).toContain('0022600003 home L1');
+    expect(nov3).toContain('0022600003 away W1');
     expect(nov5).toContain('0022600005 away L1');
   });
 

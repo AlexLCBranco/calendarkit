@@ -33,10 +33,14 @@ describe('streakGames', () => {
     expect(s.every((x) => x.win)).toBe(true);
   });
   it('a losing streak, and 1-game streaks', () => {
-    // going into Nov 4: L1 (lost at NYK on Nov 3; the OT win before it is another streak)
-    expect(streakGames(data, TEAM.BOS, G[2]!.gameId).map((x) => [x.game.dateEt, x.win])).toEqual([['2026-11-03', false]]);
-    // going into Nov 3: W1
-    expect(streakGames(data, TEAM.BOS, G[1]!.gameId).map((x) => [x.game.dateEt, x.win])).toEqual([['2026-11-01', true]]);
+    // round 22: a final game's streak includes it — through Nov 3: L1 (lost at NYK; the OT win before it is another streak)
+    expect(streakGames(data, TEAM.BOS, G[1]!.gameId).map((x) => [x.game.dateEt, x.win])).toEqual([['2026-11-03', false]]);
+    // through Nov 1: W1 (its first game, a win → W1); through Nov 4: W1 again (win after a loss)
+    expect(streakGames(data, TEAM.BOS, G[0]!.gameId).map((x) => [x.game.dateEt, x.win])).toEqual([['2026-11-01', true]]);
+    expect(streakGames(data, TEAM.BOS, G[2]!.gameId).map((x) => [x.game.dateEt, x.win])).toEqual([['2026-11-04', true]]);
+    // through Nov 6: W2; through Nov 7: W3 = the game to come on Nov 9 (its streak going in, the current one)
+    expect(streakGames(data, TEAM.BOS, G[3]!.gameId)).toHaveLength(2);
+    expect(streakGames(data, TEAM.BOS, G[4]!.gameId)).toEqual(streakGames(data, TEAM.BOS, G[5]!.gameId));
     // DEN lost its only game: L1
     expect(streakGames(data, TEAM.DEN).map((x) => [x.game.dateEt, x.win])).toEqual([['2026-11-04', false]]);
     // NYK: W1, current

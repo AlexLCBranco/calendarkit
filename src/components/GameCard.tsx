@@ -208,12 +208,12 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   );
   const loss = (first: boolean) => (result && result.win !== first ? ' ck-loss' : '');
 
-  // league records going in, on the outside of each logo (an empty slot when unknown)
+  // league records (after the game once final, round 22; else going in), on the outside of each logo (an empty slot when unknown)
   const recOf = (t: ScheduleGame['homeTeam']) => records?.get(t.teamId);
   const recText = (r?: TeamRecord) => (r ? `${r.wins}-${r.losses}` : '');
   const rec = (t: ScheduleGame['homeTeam'], home = false) =>
     records && (
-      <span className={`ck-rec${home ? ' ck-rec-home' : ''}`} title={recOf(t) ? `${teamLabel(t)} record going in` : undefined}>
+      <span className={`ck-rec${home ? ' ck-rec-home' : ''}`} title={recOf(t) ? `${teamLabel(t)} record ${result ? 'after the game' : 'going in'}` : undefined}>
         {recText(recOf(t))}
       </span>
     );
@@ -272,7 +272,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   const seasonText = season ? seasonTip(season) : '';
   const label = side
     ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${seasonText ? `, ${seasonText}` : ''}`
-    : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${recOf(game.awayTeam) && recOf(game.homeTeam) ? `, records going in ${away} ${recText(recOf(game.awayTeam))}, ${home} ${recText(recOf(game.homeTeam))}` : ''}`;
+    : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${recOf(game.awayTeam) && recOf(game.homeTeam) ? `, records ${result ? 'after the game' : 'going in'} ${away} ${recText(recOf(game.awayTeam))}, ${home} ${recText(recOf(game.homeTeam))}` : ''}`;
   const nights = bracketNights ?? b2b.map((n) => n.night);
   const bracket = side && nights.length ? nights.join(' ') : undefined;
   const cols = fatigueColumns && !!side;

@@ -2,7 +2,7 @@
 // + the opponent (logo, tricode: a team link), the result, final score and margin ("W 118–104, +14"), OT when it went
 // there. Each game is its hoopsjunkie page (new tab). Built on the series popup's behaviour (useHoverPopup): it stays
 // open while the pointer is in it, never in a copy, and needs no request — the games come from the schedule loaded.
-// A streak element carries data-streak="<teamId>|<gameId going into, or empty for the current streak>".
+// A streak element carries data-streak="<teamId>|<gameId of the line (through it once final), or empty for the current streak>".
 
 import { dateFormat, type CalendarData } from '../data/model';
 import { streakGames } from '../data/streak';

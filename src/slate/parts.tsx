@@ -6,9 +6,12 @@ import type { SeasonLine, Tipoff } from '../data/model';
 import { teamLogo } from '../data/teams';
 import { TeamLink } from './teamLink';
 
-/** The season line's tooltip: "Game 2, record 0-1 going in, on a 1-game losing streak" ('' without a game number). */
-export const seasonTip = ({ game, record, streak }: SeasonLine) =>
-  game ? `Game ${game}${record ? `, record ${record.wins}-${record.losses} going in` : ''}${streak ? `, on a ${streak.n}-game ${streak.kind === 'W' ? 'winning' : 'losing'} streak` : ''}` : '';
+/**
+ * The season line's tooltip: "Game 2, record 0-1 going in, on a 1-game losing streak", or once the game is final
+ * "Game 2, record 1-1 after it, on a 1-game winning streak" (round 22) ('' without a game number).
+ */
+export const seasonTip = ({ game, record, streak, after }: SeasonLine) =>
+  game ? `Game ${game}${record ? `, record ${record.wins}-${record.losses} ${after ? 'after it' : 'going in'}` : ''}${streak ? `, on a ${streak.n}-game ${streak.kind === 'W' ? 'winning' : 'losing'} streak` : ''}` : '';
 
 /** Team logo on its light disc (round 15: a team link); an undecided team gets an empty slot of the same size. */
 export function TeamLogo({ team, link = true }: { team: ScheduleGame['homeTeam']; /** false: never a link (the team picker) */ link?: boolean }) {

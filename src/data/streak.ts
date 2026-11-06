@@ -18,14 +18,15 @@ export interface StreakGame {
 }
 
 /**
- * The streak `teamId` takes into `beforeGameId` (or its current streak, without one): its last finished regular-season
- * games of the same result, newest first. Empty before the first result.
+ * The streak shown on `gameId`'s line (or the current streak, without one): through that game when it is final (its
+ * own result included, round 22), going into it when it isn't — its last finished regular-season games of the same
+ * result, newest first. Empty before the first result.
  */
-export function streakGames(data: CalendarData, teamId: number, beforeGameId?: string): StreakGame[] {
+export function streakGames(data: CalendarData, teamId: number, gameId?: string): StreakGame[] {
   const all = teamGames(data, teamId);
-  const end = beforeGameId ? all.findIndex((g) => g.gameId === beforeGameId) : all.length;
+  const at = gameId ? all.findIndex((g) => g.gameId === gameId) : -1;
   const done: StreakGame[] = [];
-  for (const g of all.slice(0, end < 0 ? all.length : end)) {
+  for (const g of at < 0 ? all : all.slice(0, at + 1)) {
     if (g.gameType !== 'regular') continue;
     const r = finalScore(g, teamId);
     if (!r) continue;
