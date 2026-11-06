@@ -20,9 +20,11 @@ export interface CopyButtonProps {
   /** `hover`: shown on hover/focus of the parent only (day cells, game cards). */
   hover?: boolean;
   testId?: string;
+  /** Round 21 (item 7): a visible label after the glyph ("Copy"); the tooltip stays `label`. */
+  text?: string;
 }
 
-export function CopyButton({ label, copy, of, hover = false, testId }: CopyButtonProps) {
+export function CopyButton({ label, copy, of, hover = false, testId, text }: CopyButtonProps) {
   const [state, setState] = useState<CopyState>('idle');
 
   async function handleClick(e: MouseEvent<HTMLButtonElement>) {
@@ -47,13 +49,15 @@ export function CopyButton({ label, copy, of, hover = false, testId }: CopyButto
   return (
     <button
       type="button"
-      className={`ck-copy${hover ? ' ck-copy-hover' : ''}`}
+      className={`ck-copy${hover ? ' ck-copy-hover' : ''}${text ? ' ck-copy-text' : ''}`}
       onClick={handleClick}
       data-capture-exclude="true"
       data-state={state}
       data-testid={testId}
       aria-label={label}
       title={label}
-    />
+    >
+      {text && <span className="ck-copy-label">{text}</span>}
+    </button>
   );
 }

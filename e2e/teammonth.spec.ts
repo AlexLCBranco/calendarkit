@@ -76,7 +76,7 @@ test('opens on the month of the next game, that game at the top; the top bar sta
   await expect(monthTitle(page, compact)).toHaveText(title(next.date.slice(0, 7)));
   await expect.poll(() => topRow(page)).toBe(next.date);
   expect((await rowDates(page)).every((d) => d.startsWith(next.date.slice(0, 7)))).toBe(true);
-  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(40);
+  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // round 21: two rows
   // the title is plain text, inside the window, not cut off
   const t = await monthTitle(page, compact).evaluate((e) => ({ w: e.scrollWidth, cw: e.clientWidth, right: e.getBoundingClientRect().right, vw: innerWidth, tag: e.tagName }));
   expect(t.w).toBeLessThanOrEqual(t.cw + 1);

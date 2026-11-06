@@ -86,7 +86,19 @@ async function open(browser: Browser, base: string, date: string, variant: Varia
  * byte-identical). Locally, nothing is masked.
  */
 const LIVE = !!process.env.E2E_BASE_URL;
-const shoot = (page: Page) => page.locator('.ck-slate').screenshot({ animations: 'disabled', caret: 'hide', ...(LIVE ? { mask: [page.locator('.ck-slate .ck-logo-backing')], maskColor: '#ff00ff' } : {}) });
+/**
+ * Round 21 (item 7): the current top bar has two rows, so its Slate starts lower — and Chromium rasterizes the same card
+ * up to 1 level apart (logo discs more) at another y. The screen is taken with the top bar out of the layout in both
+ * builds, so the Slate fills the same box in both; the bar is put back for the copies (their button is in it).
+ */
+const shoot = async (page: Page) => {
+  const off = await page.addStyleTag({ content: '[data-testid="top-bar"] { display: none !important; }' });
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  const png = await page.locator('.ck-slate').screenshot({ animations: 'disabled', caret: 'hide', ...(LIVE ? { mask: [page.locator('.ck-slate .ck-logo-backing')], maskColor: '#ff00ff' } : {}) });
+  await off.evaluate((e) => (e as Element).remove());
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+  return png;
+};
 const logos = (page: Page) => page.locator('.ck-slate img').evaluateAll((is) => is.map((i) => [new URL((i as HTMLImageElement).src).pathname.split('/').pop(), i.getBoundingClientRect().width, i.getBoundingClientRect().height, (i as HTMLImageElement).naturalWidth > 0]));
 
 /** How many pixels of two PNGs (base64) differ, or the size mismatch; pixels inside `skip` boxes don't count. */

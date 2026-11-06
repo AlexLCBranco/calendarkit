@@ -1,14 +1,35 @@
 /* Top bar: title, League | Team, List | Calendar, team picker, period navigation, weeks, TV filter, note — one row
    on desktop; wraps (two rows on phones), never wider than the widget. */
+/* Round 21 (item 7): two rows — row 1 global (history, destinations | notes, Quick standings, Copy), row 2 the
+   destination's (Schedule: scope picker, date block, views | options). Every row piece has a fixed width up to the
+   views, so nothing moves between views; the options sit on the right. */
 .ck-toolbar {
   display: flex;
-  flex-wrap: wrap;
-  /* columns 6 px apart (12 before round 11, 8 before round 17) so Team → List keeps one row at 1920 px with the
-     Standings tab and button; rows still 8 px apart, so 2-row bars (1280) keep their height */
-  gap: 8px 6px; /* rows 8 px apart as before (2-row bars keep their height) */
-  align-items: center;
-  margin-bottom: 12px;
+  flex-direction: column;
+  /* round 21: 6 px between the rows and 8 px under the bar (was one row, 12 px under), so the Cup views still fit */
+  gap: 6px;
+  margin-bottom: 8px;
   min-width: 0;
+}
+.ck-bar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  min-width: 0;
+}
+.ck-bar-right {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.ck-cup-stage {
+  color: var(--ck-muted);
+  font-size: 13px;
+  white-space: nowrap;
 }
 .ck-title {
   font-size: 16px;
@@ -24,24 +45,42 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+/* One segmented control for everything (destinations, views, ranges, Cup sub-tabs): 36 px tall, 8 px corners */
 .ck-tabs {
   display: inline-flex;
+  height: 36px;
+  box-sizing: border-box;
   border: 1px solid var(--ck-border);
   border-radius: 8px;
   overflow: hidden;
+  flex: none;
 }
 .ck-tab {
   background: var(--ck-surface);
   color: var(--ck-muted);
   border: 0;
-  padding: 7px 14px;
+  padding: 0 14px;
   font: inherit;
+  font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
 }
-.ck-tabs-view .ck-tab {
-  /* League | Team | Cup | Standings: narrower tabs (round 11: 10 px; round 17: 8 px), for the same reason */
-  padding: 7px 8px;
+/* round 21: each tab is as wide as its bold (selected) text, so selecting one never shifts its neighbours */
+.ck-tab {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.ck-tab::after {
+  content: attr(data-text);
+  font-weight: 600;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+.ck-tab:hover:not(.ck-tab-selected) {
+  color: var(--ck-text);
 }
 .ck-tab-selected {
   background: var(--ck-accent);
@@ -121,19 +160,71 @@
   gap: 4px;
 }
 
-/* the header's "Standings" button */
+/* One button style (round 21): Quick standings, Copy, Today, the picker — 36 px tall, 8 px corners */
+.ck-button,
 .ck-st-button {
+  height: 36px;
+  box-sizing: border-box;
   border: 1px solid var(--ck-border);
   border-radius: 8px;
   background: var(--ck-surface);
   color: var(--ck-text);
   font: inherit;
-  padding: 5px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 12px;
   cursor: pointer;
   white-space: nowrap;
+  flex: none;
+}
+.ck-button:hover,
+.ck-st-button:hover {
+  border-color: var(--ck-accent);
 }
 .ck-st-button[aria-expanded='true'] {
   background: var(--ck-accent);
   color: #06121f;
   font-weight: 600;
+}
+
+/* the Schedule's scope picker: fixed width ("All teams" or "BOS" + ×), so the date block after it never moves */
+.ck-picker-scope {
+  display: inline-flex;
+  width: 150px;
+  flex: none;
+  gap: 4px;
+}
+.ck-picker-scope .ck-picker-button {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  box-sizing: border-box;
+}
+.ck-picker-clear {
+  flex: none;
+  width: 30px;
+  height: 36px;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ck-picker-clear:hover {
+  color: var(--ck-text);
+  border-color: var(--ck-accent);
+}
+.ck-picker-all {
+  grid-column: 1 / -1;
+  font-weight: 600;
+}
+/* the date block: fixed width whatever the view or the title (the Today button is always there) */
+.ck-date-block {
+  flex: none;
+}
+.ck-compact .ck-picker-scope {
+  width: auto;
 }

@@ -428,6 +428,32 @@
 .ck-cup-strip .ck-strip-days {
   grid-template-columns: repeat(var(--ck-nights), minmax(0, 1fr));
 }
+/* round 21: one line per night ("Fri Nov 6 · 9"), so the By date view still fits the window under the two-row top bar */
+.ck-cup-strip .ck-strip-day {
+  flex-direction: row;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 0;
+}
+.ck-cup-strip .ck-strip-num {
+  font-size: 14px;
+}
+.ck-cup-strip .ck-strip-sub::before {
+  content: '· ';
+}
+.ck-cup-strip .ck-strip-arrow {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+}
+.ck-cup-strip .ck-strip {
+  grid-template-columns: 24px 1fr 24px;
+  margin-bottom: 2px;
+}
+.ck-cup-bydate .ck-cg-card {
+  margin-bottom: 6px;
+}
 .ck-cup-team {
   flex: none;
   width: 100%;

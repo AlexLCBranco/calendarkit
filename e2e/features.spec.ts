@@ -43,7 +43,8 @@ const sunday = (d: string) => addDays(d, -new Date(`${d}T00:00:00Z`).getUTCDay()
 /** Rows of the top bar: distinct vertical positions of its items (centers, 4 px tolerance). */
 const barRows = (page: Page) =>
   page.getByTestId('top-bar').evaluate((bar) => {
-    const items = [...bar.children].filter((c) => (c as HTMLElement).offsetWidth > 1);
+    // round 21: the pieces of both rows (a row that wraps counts as more rows)
+    const items = [...bar.querySelectorAll(':scope > .ck-bar-row > *')].filter((c) => (c as HTMLElement).offsetWidth > 1);
     const centers = items.map((c) => {
       const r = c.getBoundingClientRect();
       return r.top + r.height / 2;
@@ -64,7 +65,7 @@ const cellSizes = (page: Page, sel: string) =>
     return { n: cells.length, wSpread: Math.max(...w) - Math.min(...w), hSpread: Math.max(...h) - Math.min(...h), h: Math.min(...h), w: Math.min(...w) };
   }, sel);
 
-test('top bar: one row at 1920 px in every view, at most two rows on phones, never sideways scroll', async ({ page }, info) => {
+test('top bar (round 21: two rows): two rows at 1920 px in every view, at most four on phones, never sideways scroll', async ({ page }, info) => {
   const errors = collectErrors(page);
   const p = info.project.name;
   for (const search of ['?view=league&layout=list', '?view=league&layout=calendar', '?view=league&layout=calendar&weeks=2', '?view=team&layout=list&team=POR', '?view=team&layout=calendar&team=POR']) {
@@ -72,12 +73,12 @@ test('top bar: one row at 1920 px in every view, at most two rows on phones, nev
     const r = await barRows(page);
     console.log(`[${p}] top bar ${search}: ${r.rows} row(s), ${r.height.toFixed(0)} px, ${r.items} items`);
     if (p === 'desktop-xl') {
-      expect(r.rows, search).toBe(1);
-      expect(r.height, search).toBeLessThanOrEqual(40);
+      expect(r.rows, search).toBe(2);
+      expect(r.height, search).toBeLessThanOrEqual(78);
       await expect(page.getByTestId('tz-note')).toHaveText(/^Times in your time zone \(America\/Sao_Paulo\)$/);
       await expect(page.getByTestId('tz-note')).toHaveCSS('font-size', '12px');
     }
-    if (p === 'phone') expect(r.rows, search).toBeLessThanOrEqual(2);
+    if (p === 'phone') expect(r.rows, search).toBeLessThanOrEqual(4);
     expect(await sideways(page), search).toBeLessThanOrEqual(0);
   }
   expect(errors).toEqual([]);
@@ -100,12 +101,13 @@ test('team header and team picker: logos, mouse and keyboard, team change', asyn
   expect(h.disc).toBe(p === 'phone' ? 40 : 48);
   expect(h.visible).toBe(true);
   expect(h.font).toBeGreaterThan(h.biggestOther); // the most prominent text above the content
-  // picker: logo on the button, all 30 with loaded logos in the list, inside the viewport
+  // picker: logo on the button, "All teams" + all 30 with loaded logos in the list, inside the viewport
   const btn = page.getByTestId('team-picker');
   await expect(btn.locator('img')).toHaveAttribute('src', '/calendar/logos/BOS.svg');
   await btn.click();
   const list = page.getByRole('listbox', { name: 'Teams' });
-  await expect(list.getByRole('option')).toHaveCount(30);
+  await expect(list.getByRole('option')).toHaveCount(31);
+  await expect(list.getByRole('option').first()).toHaveText('All teams');
   await imagesLoaded(page);
   expect(await list.evaluate((l) => [...l.querySelectorAll('img')].filter((i) => i.naturalWidth > 0).length)).toBe(30);
   const box = (await list.boundingBox())!;
@@ -333,8 +335,8 @@ test('league week view: 7 equal columns, counts match the data, toggle, prev/nex
   await page.mouse.move(0, 0);
   await shot(page, 'league-calendar-2w', p);
 
-  // month popup: counts per day, jump to any week
-  await title.click();
+  // month popup (round 21: the calendar icon after ›, as in every view): counts per day, jump to any week
+  await page.getByTestId('date-pick').click();
   const popup = page.getByRole('dialog', { name: 'Jump to a week' });
   await expect(popup).toBeVisible();
   await expect(popup.getByLabel(`November 2: ${count('2026-11-02', 1)} games`)).toBeVisible();

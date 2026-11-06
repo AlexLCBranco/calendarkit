@@ -130,3 +130,14 @@
 .ck-team-side > .ck-team-header {
   margin-left: 0;
 }
+
+/* round 21 (item 7): Slate opened from a team's view — that team's game outlined (never in a copy: copies render their own cards) */
+.ck-slate-card.ck-slate-focus {
+  outline: 2px solid var(--ck-accent);
+  outline-offset: 1px;
+}
+.ck-slate-nofocus {
+  margin: 0 0 8px;
+  color: var(--ck-muted);
+  font-size: 13px;
+}

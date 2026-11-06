@@ -22,13 +22,15 @@ const popup = () => screen.getByRole('dialog', { name: 'Pick a date' });
 const open = () => fireEvent.click(screen.getByRole('button', { name: 'Pick a date' }));
 
 describe('League List', () => {
-  it('icon next to the title; popup only while open; counts per day (TV filter too); a date jumps there', () => {
+  it('icon after the next arrow (round 21: ‹ date › · calendar · Today); popup only while open; counts per day (TV filter too); a date jumps there', () => {
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-17' }} />);
     expect(screen.queryByRole('dialog')).toBeNull();
     const icon = screen.getByRole('button', { name: 'Pick a date' });
     expect(icon.getAttribute('aria-expanded')).toBe('false');
-    // right after the title
-    expect(screen.getByTestId('day-title').nextElementSibling).toBe(icon);
+    // round 21: ‹ title › · calendar · Today
+    expect(screen.getByTestId('day-title').nextElementSibling!.getAttribute('aria-label')).toBe('Next day');
+    expect(screen.getByTestId('day-title').nextElementSibling!.nextElementSibling).toBe(icon);
+    expect(icon.nextElementSibling).toBe(screen.getByTestId('today'));
     open();
     expect(icon.getAttribute('aria-expanded')).toBe('true');
     expect(within(popup()).getByText('November 2026')).toBeTruthy();
@@ -91,7 +93,9 @@ describe('Team List', () => {
     const all = teamGames(data, LAL);
     // round 9: the list holds November's rows (the month of the next game); these picks stay in it
     const games = all.filter((g) => g.dateEt.startsWith('2026-11'));
-    expect(screen.getByTestId('team-day-title').nextElementSibling).toBe(screen.getByRole('button', { name: 'Pick a date' }));
+    // round 21: ‹ title › · calendar · Today, as in every view (‹ › = previous / next game)
+    expect(screen.getByTestId('team-day-title').nextElementSibling!.getAttribute('aria-label')).toBe('Next game');
+    expect(screen.getByTestId('team-day-title').nextElementSibling!.nextElementSibling).toBe(screen.getByRole('button', { name: 'Pick a date' }));
     open();
     for (const c of popup().querySelectorAll<HTMLButtonElement>('[data-date]')) {
       const g = all.find((x) => x.dateEt === c.dataset.date);

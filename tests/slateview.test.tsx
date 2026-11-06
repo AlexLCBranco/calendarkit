@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { CalendarView } from '../src/components/CalendarView';
 import { readUrlState } from '../src/App';
 import { data, feed } from './feed';
+import { clearScope, pickScope } from './nav';
 
 afterEach(cleanup);
 
@@ -50,14 +51,14 @@ describe('Slate view', () => {
     expect(title()).toBe('Sunday, November 15, 2026');
   });
 
-  it('no week toggle, no countdown; Team shows its List and League comes back to the Slate', () => {
+  it('no week toggle, no countdown; a team shows its List (Slate still offered, round 21) and All teams comes back to the Slate', () => {
     open();
     expect(screen.queryByRole('tab', { name: '2 weeks' })).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'Team' }));
-    expect(screen.queryByRole('tab', { name: 'Slate' })).toBeNull();
+    pickScope('Atlanta Hawks');
+    expect(screen.getByRole('tab', { name: 'Slate' }).getAttribute('aria-selected')).toBe('false');
     expect(screen.getByRole('tab', { name: 'List' }).getAttribute('aria-selected')).toBe('true');
     expect(document.querySelector('[data-testid="team-list"]')).toBeTruthy();
-    fireEvent.click(screen.getByRole('tab', { name: 'League' }));
+    clearScope();
     expect(document.querySelector('[data-testid="slate"]')).toBeTruthy();
   });
 

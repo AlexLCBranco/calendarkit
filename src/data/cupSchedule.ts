@@ -145,3 +145,26 @@ export const cupTeamTag = (data: CalendarData, teamId: number) => (g: ScheduleGa
   if (!n) return cupTag(g);
   return `Group round ${g.homeTeam.teamId === teamId ? n.home : n.away} · ${groupShort(g.gameSubLabel)}`;
 };
+
+const fmtNight = (date: string) => dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
+
+/**
+ * Round 21 (item 7): the Cup bar's stage label for `today` (local date) — "Group play starts Fri, Oct 30", "Group play ·
+ * night 2 of 7" on a Cup night, "Group play · next night Fri, Nov 13 (3 of 7)" between, "Quarterfinals · tonight" /
+ * "Semifinals · Tue, Dec 8", "Cup complete" after the last night. From the schedule's Cup nights only.
+ */
+export function cupStageLabel(nights: readonly CupNight[], today: string): string {
+  const first = nights[0];
+  const last = nights.at(-1);
+  if (!first || !last) return '';
+  if (today < first.date) return `Group play starts ${fmtNight(first.date)}`;
+  if (today > last.date) return 'Cup complete';
+  const cur = nights.find((n) => n.date >= today)!;
+  const tonight = cur.date === today;
+  if (cur.round === 'group') {
+    const group = nights.filter((n) => n.round === 'group');
+    const i = group.indexOf(cur) + 1;
+    return tonight ? `Group play · night ${i} of ${group.length}` : `Group play · next night ${fmtNight(cur.date)} (${i} of ${group.length})`;
+  }
+  return `${CUP_ROUND_LABEL[cur.round]} · ${tonight ? 'tonight' : fmtNight(cur.date)}`;
+}

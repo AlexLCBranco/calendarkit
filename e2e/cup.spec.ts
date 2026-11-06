@@ -6,6 +6,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
 import { APP } from './app';
+import { clearScope, destination, pickScope } from './nav';
 
 const OUT = 'test-output/copy-images';
 const desktop = (name: string) => ['desktop', 'desktop-xl'].includes(name);
@@ -62,7 +63,7 @@ async function allPlayed(page: Page) {
 
 async function openCup(page: Page) {
   await page.goto(`${APP}?view=league&layout=list`);
-  await page.getByRole('tab', { name: 'Cup' }).click();
+  await destination(page, 'Cup').click();
   await expect(page.getByTestId('cup-group')).toHaveCount(6);
   await page.evaluate(() => document.fonts.ready);
   // the logos load over the network on the live site: wait for them (a broken one fails here by timeout)
@@ -153,8 +154,8 @@ test.describe('Cup view', () => {
 
     // nothing below the panels is cut off and the page doesn't scroll sideways
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
-    // the League | Team | Cup switch, and back to League
-    await page.getByRole('tab', { name: 'League' }).click();
+    // the destinations: back to Schedule
+    await destination(page, 'Schedule').click();
     await expect(page.getByTestId('cup')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
@@ -207,11 +208,11 @@ test.describe('Cup view', () => {
     const chunks: string[] = [];
     page.on('request', (r) => /CupView/.test(r.url()) && chunks.push(r.url()));
     await page.goto(`${APP}?view=league&layout=list`);
-    await expect(page.getByRole('tab', { name: 'Cup' })).toBeVisible();
-    await page.getByRole('tab', { name: 'Team' }).click();
-    await page.getByRole('tab', { name: 'League' }).click();
+    await expect(destination(page, 'Cup')).toBeVisible();
+    await pickScope(page, 'Boston Celtics');
+    await clearScope(page);
     expect(chunks).toEqual([]);
-    await page.getByRole('tab', { name: 'Cup' }).click();
+    await destination(page, 'Cup').click();
     await expect(page.getByTestId('cup-group')).toHaveCount(6);
     expect(chunks.length).toBeGreaterThan(0);
   });
@@ -383,7 +384,7 @@ test.describe('Cup view fits the window', () => {
 test('no Cup view on tablets and phones; a Cup link shows the League view there', async ({ page }, info) => {
   test.skip(desktop(info.project.name), 'tablet and phone only');
   await page.goto(`${APP}?view=cup`);
-  await expect(page.getByRole('tab', { name: 'League' })).toHaveAttribute('aria-selected', 'true');
+  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('tab', { name: 'Cup' })).toHaveCount(0);
   await expect(page.getByTestId('cup')).toHaveCount(0);
 });

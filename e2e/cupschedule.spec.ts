@@ -142,7 +142,7 @@ test.describe('Cup schedule', () => {
   test('opens on Standings; Schedule on League By group; the switches; not remembered across a reload', async ({ page }) => {
     await page.goto(`${APP}?view=cup`);
     await expect(page.getByTestId('cup-group')).toHaveCount(6);
-    await expect(page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Standings' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Groups' })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
     await expect(page.getByTestId('cup-league')).toHaveAttribute('data-by', 'group');
     await expect(page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'League' })).toHaveAttribute('aria-selected', 'true');
@@ -160,7 +160,7 @@ test.describe('Cup schedule', () => {
     await expect(page.getByTestId('cup-pick')).toBeVisible();
     await page.reload();
     await expect(page.getByTestId('cup-group')).toHaveCount(6);
-    await expect(page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Standings' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Groups' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.getByTestId('cup-league')).toHaveCount(0);
     await page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
     await expect(page.getByTestId('cup-league')).toHaveAttribute('data-by', 'group');
@@ -492,7 +492,7 @@ test.describe('Cup schedule fits the window', () => {
       await page.screenshot({ path: `test-output/cupschedule-team-${size.width}x${size.height}.png` });
       console.log(`[cup schedule fit] team ${size.width}×${size.height}: ${r.rows} games, view bottom ${r.bottom} / window ${r.win}, row text ${r.font}`);
       expect(r.rows).toBe(7);
-      expect((await page.getByTestId('top-bar').boundingBox())!.height, 'top bar one row with the Cup switches and the picker').toBeLessThanOrEqual(40);
+      expect((await page.getByTestId('top-bar').boundingBox())!.height, 'top bar: its two rows (round 21), the Cup switches and the picker in row 2').toBeLessThanOrEqual(78);
       expect(r.scroll, 'page scrolls vertically').toBeLessThanOrEqual(r.win);
       expect(r.out).toEqual([]);
       expect([r.font, r.zoom], 'rows at the Team List’s size').toEqual([ref.font, ref.zoom]);

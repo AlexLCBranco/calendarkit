@@ -4,7 +4,9 @@
 // self-contained part (src/slate/, also used by the gauntlet's Slate widget); this file adds calendarkit's own frame —
 // the scroller and the notes toolbar (Switch all, Hide all notes, Export / Import).
 
-import { useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { TEAM_BY_ID } from '../data/teams';
+import { dateFormat } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { CalendarData } from '../data/model';
 import type { GameLink } from '../slate/links';
@@ -31,17 +33,39 @@ export interface SlateViewProps {
   /** "Hide all notes": info-only cards (a view toggle, never stored). */
   hideNotes?: boolean;
   onHideNotes?: (hide: boolean) => void;
+  /**
+   * Round 21 (item 7): the team the Slate was opened from (Slate picked in a team's view): its game is highlighted and
+   * scrolled into view, or a small note says the team doesn't play that day.
+   */
+  focusTeam?: number;
+  /** Local date, for the note's "today". */
+  today?: string;
 }
 
 /** Slate on desktop only: from the lists' column width (960 px; the grid is that wide), so not on tablets or phones. */
 export const SLATE_MIN_WIDTH = LIST_MAX_WIDTH;
 
-export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840, notes, odds, hideNotes = false, onHideNotes }: SlateViewProps) {
+export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840, notes, odds, hideNotes = false, onHideNotes, focusTeam, today }: SlateViewProps) {
   const games = slateGames(data, date, tvOnly);
+  const focusGame = focusTeam ? games.find((g) => g.homeTeam.teamId === focusTeam || g.awayTeam.teamId === focusTeam) : undefined;
+  const scroll = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const card = focusGame && scroll.current?.querySelector<HTMLElement>(`.ck-slate-card[data-game-id="${focusGame.gameId}"]`);
+    if (!card) return;
+    card.classList.add('ck-slate-focus');
+    card.scrollIntoView?.({ block: 'nearest' });
+    return () => card.classList.remove('ck-slate-focus');
+  }, [focusGame, hideNotes]);
+  const tri = focusTeam ? TEAM_BY_ID.get(focusTeam)?.tricode : undefined;
   return (
     <section className="ck-slate" aria-label="Games of the day" data-day={date}>
       {notes && <NotesTools notes={notes} games={games} hideNotes={hideNotes} onHideNotes={onHideNotes} />}
-      <div className="ck-slate-scroll" data-testid="slate" data-select-scroller>
+      {tri && !focusGame && (
+        <p className="ck-slate-nofocus" data-testid="slate-no-team" data-capture-exclude="true">
+          {tri} doesn’t play {date === today ? 'today' : `on ${dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`))}`}
+        </p>
+      )}
+      <div className="ck-slate-scroll" data-testid="slate" data-select-scroller ref={scroll}>
         <SlateDay data={data} date={date} tvOnly={tvOnly} timeZone={timeZone} gameLink={gameLink} width={width} notes={hideNotes ? undefined : notes} odds={odds} />
       </div>
     </section>

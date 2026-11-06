@@ -28,7 +28,7 @@ test('stamp in the viewer\'s zone, muted while fresh; orange with a tooltip afte
   expect(s!.y).toBeGreaterThan(n!.y);
   expect(Math.abs(s!.x + s!.width - (n!.x + n!.width))).toBeLessThan(1);
   const bar = (await page.getByTestId('top-bar').boundingBox())!;
-  if (info.project.name === 'desktop-xl') expect(bar.height).toBeLessThanOrEqual(40);
+  if (info.project.name === 'desktop-xl') expect(bar.height).toBeLessThanOrEqual(78); // round 21: two rows
   expect(s!.y + s!.height).toBeLessThanOrEqual(bar.y + bar.height + 0.5);
 
   await page.clock.setFixedTime(Date.parse(time) + 37 * H);

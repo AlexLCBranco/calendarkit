@@ -36,7 +36,22 @@
   content: '!';
   font-weight: 700;
 }
-.ck-compact .ck-toolbar > .ck-copy {
+/* round 21: the top bar's Copy has its label, the shared button size */
+.ck-copy.ck-copy-text {
+  width: auto;
+  height: 36px;
+  gap: 6px;
+  grid-auto-flow: column;
+  padding: 0 12px;
+  color: var(--ck-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.ck-copy.ck-copy-text::before {
+  color: var(--ck-muted);
+  font-size: 15px;
+}
+.ck-compact .ck-toolbar .ck-copy {
   order: 1;
   width: 28px;
   height: 28px;

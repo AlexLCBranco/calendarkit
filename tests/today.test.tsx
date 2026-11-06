@@ -88,9 +88,10 @@ describe('Today button', () => {
     expect(today().textContent).toBe('Today');
   });
 
-  it('sits right after the next arrow, and is left out on phones', () => {
+  it('sits after the next arrow and the calendar icon (round 21), and is left out on phones', () => {
     render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" />);
-    expect(screen.getByLabelText('Next day').nextElementSibling).toBe(today());
+    expect(screen.getByLabelText('Next day').nextElementSibling).toBe(screen.getByTestId('date-pick'));
+    expect(screen.getByTestId('date-pick').nextElementSibling).toBe(today());
     cleanup();
     render(<CalendarView data={data} size={PHONE} now={NOW} timeZone="UTC" />);
     expect(screen.queryByTestId('today')).toBeNull();

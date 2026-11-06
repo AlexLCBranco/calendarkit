@@ -282,10 +282,10 @@ describe('Cup view switches', () => {
   const open = () => render(<CalendarView data={realData} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'cup' }} />);
   const tabs = (name: string) => within(screen.getByRole('tablist', { name }));
 
-  it('opens on Standings; Schedule opens on League By group; Team shows the picker until a team is picked; nothing remembered', async () => {
+  it('opens on Groups; Schedule opens on League By group; Team shows the picker until a team is picked; nothing remembered', async () => {
     open();
     expect(await screen.findByTestId('cup')).toBeTruthy(); // the standings
-    expect(tabs('Cup view').getByRole('tab', { name: 'Standings' }).getAttribute('aria-selected')).toBe('true');
+    expect(tabs('Cup view').getByRole('tab', { name: 'Groups' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.queryByRole('tablist', { name: 'Cup list' })).toBeNull();
     fireEvent.click(tabs('Cup view').getByRole('tab', { name: 'Schedule' }));
     expect(await screen.findByTestId('cup-league')).toBeTruthy();
@@ -310,10 +310,10 @@ describe('Cup view switches', () => {
     expect(screen.getByTestId('cup-team')).toBeTruthy();
     expect(screen.getByTestId('team-picker').textContent).toMatch(/Boston Celtics/);
     // leaving the Cup view and coming back: Standings again, and the team forgotten
-    fireEvent.click(tabs('View').getByRole('tab', { name: 'League' }));
-    fireEvent.click(tabs('View').getByRole('tab', { name: 'Cup' }));
+    fireEvent.click(tabs('Destination').getByRole('tab', { name: 'Schedule' }));
+    fireEvent.click(tabs('Destination').getByRole('tab', { name: 'Cup' }));
     expect(await screen.findByTestId('cup')).toBeTruthy();
-    expect(tabs('Cup view').getByRole('tab', { name: 'Standings' }).getAttribute('aria-selected')).toBe('true');
+    expect(tabs('Cup view').getByRole('tab', { name: 'Groups' }).getAttribute('aria-selected')).toBe('true');
     fireEvent.click(tabs('Cup view').getByRole('tab', { name: 'Schedule' }));
     await screen.findByTestId('cup-league');
     expect(by()).toBe('group');
@@ -324,6 +324,6 @@ describe('Cup view switches', () => {
     open();
     expect(await screen.findByTestId('cup')).toBeTruthy();
     await act(async () => {});
-    expect(tabs('Cup view').getByRole('tab', { name: 'Standings' }).getAttribute('aria-selected')).toBe('true');
+    expect(tabs('Cup view').getByRole('tab', { name: 'Groups' }).getAttribute('aria-selected')).toBe('true');
   });
 });

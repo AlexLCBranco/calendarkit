@@ -63,20 +63,23 @@ describe('team header', () => {
 });
 
 describe('team picker', () => {
-  it('button shows the team logo and full name (tricode on phones); the list has all 30 teams with logos, grouped by conference · division', () => {
+  it('scope picker (round 21): the team logo and tricode (full name as tooltip), a × back to All teams; the list starts with "All teams", then all 30 teams with logos, grouped by conference · division', () => {
     team(TEAM.BOS, 'list');
     const btn = screen.getByTestId('team-picker');
-    expect(btn.textContent).toMatch(/Boston Celtics/);
+    expect(btn.textContent).toMatch(/^BOS/);
+    expect(btn.querySelector('[title="Boston Celtics"]')).toBeTruthy();
+    expect(screen.getByTestId('scope-clear').getAttribute('aria-label')).toBe('All teams');
     expect(imgs(btn)).toEqual(['/calendar/logos/BOS.svg']);
     expect(btn.getAttribute('aria-haspopup')).toBe('listbox');
-    expect(screen.getByRole('button', { name: /^Team Boston Celtics/ })).toBe(btn);
+    expect(screen.getByRole('button', { name: /^Team BOS/ })).toBe(btn);
     fireEvent.click(btn);
     const list = screen.getByRole('listbox', { name: 'Teams' });
     const groups = within(list).getAllByRole('group');
     expect(groups.map((g) => g.querySelector('.ck-picker-head')!.textContent)).toEqual([
       'East · Atlantic', 'East · Central', 'East · Southeast', 'West · Northwest', 'West · Pacific', 'West · Southwest',
     ]);
-    const options = within(list).getAllByRole('option');
+    const [all, ...options] = within(list).getAllByRole('option');
+    expect(all!.textContent).toBe('All teams');
     expect(options).toHaveLength(30);
     for (const o of options) {
       const t = TEAM_BY_ID.get(Number(o.getAttribute('data-team-id')))!;
@@ -116,6 +119,8 @@ describe('team picker', () => {
     fireEvent.keyDown(list, { key: 'End' });
     expect(active()).toBe('San Antonio Spurs');
     fireEvent.keyDown(list, { key: 'Home' });
+    expect(active()).toBe('All teams');
+    fireEvent.keyDown(list, { key: 'ArrowDown' });
     expect(active()).toBe('Boston Celtics');
     fireEvent.keyDown(list, { key: 'm' }); // next team starting with M, in picker order
     expect(active()).toBe('Milwaukee Bucks');

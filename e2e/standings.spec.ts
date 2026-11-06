@@ -6,6 +6,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
 import { APP } from './app';
+import { destination, pickScope } from './nav';
 
 const OUT = 'test-output/copy-images';
 const desktop = (name: string) => ['desktop', 'desktop-xl'].includes(name);
@@ -156,8 +157,8 @@ test.describe('Standings view', () => {
 
   test('the column set is kept while the page is open, not across a reload', async ({ page }) => {
     await openStandings(page, 'schedule');
-    await page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'League' }).click();
-    await page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'Standings' }).click();
+    await destination(page, 'Schedule').click();
+    await destination(page, 'Standings').click();
     await expect(page.getByTestId('standings-capture')).toHaveAttribute('data-set', 'schedule');
     await page.reload();
     await expect(page.getByTestId('standings-capture')).toHaveAttribute('data-set', 'main');
@@ -179,7 +180,8 @@ test.describe('Standings view', () => {
     const tri = await row.getAttribute('data-team');
     await expect(row.locator('a[data-team-link]')).toHaveCount(2);
     await row.locator('.ck-st-name').click();
-    await expect(page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'Team' })).toHaveAttribute('aria-selected', 'true');
+    await expect(destination(page, 'Schedule')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByTestId('team-header')).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`team=${tri}`));
   });
 
@@ -222,10 +224,10 @@ test.describe('Standings view', () => {
     const chunks: string[] = [];
     page.on('request', (r) => /Standings/.test(r.url()) && chunks.push(r.url()));
     await page.goto(`${APP}?view=league&layout=list`);
-    await expect(page.getByRole('tab', { name: 'Standings' })).toBeVisible();
-    await page.getByRole('tab', { name: 'Team' }).click();
+    await expect(destination(page, 'Standings')).toBeVisible();
+    await pickScope(page, 'Boston Celtics');
     expect(chunks).toEqual([]);
-    await page.getByRole('tab', { name: 'Standings' }).click();
+    await destination(page, 'Standings').click();
     await expect(page.getByTestId('standings-table').first()).toBeVisible();
     expect(chunks.length).toBeGreaterThan(0);
   });
@@ -383,7 +385,7 @@ test.describe('Standings popup', () => {
 test('no Standings tab or button on tablets and phones; a Standings link shows the League view there', async ({ page }, info) => {
   test.skip(desktop(info.project.name), 'tablet and phone only');
   await page.goto(`${APP}?view=standings`);
-  await expect(page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'League' })).toHaveAttribute('aria-selected', 'true');
+  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('tab', { name: 'Standings' })).toHaveCount(0);
   await expect(page.getByTestId('standings-button')).toHaveCount(0);
   await expect(page.getByTestId('standings-table')).toHaveCount(0);

@@ -9,6 +9,7 @@ import { CalendarView } from '../src/components/CalendarView';
 import { hasNationalTv, teamGames } from '../src/data/model';
 import { data } from './feed';
 import { TEAM } from './synthetic';
+import { clearScope } from './nav';
 
 afterEach(cleanup);
 
@@ -39,7 +40,7 @@ describe('control + URL', () => {
     expect(screen.queryByRole('tablist', { name: 'Span' })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
     expect(document.querySelector('.ck-team-month')!.getAttribute('data-span')).toBe('2w');
-    fireEvent.click(screen.getByRole('tab', { name: 'League' }));
+    clearScope();
     expect(screen.queryByRole('tablist', { name: 'Span' })).toBeNull();
     expect(screen.getByRole('tablist', { name: 'Weeks' })).toBeTruthy(); // the league's own control is unchanged
   });

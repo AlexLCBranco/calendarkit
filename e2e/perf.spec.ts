@@ -337,22 +337,24 @@ test('switching views: click → next frame', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   await page.goto('/calendar/?view=league&layout=list&team=BOS');
   await expect(page.getByTestId('day-title')).toBeVisible();
-  // League List → League Calendar (week view) → Team Calendar → Team List → League List
+  // League List → League Calendar (week view) → Team Calendar → Team List → League List. Round 21: the League | Team
+  // tabs are the scope picker — Team = BOS's option (the list opened before the timer), League = its "×".
   const steps: [string, string, string][] = [
-    ['switch-league-calendar', 'Layout', 'Calendar'],
-    ['switch-team-calendar', 'View', 'Team'],
-    ['switch-team-list', 'Layout', 'List'],
-    ['switch-league-list', 'View', 'League'],
+    ['switch-league-calendar', '[role=tablist][aria-label="Layout"] [role=tab]', 'Calendar'],
+    ['switch-team-calendar', '[role=option]', 'Boston Celtics'],
+    ['switch-team-list', '[role=tablist][aria-label="Layout"] [role=tab]', 'List'],
+    ['switch-league-list', '[data-testid="scope-clear"]', '×'],
   ];
   const times = new Map<string, number[]>();
   // round 0 warms up (first render of each view's code paths) and is not counted: the switch timings flaked on unchanged
   // code with a cold first round (2026-10-28: League Calendar 117 ms, Team Calendar 105 ms; 38–84 / 63–72 ms warm)
   for (let run = 0; run <= RUNS; run++) {
     for (const [name, group, tab] of steps) {
+      if (name === 'switch-team-calendar') await page.getByTestId('bar-local').getByTestId('team-picker').click();
       const t = await page.evaluate(
         ([group, tab]) =>
           new Promise<number>((resolve) => {
-            const el = [...document.querySelectorAll(`[role=tablist][aria-label="${group}"] [role=tab]`)].find((b) => b.textContent === tab) as HTMLElement;
+            const el = [...document.querySelectorAll(group!)].find((b) => b.textContent!.trim() === tab) as HTMLElement;
             const t0 = performance.now();
             el.click();
             requestAnimationFrame(() => setTimeout(() => resolve(performance.now() - t0), 0));

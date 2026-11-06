@@ -3,6 +3,7 @@
 
 import { expect, test, type Page } from './fixtures';
 import { isRotationkitConfigured } from '../src/config';
+import { pickScope } from './nav';
 
 function collectErrors(page: Page) {
   const errors: string[] = [];
@@ -41,10 +42,8 @@ test('league view and team view render without console errors', async ({ page },
   await expect(page.locator('[data-game-id]').first()).toBeVisible();
 
   // Team view (month grid).
-  await page.getByRole('tab', { name: 'Team' }).click();
   await page.getByRole('tab', { name: 'Calendar' }).click();
-  await page.getByTestId('team-picker').click();
-  await page.getByRole('option', { name: 'Los Angeles Lakers' }).click();
+  await pickScope(page, 'Los Angeles Lakers');
   await expect(page).toHaveURL(/team=LAL/);
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   await shot(page, 'team-month', info.project.name);

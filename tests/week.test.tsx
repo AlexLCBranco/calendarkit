@@ -162,9 +162,9 @@ describe('week view: navigation', () => {
     expect(title()).toBe('Dec 27, 2026 – Jan 2, 2027');
   });
 
-  it('period title opens a month popup with counts per day; a day jumps to its week; Escape closes', () => {
+  it('the calendar icon (round 21; was the title) opens a month popup with counts per day; a day jumps to its week; Escape closes', () => {
     openWeek(realData, '2026-11-15');
-    fireEvent.click(screen.getByTestId('period-title'));
+    fireEvent.click(screen.getByTestId('date-pick'));
     const popup = screen.getByRole('dialog', { name: 'Jump to a week' });
     expect(within(popup).getByLabelText(`November 2: 15 games`)).toBeTruthy();
     expect(within(popup).getByText('November 2026')).toBeTruthy();
@@ -174,7 +174,7 @@ describe('week view: navigation', () => {
     fireEvent.click(within(popup).getByLabelText(`December 16: ${realData.byDate.get('2026-12-16')!.length} games`));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(title()).toBe('Dec 13 – 19, 2026');
-    fireEvent.click(screen.getByTestId('period-title'));
+    fireEvent.click(screen.getByTestId('date-pick'));
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(title()).toBe('Dec 13 – 19, 2026');

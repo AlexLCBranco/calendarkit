@@ -34,7 +34,11 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-05, after round 20)
+## Current state / handoff (2026-11-06, round 21 in progress)
+Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar).
+
+## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
 points left out), test cleanup (fatigue walks, free ports, odds check CI-only). See "### Round 20".
 
@@ -2323,3 +2327,33 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   https://gauntlet-home.vercel.app/calendar/.
 - Repo growth from daily 4 MB snapshot commits (~a few hundred KB compressed per change). Fine for a season;
   revisit if it becomes a problem (e.g. Vercel Blob or a separate data branch).
+
+### Round 21 (2026-11-06): the 14-item batch
+
+Alex's answers before the start: Slate Cup squares as two-line mini squares in the Fatigue track + ~90 px on Cup nights
+only (cards stay 2 columns, same height); dates go into every history entry but a fresh load still opens on today (the
+round-6 rule stays); the streak popup is built on the season-series popup (the 3-in-4 is only a tooltip); every item is a
+minor version.
+
+**Item 7 (v1.41.0): two-row top bar.** Row 1, the same everywhere: destinations Schedule · Cup · Standings (League and Team
+are one destination; the scope picker chooses), then on the right the time-zone note + data stamp, "Quick standings"
+(the popup; "Standings" is only the destination now) and a labelled "Copy" (tooltip "Copy as image"). Row 2 per
+destination — Schedule: the scope picker (fixed 150 px: "All teams", or the team's tricode with a "×" back to All teams;
+its list starts with "All teams"), the date block (‹ date › · calendar · Today in every view, fixed width, Today disabled
+not removed; the Team List's ‹ › go to the previous / next game; the week view's picker moved from the title to the
+calendar icon; the Team Calendar got one), then List · Calendar · Slate (Slate always), then the view's options on the
+right. Cup: Groups · Schedule (+ the schedule's own switches) and the stage label (`cupStageLabel`). Standings: the
+column sets. One control style: every segmented control and button 36 px tall, 8 px corners; a tab reserves its bold
+width (`data-text` + `::after`), so selecting one never moves its neighbours.
+- Picking a team keeps the view (List or Calendar); "×" / "All teams" goes back to the league on the date looked at.
+  Slate from a team: All teams on that date, the team's card outlined and scrolled into view, or "BOS doesn't play today".
+- Fits: the bar is 78 px (was 36). To keep the Cup schedule's By date view on one screen at 1920 × 950 the Cup night strip
+  is one line per night, its cards 6 px apart, and the bar has 6 px between rows and 8 px under it (was 12): exactly 950.
+  The 1-week view's scale at 1920 × 911 is 1.05 (was 1.1; 42 px less height).
+- Perf: loads and switches unchanged when both builds are served the same way (week view 305 → 306 ms, Team Calendar 314
+  → 316 ms, median of 9). Note: the perf guard's load numbers come from `vite preview`, which measured ~30 ms more on the
+  calendar views than the reference server for the very same code.
+- Fixed on the way (since v1.35.0): a team link's `on=` was never read — the date check was `/^d{4}-d{2}-d{2}$/`
+  (no backslashes), so a team link opened in a new tab showed the next game instead of the date looked at.
+- slate-same.spec.ts takes its screenshots with the top bar out of the layout in both builds (a Slate 42 px lower is
+  rasterized up to 1 level apart).

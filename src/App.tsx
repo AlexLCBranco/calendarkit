@@ -39,7 +39,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     tvOnly: p.get('tv') === '1' ? true : undefined,
     teamSpan: p.get('span') === '1w' ? 1 : p.get('span') === '2w' ? 2 : undefined,
     weeks: p.get('weeks') === '2' ? 2 : p.get('weeks') === '1' ? 1 : undefined,
-    teamDate: /^d{4}-d{2}-d{2}$/.test(p.get('on') ?? '') ? p.get('on')! : undefined,
+    teamDate: /^\d{4}-\d{2}-\d{2}$/.test(p.get('on') ?? '') ? p.get('on')! : undefined,
   };
 }
 

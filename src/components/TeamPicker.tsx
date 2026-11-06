@@ -7,6 +7,9 @@ import { TeamLogo } from './GameCard';
 import { clampX, fullName } from './widget';
 
 const PICKER_ORDER: Team[] = DIVISIONS.flatMap(({ division }) => TEAMS.filter((t) => t.division === division));
+/** The scope picker's "All teams" option (id 0: no team has it). */
+const ALL = 0;
+const ALL_TEAMS = { id: ALL, tricode: '', city: 'All', name: 'teams' } as Team;
 
 /**
  * Team picker with logos: a button (logo + name; tricode on phones) opening a listbox grouped by conference and
@@ -14,7 +17,12 @@ const PICKER_ORDER: Team[] = DIVISIONS.flatMap(({ division }) => TEAMS.filter((t
  * team starting with it, Enter selects, Escape closes; focus returns to the button.
  * Without a team (the Cup Team list, round 12: nothing picked yet) the button reads "Pick a team" and has no logo.
  */
-export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: number; onChange: (teamId: number) => void; compact?: boolean }) {
+/**
+ * Round 21 (item 7): `allTeams` — the Schedule's scope picker: no team = "All teams" (the league views), a team = its
+ * tricode with a "×" beside the button that goes back to All teams (`onClear`); the list starts with an "All teams"
+ * option. Fixed width, so the date block after it never moves.
+ */
+export function TeamPicker({ teamId, onChange, compact = false, allTeams = false, onClear }: { teamId?: number; onChange: (teamId: number) => void; compact?: boolean; allTeams?: boolean; onClear?: () => void }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(teamId ?? PICKER_ORDER[0]!.id);
   const [pos, setPos] = useState({ left: 0, top: 0 });
@@ -26,7 +34,7 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
   const openList = () => {
     const r = btn.current!.getBoundingClientRect();
     setPos({ left: r.left, top: r.bottom + 4 });
-    setActive(teamId ?? PICKER_ORDER[0]!.id);
+    setActive(teamId ?? (allTeams ? ALL : PICKER_ORDER[0]!.id));
     setOpen(true);
   };
   const close = (focus = true) => {
@@ -35,8 +43,10 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
   };
   const pick = (t: number) => {
     close();
+    if (t === ALL) return teamId !== undefined && onClear?.();
     if (t !== teamId) onChange(t);
   };
+  const order = allTeams ? [ALL_TEAMS, ...PICKER_ORDER] : PICKER_ORDER;
   useLayoutEffect(() => {
     const el = list.current;
     if (!open || !el) return;
@@ -54,8 +64,8 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
   }, [open]);
 
   const move = (by: number) => {
-    const i = PICKER_ORDER.findIndex((t) => t.id === active);
-    setActive(PICKER_ORDER[Math.max(0, Math.min(PICKER_ORDER.length - 1, i + by))]!.id);
+    const i = order.findIndex((t) => t.id === active);
+    setActive(order[Math.max(0, Math.min(order.length - 1, i + by))]!.id);
   };
   const onListKey = (e: KeyboardEvent) => {
     const keys: Record<string, () => void> = {
@@ -63,7 +73,7 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
       ArrowUp: () => move(-1),
       ArrowRight: () => move(compact ? 15 : 5),
       ArrowLeft: () => move(compact ? -15 : -5),
-      Home: () => setActive(PICKER_ORDER[0]!.id),
+      Home: () => setActive(order[0]!.id),
       End: () => setActive(PICKER_ORDER.at(-1)!.id),
       Enter: () => pick(active),
       ' ': () => pick(active),
@@ -76,14 +86,14 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
     } else if (/^[a-z]$/i.test(e.key)) {
       // next team (after the active one) whose city or name starts with the letter
       const i = PICKER_ORDER.findIndex((t) => t.id === active);
-      const rot = [...PICKER_ORDER.slice(i + 1), ...PICKER_ORDER.slice(0, i + 1)];
+      const rot = [...PICKER_ORDER.slice(i + 1), ...PICKER_ORDER.slice(0, i + 1)]; // never lands on "All teams"
       const hit = rot.find((t) => fullName(t).toLowerCase().startsWith(e.key.toLowerCase()) || t.name.toLowerCase().startsWith(e.key.toLowerCase()));
       if (hit) setActive(hit.id);
     }
   };
 
   return (
-    <div className="ck-picker">
+    <div className={`ck-picker${allTeams ? ' ck-picker-scope' : ''}`}>
       <span id={`${id}-label`} className="ck-sr">
         Team
       </span>
@@ -106,11 +116,16 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
         }}
       >
         {team && <TeamLogo team={{ teamId } as ScheduleGame['homeTeam']} link={false} />}
-        <span className="ck-picker-name">{!team ? 'Pick a team' : compact ? team.tricode : fullName(team)}</span>
+        <span className="ck-picker-name" title={allTeams && team ? fullName(team) : undefined}>{!team ? (allTeams ? 'All teams' : 'Pick a team') : compact || allTeams ? team.tricode : fullName(team)}</span>
         <span className="ck-caret" aria-hidden="true">
           ▾
         </span>
       </button>
+      {allTeams && team && onClear && (
+        <button type="button" className="ck-picker-clear" data-testid="scope-clear" aria-label="All teams" title="Back to All teams" onClick={onClear}>
+          ×
+        </button>
+      )}
       {open && (
         <div
           ref={list}
@@ -122,6 +137,20 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
           onKeyDown={onListKey}
           style={{ top: pos.top }}
         >
+          {allTeams && (
+            <div
+              id={`${id}-${ALL}`}
+              role="option"
+              aria-selected={teamId === undefined}
+              data-team-id={ALL}
+              className={`ck-picker-option ck-picker-all${active === ALL ? ' ck-picker-active' : ''}`}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => pick(ALL)}
+              onMouseMove={(e) => (e.movementX || e.movementY) && setActive(ALL)}
+            >
+              All teams
+            </div>
+          )}
           {DIVISIONS.map(({ conference, division }) => (
             <div key={division} role="group" aria-labelledby={`${id}-${division}`} className="ck-picker-group">
               <div id={`${id}-${division}`} className="ck-picker-head" role="presentation">

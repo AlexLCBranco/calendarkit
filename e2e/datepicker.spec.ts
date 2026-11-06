@@ -21,7 +21,7 @@ for (const [name, search, titleId] of [
 ] as const) {
   test(`${name}: icon, popup in the window, keyboard (arrows, Enter, Escape), pick jumps`, async ({ page }, info) => {
     await open(page, search);
-    if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(40);
+    if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // round 21: two rows
     const icon = page.getByRole('button', { name: 'Pick a date' });
     await expect(page.getByRole('dialog')).toHaveCount(0); // rendered only while open
     await icon.click();

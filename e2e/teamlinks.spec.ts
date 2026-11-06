@@ -9,6 +9,7 @@
 
 import { expect, test, type Locator, type Page } from './fixtures';
 import { APP } from './app';
+import { clearScope, destination } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z'); // Sun Nov 15, 12:00 in São Paulo (the tests' zone)
 const TODAY = '2026-11-15';
@@ -111,7 +112,8 @@ async function checkLinks(page: Page, scope: string, want: { layout: 'list' | 'c
 /** After a team link's plain click: that Team view here, in that mode, showing `date`. */
 async function expectTeamView(page: Page, t: Team, layout: 'list' | 'calendar', date: string, title?: string) {
   await expect(page.getByTestId('team-header')).toContainText(`${t.city} ${t.name}`);
-  await expect(page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'Team' })).toHaveAttribute('aria-selected', 'true');
+  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('bar-local').getByTestId('team-picker')).toHaveAttribute('data-team-id', String(t.id));
   await expect(page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: layout === 'list' ? 'List' : 'Calendar' })).toHaveAttribute('aria-selected', 'true');
   expect(new URL(page.url()).searchParams.get('team')).toBe(t.tri);
   const month = new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -248,12 +250,12 @@ test.describe('team links', () => {
     await expect(slots.locator('[data-team-link]')).toHaveCount(0);
     // and a click on one goes nowhere
     await slots.first().locator('.ck-cup-slot').first().click();
-    await expect(page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'Cup' })).toHaveAttribute('aria-selected', 'true');
+    await expect(destination(page, 'Cup')).toHaveAttribute('aria-selected', 'true');
   });
 
   test('the last-used Team mode is respected (Calendar, then List; Slate kept for League)', async ({ page }) => {
     await open(page, '?view=team&layout=calendar&team=LAL');
-    await page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'League' }).click();
+    await clearScope(page);
     await page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: 'Slate' }).click();
     await page.waitForSelector('[data-testid="slate"] a[data-team-link]');
     const teams = await snapshotTeams(page);
@@ -265,13 +267,13 @@ test.describe('team links', () => {
     await expectTeamView(page, t, 'calendar', TODAY);
     // List now, then back to League: Slate is still League's layout, and a team link opens the List
     await page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: 'List' }).click();
-    await page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'League' }).click();
+    await clearScope(page);
     await page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: 'Slate' }).click();
     a = page.locator('[data-testid="slate"] .ck-slate-name').nth(1);
     t = teams[Number(await a.getAttribute('data-team-link'))]!;
     await a.click();
     await expectTeamView(page, t, 'list', TODAY);
-    await page.getByRole('tablist', { name: 'View' }).getByRole('tab', { name: 'League' }).click();
+    await clearScope(page);
     await expect(page.getByTestId('slate')).toBeVisible();
   });
 

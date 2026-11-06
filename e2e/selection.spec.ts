@@ -4,6 +4,7 @@
 // selects rows beyond the first screen; the bar's Copy and Ctrl+C put a PNG on the clipboard.
 
 import { expect, test, type Page } from './fixtures';
+import { clearScope } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -220,7 +221,7 @@ test('changing view, team, period, span or a toggle clears the selection', async
   await page.getByRole('tab', { name: 'List', exact: true }).click();
   expect(await highlighted(page)).toEqual([]);
   await select('.ck-team-rows > .ck-card');
-  await page.getByRole('tab', { name: 'League', exact: true }).click();
+  await clearScope(page);
   expect(await highlighted(page)).toEqual([]);
 });
 

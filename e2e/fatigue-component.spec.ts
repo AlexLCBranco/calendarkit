@@ -321,8 +321,9 @@ for (const size of SIZES) {
       return { bad, tri: getComputedStyle(document.querySelector('.ck-mtri-text')!).fontSize, scale: document.querySelector<HTMLElement>('.ck-week-view')!.dataset.scale };
     });
     expect(row.bad).toEqual([]);
-    // game text at the size round 5 left it: 1-week scale 1.1 at 1920 × 911, 1 at 1280 × 900
-    expect(row.scale).toBe(size.width === 1920 ? '1.1' : '1');
-    expect(row.tri).toBe(size.width === 1920 ? '12.1px' : '11px');
+    // game text: 1-week scale 1 at 1280 × 900; at 1920 × 911 1.05 since round 21 (the two-row top bar leaves the week 42 px
+    // less height; round 5 left it at 1.1)
+    expect(row.scale).toBe(size.width === 1920 ? '1.05' : '1');
+    expect(row.tri).toBe(size.width === 1920 ? '11.55px' : '11px');
   });
 }

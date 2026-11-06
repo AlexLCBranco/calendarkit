@@ -18,11 +18,13 @@ export interface PeriodNavProps {
   /** "Today" button after the next arrow (back to today's games); disabled when already there. */
   onToday?: () => void;
   todayDisabled?: boolean;
-  /** A calendar icon right after the title that opens a date picker (the lists). */
+  /** A calendar icon after the next arrow that opens a date picker (round 21: every view with a date). */
   pick?: { open: boolean; onToggle: () => void };
+  /** Extra class on the title (the Team List's: its own paint layer, week-strip.css). */
+  titleClass?: string;
 }
 
-export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisabled, testId = 'period-title', onTitleClick, titleExpanded, onToday, todayDisabled, pick }: PeriodNavProps) {
+export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisabled, testId = 'period-title', onTitleClick, titleExpanded, onToday, todayDisabled, pick, titleClass = '' }: PeriodNavProps) {
   return (
     <div className="ck-nav ck-period">
       <button type="button" className="ck-arrow" aria-label={`Previous ${unit}`} disabled={prevDisabled} onClick={onPrev}>
@@ -36,14 +38,15 @@ export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisab
           </span>
         </button>
       ) : (
-        <h2 className="ck-nav-title" data-testid={testId}>
+        <h2 className={`ck-nav-title${titleClass}`} data-testid={testId}>
           {title}
         </h2>
       )}
-      {pick && <DatePickButton open={pick.open} onClick={pick.onToggle} />}
       <button type="button" className="ck-arrow" aria-label={`Next ${unit}`} disabled={nextDisabled} onClick={onNext}>
         ›
       </button>
+      {/* round 21 (item 7): the date block is always ‹ date › · calendar · Today */}
+      {pick && <DatePickButton open={pick.open} onClick={pick.onToggle} />}
       {onToday && <TodayButton onClick={onToday} disabled={!!todayDisabled} />}
     </div>
   );

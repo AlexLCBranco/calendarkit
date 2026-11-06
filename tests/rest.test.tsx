@@ -10,6 +10,7 @@ import { data } from './feed';
 import { TEAM } from './synthetic';
 import { TEAM_BY_ID } from '../src/data/teams';
 import { acrossMonths, shownMonth } from './teamMonths';
+import { clearScope } from './nav';
 
 afterEach(cleanup);
 
@@ -106,7 +107,7 @@ describe('Team List rest rows', () => {
     expect(restRows()).toEqual([]);
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
     expect(screen.queryByLabelText('Show rest days')).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'League' }));
+    clearScope();
     expect(screen.queryByLabelText('Show rest days')).toBeNull();
     cleanup();
     render(<CalendarView data={data} size={PHONE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS, showRest: true }} />);

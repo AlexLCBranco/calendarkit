@@ -54,7 +54,7 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; â€
   await open(page, '?view=team&layout=list&team=LAL');
   const list = page.getByTestId('team-list');
   const title = page.getByTestId('team-day-title');
-  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(40);
+  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // round 21: two rows
   /** Date of the row whose top is at (or just above) the list's top edge. */
   const topRow = () =>
     list.evaluate((el) => {

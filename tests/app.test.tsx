@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import raw from './fixtures/feed-2026-10-23.json';
 import { isRotationkitConfigured, ROTATIONKIT_PLACEHOLDER } from '../src/config';
+import { pickScope, scopeTeam } from './nav';
 
 // The shell reads its config through this mock so each test can pick the base URL.
 const rk = vi.hoisted(() => ({ base: '' }));
@@ -91,13 +92,13 @@ describe('App: URL state for the List | Calendar switch', () => {
 
   it('old ?view=team links open Team → Calendar', async () => {
     await open('?view=team&team=BOS');
-    expect(selected('Team') && selected('Calendar')).toBe(true);
+    expect(scopeTeam() !== undefined && selected('Calendar')).toBe(true);
     expect(screen.getByRole('region', { name: 'Celtics schedule' })).toBeTruthy();
   });
 
   it('old ?view=league links open League → List, on today: the date in the URL is ignored (round 6)', async () => {
     await open('?view=league&date=2026-11-14');
-    expect(selected('League') && selected('List')).toBe(true);
+    expect(scopeTeam() === undefined && selected('List')).toBe(true);
     expect(screen.getByTestId('day-title').textContent).toMatch(/^Fri(day)?, Oct(ober)? 23, 2026$/); // NOW; jsdom has no width: compact title
   });
 
@@ -120,6 +121,13 @@ describe('App: URL state for the List | Calendar switch', () => {
     expect(screen.getByRole('region', { name: /^(League week|Month navigator)$/ })).toBeTruthy(); // by width
   });
 
+  it('a team link’s on= date is read (v1.35.0 bug: the check had no backslashes, so on= never matched)', async () => {
+    const { readUrlState } = await import('../src/App');
+    expect(readUrlState('?view=team&layout=list&team=MIA&on=2026-11-15').teamDate).toBe('2026-11-15');
+    expect(readUrlState('?view=team&on=dddd-dd-dd').teamDate).toBeUndefined();
+    expect(readUrlState('?view=team&on=2026-11-1').teamDate).toBeUndefined();
+  });
+
   it('?weeks=2 opens two week rows; links without it get one week; the toggle writes it', async () => {
     const { readUrlState } = await import('../src/App');
     expect(readUrlState('?view=league&layout=calendar&date=2026-11-15&weeks=2')).toMatchObject({ mode: 'league', layout: 'calendar', date: '2026-11-15', weeks: 2 });
@@ -134,7 +142,7 @@ describe('App: URL state for the List | Calendar switch', () => {
     await open('?view=league&date=2026-11-14');
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
     expect(window.location.search).toMatch(/view=league&layout=calendar/);
-    fireEvent.click(screen.getByRole('tab', { name: 'Team' }));
+    pickScope('Atlanta Hawks');
     expect(window.location.search).toMatch(/view=team&layout=calendar/);
     fireEvent.click(screen.getByLabelText('TV games only'));
     expect(window.location.search).toMatch(/tv=1/);

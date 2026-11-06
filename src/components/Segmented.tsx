@@ -4,7 +4,7 @@ export function Segmented<T extends string>({ label, value, options, onChange, c
   return (
     <div className={`ck-tabs${className}`} role="tablist" aria-label={label}>
       {options.map(([v, text]) => (
-        <button key={v} type="button" role="tab" aria-selected={value === v} className={`ck-tab${value === v ? ' ck-tab-selected' : ''}`} onClick={() => onChange(v)}>
+        <button key={v} type="button" role="tab" aria-selected={value === v} className={`ck-tab${value === v ? ' ck-tab-selected' : ''}`} data-text={text} onClick={() => onChange(v)}>
           {text}
         </button>
       ))}

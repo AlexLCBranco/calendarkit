@@ -4,6 +4,7 @@
 
 import { expect, test, type Page } from './fixtures';
 import { eachTeamMonth, showMonth } from './teamMonths';
+import { clearScope, pickScope, scopeTeamId } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const DEFAULT_DAY = '2026-11-15'; // evening games not over at 15:00 UTC
@@ -98,13 +99,15 @@ test('List | Calendar switch: both options in League and Team, four views, layou
     ['Team', 'List', () => expect(page.getByRole('region', { name: 'Celtics games' })).toBeVisible()],
   ];
   for (const [mode, layout, check] of views) {
-    await selected(page, mode).click();
-    if (mode === 'Team') await pickTeam(page, 'Boston Celtics');
+    // round 21: League / Team is the scope picker (All teams / a team)
+    const team = await scopeTeamId(page);
+    if (mode === 'League' && team) await clearScope(page);
+    if (mode === 'Team' && !team) await pickScope(page, 'Boston Celtics');
     await selected(page, layout).click();
     await expect(selected(page, 'List')).toBeVisible();
     await expect(selected(page, 'Calendar')).toBeVisible();
     await expect(selected(page, layout)).toHaveAttribute('aria-selected', 'true');
-    await expect(selected(page, mode)).toHaveAttribute('aria-selected', 'true');
+    expect(!!(await scopeTeamId(page))).toBe(mode === 'Team');
     await check();
     await expect(page).toHaveURL(new RegExp(`view=${mode.toLowerCase()}&layout=${layout.toLowerCase()}`));
     const r = await layoutChecks(page);
@@ -119,11 +122,11 @@ test('List | Calendar switch: both options in League and Team, four views, layou
     await page.mouse.move(0, 0);
     await shot(page, `${mode.toLowerCase()}-${layout.toLowerCase()}`, project);
   }
-  // Team → List kept when going back to League; a reload keeps it all
-  await selected(page, 'League').click();
+  // Team → List kept when going back to All teams; a team keeps the view (Calendar); a reload keeps it all
+  await clearScope(page);
   await expect(page.getByRole('region', { name: 'League schedule' })).toBeVisible();
   await selected(page, 'Calendar').click();
-  await selected(page, 'Team').click();
+  await pickScope(page, 'Boston Celtics');
   await expect(page.getByRole('region', { name: 'Celtics schedule' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('region', { name: 'Celtics schedule' })).toBeVisible();

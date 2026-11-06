@@ -10,6 +10,7 @@ import { TEAM_BY_ID } from '../src/data/teams';
 import { data } from './feed';
 import { TEAM } from './synthetic';
 import { acrossMonths, eachTeamMonth, shownMonth } from './teamMonths';
+import { clearScope, pickScope } from './nav';
 
 afterEach(cleanup);
 
@@ -32,33 +33,32 @@ function view(): string {
 }
 
 describe('List | Calendar switch', () => {
-  it('shows both options in League and in Team, current one highlighted', () => {
+  it('shows the same options for All teams and for a team (round 21: Slate always), current one highlighted', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
-    for (const mode of ['League', 'Team']) {
-      fireEvent.click(tab(mode));
-      // round 7: League adds Slate (desktop)
-      expect(within(screen.getByRole('tablist', { name: 'Layout' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(mode === 'League' ? ['List', 'Calendar', 'Slate'] : ['List', 'Calendar']);
+    for (const scope of ['All teams', 'Atlanta Hawks']) {
+      if (scope !== 'All teams') pickScope(scope);
+      expect(within(screen.getByRole('tablist', { name: 'Layout' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['List', 'Calendar', 'Slate']);
       expect(selected('List')).toBe(true);
       expect(selected('Calendar')).toBe(false);
     }
     expect(screen.queryByRole('button', { name: 'Month' })).toBeNull();
   });
 
-  it('renders the right view for each of the 4 combinations; the layout is kept across League ↔ Team', () => {
+  it('renders the right view for each of the 4 combinations; the layout is kept across All teams ↔ a team', () => {
     const onStateChange = vi.fn();
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" onStateChange={onStateChange} />);
     expect(view()).toBe('league-list');
-    fireEvent.click(tab('Team'));
+    pickScope('Atlanta Hawks');
     expect(view()).toBe('team-list');
     fireEvent.click(tab('Calendar'));
     expect(view()).toBe('team-calendar');
     expect(selected('Calendar')).toBe(true);
-    fireEvent.click(tab('League'));
+    clearScope();
     expect(view()).toBe('league-calendar');
     expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ mode: 'league', layout: 'calendar' }));
     fireEvent.click(tab('List'));
     expect(view()).toBe('league-list');
-    fireEvent.click(tab('Team'));
+    pickScope('Atlanta Hawks');
     expect(view()).toBe('team-list');
     expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ mode: 'team', layout: 'list' }));
   });
@@ -185,10 +185,12 @@ describe('league list: one day at a time (round 8)', () => {
     fireEvent.click(tab('List'));
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
     expect(title()).toBe('Saturday, October 24, 2026');
-    fireEvent.click(tab('Team'));
+    pickScope('Atlanta Hawks');
+    const looked = screen.getByTestId('team-day-title').textContent; // the team's row the list opened at
     fireEvent.keyDown(window, { key: 'ArrowRight' });
-    fireEvent.click(tab('League'));
-    expect(title()).toBe('Saturday, October 24, 2026');
+    expect(screen.getByTestId('team-day-title').textContent).toBe(looked); // no day keys in the Team List
+    clearScope(); // round 21: All teams comes back on the date looked at in the team's view
+    expect(title()).toBe(looked);
   });
 
   it('week strip click and prev/next arrows jump between game days', () => {
