@@ -9,16 +9,16 @@
 // job takes from the game's boxscore (src/data/regulation.ts); until a game's totals are stored it counts its final score.
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { TEAMS, TEAM_BY_ID, type Conference } from './teams';
+import { TEAMS, type Conference } from './teams';
 import type { RegulationTotals } from './regulation';
 
 /** Group play runs Oct 30 – Nov 27 (2026-27); only finished group games inside it count. */
 export const CUP_GROUP_START = '2026-10-30';
 export const CUP_GROUP_END = '2026-11-27';
 
-/** The feed's group labels, in the view's order: West A/B/C on top, East A/B/C below. */
-export const CUP_GROUPS = ['West Group A', 'West Group B', 'West Group C', 'East Group A', 'East Group B', 'East Group C'] as const;
-export type CupGroup = (typeof CUP_GROUPS)[number];
+/** The feed's group labels, in the view's order: West A/B/C on top, East A/B/C below (round 21: the engine's). */
+export { CUP_GROUPS, rank, type CupGroup, type Tiebreak } from './cupEngine';
+import { computeCup, CUP_GROUPS, diffRule, lastSeasonRule, pointsRule, rank, type CupGroup, type EngineResult, type GroupResult, type Tiebreak } from './cupEngine';
 
 /**
  * 2025-26 regular-season wins (82 games each, so wins alone order the records), tiebreaker 4. Source: stats.nba.com
@@ -30,8 +30,6 @@ export const LAST_SEASON_WINS: Readonly<Record<string, number>> = {
   MIL: 32, CHI: 31, NOP: 26, DAL: 26, MEM: 25, SAC: 22, UTA: 22, BKN: 20, IND: 19, WAS: 17,
 };
 
-/** Which rule set a team apart from the teams tied with it: head-to-head, point differential, points scored, last season. */
-export type Tiebreak = 'h2h' | 'diff' | 'points' | 'last-season';
 
 export interface CupTeamLine {
   teamId: number;
@@ -140,16 +138,6 @@ export const isCountedCupGame = (g: ScheduleGame) =>
 
 const isOt = (g: ScheduleGame) => /^Final\/\d*OT$/i.test(g.statusText);
 
-interface Acc {
-  teamId: number;
-  tricode: string;
-  w: number;
-  l: number;
-  diff: number;
-  points: number;
-  otGames: number;
-}
-
 /**
  * Teams by group from every Cup group game in the feed (finished or not), so 0-0 teams are listed too. A group with no
  * labelled game for each of its 5 teams falls back to CUP_GROUP_TEAMS.
@@ -166,73 +154,47 @@ export function cupGroupsOf(games: readonly ScheduleGame[]): Map<CupGroup, numbe
   return new Map([...out].map(([k, v]) => [k, v.size === 5 ? [...v] : CUP_GROUP_TEAMS[k].map((tri) => byTricode.get(tri)!)]));
 }
 
-/** `regulation`: the snapshot's regulation totals (gameId → [away, home]) for rule 3; OT games without one count their final score. */
-export function cupStandings(games: readonly ScheduleGame[], regulation: RegulationTotals = {}): CupStandings {
-  let otWithoutRegulation = 0;
-  const counted = games.filter(isCountedCupGame);
-  const acc = new Map<number, Acc>();
-  const line = (id: number): Acc => {
-    let a = acc.get(id);
-    if (!a) acc.set(id, (a = { teamId: id, tricode: TEAM_BY_ID.get(id)?.tricode ?? String(id), w: 0, l: 0, diff: 0, points: 0, otGames: 0 }));
-    return a;
-  };
-  for (const g of counted) {
-    const h = line(g.homeTeam.teamId);
-    const a = line(g.awayTeam.teamId);
+/** The real finished group games as the engine's results (OT: 0 margin; regulation points once stored, else the final score). */
+export function realResults(counted: readonly ScheduleGame[], regulation: RegulationTotals = {}): GroupResult[] {
+  return counted.map((g) => {
     const hs = g.homeTeam.score;
     const as = g.awayTeam.score;
-    const homeWon = hs > as;
-    h.w += homeWon ? 1 : 0;
-    h.l += homeWon ? 0 : 1;
-    a.w += homeWon ? 0 : 1;
-    a.l += homeWon ? 1 : 0;
-    // an OT game was level after regulation: 0 to the differential (see above)
-    const margin = isOt(g) ? 0 : hs - as;
-    h.diff += margin;
-    a.diff -= margin;
-    // rule 3 leaves overtime points out: an OT game adds its regulation points (equal for both teams)
-    const reg = isOt(g) ? regulation[g.gameId] : undefined;
-    if (isOt(g) && !reg) otWithoutRegulation++;
-    h.points += reg ? reg[1] : hs;
-    a.points += reg ? reg[0] : as;
-    if (isOt(g)) {
-      h.otGames++;
-      a.otGames++;
-    }
-  }
-
-  const slots = cupSlots(games);
-  const groups: CupGroupTable[] = [...cupGroupsOf(games)].map(([group, ids]) => {
-    const teams = ids.map((id) => ({ ...line(id), slots: slots.get(id) ?? [] }));
-    const ranked = rank(teams, [h2h(counted), byDiff, byPoints, byLastSeason]);
-    const conference: Conference = group.startsWith('West') ? 'West' : 'East';
-    return {
-      group,
-      conference,
-      short: group.replace(' Group ', ' ').toUpperCase(),
-      teams: ranked.map((r, i) => ({ ...r.team, rank: i + 1, tiebreak: r.tiebreak as Tiebreak | undefined, tied: r.tied, status: i === 0 ? ('leader' as const) : undefined })),
-    };
+    const ot = isOt(g);
+    const reg = ot ? regulation[g.gameId] : undefined;
+    return { gameId: g.gameId, home: g.homeTeam.teamId, away: g.awayTeam.teamId, winner: hs > as ? g.homeTeam.teamId : g.awayTeam.teamId, margin: ot ? 0 : Math.abs(hs - as), points: reg ? [reg[0], reg[1]] : [as, hs], ot };
   });
+}
 
-  const wildCards: WildCardRace[] = (['West', 'East'] as const).map((conference) => {
-    const seconds = groups.filter((g) => g.conference === conference && g.teams[1]).map((g) => ({ ...g.teams[1]!, group: g.group }));
-    const ranked = rank(seconds, [byDiff, byPoints, byLastSeason]);
-    const rest = groups.filter((g) => g.conference === conference).flatMap((g) => g.teams.slice(2).map((t) => ({ ...t, group: g.group })));
-    const chasing = rank(rest, [byDiff, byPoints, byLastSeason]).slice(0, CUP_CHASERS).map((r) => r.team);
-    return {
-      conference,
-      teams: ranked.map((r) => ({ ...r.team, wcTiebreak: r.tiebreak as WildCardRace['teams'][number]['wcTiebreak'], wcTied: r.tied })),
-      chasing,
-    };
+/**
+ * `regulation`: the snapshot's regulation totals (gameId → [away, home]) for rule 3; OT games without one count their
+ * final score. Round 21: the rules are the shared engine's (cupEngine.ts); this adds the slots, the OT counts and the
+ * chasers, and keeps the engine's result (`engine`: seeds and quarterfinals) for the views that need it.
+ */
+export function cupStandings(games: readonly ScheduleGame[], regulation: RegulationTotals = {}): CupStandings & { engine: EngineResult } {
+  const counted = games.filter(isCountedCupGame);
+  const otWithoutRegulation = counted.filter((g) => isOt(g) && !regulation[g.gameId]).length;
+  const otGames = new Map<number, number>();
+  for (const g of counted.filter(isOt)) for (const id of [g.homeTeam.teamId, g.awayTeam.teamId]) otGames.set(id, (otGames.get(id) ?? 0) + 1);
+  const engine = computeCup(cupGroupsOf(games), realResults(counted, regulation), LAST_SEASON_WINS);
+  const slots = cupSlots(games);
+  const groups: CupGroupTable[] = engine.groups.map((g) => ({
+    group: g.group,
+    conference: g.conference,
+    short: g.group.replace(' Group ', ' ').toUpperCase(),
+    teams: g.teams.map((t, i) => ({ teamId: t.teamId, tricode: t.tricode, w: t.w, l: t.l, diff: t.diff, points: t.points, otGames: otGames.get(t.teamId) ?? 0, rank: t.rank, tiebreak: t.tiebreak, tied: t.tied, status: i === 0 ? ('leader' as const) : undefined, slots: slots.get(t.teamId) ?? [] })),
+  }));
+  const lineOf = (id: number) => groups.flatMap((g) => g.teams).find((t) => t.teamId === id)!;
+  const wildCards: WildCardRace[] = engine.wildCards.map((wc) => {
+    const rest = groups.filter((g) => g.conference === wc.conference).flatMap((g) => g.teams.slice(2).map((t) => ({ ...t, group: g.group, unknownDiff: [], unknownPoints: [] })));
+    const chasing = rank(rest, [diffRule, pointsRule, lastSeasonRule(LAST_SEASON_WINS)]).slice(0, CUP_CHASERS).map((r) => r.team);
+    return { conference: wc.conference, teams: wc.teams.map((t) => ({ ...lineOf(t.teamId), group: t.group, wcTiebreak: t.wcTiebreak, wcTied: t.wcTied })), chasing };
   });
   for (const wc of wildCards) {
     const holder = wc.teams[0];
     if (!holder) continue;
-    const t = groups.find((g) => g.group === holder.group)!.teams[1]!;
-    t.status = 'wild-card';
+    groups.find((g) => g.group === holder.group)!.teams[1]!.status = 'wild-card';
     holder.status = 'wild-card';
   }
-
   return {
     groups,
     wildCards,
@@ -240,90 +202,8 @@ export function cupStandings(games: readonly ScheduleGame[], regulation: Regulat
     games: counted.length,
     hasOt: counted.some(isOt),
     otWithoutRegulation,
+    engine,
   };
-}
-
-/** A tiebreaker: a number per team (higher is better) among the tied teams, or undefined when it can't be applied. */
-interface Rule<T> {
-  name: Tiebreak;
-  value: (team: T, tied: readonly T[]) => number | undefined;
-}
-
-type Line = Pick<Acc, 'teamId' | 'tricode' | 'w' | 'l' | 'diff' | 'points'>;
-
-/** 1. Head-to-head among the tied teams: wins minus losses in finished group games between them. */
-function h2h(counted: readonly ScheduleGame[]): Rule<Line> {
-  return {
-    name: 'h2h',
-    value: (team, tied) => {
-      const ids = new Set(tied.map((t) => t.teamId));
-      let n = 0;
-      for (const g of counted) {
-        const h = g.homeTeam.teamId;
-        const a = g.awayTeam.teamId;
-        if (!ids.has(h) || !ids.has(a) || (h !== team.teamId && a !== team.teamId)) continue;
-        const won = (h === team.teamId) === g.homeTeam.score > g.awayTeam.score;
-        n += won ? 1 : -1;
-      }
-      return n;
-    },
-  };
-}
-const byDiff: Rule<Line> = { name: 'diff', value: (t) => t.diff };
-const byPoints: Rule<Line> = { name: 'points', value: (t) => t.points };
-/** 4. Last season's record; not applied when a tied team has no number. */
-const byLastSeason: Rule<Line> = { name: 'last-season', value: (t) => LAST_SEASON_WINS[t.tricode] };
-
-interface Ranked<T> {
-  team: T;
-  tiebreak?: string;
-  tied: boolean;
-}
-
-/**
- * Record first, as NBA standings: more wins minus losses (games over .500), then the better win % (1-0 above 2-1); a
- * team with no games is 0-0 and counts as .500 (level with 1-1).
- */
-const recordKey = (t: Line) => [t.w - t.l, t.w + t.l ? t.w / (t.w + t.l) : 0.5] as const;
-
-/**
- * Orders teams by record, then breaks each tie with the rules in order. When a rule splits a tie only in part, the
- * teams still level start again from the first rule among themselves (so a 3-way tie that leaves two teams level goes
- * back to their head-to-head). A tie no rule breaks keeps tricode order and is marked tied.
- */
-export function rank<T extends Line>(teams: readonly T[], rules: readonly Rule<Line>[]): Ranked<T>[] {
-  const sorted = [...teams].sort((a, b) => {
-    const [ad, aw] = recordKey(a);
-    const [bd, bw] = recordKey(b);
-    return bd - ad || bw - aw || a.tricode.localeCompare(b.tricode);
-  });
-  const out: Ranked<T>[] = [];
-  for (let i = 0; i < sorted.length; ) {
-    let j = i + 1;
-    const [d, w] = recordKey(sorted[i]!);
-    while (j < sorted.length && recordKey(sorted[j]!)[0] === d && recordKey(sorted[j]!)[1] === w) j++;
-    out.push(...breakTie(sorted.slice(i, j), rules));
-    i = j;
-  }
-  return out;
-}
-
-function breakTie<T extends Line>(tied: readonly T[], rules: readonly Rule<Line>[]): Ranked<T>[] {
-  if (tied.length === 1) return [{ team: tied[0]!, tied: false }];
-  for (const rule of rules) {
-    const values = tied.map((t) => rule.value(t, tied));
-    if (values.some((v) => v === undefined)) continue;
-    if (values.every((v) => v === values[0])) continue;
-    // buckets of equal value, best first
-    const distinct = [...new Set(values as number[])].sort((a, b) => b - a);
-    return distinct.flatMap((v) => {
-      const bucket = tied.filter((_, k) => values[k] === v);
-      if (bucket.length === 1) return [{ team: bucket[0]!, tiebreak: rule.name, tied: false }];
-      // still level: start again from the first rule among the teams left (they keep this rule as the one that placed the bucket)
-      return breakTie(bucket, rules).map((r) => ({ ...r, tiebreak: r.tiebreak ?? rule.name }));
-    });
-  }
-  return tied.map((team) => ({ team, tied: true }));
 }
 
 /** The 2026-27 Cup groups (Alex's list; the feed has the same): used for a group the feed doesn't label. */
@@ -336,7 +216,7 @@ export const CUP_GROUP_TEAMS: Readonly<Record<CupGroup, readonly string[]>> = {
   'East Group C': ['WAS', 'BOS', 'ATL', 'CHI', 'CHA'],
 };
 
-const standingsCache = new WeakMap<object, { standings: CupStandings; byTeam: Map<number, CupTeamLine> }>();
+const standingsCache = new WeakMap<object, { standings: ReturnType<typeof cupStandings>; byTeam: Map<number, CupTeamLine> }>();
 
 /** Round 21: the standings of a data set (its games and regulation totals), worked out once; and each team's line. */
 export function cupStandingsOf(data: { games: readonly ScheduleGame[]; regulation?: RegulationTotals }) {

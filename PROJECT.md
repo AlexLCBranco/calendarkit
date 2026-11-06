@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2410,3 +2410,12 @@ Alex's answer (2026-11-06, after the measured ~170 px replaced my "+90 px" guess
 nights (207 px at 1920), the 300 px minimum waived to `SLATE_NOTE_MIN_CUP` = 200 those nights, so 2 columns stay. The
 records come from `cupStandingsOf(data)` (cup.ts: the standings once per data set, a team → line map). Copies get the
 track too. slate-same.spec.ts (pixel identity with v1.33.0) now leaves Cup nights out — they change on purpose.
+
+**The Cup rules engine (v1.46.1, before item 4).** `src/data/cupEngine.ts` is the one copy of the Cup rules: `computeCup`
+(groups, results → each group ranked, the wild-card races, seeds 1–4 per conference, the quarterfinals with hosts),
+`semifinal` (the higher seed hosts), `rank` and the rules. It works on plain results (`GroupResult`: winner, margin,
+points, OT, picked), so the simulator's picks go through it too; a pick without a margin is never guessed — a tie that
+would need it is `undecided` with the rule and the games. cup.ts `cupStandings` is now the engine over the real results
+(`realResults`) plus slots, OT counts and chasers; its tests pass unchanged. Rules checked against NBA.com "Emirates NBA
+Cup 101" (2026-11-06): the wild card skips head-to-head (as the code did); the quarterfinals are hosted by the two best
+records (seeds 1 and 2; seed 1 plays the wild card), the semifinals by the higher seed, the Championship at a neutral site.
