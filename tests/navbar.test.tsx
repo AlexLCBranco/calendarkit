@@ -143,10 +143,10 @@ describe('Schedule row 2', () => {
 });
 
 describe('Cup and Standings row 2', () => {
-  it('Cup: Groups · Schedule and the stage label; Standings: the column sets', async () => {
+  it('Cup: Groups · Schedule · Simulator and the stage label; Standings: the column sets', async () => {
     open({ mode: 'cup' });
     await screen.findByTestId('cup');
-    expect(tabs('Cup view').getAllByRole('tab').map((t) => t.textContent)).toEqual(['Groups', 'Schedule']);
+    expect(tabs('Cup view').getAllByRole('tab').map((t) => t.textContent)).toEqual(['Groups', 'Schedule', 'Simulator']);
     expect(screen.getByTestId('cup-stage').textContent).toBe(cupStageLabel(cupNights(data), '2026-11-15'));
     expect(screen.queryByTestId('date-block')).toBeNull();
     goTo('Standings');

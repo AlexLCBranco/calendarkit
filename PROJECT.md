@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2419,3 +2419,15 @@ would need it is `undecided` with the rule and the games. cup.ts `cupStandings` 
 (`realResults`) plus slots, OT counts and chasers; its tests pass unchanged. Rules checked against NBA.com "Emirates NBA
 Cup 101" (2026-11-06): the wild card skips head-to-head (as the code did); the quarterfinals are hosted by the two best
 records (seeds 1 and 2; seed 1 plays the wild card), the semifinals by the higher seed, the Championship at a neutral site.
+
+**Item 4 (v1.47.0): Cup simulator.** Cup → Simulator (`cup=simulator` in the address): a "SIMULATION" banner; every group
+game by night in one row of columns (played ones: the real score, a hoopsjunkie link; the rest: the two teams as pick
+buttons, a ↗ link apart); the six tables (West | East; below 1800 px West over East), the wild-card race and the bracket —
+all from `simulate` = the shared engine over the real results plus the picks, on every click, no request. Quick mode:
+click the winner (no margin); Detailed: the winner and the margin; switching keeps the picks; per-game ↺ and "Reset to real
+results". A spot a quick pick's missing margin would decide shows "depends on margin" (tables, race, bracket seeds) and
+the games are outlined with "margin?". Placed by a tiebreaker: "won on point differential" (H2H / PD / PTS / 25-26 tags).
+Bracket: QF 1 v 4 and 2 v 3 with the host (seeds 1 and 2) tagged HOST; SF "the higher seed hosts"; the final's venue from
+the feed (Neutral · Hinkle Fieldhouse, Indianapolis), via the shared `VenueMarker` (src/slate). Picks live in
+CalendarView (kept when leaving the Cup, gone on reload), never stored. Fits one screen at 1920 × 950 and 1600 × 1000
+with every game picked (e2e/simulator.spec.ts). Rest/travel on the bracket comes with item 13.

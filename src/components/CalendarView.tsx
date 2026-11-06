@@ -19,6 +19,7 @@ import { leagueListStyle, LeagueListView, ListDaySection, listDays, listTitle, n
 import { LeagueWeekView, type WeekCount } from './LeagueWeekView';
 import { hoverHandlers, useClearHover, useHoverRow } from './MapHover';
 import { MonthNavigator } from './MonthNavigator';
+import type { SimMode, SimPicks } from './CupSimulator';
 import { cupNights, cupStageLabel } from '../data/cupSchedule';
 import { monthNav, PeriodNav, type PeriodNavProps } from './PeriodNav';
 import { Segmented } from './Segmented';
@@ -181,7 +182,7 @@ const StandingsView = lazy(standingsChunk);
 const StandingsPopup = lazy(() => standingsChunk().then((m) => ({ default: m.StandingsPopup })));
 /** Round 21 (item 7): the top bar's destinations; Schedule is League or Team by the scope picker. */
 export type Destination = 'schedule' | 'cup' | 'standings';
-export type CupState = { tab: 'standings' | 'schedule'; list: 'league' | 'team'; by: 'group' | 'date'; teamId?: number; night?: string };
+export type CupState = { tab: 'standings' | 'schedule' | 'simulator'; list: 'league' | 'team'; by: 'group' | 'date'; teamId?: number; night?: string };
 const CUP_START: CupState = { tab: 'standings', list: 'league', by: 'group' };
 const teamMapFits = (width: number) => width >= TEAM_LIST_MAX_WIDTH + LEAGUE_MAP_GAP + LEAGUE_MAP_MIN;
 
@@ -295,6 +296,10 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     if (!cup) setCupView(CUP_START);
   }, [cup]);
   const cupSchedule = cup && cupView.tab === 'schedule';
+  const cupSim = cup && cupView.tab === 'simulator';
+  // round 21 (item 4): the simulator's picks and mode — kept while the page is open (leaving the Cup keeps them), never stored
+  const [simPicks, setSimPicks] = useState<SimPicks>(() => new Map());
+  const [simMode, setSimMode] = useState<SimMode>('quick');
   const cupTeam = cupSchedule && cupView.list === 'team';
   const onCupNight = useCallback((night: string) => setCupView((v) => (v.night === night ? v : { ...v, night })), []);
   const list = state.layout === 'list' || (state.layout === 'slate' && !slate);
@@ -479,7 +484,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   // (round 12): the night on show as the League List copies its day, or the team's Cup games with its header — as on screen
   // (the Schedule never scrolls, so the node on screen is the whole view)
   const copyCup = (button: HTMLButtonElement) => {
-    const node = root.current?.querySelector<HTMLElement>(cupSchedule ? (cupTeam ? '[data-testid="cup-team"]' : '[data-testid="cup-league"] [data-testid="cup-copy"]') : '[data-testid="cup-grid"]');
+    const node = root.current?.querySelector<HTMLElement>(cupSim ? '[data-testid="cup-sim"]' : cupSchedule ? (cupTeam ? '[data-testid="cup-team"]' : '[data-testid="cup-league"] [data-testid="cup-copy"]') : '[data-testid="cup-grid"]');
     if (!node) return Promise.reject(new Error('the Cup standings are not on screen yet'));
     button.dataset.captured = `${node.offsetWidth}x${node.offsetHeight}@${capturePixelRatio(node.scrollWidth, node.scrollHeight, COPY_PIXEL_RATIO)}`;
     return copyElement(node, cupSchedule ? undefined : 1);
@@ -662,7 +667,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     if (standings) return 'Standings';
     if (cup) {
       const ct = cupView.teamId !== undefined ? TEAM_BY_ID.get(cupView.teamId)?.tricode : undefined;
-      return cupView.tab === 'standings' ? 'Cup · Groups' : `Cup · Schedule · ${cupView.list === 'team' ? ct ?? 'Team' : cupView.by === 'date' ? 'By date' : 'By group'}`;
+      return cupView.tab === 'standings' ? 'Cup · Groups' : cupView.tab === 'simulator' ? 'Cup · Simulator' : `Cup · Schedule · ${cupView.list === 'team' ? ct ?? 'Team' : cupView.by === 'date' ? 'By date' : 'By group'}`;
     }
     if (team) {
       const period = list ? (teamListTo !== teamListMonth ? `${fmtShortMonth(teamListMonth)} – ${fmtShortMonth(teamListTo)}` : fmtShortMonth(teamListMonth)) : teamWeeks ? fmtRange(teamWeek, addDays(teamWeek, 7 * teamWeeks - 1)) : fmtShortMonth(teamMonth);
@@ -863,7 +868,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
             )}
             {cup && (
               <>
-                <Segmented label="Cup view" value={cupView.tab} options={[['standings', 'Groups'], ['schedule', 'Schedule']]} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />
+                <Segmented label="Cup view" value={cupView.tab} options={[['standings', 'Groups'], ['schedule', 'Schedule'], ['simulator', 'Simulator']]} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />
                 {cupSchedule && <Segmented label="Cup list" value={cupView.list} options={[['league', 'League'], ['team', 'Team']]} onChange={(list) => setCupView((v) => ({ ...v, list }))} />}
                 {cupSchedule && !cupTeam && <Segmented label="Cup layout" value={cupView.by} options={[['group', 'By group'], ['date', 'By date']]} onChange={(by) => setCupView((v) => ({ ...v, by }))} />}
                 {cupTeam && <TeamPicker teamId={cupView.teamId} onChange={(teamId) => setCupView((v) => ({ ...v, teamId }))} />}
@@ -882,7 +887,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
           </Suspense>
         ) : cup ? (
           <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>
-            <CupView data={data} gameLink={gameLink} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
+            <CupView data={data} gameLink={gameLink} sim={cupSim ? { picks: simPicks, onPicks: setSimPicks, mode: simMode, onMode: setSimMode } : undefined} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
           </Suspense>
         ) : team ? (
           teamMap ? (

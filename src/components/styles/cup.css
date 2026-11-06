@@ -460,3 +460,337 @@
 .ck-cup-pick {
   text-align: center;
 }
+
+/* ---- Round 21 (item 4): the simulator — one screen: the games by night, the six tables (West | East), the wild-card
+   race and the bracket */
+.ck-sim {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+.ck-sim-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ck-sim-banner {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #e0a526;
+  color: #1a1205;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.ck-sim-note {
+  color: var(--ck-muted);
+}
+.ck-sim-mode {
+  margin-left: auto;
+}
+.ck-sim-games {
+  display: grid;
+  grid-template-columns: repeat(var(--ck-sim-nights), minmax(0, 1fr));
+  gap: 6px;
+  align-items: start;
+}
+.ck-sim-night {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ck-sim-night-head {
+  margin: 0 0 2px;
+  font-size: 11px;
+  color: var(--ck-muted);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ck-sim-game {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  padding: 0 3px;
+  border-radius: 5px;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  text-decoration: none;
+  white-space: nowrap;
+  min-width: 0;
+}
+.ck-sim-real {
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+.ck-sim-real:hover {
+  opacity: 1;
+}
+.ck-sim-won {
+  font-weight: 700;
+}
+.ck-sim-lost {
+  color: var(--ck-muted);
+}
+.ck-sim-at {
+  color: var(--ck-muted);
+  font-size: 10px;
+}
+.ck-sim-pick {
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--ck-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ck-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ck-sim-pick:hover {
+  border-color: var(--ck-accent);
+}
+.ck-sim-picked {
+  background: #1f8f5f;
+  border-color: #1f8f5f;
+  color: #fff;
+}
+.ck-sim-notpicked {
+  color: var(--ck-muted);
+  text-decoration: line-through;
+}
+.ck-sim-margin {
+  width: 34px;
+  height: 18px;
+  padding: 0 2px;
+  border: 1px solid var(--ck-border);
+  border-radius: 4px;
+  background: var(--ck-bg);
+  color: var(--ck-text);
+  font: inherit;
+}
+.ck-sim-needs {
+  box-shadow: inset 0 0 0 1.5px #e0a526;
+}
+.ck-sim-needtag {
+  color: #e0a526;
+  font-size: 10px;
+  font-weight: 700;
+}
+.ck-sim-undo {
+  border: 0;
+  background: transparent;
+  color: var(--ck-muted);
+  font: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.ck-sim-undo:hover {
+  color: var(--ck-text);
+}
+.ck-sim-game .ck-slate-link {
+  margin-left: auto;
+}
+.ck-sim-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ck-sim-conf {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.ck-sim-table {
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  padding: 4px 6px;
+  background: var(--ck-surface);
+  --ck-logo: 16px;
+}
+.ck-sim-trow {
+  display: grid;
+  grid-template-columns: 22px 18px 34px minmax(0, 1fr) 30px 40px;
+  align-items: center;
+  gap: 3px;
+  height: 21px;
+}
+.ck-sim-thead {
+  grid-template-columns: minmax(0, 1fr) 30px 40px;
+  color: var(--ck-muted);
+  font-size: 10px;
+  font-weight: 700;
+  height: 16px;
+}
+.ck-sim-gname {
+  color: var(--ck-cup);
+  letter-spacing: 0.06em;
+}
+.ck-sim-team {
+  border-left: 3px solid var(--ck-team);
+  padding-left: 3px;
+}
+.ck-sim-team[data-status='leader'],
+.ck-sim-team[data-status='wild-card'] {
+  background: rgb(255 255 255 / 0.05);
+  border-radius: 4px;
+}
+.ck-sim-rank {
+  text-align: center;
+  color: var(--ck-muted);
+}
+.ck-sim-tri {
+  font-weight: 700;
+}
+.ck-sim-extra {
+  min-width: 0;
+  overflow: hidden;
+}
+.ck-sim-tbtag {
+  color: var(--ck-muted);
+  font-size: 10px;
+}
+.ck-sim-rec {
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.ck-sim-diff {
+  min-width: 0;
+  padding: 1px 3px;
+  font-size: 11px;
+}
+.ck-sim-depends {
+  color: #e0a526;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ck-sim-bottom {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 10px;
+}
+.ck-sim-panel {
+  border: 1px solid var(--ck-border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  --ck-logo: 16px;
+}
+.ck-sim-panel h3 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+.ck-sim-panel h4 {
+  margin: 0 0 2px;
+  font-size: 10px;
+  color: var(--ck-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.ck-sim-races {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ck-sim-race-row {
+  display: grid;
+  grid-template-columns: 26px 18px 34px auto 30px 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 6px;
+}
+.ck-sim-holder {
+  box-shadow: inset 0 0 0 1px var(--ck-cup);
+}
+.ck-sim-sub {
+  color: var(--ck-muted);
+  font-size: 11px;
+}
+.ck-sim-tb {
+  color: var(--ck-muted);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ck-sim-bgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.9fr;
+  gap: 10px;
+  align-items: start;
+}
+.ck-sim-bgame {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 6px;
+  margin-bottom: 3px;
+  border-radius: 6px;
+  background: var(--ck-surface);
+}
+.ck-sim-bround {
+  color: var(--ck-cup);
+  font-weight: 800;
+  font-size: 10px;
+  width: 26px;
+}
+.ck-sim-bteam {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.ck-sim-seed {
+  color: var(--ck-muted);
+  font-size: 10px;
+}
+.ck-sim-vs {
+  color: var(--ck-muted);
+  font-size: 10px;
+}
+.ck-sim-bsf .ck-sim-bteam,
+.ck-sim-bfinal .ck-sim-bteam {
+  color: var(--ck-muted);
+}
+.ck-sim-bfinal {
+  flex-direction: column;
+  align-items: flex-start;
+}
+/* the venue marker (VenueMarker.tsx) */
+.ck-venue-host {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--ck-accent);
+  color: #06121f;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.ck-venue-neutral {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f5f5f5;
+  color: #111;
+  font-size: 10px;
+  font-weight: 800;
+}
+.ck-venue-tbd {
+  color: var(--ck-muted);
+  font-size: 10px;
+  font-style: italic;
+}
+/* narrower windows (1600): West's three tables over East's (room for "depends on margin"); the race and the bracket half each */
+@media (max-width: 1800px) {
+  .ck-sim-groups {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .ck-sim-bottom {
+    grid-template-columns: 1fr 1fr;
+  }
+}

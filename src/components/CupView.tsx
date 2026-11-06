@@ -12,6 +12,7 @@ import { TeamLink } from '../slate/teamLink';
 import { CupSquare } from '../slate/CupSquare';
 import type { GameLink } from '../slate/links';
 import CupSchedule, { type CupScheduleProps } from './CupSchedule';
+import CupSimulator, { type CupSimulatorProps } from './CupSimulator';
 import './styles/cup.css';
 
 /** Pill colors: each team's main color, lifted where it is near black or too light for white text on the dark page. */
@@ -40,9 +41,12 @@ export interface CupViewProps {
   gameLink?: GameLink;
   /** Round 12: the schedule instead of the standings (default: standings). */
   schedule?: Omit<CupScheduleProps, 'data'>;
+  /** Round 21 (item 4): the simulator instead. */
+  sim?: Omit<CupSimulatorProps, 'data' | 'gameLink'>;
 }
 
-export default function CupView({ data, schedule, gameLink }: CupViewProps) {
+export default function CupView({ data, schedule, gameLink, sim }: CupViewProps) {
+  if (sim) return <CupSimulator data={data} gameLink={gameLink} {...sim} />;
   return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} gameLink={gameLink} />;
 }
 

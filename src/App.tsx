@@ -43,7 +43,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     weeks: p.get('weeks') === '2' ? 2 : p.get('weeks') === '1' ? 1 : undefined,
     teamDate: /^\d{4}-\d{2}-\d{2}$/.test(p.get('on') ?? '') ? p.get('on')! : undefined,
     // round 21 (item 6): the Cup's sub-view
-    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : 'standings', list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id } : undefined,
+    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : p.get('cup') === 'simulator' ? 'simulator' : 'standings', list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id } : undefined,
   };
 }
 
