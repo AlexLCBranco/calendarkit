@@ -25,4 +25,7 @@ export {
 } from './notes';
 export { slateColumns, slateCopyColumns, slateImageSize, slateInfoColumns, slateNoteWidth, slatePixelRatio, SLATE_CARD_WIDTH, SLATE_COPY_GAP, SLATE_INFO_WIDTH, SLATE_NOTE_MIN } from './layout';
 export { useTooltip } from './tooltip';
+// round 21: the streak popup (item 8) and the series popup, for a host that wants them on its cards
+export { useStreakPopup } from './streakPopup';
+export { useSeriesPopup } from './series';
 export { createOddsStore, fmtOdds, liveOddsStore, oddsKey, ODDS_URL, type DayOdds, type GameOdds, type SlateOdds } from './odds';

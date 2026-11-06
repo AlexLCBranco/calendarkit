@@ -830,3 +830,114 @@
   color: var(--ck-muted);
   font-size: 10px;
 }
+
+/* ---- Round 21 (item 9): Cup history — the summary (West | East), then one season's tables and bracket */
+.ck-history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  --ck-logo: 16px;
+}
+.ck-history h3 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+.ck-hist-confs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ck-hist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.ck-hist-table th,
+.ck-hist-table td {
+  padding: 0 4px;
+  height: 17px;
+  text-align: center;
+  font-size: 11px;
+}
+.ck-hist-table th {
+  color: var(--ck-muted);
+  font-size: 10px;
+}
+.ck-hist-table td:first-child,
+.ck-hist-table th:first-child {
+  text-align: left;
+}
+.ck-hist-sort {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+.ck-hist-sorted {
+  color: var(--ck-accent);
+  text-decoration: underline;
+}
+.ck-hist-stage {
+  color: var(--ck-muted);
+}
+.ck-hist-qf,
+.ck-hist-sf,
+.ck-hist-final {
+  color: var(--ck-text);
+  font-weight: 700;
+}
+.ck-hist-champion {
+  font-weight: 800;
+}
+.ck-hist-shead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.ck-hist-shead h3 {
+  margin: 0;
+}
+.ck-hist-notes {
+  color: var(--ck-muted);
+  font-size: 11px;
+}
+.ck-hist-groups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ck-hist-trow {
+  display: grid;
+  grid-template-columns: 22px 34px minmax(0, 1fr) 30px 40px;
+  align-items: center;
+  gap: 3px;
+  height: 26px;
+}
+.ck-hist-squares {
+  display: flex;
+  gap: 2px;
+  justify-content: flex-end;
+  font-size: 10px;
+  line-height: 10px;
+  font-weight: 700;
+}
+.ck-hist-squares .ck-cup-slot {
+  height: 24px;
+  min-width: 34px;
+  color: #fff;
+}
+.ck-hist-bgame {
+  color: var(--ck-text);
+  text-decoration: none;
+}
+@media (max-width: 1800px) {
+  .ck-hist-groups {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

@@ -43,7 +43,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     weeks: p.get('weeks') === '2' ? 2 : p.get('weeks') === '1' ? 1 : undefined,
     teamDate: /^\d{4}-\d{2}-\d{2}$/.test(p.get('on') ?? '') ? p.get('on')! : undefined,
     // round 21 (item 6): the Cup's sub-view
-    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : p.get('cup') === 'simulator' ? 'simulator' : 'standings', list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id } : undefined,
+    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : p.get('cup') === 'simulator' ? 'simulator' : p.get('cup') === 'history' ? 'history' : 'standings', hs: /^\d{4}$/.test(p.get('hs') ?? '') ? Number(p.get('hs')) : undefined, list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id } : undefined,
   };
 }
 
@@ -87,6 +87,7 @@ export function urlOf(snap: ViewSnapshot, pathname = window.location.pathname): 
   if (s.teamSpan !== 'month') p.set('span', `${s.teamSpan}w`);
   if (s.mode === 'cup') {
     p.set('cup', snap.cup.tab);
+    if (snap.cup.tab === 'history' && snap.cup.hs) p.set('hs', String(snap.cup.hs));
     if (snap.cup.tab === 'schedule') {
       p.set('cl', snap.cup.list);
       if (snap.cup.list === 'league') p.set('by', snap.cup.by);

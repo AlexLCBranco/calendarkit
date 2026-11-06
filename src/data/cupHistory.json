@@ -1,0 +1,5441 @@
+{
+ "note": "Built by scripts/build-cup-history.ts from the NBA (stats.nba.com); do not edit by hand.",
+ "seasons": [
+  {
+   "season": "2023-24",
+   "year": 2023,
+   "sources": [
+    "https://stats.nba.com/stats/iststandings?LeagueID=00&Season=2023-24&Section=group",
+    "https://stats.nba.com/stats/scheduleleaguev2?Season=2023-24&LeagueID=00"
+   ],
+   "fetched": "2026-11-06",
+   "teams": [
+    {
+     "teamId": 1610612737,
+     "tricode": "ATL",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -32,
+     "points": 499,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300018",
+       "opponent": "DET",
+       "home": false,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 126,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300029",
+       "opponent": "PHI",
+       "home": true,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 116,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300039",
+       "opponent": "IND",
+       "home": true,
+       "win": false,
+       "date": "2023-11-21",
+       "score": 152,
+       "oppScore": 157,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300055",
+       "opponent": "CLE",
+       "home": false,
+       "win": false,
+       "date": "2023-11-28",
+       "score": 105,
+       "oppScore": 128,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612738,
+     "tricode": "BOS",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 1,
+     "w": 3,
+     "l": 1,
+     "diff": 27,
+     "points": 449,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 3,
+     "games": [
+      {
+       "gameId": "0022300010",
+       "opponent": "BKN",
+       "home": true,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 121,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300031",
+       "opponent": "TOR",
+       "home": false,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 108,
+       "oppScore": 105,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300043",
+       "opponent": "ORL",
+       "home": false,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 96,
+       "oppScore": 113,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300053",
+       "opponent": "CHI",
+       "home": true,
+       "win": true,
+       "date": "2023-11-28",
+       "score": 124,
+       "oppScore": 97,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612739,
+     "tricode": "CLE",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 29,
+     "points": 474,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300001",
+       "opponent": "IND",
+       "home": false,
+       "win": false,
+       "date": "2023-11-03",
+       "score": 116,
+       "oppScore": 121,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300030",
+       "opponent": "DET",
+       "home": true,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 108,
+       "oppScore": 100,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300040",
+       "opponent": "PHI",
+       "home": false,
+       "win": true,
+       "date": "2023-11-21",
+       "score": 122,
+       "oppScore": 119,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022300055",
+       "opponent": "ATL",
+       "home": true,
+       "win": true,
+       "date": "2023-11-28",
+       "score": 128,
+       "oppScore": 105,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612740,
+     "tricode": "NOP",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 1,
+     "w": 3,
+     "l": 1,
+     "diff": 33,
+     "points": 463,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 3,
+     "games": [
+      {
+       "gameId": "0022300011",
+       "opponent": "HOU",
+       "home": false,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 101,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300022",
+       "opponent": "DAL",
+       "home": true,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 131,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300034",
+       "opponent": "DEN",
+       "home": true,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 115,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300052",
+       "opponent": "LAC",
+       "home": false,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 116,
+       "oppScore": 106,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612741,
+     "tricode": "CHI",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -48,
+     "points": 409,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300004",
+       "opponent": "BKN",
+       "home": true,
+       "win": false,
+       "date": "2023-11-03",
+       "score": 107,
+       "oppScore": 109,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300033",
+       "opponent": "ORL",
+       "home": true,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 97,
+       "oppScore": 103,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300046",
+       "opponent": "TOR",
+       "home": false,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 108,
+       "oppScore": 121,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300053",
+       "opponent": "BOS",
+       "home": false,
+       "win": false,
+       "date": "2023-11-28",
+       "score": 97,
+       "oppScore": 124,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612742,
+     "tricode": "DAL",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": -8,
+     "points": 489,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300006",
+       "opponent": "DEN",
+       "home": false,
+       "win": false,
+       "date": "2023-11-03",
+       "score": 114,
+       "oppScore": 125,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300014",
+       "opponent": "LAC",
+       "home": true,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 144,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300022",
+       "opponent": "NOP",
+       "home": false,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 110,
+       "oppScore": 131,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300059",
+       "opponent": "HOU",
+       "home": true,
+       "win": true,
+       "date": "2023-11-28",
+       "score": 121,
+       "oppScore": 115,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612743,
+     "tricode": "DEN",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 4,
+     "w": 2,
+     "l": 2,
+     "diff": -10,
+     "points": 432,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300006",
+       "opponent": "DAL",
+       "home": true,
+       "win": true,
+       "date": "2023-11-03",
+       "score": 125,
+       "oppScore": 114,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300024",
+       "opponent": "LAC",
+       "home": true,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 111,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300034",
+       "opponent": "NOP",
+       "home": false,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 110,
+       "oppScore": 115,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300048",
+       "opponent": "HOU",
+       "home": false,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 86,
+       "oppScore": 105,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612744,
+     "tricode": "GSW",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 4,
+     "points": 483,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300005",
+       "opponent": "OKC",
+       "home": false,
+       "win": true,
+       "date": "2023-11-03",
+       "score": 141,
+       "oppScore": 139,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300025",
+       "opponent": "MIN",
+       "home": true,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 101,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300051",
+       "opponent": "SAS",
+       "home": true,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 118,
+       "oppScore": 112,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300060",
+       "opponent": "SAC",
+       "home": false,
+       "win": false,
+       "date": "2023-11-28",
+       "score": 123,
+       "oppScore": 124,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612745,
+     "tricode": "HOU",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 2,
+     "w": 2,
+     "l": 2,
+     "diff": 10,
+     "points": 424,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300011",
+       "opponent": "NOP",
+       "home": true,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 104,
+       "oppScore": 101,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300037",
+       "opponent": "LAC",
+       "home": false,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 100,
+       "oppScore": 106,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300048",
+       "opponent": "DEN",
+       "home": true,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 105,
+       "oppScore": 86,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300059",
+       "opponent": "DAL",
+       "home": false,
+       "win": false,
+       "date": "2023-11-28",
+       "score": 115,
+       "oppScore": 121,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612746,
+     "tricode": "LAC",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 5,
+     "w": 1,
+     "l": 3,
+     "diff": -25,
+     "points": 446,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300014",
+       "opponent": "DAL",
+       "home": false,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 126,
+       "oppScore": 144,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300024",
+       "opponent": "DEN",
+       "home": false,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 108,
+       "oppScore": 111,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300037",
+       "opponent": "HOU",
+       "home": true,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 106,
+       "oppScore": 100,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300052",
+       "opponent": "NOP",
+       "home": true,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 106,
+       "oppScore": 116,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612747,
+     "tricode": "LAL",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 74,
+     "points": 494,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 1,
+     "games": [
+      {
+       "gameId": "0022300015",
+       "opponent": "PHX",
+       "home": false,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 122,
+       "oppScore": 119,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300026",
+       "opponent": "MEM",
+       "home": true,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 134,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300036",
+       "opponent": "POR",
+       "home": false,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 107,
+       "oppScore": 95,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300042",
+       "opponent": "UTA",
+       "home": true,
+       "win": true,
+       "date": "2023-11-21",
+       "score": 131,
+       "oppScore": 99,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612748,
+     "tricode": "MIA",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 4,
+     "points": 454,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300003",
+       "opponent": "WAS",
+       "home": true,
+       "win": true,
+       "date": "2023-11-03",
+       "score": 121,
+       "oppScore": 114,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300017",
+       "opponent": "CHA",
+       "home": false,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 111,
+       "oppScore": 105,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300045",
+       "opponent": "NYK",
+       "home": false,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 98,
+       "oppScore": 100,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300056",
+       "opponent": "MIL",
+       "home": true,
+       "win": false,
+       "date": "2023-11-28",
+       "score": 124,
+       "oppScore": 131,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612749,
+     "tricode": "MIL",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 46,
+     "points": 502,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 1,
+     "games": [
+      {
+       "gameId": "0022300002",
+       "opponent": "NYK",
+       "home": true,
+       "win": true,
+       "date": "2023-11-03",
+       "score": 110,
+       "oppScore": 105,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300027",
+       "opponent": "CHA",
+       "home": false,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 130,
+       "oppScore": 99,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300049",
+       "opponent": "WAS",
+       "home": true,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 131,
+       "oppScore": 128,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300056",
+       "opponent": "MIA",
+       "home": false,
+       "win": true,
+       "date": "2023-11-28",
+       "score": 131,
+       "oppScore": 124,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612750,
+     "tricode": "MIN",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 0,
+     "points": 438,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300013",
+       "opponent": "SAS",
+       "home": false,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 117,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300025",
+       "opponent": "GSW",
+       "home": false,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 104,
+       "oppScore": 101,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300050",
+       "opponent": "SAC",
+       "home": true,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 111,
+       "oppScore": 124,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300058",
+       "opponent": "OKC",
+       "home": true,
+       "win": true,
+       "date": "2023-11-28",
+       "score": 106,
+       "oppScore": 103,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612751,
+     "tricode": "BKN",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 3,
+     "w": 3,
+     "l": 1,
+     "diff": 20,
+     "points": 455,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300004",
+       "opponent": "CHI",
+       "home": false,
+       "win": true,
+       "date": "2023-11-03",
+       "score": 109,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300010",
+       "opponent": "BOS",
+       "home": false,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 107,
+       "oppScore": 121,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300020",
+       "opponent": "ORL",
+       "home": true,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 124,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300054",
+       "opponent": "TOR",
+       "home": true,
+       "win": true,
+       "date": "2023-11-28",
+       "score": 115,
+       "oppScore": 103,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612752,
+     "tricode": "NYK",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 42,
+     "points": 440,
+     "groupWinner": false,
+     "wildCard": true,
+     "seed": 4,
+     "games": [
+      {
+       "gameId": "0022300002",
+       "opponent": "MIL",
+       "home": false,
+       "win": false,
+       "date": "2023-11-03",
+       "score": 105,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300028",
+       "opponent": "WAS",
+       "home": false,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 120,
+       "oppScore": 99,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300045",
+       "opponent": "MIA",
+       "home": true,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 100,
+       "oppScore": 98,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300057",
+       "opponent": "CHA",
+       "home": true,
+       "win": true,
+       "date": "2023-11-28",
+       "score": 115,
+       "oppScore": 91,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612753,
+     "tricode": "ORL",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 22,
+     "points": 446,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300020",
+       "opponent": "BKN",
+       "home": false,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 104,
+       "oppScore": 124,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300033",
+       "opponent": "CHI",
+       "home": false,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 103,
+       "oppScore": 97,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300038",
+       "opponent": "TOR",
+       "home": true,
+       "win": true,
+       "date": "2023-11-21",
+       "score": 126,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300043",
+       "opponent": "BOS",
+       "home": true,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 113,
+       "oppScore": 96,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612754,
+     "tricode": "IND",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 39,
+     "points": 546,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 2,
+     "games": [
+      {
+       "gameId": "0022300001",
+       "opponent": "CLE",
+       "home": true,
+       "win": true,
+       "date": "2023-11-03",
+       "score": 121,
+       "oppScore": 116,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300019",
+       "opponent": "PHI",
+       "home": false,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 132,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300039",
+       "opponent": "ATL",
+       "home": false,
+       "win": true,
+       "date": "2023-11-21",
+       "score": 157,
+       "oppScore": 152,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300047",
+       "opponent": "DET",
+       "home": true,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 136,
+       "oppScore": 113,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612755,
+     "tricode": "PHI",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 9,
+     "points": 485,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300008",
+       "opponent": "DET",
+       "home": false,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 114,
+       "oppScore": 106,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300019",
+       "opponent": "IND",
+       "home": true,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 126,
+       "oppScore": 132,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300029",
+       "opponent": "ATL",
+       "home": false,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 126,
+       "oppScore": 116,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300040",
+       "opponent": "CLE",
+       "home": true,
+       "win": false,
+       "date": "2023-11-21",
+       "score": 119,
+       "oppScore": 122,
+       "status": "Final/OT"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612756,
+     "tricode": "PHX",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 34,
+     "points": 480,
+     "groupWinner": false,
+     "wildCard": true,
+     "seed": 4,
+     "games": [
+      {
+       "gameId": "0022300015",
+       "opponent": "LAL",
+       "home": true,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 119,
+       "oppScore": 122,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300035",
+       "opponent": "UTA",
+       "home": false,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 131,
+       "oppScore": 128,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300041",
+       "opponent": "POR",
+       "home": true,
+       "win": true,
+       "date": "2023-11-21",
+       "score": 120,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300044",
+       "opponent": "MEM",
+       "home": false,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 110,
+       "oppScore": 89,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612757,
+     "tricode": "POR",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -39,
+     "points": 416,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300007",
+       "opponent": "MEM",
+       "home": true,
+       "win": true,
+       "date": "2023-11-03",
+       "score": 115,
+       "oppScore": 113,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022300023",
+       "opponent": "UTA",
+       "home": false,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 99,
+       "oppScore": 115,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300036",
+       "opponent": "LAL",
+       "home": true,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 95,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300041",
+       "opponent": "PHX",
+       "home": false,
+       "win": false,
+       "date": "2023-11-21",
+       "score": 107,
+       "oppScore": 120,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612758,
+     "tricode": "SAC",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 30,
+     "points": 482,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 2,
+     "games": [
+      {
+       "gameId": "0022300016",
+       "opponent": "OKC",
+       "home": true,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 105,
+       "oppScore": 98,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300032",
+       "opponent": "SAS",
+       "home": false,
+       "win": true,
+       "date": "2023-11-17",
+       "score": 129,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300050",
+       "opponent": "MIN",
+       "home": false,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 124,
+       "oppScore": 111,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300060",
+       "opponent": "GSW",
+       "home": true,
+       "win": true,
+       "date": "2023-11-28",
+       "score": 124,
+       "oppScore": 123,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612759,
+     "tricode": "SAS",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -58,
+     "points": 429,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300013",
+       "opponent": "MIN",
+       "home": true,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 110,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300021",
+       "opponent": "OKC",
+       "home": false,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 87,
+       "oppScore": 123,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300032",
+       "opponent": "SAC",
+       "home": true,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 120,
+       "oppScore": 129,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300051",
+       "opponent": "GSW",
+       "home": false,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 112,
+       "oppScore": 118,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612760,
+     "tricode": "OKC",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": 24,
+     "points": 463,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300005",
+       "opponent": "GSW",
+       "home": true,
+       "win": false,
+       "date": "2023-11-03",
+       "score": 139,
+       "oppScore": 141,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300016",
+       "opponent": "SAC",
+       "home": false,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 98,
+       "oppScore": 105,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300021",
+       "opponent": "SAS",
+       "home": true,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 123,
+       "oppScore": 87,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300058",
+       "opponent": "MIN",
+       "home": false,
+       "win": false,
+       "date": "2023-11-28",
+       "score": 103,
+       "oppScore": 106,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612761,
+     "tricode": "TOR",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -21,
+     "points": 436,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300031",
+       "opponent": "BOS",
+       "home": true,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 105,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300038",
+       "opponent": "ORL",
+       "home": false,
+       "win": false,
+       "date": "2023-11-21",
+       "score": 107,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300046",
+       "opponent": "CHI",
+       "home": true,
+       "win": true,
+       "date": "2023-11-24",
+       "score": 121,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300054",
+       "opponent": "BKN",
+       "home": false,
+       "win": false,
+       "date": "2023-11-28",
+       "score": 103,
+       "oppScore": 115,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612762,
+     "tricode": "UTA",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": -13,
+     "points": 469,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300012",
+       "opponent": "MEM",
+       "home": false,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 127,
+       "oppScore": 121,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300023",
+       "opponent": "POR",
+       "home": true,
+       "win": true,
+       "date": "2023-11-14",
+       "score": 115,
+       "oppScore": 99,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300035",
+       "opponent": "PHX",
+       "home": true,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 128,
+       "oppScore": 131,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300042",
+       "opponent": "LAL",
+       "home": false,
+       "win": false,
+       "date": "2023-11-21",
+       "score": 99,
+       "oppScore": 131,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612763,
+     "tricode": "MEM",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -56,
+     "points": 430,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300007",
+       "opponent": "POR",
+       "home": false,
+       "win": false,
+       "date": "2023-11-03",
+       "score": 113,
+       "oppScore": 115,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022300012",
+       "opponent": "UTA",
+       "home": true,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 121,
+       "oppScore": 127,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300026",
+       "opponent": "LAL",
+       "home": false,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 107,
+       "oppScore": 134,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300044",
+       "opponent": "PHX",
+       "home": true,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 89,
+       "oppScore": 110,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612764,
+     "tricode": "WAS",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -38,
+     "points": 458,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300003",
+       "opponent": "MIA",
+       "home": false,
+       "win": false,
+       "date": "2023-11-03",
+       "score": 114,
+       "oppScore": 121,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300009",
+       "opponent": "CHA",
+       "home": true,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 117,
+       "oppScore": 124,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300028",
+       "opponent": "NYK",
+       "home": true,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 99,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300049",
+       "opponent": "MIL",
+       "home": false,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 128,
+       "oppScore": 131,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612765,
+     "tricode": "DET",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -45,
+     "points": 439,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300008",
+       "opponent": "PHI",
+       "home": true,
+       "win": false,
+       "date": "2023-11-10",
+       "score": 106,
+       "oppScore": 114,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300018",
+       "opponent": "ATL",
+       "home": true,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 120,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300030",
+       "opponent": "CLE",
+       "home": false,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 100,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300047",
+       "opponent": "IND",
+       "home": false,
+       "win": false,
+       "date": "2023-11-24",
+       "score": 113,
+       "oppScore": 136,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612766,
+     "tricode": "CHA",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -54,
+     "points": 419,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022300009",
+       "opponent": "WAS",
+       "home": false,
+       "win": true,
+       "date": "2023-11-10",
+       "score": 124,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300017",
+       "opponent": "MIA",
+       "home": true,
+       "win": false,
+       "date": "2023-11-14",
+       "score": 105,
+       "oppScore": 111,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300027",
+       "opponent": "MIL",
+       "home": true,
+       "win": false,
+       "date": "2023-11-17",
+       "score": 99,
+       "oppScore": 130,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022300057",
+       "opponent": "NYK",
+       "home": false,
+       "win": false,
+       "date": "2023-11-28",
+       "score": 91,
+       "oppScore": 115,
+       "status": "Final"
+      }
+     ]
+    }
+   ],
+   "knockout": [
+    {
+     "gameId": "0022301202",
+     "round": "qf",
+     "conference": "East",
+     "date": "2023-12-04",
+     "arena": "Gainbridge Fieldhouse",
+     "city": "Indianapolis",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612754,
+      "tricode": "IND",
+      "score": 122
+     },
+     "away": {
+      "teamId": 1610612738,
+      "tricode": "BOS",
+      "score": 112
+     }
+    },
+    {
+     "gameId": "0022301204",
+     "round": "qf",
+     "conference": "West",
+     "date": "2023-12-04",
+     "arena": "Golden 1 Center",
+     "city": "Sacramento",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612758,
+      "tricode": "SAC",
+      "score": 117
+     },
+     "away": {
+      "teamId": 1610612740,
+      "tricode": "NOP",
+      "score": 127
+     }
+    },
+    {
+     "gameId": "0022301201",
+     "round": "qf",
+     "conference": "East",
+     "date": "2023-12-05",
+     "arena": "Fiserv Forum",
+     "city": "Milwaukee",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612749,
+      "tricode": "MIL",
+      "score": 146
+     },
+     "away": {
+      "teamId": 1610612752,
+      "tricode": "NYK",
+      "score": 122
+     }
+    },
+    {
+     "gameId": "0022301203",
+     "round": "qf",
+     "conference": "West",
+     "date": "2023-12-05",
+     "arena": "Crypto.com Arena",
+     "city": "Los Angeles",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612747,
+      "tricode": "LAL",
+      "score": 106
+     },
+     "away": {
+      "teamId": 1610612756,
+      "tricode": "PHX",
+      "score": 103
+     }
+    },
+    {
+     "gameId": "0022301229",
+     "round": "sf",
+     "conference": "East",
+     "date": "2023-12-07",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612749,
+      "tricode": "MIL",
+      "score": 119
+     },
+     "away": {
+      "teamId": 1610612754,
+      "tricode": "IND",
+      "score": 128
+     }
+    },
+    {
+     "gameId": "0022301230",
+     "round": "sf",
+     "conference": "West",
+     "date": "2023-12-07",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612747,
+      "tricode": "LAL",
+      "score": 133
+     },
+     "away": {
+      "teamId": 1610612740,
+      "tricode": "NOP",
+      "score": 89
+     }
+    },
+    {
+     "gameId": "0062300001",
+     "round": "final",
+     "date": "2023-12-09",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612747,
+      "tricode": "LAL",
+      "score": 123
+     },
+     "away": {
+      "teamId": 1610612754,
+      "tricode": "IND",
+      "score": 109
+     }
+    }
+   ],
+   "groupDates": [
+    "2023-11-03",
+    "2023-11-10",
+    "2023-11-14",
+    "2023-11-17",
+    "2023-11-21",
+    "2023-11-24",
+    "2023-11-28"
+   ]
+  },
+  {
+   "season": "2024-25",
+   "year": 2024,
+   "sources": [
+    "https://stats.nba.com/stats/iststandings?LeagueID=00&Season=2024-25&Section=group",
+    "https://stats.nba.com/stats/scheduleleaguev2?Season=2024-25&LeagueID=00"
+   ],
+   "fetched": "2026-11-06",
+   "teams": [
+    {
+     "teamId": 1610612737,
+     "tricode": "ATL",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 1,
+     "w": 3,
+     "l": 1,
+     "diff": 15,
+     "points": 485,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 3,
+     "games": [
+      {
+       "gameId": "0022400001",
+       "opponent": "BOS",
+       "home": false,
+       "win": true,
+       "date": "2024-11-12",
+       "score": 117,
+       "oppScore": 116,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400012",
+       "opponent": "WAS",
+       "home": true,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 129,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400030",
+       "opponent": "CHI",
+       "home": false,
+       "win": false,
+       "date": "2024-11-22",
+       "score": 122,
+       "oppScore": 136,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400041",
+       "opponent": "CLE",
+       "home": true,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 117,
+       "oppScore": 101,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612738,
+     "tricode": "BOS",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 23,
+     "points": 482,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400001",
+       "opponent": "ATL",
+       "home": true,
+       "win": false,
+       "date": "2024-11-12",
+       "score": 116,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400021",
+       "opponent": "CLE",
+       "home": true,
+       "win": true,
+       "date": "2024-11-19",
+       "score": 120,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400028",
+       "opponent": "WAS",
+       "home": false,
+       "win": true,
+       "date": "2024-11-22",
+       "score": 108,
+       "oppScore": 96,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400047",
+       "opponent": "CHI",
+       "home": false,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 138,
+       "oppScore": 129,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612739,
+     "tricode": "CLE",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 30,
+     "points": 480,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400013",
+       "opponent": "CHI",
+       "home": true,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 144,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400021",
+       "opponent": "BOS",
+       "home": false,
+       "win": false,
+       "date": "2024-11-19",
+       "score": 117,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400041",
+       "opponent": "ATL",
+       "home": false,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 101,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400051",
+       "opponent": "WAS",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 118,
+       "oppScore": 87,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612740,
+     "tricode": "NOP",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 5,
+     "w": 1,
+     "l": 3,
+     "diff": -49,
+     "points": 409,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400017",
+       "opponent": "DEN",
+       "home": true,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 101,
+       "oppScore": 94,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400024",
+       "opponent": "DAL",
+       "home": false,
+       "win": false,
+       "date": "2024-11-19",
+       "score": 91,
+       "oppScore": 132,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400032",
+       "opponent": "GSW",
+       "home": true,
+       "win": false,
+       "date": "2024-11-22",
+       "score": 108,
+       "oppScore": 112,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400042",
+       "opponent": "MEM",
+       "home": false,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 109,
+       "oppScore": 120,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612741,
+     "tricode": "CHI",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 4,
+     "w": 2,
+     "l": 2,
+     "diff": 6,
+     "points": 518,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400013",
+       "opponent": "CLE",
+       "home": false,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 126,
+       "oppScore": 144,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400030",
+       "opponent": "ATL",
+       "home": true,
+       "win": true,
+       "date": "2024-11-22",
+       "score": 136,
+       "oppScore": 122,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400035",
+       "opponent": "WAS",
+       "home": false,
+       "win": true,
+       "date": "2024-11-26",
+       "score": 127,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400047",
+       "opponent": "BOS",
+       "home": true,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 129,
+       "oppScore": 138,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612742,
+     "tricode": "DAL",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 46,
+     "points": 493,
+     "groupWinner": false,
+     "wildCard": true,
+     "seed": 4,
+     "games": [
+      {
+       "gameId": "0022400007",
+       "opponent": "GSW",
+       "home": false,
+       "win": false,
+       "date": "2024-11-12",
+       "score": 117,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400024",
+       "opponent": "NOP",
+       "home": true,
+       "win": true,
+       "date": "2024-11-19",
+       "score": 132,
+       "oppScore": 91,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400033",
+       "opponent": "DEN",
+       "home": false,
+       "win": true,
+       "date": "2024-11-22",
+       "score": 123,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400056",
+       "opponent": "MEM",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 121,
+       "oppScore": 116,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612743,
+     "tricode": "DEN",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 6,
+     "points": 455,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400017",
+       "opponent": "NOP",
+       "home": false,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 94,
+       "oppScore": 101,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400023",
+       "opponent": "MEM",
+       "home": false,
+       "win": true,
+       "date": "2024-11-19",
+       "score": 122,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400033",
+       "opponent": "DAL",
+       "home": true,
+       "win": false,
+       "date": "2024-11-22",
+       "score": 120,
+       "oppScore": 123,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400058",
+       "opponent": "GSW",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 119,
+       "oppScore": 115,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612744,
+     "tricode": "GSW",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 1,
+     "w": 3,
+     "l": 1,
+     "diff": 8,
+     "points": 470,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 3,
+     "games": [
+      {
+       "gameId": "0022400007",
+       "opponent": "DAL",
+       "home": true,
+       "win": true,
+       "date": "2024-11-12",
+       "score": 120,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400019",
+       "opponent": "MEM",
+       "home": true,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 123,
+       "oppScore": 118,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400032",
+       "opponent": "NOP",
+       "home": false,
+       "win": true,
+       "date": "2024-11-22",
+       "score": 112,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400058",
+       "opponent": "DEN",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 115,
+       "oppScore": 119,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612745,
+     "tricode": "HOU",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 1,
+     "w": 3,
+     "l": 1,
+     "diff": 40,
+     "points": 454,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 2,
+     "games": [
+      {
+       "gameId": "0022400016",
+       "opponent": "LAC",
+       "home": true,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 125,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400031",
+       "opponent": "POR",
+       "home": true,
+       "win": true,
+       "date": "2024-11-22",
+       "score": 116,
+       "oppScore": 88,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400037",
+       "opponent": "MIN",
+       "home": false,
+       "win": true,
+       "date": "2024-11-26",
+       "score": 117,
+       "oppScore": 111,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022400059",
+       "opponent": "SAC",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 111,
+       "oppScore": 120,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612746,
+     "tricode": "LAC",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 2,
+     "w": 2,
+     "l": 2,
+     "diff": 16,
+     "points": 427,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400016",
+       "opponent": "HOU",
+       "home": false,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 104,
+       "oppScore": 125,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400034",
+       "opponent": "SAC",
+       "home": true,
+       "win": true,
+       "date": "2024-11-22",
+       "score": 104,
+       "oppScore": 88,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400044",
+       "opponent": "MIN",
+       "home": false,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 92,
+       "oppScore": 93,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400060",
+       "opponent": "POR",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 127,
+       "oppScore": 105,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612747,
+     "tricode": "LAL",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": -24,
+     "points": 437,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400015",
+       "opponent": "SAS",
+       "home": false,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 120,
+       "oppScore": 115,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400026",
+       "opponent": "UTA",
+       "home": true,
+       "win": true,
+       "date": "2024-11-19",
+       "score": 124,
+       "oppScore": 118,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400039",
+       "opponent": "PHX",
+       "home": false,
+       "win": false,
+       "date": "2024-11-26",
+       "score": 100,
+       "oppScore": 127,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400048",
+       "opponent": "OKC",
+       "home": true,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 93,
+       "oppScore": 101,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612748,
+     "tricode": "MIA",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 20,
+     "points": 459,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400002",
+       "opponent": "DET",
+       "home": false,
+       "win": false,
+       "date": "2024-11-12",
+       "score": 121,
+       "oppScore": 123,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022400009",
+       "opponent": "IND",
+       "home": false,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 124,
+       "oppScore": 111,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400036",
+       "opponent": "MIL",
+       "home": true,
+       "win": false,
+       "date": "2024-11-26",
+       "score": 103,
+       "oppScore": 106,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400046",
+       "opponent": "TOR",
+       "home": true,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 121,
+       "oppScore": 111,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612749,
+     "tricode": "MIL",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 50,
+     "points": 462,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 1,
+     "games": [
+      {
+       "gameId": "0022400005",
+       "opponent": "TOR",
+       "home": true,
+       "win": true,
+       "date": "2024-11-12",
+       "score": 99,
+       "oppScore": 85,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400029",
+       "opponent": "IND",
+       "home": true,
+       "win": true,
+       "date": "2024-11-22",
+       "score": 129,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400036",
+       "opponent": "MIA",
+       "home": false,
+       "win": true,
+       "date": "2024-11-26",
+       "score": 106,
+       "oppScore": 103,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400052",
+       "opponent": "DET",
+       "home": false,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 128,
+       "oppScore": 107,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612750,
+     "tricode": "MIN",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": -13,
+     "points": 418,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400008",
+       "opponent": "POR",
+       "home": false,
+       "win": false,
+       "date": "2024-11-12",
+       "score": 108,
+       "oppScore": 122,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400020",
+       "opponent": "SAC",
+       "home": false,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 130,
+       "oppScore": 126,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022400037",
+       "opponent": "HOU",
+       "home": true,
+       "win": false,
+       "date": "2024-11-26",
+       "score": 111,
+       "oppScore": 117,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022400044",
+       "opponent": "LAC",
+       "home": true,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 93,
+       "oppScore": 92,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612751,
+     "tricode": "BKN",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -39,
+     "points": 436,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400014",
+       "opponent": "NYK",
+       "home": false,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 122,
+       "oppScore": 124,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400022",
+       "opponent": "CHA",
+       "home": true,
+       "win": true,
+       "date": "2024-11-19",
+       "score": 116,
+       "oppScore": 115,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400027",
+       "opponent": "PHI",
+       "home": false,
+       "win": false,
+       "date": "2024-11-22",
+       "score": 98,
+       "oppScore": 113,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400043",
+       "opponent": "ORL",
+       "home": true,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 100,
+       "oppScore": 123,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612752,
+     "tricode": "NYK",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 30,
+     "points": 455,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 2,
+     "games": [
+      {
+       "gameId": "0022400004",
+       "opponent": "PHI",
+       "home": false,
+       "win": true,
+       "date": "2024-11-12",
+       "score": 111,
+       "oppScore": 99,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400014",
+       "opponent": "BKN",
+       "home": true,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 124,
+       "oppScore": 122,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400040",
+       "opponent": "CHA",
+       "home": false,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 99,
+       "oppScore": 98,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400053",
+       "opponent": "ORL",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 121,
+       "oppScore": 106,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612753,
+     "tricode": "ORL",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 45,
+     "points": 441,
+     "groupWinner": false,
+     "wildCard": true,
+     "seed": 4,
+     "games": [
+      {
+       "gameId": "0022400003",
+       "opponent": "CHA",
+       "home": true,
+       "win": true,
+       "date": "2024-11-12",
+       "score": 114,
+       "oppScore": 89,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400010",
+       "opponent": "PHI",
+       "home": true,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 98,
+       "oppScore": 86,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400043",
+       "opponent": "BKN",
+       "home": false,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 123,
+       "oppScore": 100,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400053",
+       "opponent": "NYK",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 106,
+       "oppScore": 121,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612754,
+     "tricode": "IND",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -60,
+     "points": 445,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400009",
+       "opponent": "MIA",
+       "home": true,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 111,
+       "oppScore": 124,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400029",
+       "opponent": "MIL",
+       "home": false,
+       "win": false,
+       "date": "2024-11-22",
+       "score": 117,
+       "oppScore": 129,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400045",
+       "opponent": "DET",
+       "home": true,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 106,
+       "oppScore": 130,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400054",
+       "opponent": "TOR",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 111,
+       "oppScore": 122,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612755,
+     "tricode": "PHI",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": -3,
+     "points": 408,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400004",
+       "opponent": "NYK",
+       "home": true,
+       "win": false,
+       "date": "2024-11-12",
+       "score": 99,
+       "oppScore": 111,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400010",
+       "opponent": "ORL",
+       "home": false,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 86,
+       "oppScore": 98,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400027",
+       "opponent": "BKN",
+       "home": true,
+       "win": true,
+       "date": "2024-11-22",
+       "score": 113,
+       "oppScore": 98,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400050",
+       "opponent": "CHA",
+       "home": false,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 110,
+       "oppScore": 104,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612756,
+     "tricode": "PHX",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 30,
+     "points": 434,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400006",
+       "opponent": "UTA",
+       "home": false,
+       "win": true,
+       "date": "2024-11-12",
+       "score": 120,
+       "oppScore": 112,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400018",
+       "opponent": "OKC",
+       "home": false,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 83,
+       "oppScore": 99,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400039",
+       "opponent": "LAL",
+       "home": true,
+       "win": true,
+       "date": "2024-11-26",
+       "score": 127,
+       "oppScore": 100,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400057",
+       "opponent": "SAS",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 104,
+       "oppScore": 93,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612757,
+     "tricode": "POR",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 4,
+     "w": 2,
+     "l": 2,
+     "diff": -27,
+     "points": 430,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400008",
+       "opponent": "MIN",
+       "home": true,
+       "win": true,
+       "date": "2024-11-12",
+       "score": 122,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400031",
+       "opponent": "HOU",
+       "home": false,
+       "win": false,
+       "date": "2024-11-22",
+       "score": 88,
+       "oppScore": 116,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400049",
+       "opponent": "SAC",
+       "home": true,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 115,
+       "oppScore": 106,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400060",
+       "opponent": "LAC",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 105,
+       "oppScore": 127,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612758,
+     "tricode": "SAC",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 5,
+     "w": 1,
+     "l": 3,
+     "diff": -16,
+     "points": 429,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400020",
+       "opponent": "MIN",
+       "home": true,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 126,
+       "oppScore": 130,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022400034",
+       "opponent": "LAC",
+       "home": false,
+       "win": false,
+       "date": "2024-11-22",
+       "score": 88,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400049",
+       "opponent": "POR",
+       "home": false,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 106,
+       "oppScore": 115,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400059",
+       "opponent": "HOU",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 120,
+       "oppScore": 111,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612759,
+     "tricode": "SAS",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 4,
+     "w": 2,
+     "l": 2,
+     "diff": 3,
+     "points": 446,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400015",
+       "opponent": "LAL",
+       "home": true,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 115,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400025",
+       "opponent": "OKC",
+       "home": true,
+       "win": true,
+       "date": "2024-11-19",
+       "score": 110,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400038",
+       "opponent": "UTA",
+       "home": false,
+       "win": true,
+       "date": "2024-11-26",
+       "score": 128,
+       "oppScore": 115,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400057",
+       "opponent": "PHX",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 93,
+       "oppScore": 104,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612760,
+     "tricode": "OKC",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 1,
+     "w": 3,
+     "l": 1,
+     "diff": 45,
+     "points": 437,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 1,
+     "games": [
+      {
+       "gameId": "0022400018",
+       "opponent": "PHX",
+       "home": true,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 99,
+       "oppScore": 83,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400025",
+       "opponent": "SAS",
+       "home": false,
+       "win": false,
+       "date": "2024-11-19",
+       "score": 104,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400048",
+       "opponent": "LAL",
+       "home": false,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 101,
+       "oppScore": 93,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400055",
+       "opponent": "UTA",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 133,
+       "oppScore": 106,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612761,
+     "tricode": "TOR",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -17,
+     "points": 413,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400005",
+       "opponent": "MIL",
+       "home": false,
+       "win": false,
+       "date": "2024-11-12",
+       "score": 85,
+       "oppScore": 99,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400011",
+       "opponent": "DET",
+       "home": true,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 95,
+       "oppScore": 99,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400046",
+       "opponent": "MIA",
+       "home": false,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 111,
+       "oppScore": 121,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400054",
+       "opponent": "IND",
+       "home": true,
+       "win": true,
+       "date": "2024-12-03",
+       "score": 122,
+       "oppScore": 111,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612762,
+     "tricode": "UTA",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -54,
+     "points": 451,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400006",
+       "opponent": "PHX",
+       "home": true,
+       "win": false,
+       "date": "2024-11-12",
+       "score": 112,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400026",
+       "opponent": "LAL",
+       "home": false,
+       "win": false,
+       "date": "2024-11-19",
+       "score": 118,
+       "oppScore": 124,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400038",
+       "opponent": "SAS",
+       "home": true,
+       "win": false,
+       "date": "2024-11-26",
+       "score": 115,
+       "oppScore": 128,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400055",
+       "opponent": "OKC",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 106,
+       "oppScore": 133,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612763,
+     "tricode": "MEM",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -11,
+     "points": 464,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400019",
+       "opponent": "GSW",
+       "home": false,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 118,
+       "oppScore": 123,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400023",
+       "opponent": "DEN",
+       "home": true,
+       "win": false,
+       "date": "2024-11-19",
+       "score": 110,
+       "oppScore": 122,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400042",
+       "opponent": "NOP",
+       "home": true,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 120,
+       "oppScore": 109,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400056",
+       "opponent": "DAL",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 116,
+       "oppScore": 121,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612764,
+     "tricode": "WAS",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -74,
+     "points": 408,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400012",
+       "opponent": "ATL",
+       "home": false,
+       "win": false,
+       "date": "2024-11-15",
+       "score": 117,
+       "oppScore": 129,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400028",
+       "opponent": "BOS",
+       "home": true,
+       "win": false,
+       "date": "2024-11-22",
+       "score": 96,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400035",
+       "opponent": "CHI",
+       "home": true,
+       "win": false,
+       "date": "2024-11-26",
+       "score": 108,
+       "oppScore": 127,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400051",
+       "opponent": "CLE",
+       "home": false,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 87,
+       "oppScore": 118,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612765,
+     "tricode": "DET",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 7,
+     "points": 447,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400002",
+       "opponent": "MIA",
+       "home": true,
+       "win": true,
+       "date": "2024-11-12",
+       "score": 123,
+       "oppScore": 121,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022400011",
+       "opponent": "TOR",
+       "home": false,
+       "win": true,
+       "date": "2024-11-15",
+       "score": 99,
+       "oppScore": 95,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400045",
+       "opponent": "IND",
+       "home": false,
+       "win": true,
+       "date": "2024-11-29",
+       "score": 130,
+       "oppScore": 106,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400052",
+       "opponent": "MIL",
+       "home": true,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 107,
+       "oppScore": 128,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612766,
+     "tricode": "CHA",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -33,
+     "points": 406,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022400003",
+       "opponent": "ORL",
+       "home": false,
+       "win": false,
+       "date": "2024-11-12",
+       "score": 89,
+       "oppScore": 114,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400022",
+       "opponent": "BKN",
+       "home": false,
+       "win": false,
+       "date": "2024-11-19",
+       "score": 115,
+       "oppScore": 116,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400040",
+       "opponent": "NYK",
+       "home": true,
+       "win": false,
+       "date": "2024-11-29",
+       "score": 98,
+       "oppScore": 99,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022400050",
+       "opponent": "PHI",
+       "home": true,
+       "win": false,
+       "date": "2024-12-03",
+       "score": 104,
+       "oppScore": 110,
+       "status": "Final"
+      }
+     ]
+    }
+   ],
+   "knockout": [
+    {
+     "gameId": "0022401201",
+     "round": "qf",
+     "conference": "East",
+     "date": "2024-12-10",
+     "arena": "Fiserv Forum",
+     "city": "Milwaukee",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612749,
+      "tricode": "MIL",
+      "score": 114
+     },
+     "away": {
+      "teamId": 1610612753,
+      "tricode": "ORL",
+      "score": 109
+     }
+    },
+    {
+     "gameId": "0022401203",
+     "round": "qf",
+     "conference": "West",
+     "date": "2024-12-10",
+     "arena": "Paycom Center",
+     "city": "Oklahoma City",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612760,
+      "tricode": "OKC",
+      "score": 118
+     },
+     "away": {
+      "teamId": 1610612742,
+      "tricode": "DAL",
+      "score": 104
+     }
+    },
+    {
+     "gameId": "0022401202",
+     "round": "qf",
+     "conference": "East",
+     "date": "2024-12-11",
+     "arena": "Madison Square Garden",
+     "city": "New York",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612752,
+      "tricode": "NYK",
+      "score": 100
+     },
+     "away": {
+      "teamId": 1610612737,
+      "tricode": "ATL",
+      "score": 108
+     }
+    },
+    {
+     "gameId": "0022401204",
+     "round": "qf",
+     "conference": "West",
+     "date": "2024-12-11",
+     "arena": "Toyota Center",
+     "city": "Houston",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612745,
+      "tricode": "HOU",
+      "score": 91
+     },
+     "away": {
+      "teamId": 1610612744,
+      "tricode": "GSW",
+      "score": 90
+     }
+    },
+    {
+     "gameId": "0022401229",
+     "round": "sf",
+     "conference": "East",
+     "date": "2024-12-14",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612749,
+      "tricode": "MIL",
+      "score": 110
+     },
+     "away": {
+      "teamId": 1610612737,
+      "tricode": "ATL",
+      "score": 102
+     }
+    },
+    {
+     "gameId": "0022401230",
+     "round": "sf",
+     "conference": "West",
+     "date": "2024-12-14",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612760,
+      "tricode": "OKC",
+      "score": 111
+     },
+     "away": {
+      "teamId": 1610612745,
+      "tricode": "HOU",
+      "score": 96
+     }
+    },
+    {
+     "gameId": "0062400001",
+     "round": "final",
+     "date": "2024-12-17",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612760,
+      "tricode": "OKC",
+      "score": 81
+     },
+     "away": {
+      "teamId": 1610612749,
+      "tricode": "MIL",
+      "score": 97
+     }
+    }
+   ],
+   "groupDates": [
+    "2024-11-12",
+    "2024-11-15",
+    "2024-11-19",
+    "2024-11-22",
+    "2024-11-26",
+    "2024-11-29",
+    "2024-12-03"
+   ]
+  },
+  {
+   "season": "2025-26",
+   "year": 2025,
+   "sources": [
+    "https://stats.nba.com/stats/iststandings?LeagueID=00&Season=2025-26&Section=group",
+    "https://stats.nba.com/stats/scheduleleaguev2?Season=2025-26&LeagueID=00"
+   ],
+   "fetched": "2026-11-06",
+   "teams": [
+    {
+     "teamId": 1610612737,
+     "tricode": "ATL",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 2,
+     "w": 2,
+     "l": 2,
+     "diff": -4,
+     "points": 468,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500020",
+       "opponent": "IND",
+       "home": false,
+       "win": true,
+       "date": "2025-10-31",
+       "score": 128,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500030",
+       "opponent": "TOR",
+       "home": true,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 97,
+       "oppScore": 109,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500057",
+       "opponent": "WAS",
+       "home": false,
+       "win": false,
+       "date": "2025-11-25",
+       "score": 113,
+       "oppScore": 132,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500069",
+       "opponent": "CLE",
+       "home": true,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 130,
+       "oppScore": 123,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612738,
+     "tricode": "BOS",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 2,
+     "w": 2,
+     "l": 2,
+     "diff": -17,
+     "points": 441,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500021",
+       "opponent": "PHI",
+       "home": false,
+       "win": true,
+       "date": "2025-10-31",
+       "score": 109,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500028",
+       "opponent": "ORL",
+       "home": false,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 110,
+       "oppScore": 123,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500049",
+       "opponent": "BKN",
+       "home": true,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 105,
+       "oppScore": 113,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500060",
+       "opponent": "DET",
+       "home": true,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 117,
+       "oppScore": 114,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612739,
+     "tricode": "CLE",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 26,
+     "points": 492,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500022",
+       "opponent": "TOR",
+       "home": true,
+       "win": false,
+       "date": "2025-10-31",
+       "score": 101,
+       "oppScore": 112,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500029",
+       "opponent": "WAS",
+       "home": false,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 148,
+       "oppScore": 115,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500048",
+       "opponent": "IND",
+       "home": true,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 120,
+       "oppScore": 109,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500069",
+       "opponent": "ATL",
+       "home": false,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 123,
+       "oppScore": 130,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612740,
+     "tricode": "NOP",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -19,
+     "points": 465,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500027",
+       "opponent": "LAC",
+       "home": false,
+       "win": false,
+       "date": "2025-10-31",
+       "score": 124,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500045",
+       "opponent": "LAL",
+       "home": true,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 104,
+       "oppScore": 118,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500052",
+       "opponent": "DAL",
+       "home": false,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 115,
+       "oppScore": 118,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500065",
+       "opponent": "MEM",
+       "home": true,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 128,
+       "oppScore": 133,
+       "status": "Final/OT"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612741,
+     "tricode": "CHI",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 5,
+     "w": 1,
+     "l": 3,
+     "diff": -49,
+     "points": 468,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500023",
+       "opponent": "NYK",
+       "home": true,
+       "win": true,
+       "date": "2025-10-31",
+       "score": 135,
+       "oppScore": 125,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500035",
+       "opponent": "MIL",
+       "home": false,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 110,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500051",
+       "opponent": "MIA",
+       "home": true,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 107,
+       "oppScore": 143,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500071",
+       "opponent": "CHA",
+       "home": false,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 116,
+       "oppScore": 123,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612742,
+     "tricode": "DAL",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -21,
+     "points": 455,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500034",
+       "opponent": "MEM",
+       "home": false,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 104,
+       "oppScore": 118,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500046",
+       "opponent": "LAC",
+       "home": true,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 127,
+       "oppScore": 133,
+       "status": "Final/OT2"
+      },
+      {
+       "gameId": "0022500052",
+       "opponent": "NOP",
+       "home": true,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 118,
+       "oppScore": 115,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500078",
+       "opponent": "LAL",
+       "home": false,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 119,
+       "oppScore": 129,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612743,
+     "tricode": "DEN",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 2,
+     "w": 2,
+     "l": 2,
+     "diff": 23,
+     "points": 484,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500026",
+       "opponent": "POR",
+       "home": false,
+       "win": false,
+       "date": "2025-10-31",
+       "score": 107,
+       "oppScore": 109,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500037",
+       "opponent": "GSW",
+       "home": true,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 129,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500054",
+       "opponent": "HOU",
+       "home": false,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 112,
+       "oppScore": 109,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500076",
+       "opponent": "SAS",
+       "home": true,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 136,
+       "oppScore": 139,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612744,
+     "tricode": "GSW",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 5,
+     "w": 1,
+     "l": 3,
+     "diff": -32,
+     "points": 436,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500037",
+       "opponent": "DEN",
+       "home": false,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 104,
+       "oppScore": 129,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500047",
+       "opponent": "SAS",
+       "home": false,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 109,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500056",
+       "opponent": "POR",
+       "home": true,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 123,
+       "oppScore": 127,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500066",
+       "opponent": "HOU",
+       "home": true,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 100,
+       "oppScore": 104,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612745,
+     "tricode": "HOU",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 14,
+     "points": 463,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500032",
+       "opponent": "SAS",
+       "home": false,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 110,
+       "oppScore": 121,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500042",
+       "opponent": "POR",
+       "home": true,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 140,
+       "oppScore": 116,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500054",
+       "opponent": "DEN",
+       "home": true,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 109,
+       "oppScore": 112,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500066",
+       "opponent": "GSW",
+       "home": false,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 104,
+       "oppScore": 100,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612746,
+     "tricode": "LAC",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": -20,
+     "points": 465,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500027",
+       "opponent": "NOP",
+       "home": true,
+       "win": true,
+       "date": "2025-10-31",
+       "score": 126,
+       "oppScore": 124,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500046",
+       "opponent": "DAL",
+       "home": false,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 133,
+       "oppScore": 127,
+       "status": "Final/OT2"
+      },
+      {
+       "gameId": "0022500059",
+       "opponent": "LAL",
+       "home": false,
+       "win": false,
+       "date": "2025-11-25",
+       "score": 118,
+       "oppScore": 135,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500079",
+       "opponent": "MEM",
+       "home": true,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 107,
+       "oppScore": 112,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612747,
+     "tricode": "LAL",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 46,
+     "points": 499,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 2,
+     "games": [
+      {
+       "gameId": "0022500024",
+       "opponent": "MEM",
+       "home": false,
+       "win": true,
+       "date": "2025-10-31",
+       "score": 117,
+       "oppScore": 112,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500045",
+       "opponent": "NOP",
+       "home": false,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 118,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500059",
+       "opponent": "LAC",
+       "home": true,
+       "win": true,
+       "date": "2025-11-25",
+       "score": 135,
+       "oppScore": 118,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500078",
+       "opponent": "DAL",
+       "home": true,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 129,
+       "oppScore": 119,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612748,
+     "tricode": "MIA",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 49,
+     "points": 507,
+     "groupWinner": false,
+     "wildCard": true,
+     "seed": 4,
+     "games": [
+      {
+       "gameId": "0022500033",
+       "opponent": "CHA",
+       "home": true,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 126,
+       "oppScore": 108,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500039",
+       "opponent": "NYK",
+       "home": false,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 132,
+       "oppScore": 140,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500051",
+       "opponent": "CHI",
+       "home": false,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 143,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500062",
+       "opponent": "MIL",
+       "home": true,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 106,
+       "oppScore": 103,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612749,
+     "tricode": "MIL",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 4,
+     "points": 467,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500035",
+       "opponent": "CHI",
+       "home": true,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 126,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500043",
+       "opponent": "CHA",
+       "home": true,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 147,
+       "oppScore": 134,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022500062",
+       "opponent": "MIA",
+       "home": false,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 103,
+       "oppScore": 106,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500074",
+       "opponent": "NYK",
+       "home": false,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 109,
+       "oppScore": 118,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612750,
+     "tricode": "MIN",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 45,
+     "points": 479,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500036",
+       "opponent": "UTA",
+       "home": true,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 137,
+       "oppScore": 97,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500044",
+       "opponent": "SAC",
+       "home": true,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 124,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500053",
+       "opponent": "PHX",
+       "home": false,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 113,
+       "oppScore": 114,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500064",
+       "opponent": "OKC",
+       "home": false,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 105,
+       "oppScore": 113,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612751,
+     "tricode": "BKN",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 5,
+     "w": 1,
+     "l": 3,
+     "diff": -29,
+     "points": 421,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500031",
+       "opponent": "DET",
+       "home": true,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 107,
+       "oppScore": 125,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500040",
+       "opponent": "ORL",
+       "home": false,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 98,
+       "oppScore": 105,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500049",
+       "opponent": "BOS",
+       "home": false,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 113,
+       "oppScore": 105,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500070",
+       "opponent": "PHI",
+       "home": true,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 103,
+       "oppScore": 115,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612752,
+     "tricode": "NYK",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 1,
+     "w": 3,
+     "l": 1,
+     "diff": 35,
+     "points": 512,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 3,
+     "games": [
+      {
+       "gameId": "0022500023",
+       "opponent": "CHI",
+       "home": false,
+       "win": false,
+       "date": "2025-10-31",
+       "score": 125,
+       "oppScore": 135,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500039",
+       "opponent": "MIA",
+       "home": true,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 140,
+       "oppScore": 132,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500061",
+       "opponent": "CHA",
+       "home": false,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 129,
+       "oppScore": 101,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500074",
+       "opponent": "MIL",
+       "home": true,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 118,
+       "oppScore": 109,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612753,
+     "tricode": "ORL",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 64,
+     "points": 484,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 1,
+     "games": [
+      {
+       "gameId": "0022500028",
+       "opponent": "BOS",
+       "home": true,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 123,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500040",
+       "opponent": "BKN",
+       "home": true,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 105,
+       "oppScore": 98,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500058",
+       "opponent": "PHI",
+       "home": false,
+       "win": true,
+       "date": "2025-11-25",
+       "score": 144,
+       "oppScore": 103,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500072",
+       "opponent": "DET",
+       "home": false,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 112,
+       "oppScore": 109,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612754,
+     "tricode": "IND",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": 0,
+     "points": 431,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500020",
+       "opponent": "ATL",
+       "home": true,
+       "win": false,
+       "date": "2025-10-31",
+       "score": 108,
+       "oppScore": 128,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500048",
+       "opponent": "CLE",
+       "home": false,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 109,
+       "oppScore": 120,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500063",
+       "opponent": "TOR",
+       "home": false,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 95,
+       "oppScore": 97,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500073",
+       "opponent": "WAS",
+       "home": true,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 119,
+       "oppScore": 86,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612755,
+     "tricode": "PHI",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -39,
+     "points": 431,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500021",
+       "opponent": "BOS",
+       "home": true,
+       "win": false,
+       "date": "2025-10-31",
+       "score": 108,
+       "oppScore": 109,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500041",
+       "opponent": "DET",
+       "home": false,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 105,
+       "oppScore": 114,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500058",
+       "opponent": "ORL",
+       "home": true,
+       "win": false,
+       "date": "2025-11-25",
+       "score": 103,
+       "oppScore": 144,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500070",
+       "opponent": "BKN",
+       "home": false,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 115,
+       "oppScore": 103,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612756,
+     "tricode": "PHX",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 31,
+     "points": 463,
+     "groupWinner": false,
+     "wildCard": true,
+     "seed": 4,
+     "games": [
+      {
+       "gameId": "0022500025",
+       "opponent": "UTA",
+       "home": true,
+       "win": true,
+       "date": "2025-10-31",
+       "score": 118,
+       "oppScore": 96,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500053",
+       "opponent": "MIN",
+       "home": true,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 114,
+       "oppScore": 113,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500068",
+       "opponent": "SAC",
+       "home": false,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 112,
+       "oppScore": 100,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500075",
+       "opponent": "OKC",
+       "home": false,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 119,
+       "oppScore": 123,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612757,
+     "tricode": "POR",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 4,
+     "w": 2,
+     "l": 2,
+     "diff": -31,
+     "points": 454,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500026",
+       "opponent": "DEN",
+       "home": true,
+       "win": true,
+       "date": "2025-10-31",
+       "score": 109,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500042",
+       "opponent": "HOU",
+       "home": false,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 116,
+       "oppScore": 140,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500056",
+       "opponent": "GSW",
+       "home": false,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 127,
+       "oppScore": 123,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500067",
+       "opponent": "SAS",
+       "home": true,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 102,
+       "oppScore": 115,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612758,
+     "tricode": "SAC",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 5,
+     "w": 0,
+     "l": 4,
+     "diff": -66,
+     "points": 430,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500038",
+       "opponent": "OKC",
+       "home": true,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 101,
+       "oppScore": 132,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500044",
+       "opponent": "MIN",
+       "home": false,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 110,
+       "oppScore": 124,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500068",
+       "opponent": "PHX",
+       "home": true,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 100,
+       "oppScore": 112,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500077",
+       "opponent": "UTA",
+       "home": false,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 119,
+       "oppScore": 128,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612759,
+     "tricode": "SAS",
+     "conference": "West",
+     "group": "West Group C",
+     "groupRank": 1,
+     "w": 3,
+     "l": 1,
+     "diff": 26,
+     "points": 483,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 3,
+     "games": [
+      {
+       "gameId": "0022500032",
+       "opponent": "HOU",
+       "home": true,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 121,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500047",
+       "opponent": "GSW",
+       "home": true,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 108,
+       "oppScore": 109,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500067",
+       "opponent": "POR",
+       "home": false,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 115,
+       "oppScore": 102,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500076",
+       "opponent": "DEN",
+       "home": false,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 139,
+       "oppScore": 136,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612760,
+     "tricode": "OKC",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 75,
+     "points": 512,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 1,
+     "games": [
+      {
+       "gameId": "0022500038",
+       "opponent": "SAC",
+       "home": false,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 132,
+       "oppScore": 101,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500055",
+       "opponent": "UTA",
+       "home": false,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 144,
+       "oppScore": 112,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500064",
+       "opponent": "MIN",
+       "home": true,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 113,
+       "oppScore": 105,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500075",
+       "opponent": "PHX",
+       "home": true,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 123,
+       "oppScore": 119,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612761,
+     "tricode": "TOR",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 1,
+     "w": 4,
+     "l": 0,
+     "diff": 55,
+     "points": 458,
+     "groupWinner": true,
+     "wildCard": false,
+     "seed": 2,
+     "games": [
+      {
+       "gameId": "0022500022",
+       "opponent": "CLE",
+       "home": false,
+       "win": true,
+       "date": "2025-10-31",
+       "score": 112,
+       "oppScore": 101,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500030",
+       "opponent": "ATL",
+       "home": false,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 109,
+       "oppScore": 97,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500050",
+       "opponent": "WAS",
+       "home": true,
+       "win": true,
+       "date": "2025-11-21",
+       "score": 140,
+       "oppScore": 110,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500063",
+       "opponent": "IND",
+       "home": true,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 97,
+       "oppScore": 95,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612762,
+     "tricode": "UTA",
+     "conference": "West",
+     "group": "West Group A",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -85,
+     "points": 433,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500025",
+       "opponent": "PHX",
+       "home": false,
+       "win": false,
+       "date": "2025-10-31",
+       "score": 96,
+       "oppScore": 118,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500036",
+       "opponent": "MIN",
+       "home": false,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 97,
+       "oppScore": 137,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500055",
+       "opponent": "OKC",
+       "home": true,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 112,
+       "oppScore": 144,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500077",
+       "opponent": "SAC",
+       "home": true,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 128,
+       "oppScore": 119,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612763,
+     "tricode": "MEM",
+     "conference": "West",
+     "group": "West Group B",
+     "groupRank": 2,
+     "w": 3,
+     "l": 1,
+     "diff": 14,
+     "points": 464,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500024",
+       "opponent": "LAL",
+       "home": true,
+       "win": false,
+       "date": "2025-10-31",
+       "score": 112,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500034",
+       "opponent": "DAL",
+       "home": true,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 118,
+       "oppScore": 104,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500065",
+       "opponent": "NOP",
+       "home": false,
+       "win": true,
+       "date": "2025-11-26",
+       "score": 133,
+       "oppScore": 128,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022500079",
+       "opponent": "LAC",
+       "home": false,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 112,
+       "oppScore": 107,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612764,
+     "tricode": "WAS",
+     "conference": "East",
+     "group": "East Group A",
+     "groupRank": 5,
+     "w": 1,
+     "l": 3,
+     "diff": -77,
+     "points": 443,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500029",
+       "opponent": "CLE",
+       "home": true,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 115,
+       "oppScore": 148,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500050",
+       "opponent": "TOR",
+       "home": false,
+       "win": false,
+       "date": "2025-11-21",
+       "score": 110,
+       "oppScore": 140,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500057",
+       "opponent": "ATL",
+       "home": true,
+       "win": true,
+       "date": "2025-11-25",
+       "score": 132,
+       "oppScore": 113,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500073",
+       "opponent": "IND",
+       "home": false,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 86,
+       "oppScore": 119,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612765,
+     "tricode": "DET",
+     "conference": "East",
+     "group": "East Group B",
+     "groupRank": 3,
+     "w": 2,
+     "l": 2,
+     "diff": 21,
+     "points": 462,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500031",
+       "opponent": "BKN",
+       "home": false,
+       "win": true,
+       "date": "2025-11-07",
+       "score": 125,
+       "oppScore": 107,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500041",
+       "opponent": "PHI",
+       "home": true,
+       "win": true,
+       "date": "2025-11-14",
+       "score": 114,
+       "oppScore": 105,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500060",
+       "opponent": "BOS",
+       "home": false,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 114,
+       "oppScore": 117,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500072",
+       "opponent": "ORL",
+       "home": true,
+       "win": false,
+       "date": "2025-11-28",
+       "score": 109,
+       "oppScore": 112,
+       "status": "Final"
+      }
+     ]
+    },
+    {
+     "teamId": 1610612766,
+     "tricode": "CHA",
+     "conference": "East",
+     "group": "East Group C",
+     "groupRank": 4,
+     "w": 1,
+     "l": 3,
+     "diff": -39,
+     "points": 461,
+     "groupWinner": false,
+     "wildCard": false,
+     "games": [
+      {
+       "gameId": "0022500033",
+       "opponent": "MIA",
+       "home": false,
+       "win": false,
+       "date": "2025-11-07",
+       "score": 108,
+       "oppScore": 126,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500043",
+       "opponent": "MIL",
+       "home": false,
+       "win": false,
+       "date": "2025-11-14",
+       "score": 134,
+       "oppScore": 147,
+       "status": "Final/OT"
+      },
+      {
+       "gameId": "0022500061",
+       "opponent": "NYK",
+       "home": true,
+       "win": false,
+       "date": "2025-11-26",
+       "score": 101,
+       "oppScore": 129,
+       "status": "Final"
+      },
+      {
+       "gameId": "0022500071",
+       "opponent": "CHI",
+       "home": true,
+       "win": true,
+       "date": "2025-11-28",
+       "score": 123,
+       "oppScore": 116,
+       "status": "Final"
+      }
+     ]
+    }
+   ],
+   "knockout": [
+    {
+     "gameId": "0022501201",
+     "round": "qf",
+     "conference": "East",
+     "date": "2025-12-09",
+     "arena": "Kia Center",
+     "city": "Orlando",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612753,
+      "tricode": "ORL",
+      "score": 117
+     },
+     "away": {
+      "teamId": 1610612748,
+      "tricode": "MIA",
+      "score": 108
+     }
+    },
+    {
+     "gameId": "0022501202",
+     "round": "qf",
+     "conference": "East",
+     "date": "2025-12-09",
+     "arena": "Scotiabank Arena",
+     "city": "Toronto",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612761,
+      "tricode": "TOR",
+      "score": 101
+     },
+     "away": {
+      "teamId": 1610612752,
+      "tricode": "NYK",
+      "score": 117
+     }
+    },
+    {
+     "gameId": "0022501203",
+     "round": "qf",
+     "conference": "West",
+     "date": "2025-12-10",
+     "arena": "Paycom Center",
+     "city": "Oklahoma City",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612760,
+      "tricode": "OKC",
+      "score": 138
+     },
+     "away": {
+      "teamId": 1610612756,
+      "tricode": "PHX",
+      "score": 89
+     }
+    },
+    {
+     "gameId": "0022501204",
+     "round": "qf",
+     "conference": "West",
+     "date": "2025-12-10",
+     "arena": "Crypto.com Arena",
+     "city": "Los Angeles",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612747,
+      "tricode": "LAL",
+      "score": 119
+     },
+     "away": {
+      "teamId": 1610612759,
+      "tricode": "SAS",
+      "score": 132
+     }
+    },
+    {
+     "gameId": "0022501229",
+     "round": "sf",
+     "conference": "East",
+     "date": "2025-12-13",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612753,
+      "tricode": "ORL",
+      "score": 120
+     },
+     "away": {
+      "teamId": 1610612752,
+      "tricode": "NYK",
+      "score": 132
+     }
+    },
+    {
+     "gameId": "0022501230",
+     "round": "sf",
+     "conference": "West",
+     "date": "2025-12-13",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612760,
+      "tricode": "OKC",
+      "score": 109
+     },
+     "away": {
+      "teamId": 1610612759,
+      "tricode": "SAS",
+      "score": 111
+     }
+    },
+    {
+     "gameId": "0062500001",
+     "round": "final",
+     "date": "2025-12-16",
+     "arena": "T-Mobile Arena",
+     "city": "Las Vegas",
+     "status": "Final",
+     "home": {
+      "teamId": 1610612752,
+      "tricode": "NYK",
+      "score": 124
+     },
+     "away": {
+      "teamId": 1610612759,
+      "tricode": "SAS",
+      "score": 113
+     }
+    }
+   ],
+   "groupDates": [
+    "2025-10-31",
+    "2025-11-07",
+    "2025-11-14",
+    "2025-11-21",
+    "2025-11-25",
+    "2025-11-26",
+    "2025-11-28"
+   ]
+  }
+ ]
+}

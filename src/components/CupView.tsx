@@ -4,7 +4,9 @@
 // Round 12: Standings | Schedule (the switch is in the top bar); the Schedule (CupSchedule.tsx) is worked out only once
 // its tab is opened.
 
-import { useMemo, type CSSProperties, type ReactNode } from 'react';
+import { lazy, Suspense, useMemo, type CSSProperties, type ReactNode } from 'react';
+/** Round 21 (item 9): the history and its data file, their own chunk, loaded when the tab is opened. */
+const CupHistory = lazy(() => import('./CupHistory'));
 import { CupTonight } from './CupTonight';
 import { cupStandings, type CupSlot, type CupTeamLine, type Tiebreak, type WildCardRace } from '../data/cup';
 import { dateFormat, type CalendarData } from '../data/model';
@@ -44,11 +46,19 @@ export interface CupViewProps {
   today?: string;
   /** Round 12: the schedule instead of the standings (default: standings). */
   schedule?: Omit<CupScheduleProps, 'data'>;
+  /** Round 21 (item 9): the history instead (its season, and the season picked). */
+  history?: { season?: number; onSeason: (year: number) => void };
   /** Round 21 (item 4): the simulator instead. */
   sim?: Omit<CupSimulatorProps, 'data' | 'gameLink'>;
 }
 
-export default function CupView({ data, schedule, gameLink, sim, today }: CupViewProps) {
+export default function CupView({ data, schedule, gameLink, sim, today, history }: CupViewProps) {
+  if (history)
+    return (
+      <Suspense fallback={<p className="ck-empty">Loading the Cup history…</p>}>
+        <CupHistory data={data} {...history} />
+      </Suspense>
+    );
   const tonight = today ? <CupTonight data={data} today={today} gameLink={gameLink} /> : null;
   if (sim)
     return (

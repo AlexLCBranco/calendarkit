@@ -34,9 +34,9 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-06, round 21 in progress)
+## Current state / handoff (2026-11-06, after round 21)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup), item 10 (v1.51.0, venue markers), item 13 (v1.52.0, rest / travel), item 14 (v1.53.0, prize money).
+version per item, all done (v1.41.0 – v1.54.0). See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup), item 10 (v1.51.0, venue markers), item 13 (v1.52.0, rest / travel), item 14 (v1.53.0, prize money), item 9 (v1.54.0, Cup history).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2487,3 +2487,19 @@ each with its source — 2023 $500,000 / $200,000 / $100,000 / $50,000 and 2024 
 Sports), 2026 $604,985 / $241,994 / $120,997 / $60,499 (BVM Sports, 2026-10-30 — the amounts Alex gave; not found on an
 NBA.com page yet). A small muted line under each knockout round of the simulator's bracket (the source in its tooltip);
 item 9's history uses each season's own amounts.
+
+**Item 9 (v1.54.0): Cup history.** Cup → History (`cup=history&hs=2025`): the summary first — per team, knockout
+appearances ("2 of 3"), each year's stage (– / QF / SF / F / 🏆), group-play W-L and differential over every edition;
+sortable (KO, team, W-L, DIFF; default KO); West | East — then a season (2023 / 2024 / 2025 tabs): its final group tables
+(the shared CupSquare per game, a hoopsjunkie link; ★ group winner, WC badge), its knockout games with results, venues
+(VenueMarker: a game at the home team's own arena is hosted, else neutral — Las Vegas' T-Mobile Arena for every 2023–25
+semifinal and final) and its prize line (item 14). A muted note lists only what the stored data shows differed from the
+current format ("Semifinals and final at T-Mobile Arena, Las Vegas"; group nights' weekdays when they differ). 2023 is
+named "In-Season Tournament" (Alex's brief).
+- Data: `src/data/cupHistory.json`, built by `npx tsx scripts/build-cup-history.ts` from stats.nba.com (iststandings:
+  the final group standings as the NBA had them — ranks, records, differentials, points, group winners, wild cards,
+  knockout seeds, each team's games; scheduleleaguev2: scores, knockout games, arenas), fetched 2026-11-06, the URLs
+  stored per season. Never recomputed with today's rules. Add a season when it ends: run the script with its season.
+  It is its own chunk with the History view (~112 KB raw), loaded when the tab is opened; no fetch.
+- The Slate part's bundle grew in this round (cup engine, geo data): slate.js 250.9 → 275.5 KB (gzip 80.2 → 89.2 KB).
+  src/slate/index.ts now also exports useStreakPopup and useSeriesPopup for a host.
