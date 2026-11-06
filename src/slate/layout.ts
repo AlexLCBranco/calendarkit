@@ -114,3 +114,18 @@ export const slateNoteWidth = (card: number, cup: CupTrackKind = false) => card 
 
 /** Columns of cards for a widget `width` px wide: 2 when each card's note box keeps SLATE_NOTE_MIN (Cup nights: SLATE_NOTE_MIN_CUP), else 1. */
 export const slateColumns = (width: number, cup: CupTrackKind = false) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2, cup) >= (cup === 3 ? SLATE_NOTE_MIN_STAKES : cup ? SLATE_NOTE_MIN_CUP : SLATE_NOTE_MIN) ? 2 : 1);
+
+/**
+ * Round 22 (item 14): in a copied slate with note boxes, the game's info is drawn larger inside the card — the card keeps
+ * its on-screen width, the note box gives the room (down to SLATE_COPY_NOTE_MIN), at most ×SLATE_COPY_ZOOM_MAX; the card
+ * only grows in height as much as the bigger content needs. Pasted and shrunk on the whiteboard, the text, logos and
+ * scores stay readable. CSS `zoom` (layout, not a transform), so the image stays crisp at its pixel ratio. Info-only
+ * cards (notes hidden) are exactly their content: nothing to give, ×1.
+ */
+export const SLATE_COPY_ZOOM_MAX = 1.35;
+export const SLATE_COPY_NOTE_MIN = 160;
+export function slateCopyZoom(cardWidth: number, cup: CupTrackKind = false, notes = true): number {
+  if (!notes) return 1;
+  const room = cardWidth - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - SLATE_NOTE_GAP - SLATE_COPY_NOTE_MIN;
+  return Math.max(1, Math.min(SLATE_COPY_ZOOM_MAX, Math.floor((room / slateInfoWidth(cup)) * 100) / 100));
+}

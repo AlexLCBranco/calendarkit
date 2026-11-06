@@ -2554,3 +2554,15 @@ team element is a team link; a score click opens a new tab and the page stays. I
 simulator's disabled "Reset to real results" showed a pointer — a disabled `.ck-button` now has the default cursor, 50 %.
 `e2e/slate-same.spec.ts`'s reference moved v1.33.0 → v1.55.0 (c60bc92: items 13 and 15 change the Slate on purpose); the
 score links leave the Slate pixel-identical to it.
+
+**Item 14 (v1.57.0): bigger content in the copied Slate.** With note boxes, a copy draws each card's info (time, tags,
+logos, names, records, squares, fatigue, scores, odds) larger *inside the same card width*: CSS `zoom` on the copy's
+`.ck-slate-info` (`slateCopyZoom`, src/slate/layout.ts: what the note box can give down to `SLATE_COPY_NOTE_MIN` = 160 px,
+at most `SLATE_COPY_ZOOM_MAX` = ×1.35), the info column widened to match; the card only grows in height as much as the
+bigger content needs (a regular night at 1920: ×1.35, card 78 → 99 px tall, note box 421 → ~220 px; Cup nights less —
+their info is already wide — and stakes nights ×1). `zoom` is layout, not a transform, so text stays crisp at the copy's
+pixel ratio (unchanged rule). Notes hidden: info-only cards are exactly their content, ×1. The column count is decided
+from the copy's real card height (measured once drawn; laid out once more if that picks other columns). The gauntlet's
+`SlateCopy` gets the same. Tests: tests/copyzoom.test.tsx; e2e slate.spec's column check now measures like with like
+(and its one-column gap, which had come out as −card width and let every comparison pass, is fixed); notes.spec's
+text sample stops short of the narrower box's label.

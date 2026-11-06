@@ -171,10 +171,15 @@ test('copy: 1, 5, 12 and 15 games — transparent around the cards, page-shaped,
     expect(r.ratio, 'pixels per CSS px ≥ 2 × the fitted scale').toBeGreaterThanOrEqual(2 * s);
     // page-shaped: no other column count would show the cards larger
     const [cw, ch] = [r.stage.cards[0]!.w, Math.max(...r.stage.cards.map((k) => k.h))];
-    const gap = r.stage.cards.length > 1 ? r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw : r.stage.cards[0]!.x * 2;
+    // the gap between cards: side by side, or (one column) one under the other — round 22: was the x step only, which in
+    // one column came out as −card width and let every comparison pass
+    const gap = r.stage.cards.length < 2 ? r.stage.cards[0]!.x * 2 : r.stage.cols > 1 ? r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw : r.stage.cards[1]!.y - r.stage.cards[0]!.y - r.stage.cards[0]!.h;
+    // round 22 (item 14): the copy's zoomed cards have fractional heights while the image is whole pixels, so the shown
+    // layout is measured the same way as the alternatives
+    const fitOf = (c: number) => fit({ width: c * (cw + gap), height: Math.ceil(n / c) * (ch + gap) });
+    const shown = fitOf(r.stage.cols);
     for (let c = 1; c <= n; c++) {
-      const rows = Math.ceil(n / c);
-      expect(fit({ width: c * (cw + gap), height: rows * (ch + gap) }), `${c} columns would be no larger`).toBeLessThanOrEqual(s + 1e-6);
+      expect(fitOf(c), `${c} columns would be no larger`).toBeLessThanOrEqual(shown + 1e-6);
     }
   }
 });

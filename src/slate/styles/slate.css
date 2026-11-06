@@ -185,6 +185,10 @@
   padding: 0;
   background: transparent;
 }
+/* round 22 (item 14): the copy's info block, drawn larger inside its card (slateCopyZoom; the note box gives the room) */
+.ck-slate-copy .ck-slate-info {
+  zoom: var(--ck-copy-zoom, 1);
+}
 .ck-slate-copy {
   display: grid;
   grid-template-columns: repeat(var(--ck-slate-cols), var(--ck-slate-card));

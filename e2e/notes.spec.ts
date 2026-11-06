@@ -222,7 +222,8 @@ test('copy: each card with its box — the shown slot\'s label and text, no ⇄;
   expect(r.px.insideClear, 'cards: opaque').toBe(0);
   // pixels: text in the written boxes, none in an empty one (dark, opaque); the slot label's corner holds text
   const k = r.stage.cards;
-  const textArea = (i: number) => ({ x: (k[i]!.note!.x + 10) * r.ratio, y: (k[i]!.note!.y + 8) * r.ratio, w: 200 * r.ratio, h: 18 * r.ratio });
+  // round 22 (item 14): the copy's note boxes are narrower (the info is drawn larger): the text area stops short of the label
+  const textArea = (i: number) => ({ x: (k[i]!.note!.x + 10) * r.ratio, y: (k[i]!.note!.y + 8) * r.ratio, w: Math.min(200, k[i]!.note!.w - 64) * r.ratio, h: 18 * r.ratio });
   const label = (i: number) => ({ x: (k[i]!.note!.x + k[i]!.note!.w - 50) * r.ratio, y: (k[i]!.note!.y + 4) * r.ratio, w: 28 * r.ratio, h: 12 * r.ratio });
   const [w0, w1, e2, l2] = await readPng(page, r.png, [textArea(0), textArea(1), textArea(2), label(2)], true);
   expect(w0![5], 'text pixels in the written PRE box').toBeGreaterThan(80);

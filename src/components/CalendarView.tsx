@@ -27,7 +27,8 @@ import { SET_OPTIONS, type StandingsSet } from './standingsSets';
 import { createSelectionStore, useMarqueeSelection } from './selection';
 import { SelectionBar, SelectionStyle } from './SelectionBar';
 import { SelectionCapture, type SelectionKind } from './SelectionCapture';
-import { slateCopyColumns, slateImageSize, slatePixelRatio } from '../slate/layout';
+import { slateCopyColumns, slateCopyZoom, slateImageSize, slatePixelRatio, SLATE_CARD_BORDER, SLATE_CARD_PAD } from '../slate/layout';
+import { slateCopyCup } from '../slate/SlateCard';
 import type { SlateOdds } from '../slate/odds';
 import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
 import { localNotesStore } from '../slate/notes';
@@ -451,23 +452,33 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     const cards = [...(root.current?.querySelectorAll<HTMLElement>('[data-testid="slate"] .ck-slate-card') ?? [])];
     if (!games.length || !cards.length) return Promise.reject(new Error('no games to copy'));
     // the on-screen card size: same width, so the text wraps the same; rows as tall as the tallest card
-    const card = { width: cards[0]!.getBoundingClientRect().width, height: Math.max(...cards.map((c) => c.getBoundingClientRect().height)) };
+    const shown = { width: cards[0]!.getBoundingClientRect().width, height: Math.max(...cards.map((c) => c.getBoundingClientRect().height)) };
+    // round 22 (item 14): the copy draws the info larger inside the same width, so its cards are that much taller
+    const zoom = slateCopyZoom(shown.width, slateCopyCup(data, games), !hideNotes);
+    const frame = 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER); // the card's padding and border don't scale
     const page = { width: window.innerWidth, height: window.innerHeight };
-    const cols = slateCopyColumns(games.length, card, page);
-    return new Promise<HTMLCanvasElement>((resolve, reject) =>
-      setSlateCapture({
-        games,
-        cols,
-        card,
-        onReady: (node) => {
-          const ratio = capturePixelRatio(node.scrollWidth, node.scrollHeight, slatePixelRatio(slateImageSize(games.length, cols, card), page));
-          button.dataset.captured = `${node.offsetWidth}x${node.offsetHeight}@${ratio}`;
-          copyAsImage(node, { pixelRatio: ratio, zoom: 1 }) // no background: transparent around the cards
-            .then(resolve, reject)
-            .finally(() => setSlateCapture(undefined));
-        },
-      }),
-    );
+    return new Promise<HTMLCanvasElement>((resolve, reject) => {
+      // the columns from the estimated card; once drawn, from the copy's real card height (zoomed text rounds its own
+      // way) — if that picks other columns, it is laid out once more, then taken
+      const stage = (card: { width: number; height: number }, again: boolean) => {
+        const cols = slateCopyColumns(games.length, card, page);
+        setSlateCapture({
+          games,
+          cols,
+          card,
+          onReady: (node) => {
+            const real = { width: card.width, height: Math.max(...[...node.querySelectorAll<HTMLElement>('.ck-slate-card')].map((c) => c.getBoundingClientRect().height)) };
+            if (again && slateCopyColumns(games.length, real, page) !== cols) return stage(real, false);
+            const ratio = capturePixelRatio(node.scrollWidth, node.scrollHeight, slatePixelRatio(slateImageSize(games.length, cols, real), page));
+            button.dataset.captured = `${node.offsetWidth}x${node.offsetHeight}@${ratio}`;
+            copyAsImage(node, { pixelRatio: ratio, zoom: 1 }) // no background: transparent around the cards
+              .then(resolve, reject)
+              .finally(() => setSlateCapture(undefined));
+          },
+        });
+      };
+      stage({ width: shown.width, height: (shown.height - frame) * zoom + frame }, true);
+    });
   };
 
   // Cup copies: the group cards under their heading, as on screen (the rules and wild-card panels stay out); the Schedule
@@ -929,7 +940,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         <SelectionStyle store={selection} scope=".ck-select-area" />
         {selKind && <SelectionBar store={selection} copy={copySelection} />}
         {slateCapture && (
-          <CaptureStage onReady={slateCapture.onReady} width={slateImageSize(slateCapture.games.length, slateCapture.cols, slateCapture.card).width} className=" ck-slate-capture">
+          <CaptureStage key={slateCapture.cols} onReady={slateCapture.onReady} width={slateImageSize(slateCapture.games.length, slateCapture.cols, slateCapture.card).width} className=" ck-slate-capture">
             <SlateCopy data={data} games={slateCapture.games} cols={slateCapture.cols} cardWidth={slateCapture.card.width} timeZone={timeZone} notes={hideNotes ? undefined : notes} odds={odds?.get(slateCapture.games[0]!.dateEt)} />
           </CaptureStage>
         )}
