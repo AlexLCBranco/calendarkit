@@ -2542,3 +2542,15 @@ filter. On the 2026-11-06 snapshot: 785 of 2,400 team-games (3 days is common), 
 - Tests: tests/restflag.test.tsx (B2B / 2 / 3 days, the DET example, around midnight — a 10:30 pm ET tip on Nov 4 to a
   1 pm tip on Nov 7 is 3; the whole feed against an independent count; badge placement b / c / tick), fatigue and
   leaguefatigue counts extended; e2e fits unchanged (fatigue, fatigue-component, notes, slate-tight, series).
+**Item 12 (v1.56.0): the click rule.** Game things open the game's hoopsjunkie page (new tab), team names / logos the
+team's schedule here (round 15's team links). New: every final score is its game page (`ScoreLink`, src/slate/parts.tsx:
+Slate cards, League / Team List rows, Cup schedule rows; the matchup already was the link in calendar cells and week
+lines); the season-series popup's squares are now the game page (whole square; the separate "↗" is gone) — they used to
+show that day in the League List with the row highlighted (round 14), which conflicts with the rule, so that jump is
+gone. `e2e/click-audit.spec.ts` checks every desktop view (League List, week views, Slate today and a past night, Team
+List / Calendar, Cup groups / schedule ×2 / simulator / history, Standings, the streak and series popups): no element
+with a pointer cursor lacks an action; every score, Cup square and series square sits in a hoopsjunkie game link; every
+team element is a team link; a score click opens a new tab and the page stays. It found one dead element: the
+simulator's disabled "Reset to real results" showed a pointer — a disabled `.ck-button` now has the default cursor, 50 %.
+`e2e/slate-same.spec.ts`'s reference moved v1.33.0 → v1.55.0 (c60bc92: items 13 and 15 change the Slate on purpose); the
+score links leave the Slate pixel-identical to it.

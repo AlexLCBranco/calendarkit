@@ -38,12 +38,3 @@
   font-weight: 600;
 }
 
-/* round 14 (item 5): the game a season-series square jumped to — an accent bar and ring (box-shadows: nothing moves);
-   lifted while a copy is taken */
-.ck-card.ck-series-picked {
-  box-shadow: inset 3px 0 0 var(--ck-accent), inset 0 0 0 1px var(--ck-accent);
-}
-.ck-capturing .ck-card.ck-series-picked,
-.ck-card.ck-series-picked.ck-capturing {
-  box-shadow: none;
-}

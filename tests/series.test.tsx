@@ -128,8 +128,8 @@ describe('where it shows', () => {
   });
 });
 
-function Host({ d, onPick }: { d: CalendarData; onPick?: (g: ScheduleGame) => void }) {
-  const p = useSeriesPopup(d, { onPick, gameLink: hoopsjunkieLink });
+function Host({ d }: { d: CalendarData }) {
+  const p = useSeriesPopup(d, { gameLink: hoopsjunkieLink });
   const date = [...d.byDate.keys()].find((k) => d.byDate.get(k)!.some((g) => leagueSeries(d).has(g.gameId)))!;
   return (
     <div {...p.handlers}>
@@ -140,15 +140,14 @@ function Host({ d, onPick }: { d: CalendarData; onPick?: (g: ScheduleGame) => vo
 }
 
 describe('the popup', () => {
-  it('hover the chip: one square per meeting in order, played = winner + score + date, to come = date only, this game outlined, status on top; ↗ = the game page; a square → onPick; leaving closes it', async () => {
+  it('hover the chip: one square per meeting in order, played = winner + score + date, to come = date only, this game outlined, status on top; each square = its game page (round 22, item 12); leaving closes it', async () => {
     vi.useFakeTimers();
     const d = dataOf([
       game({ date: '2026-11-01', utc: '2026-11-02T00:00:00Z', home: TEAM.BOS, away: TEAM.NYK, final: [100, 110] }),
       game({ date: '2026-12-01', utc: '2026-12-02T00:00:00Z', home: TEAM.NYK, away: TEAM.BOS }),
       game({ date: '2027-01-05', utc: '2027-01-06T00:00:00Z', home: TEAM.BOS, away: TEAM.NYK }),
     ]);
-    const picked: string[] = [];
-    render(<Host d={d} onPick={(g) => picked.push(g.gameId)} />);
+    render(<Host d={d} />);
     const chip = screen.getByTestId('series-chip');
     expect(chip.textContent).toBe('G1/3');
     fireEvent.mouseOver(chip);
@@ -162,34 +161,33 @@ describe('the popup', () => {
     expect(sq[0]!.querySelector('.ck-series-date')!.textContent).toBe('Nov 1');
     expect(sq[1]!.classList.contains('ck-series-next')).toBe(true);
     expect(sq[1]!.querySelector('.ck-series-win, .ck-series-score')).toBeNull();
-    expect(sq[1]!.querySelector('[data-testid="series-link"]')!.getAttribute('href')).toBe(gameLinkUrl(d.games[1]!));
-    expect(sq[1]!.querySelector('[data-testid="series-link"]')!.getAttribute('target')).toBe('_blank');
+    // round 22 (item 12): the whole square is the game's page (played or to come), no separate "↗", no button
+    for (const [i, s] of sq.entries()) {
+      const a = s.querySelector<HTMLAnchorElement>(':scope > a[data-testid="series-link"]')!;
+      expect([a.getAttribute('href'), a.target], `square ${i}`).toEqual([gameLinkUrl(d.games[i]!), '_blank']);
+      expect(a.querySelector('.ck-series-date')).not.toBeNull();
+      expect(s.querySelector('button')).toBeNull();
+    }
     // the pointer moves from the chip onto the popup: it stays
     fireEvent.mouseOver(document.body.querySelector('.ck-slate-name')!);
     fireEvent.mouseEnter(pop);
     fireEvent.mouseOver(pop);
     act(() => vi.advanceTimersByTime(500));
     expect(screen.queryByTestId('series-popup')).not.toBeNull();
-    fireEvent.click(sq[2]!.querySelector('button')!);
-    expect(picked).toEqual([d.games[2]!.gameId]);
-    expect(screen.queryByTestId('series-popup')).toBeNull();
-    // open again, leave: closes after a moment
-    fireEvent.mouseOver(screen.getByTestId('series-chip'));
+    // leave: closes after a moment
     fireEvent.mouseOver(document.body.querySelector('.ck-slate-name')!);
     act(() => vi.advanceTimersByTime(500));
     expect(screen.queryByTestId('series-popup')).toBeNull();
   });
 
-  it('in calendarkit: a square opens that day in the League List with the game highlighted', () => {
+  it('in calendarkit: every square is its game\'s hoopsjunkie page; a click stays on this page', () => {
     const g = first(data, (x) => x.gameType === 'regular' && x.dateEt === '2026-11-02');
     const s = leagueSeries(data).get(g.gameId)!;
-    const other = s.series.games.find((x) => x.gameId !== g.gameId)!;
-    render(<CalendarView data={data} size={{ width: 1600, height: 900 }} now={NOW} timeZone="UTC" initial={{ mode: 'league', layout: 'slate', date: g.dateEt }} />);
+    render(<CalendarView data={data} size={{ width: 1600, height: 900 }} now={NOW} timeZone="UTC" gameLink={hoopsjunkieLink} initial={{ mode: 'league', layout: 'slate', date: g.dateEt }} />);
     fireEvent.mouseOver(document.querySelector(`[data-game-id="${g.gameId}"] [data-testid="series-chip"]`)!);
-    fireEvent.click(document.querySelector(`[data-testid="series-popup"] [data-game-id="${other.gameId}"] button`)!);
-    const list = screen.getByTestId('league-list');
-    expect(list.querySelector('.ck-lday')!.getAttribute('data-day')).toBe(other.dateEt);
-    expect(list.querySelector(`[data-game-id="${other.gameId}"]`)!.classList.contains('ck-series-picked')).toBe(true);
-    expect(list.querySelectorAll('.ck-series-picked')).toHaveLength(1);
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-testid="series-popup"] [data-testid="series-square"] > a')];
+    expect(links.map((a) => a.getAttribute('href'))).toEqual(s.series.games.map((x) => gameLinkUrl(x)));
+    expect(links.every((a) => a.target === '_blank')).toBe(true);
+    expect(screen.getByTestId('slate')).toBeTruthy();
   });
 });

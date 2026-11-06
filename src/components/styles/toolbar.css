@@ -177,9 +177,14 @@
   white-space: nowrap;
   flex: none;
 }
-.ck-button:hover,
+.ck-button:hover:not(:disabled),
 .ck-st-button:hover {
   border-color: var(--ck-accent);
+}
+/* round 22 (item 12): a disabled button looks it — no pointer (e.g. the simulator's Reset with nothing picked) */
+.ck-button:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 .ck-st-button[aria-expanded='true'] {
   background: var(--ck-accent);

@@ -26,7 +26,7 @@ import type { SlateNotes } from './notes';
 import { SeriesChip } from './series';
 import { leagueSeries } from '../data/series';
 import { fmtOdds, gameOdds, type DayOdds, type GameOdds, type SlateOdds } from './odds';
-import { GameLinkIcon, seasonTip, TeamLogo, TipTime } from './parts';
+import { GameLinkIcon, ScoreLink, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
 import { streakAttr } from './streakPopup';
 
@@ -187,8 +187,8 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
           </span>
         </div>
         <div className="ck-slate-teams">
-          <TeamRow cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.awayTeam} gameId={game.gameId} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} score={result && { n: result.score, win: result.win }} odds={odds?.away} provider={odds?.provider} />
-          <TeamRow cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.homeTeam} gameId={game.gameId} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} score={result && { n: result.oppScore, win: !result.win }} odds={odds?.home} provider={odds?.provider} home />
+          <TeamRow cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.awayTeam} gameId={game.gameId} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} url={url} score={result && { n: result.score, win: result.win }} odds={odds?.away} provider={odds?.provider} />
+          <TeamRow cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.homeTeam} gameId={game.gameId} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} url={url} score={result && { n: result.oppScore, win: !result.win }} odds={odds?.home} provider={odds?.provider} home />
         </div>
       </div>
       {notes && (copy ? <NoteCopy note={notes.get(game.gameId)} /> : <NoteBox store={notes} gameId={game.gameId} label={`${away} at ${home}`} />)}
@@ -200,7 +200,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
  * "[@] [logo] Wizards 3-1 W2 [fatigue] 113": one team; the home team's row starts with the "@" (the away row keeps its
  * room). Record and streak going in (round 9, 2.1): the Team List season line's rule, colours and tooltip.
  */
-function TeamRow({ cup, team, gameId, f, line, score, odds, provider, home = false }: { cup?: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fates?: Decided; chips?: Map<number, StakeChip[]> }; team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
+function TeamRow({ cup, team, gameId, f, line, score, url, odds, provider, home = false }: { url?: string; cup?: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fates?: Decided; chips?: Map<number, StakeChip[]> }; team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
   const t = TEAM_BY_ID.get(team.teamId);
   const rec = line?.record;
   const streak = line?.streak;
@@ -224,7 +224,10 @@ function TeamRow({ cup, team, gameId, f, line, score, odds, provider, home = fal
       </span>
       {cup && (isKnockout(cup.game) ? <KoTrack data={cup.data} game={cup.game} teamId={team.teamId} home={home} /> : <CupTrack {...cup} teamId={team.teamId} />)}
       <Fatigue f={f} team={teamLabel(team)} shortChip />
-      <span className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>{score?.n ?? ''}</span>
+      {/* round 22 (item 12): a final score is the game's page */}
+      <ScoreLink url={score ? url : undefined} className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>
+        {score?.n ?? ''}
+      </ScoreLink>
       {/* round 14 (item 4): the moneyline, decimal; its column is reserved, empty until (unless) the odds come */}
       <span className="ck-slate-odds" data-testid="slate-odds" data-tip={odds ? `${teamLabel(team)} moneyline ${fmtOdds(odds)} (decimal${provider ? `, ${provider}` : ''}; the last line before tip-off once the game has started)` : undefined}>
         {odds ? fmtOdds(odds) : ''}

@@ -253,21 +253,10 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const [slateFocus, setSlateFocus] = useState<{ teamId: number; date: string }>();
   const onSelectDate = useCallback((date: string) => update({ date }), [update]);
   const openDay = (date: string) => update({ date, layout: 'list' });
-  // round 14 (item 5): a square of the season-series popup → that day in the League List, the game highlighted (a class
-  // on its row, set after the day renders; cleared by the next jump or another day)
-  const [picked, setPicked] = useState<string>();
-  useEffect(() => {
-    const el = root.current;
-    if (!el) return;
-    el.querySelectorAll('.ck-series-picked').forEach((r) => r.classList.remove('ck-series-picked'));
-    if (!picked || state.mode !== 'league' || state.layout !== 'list') return;
-    const row = el.querySelector<HTMLElement>(`[data-testid="league-list"] [data-game-id="${picked}"]`);
-    if (!row) return setPicked(undefined); // another day: the highlight is gone
-    row.classList.add('ck-series-picked');
-    row.scrollIntoView?.({ block: 'nearest' });
-  });
+  // round 22 (item 12): a square of the season-series popup is its game's hoopsjunkie page (was round 14's jump to that
+  // day in the League List, the row highlighted)
   const streakPop = useStreakPopup(data, { gameLink });
-  const series = useSeriesPopup(data, { gameLink, onPick: (g) => (setPicked(g.gameId), update({ mode: 'league', layout: 'list', date: g.dateEt })) });
+  const series = useSeriesPopup(data, { gameLink });
   const team = state.mode === 'team';
   // League → Slate (round 7): desktop only. A Team view, or a widget too narrow for it, shows the List meanwhile (the
   // state keeps "slate", so League comes back to it).

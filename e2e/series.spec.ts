@@ -81,22 +81,14 @@ for (const size of SIZES) {
       const n = await squares.count();
       expect(`G?/${n}`).toBe((await chip.textContent())!.replace(/\d+\//, '?/'));
       expect(await pop.locator('.ck-series-current').count()).toBe(1);
-      // ↗ of the first square: the game page in a new tab
+      // round 22 (item 12): a square (here the first) is the game page, in a new tab
       const link = squares.first().getByTestId('series-link');
       const [tab] = await Promise.all([context.waitForEvent('page'), link.click()]);
       expect(tab.url()).toMatch(/^https:\/\/hoopsjunkie\.io\/games\/\d{4}-\d{2}-\d{2}\/[a-z]{3}-vs-[a-z]{3}$/);
       await tab.close();
-      // a square that isn't tonight's → that day, that game highlighted
-      await chip.hover();
-      await page.mouse.move(box.x + box.width / 2, box.y + 10, { steps: 6 });
-      const target = pop.locator('[data-testid="series-square"]:not(.ck-series-current)').first();
-      const id = (await target.getAttribute('data-game-id'))!;
-      await target.locator('button').click();
-      await expect(pop).toBeHidden();
-      const row = page.getByTestId('league-list').locator(`article[data-game-id="${id}"]`);
-      await expect(row).toBeVisible();
-      await expect(row).toHaveClass(/ck-series-picked/);
-      expect(await page.getByTestId('league-list').locator('.ck-series-picked').count()).toBe(1);
+      // every square is a game page; this page stays where it was
+      expect(await pop.locator('[data-testid="series-square"] > a[target="_blank"][href^="https://hoopsjunkie.io/games/"]').count()).toBe(n);
+      await expect(page.getByTestId('slate')).toBeVisible();
     });
   });
 }

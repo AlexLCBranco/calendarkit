@@ -1,6 +1,7 @@
 // Small pieces of a game shared by the Slate cards and calendarkit's other views (round 10: moved here from
 // GameCard.tsx, which re-exports them): the team logo, the tip-off time, the season line's tooltip text.
 
+import type { ReactNode } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { SeasonLine, Tipoff } from '../data/model';
 import { teamLogo } from '../data/teams';
@@ -48,3 +49,18 @@ export const GameLinkIcon = ({ url }: { url: string }) => (
     ↗
   </a>
 );
+
+/**
+ * Round 22 (item 12, the click rule): a final score is its game's page (hoopsjunkie, a new tab), wherever it is shown
+ * apart from a matchup that already is the game link (Slate cards, List rows, Cup schedule rows). Looks like the score
+ * until hovered (pointer, underline: .ck-mlink); never link-styled in images. Without a URL: the plain <span>.
+ */
+export function ScoreLink({ url, className, children }: { url?: string; className?: string; children: ReactNode }) {
+  return url ? (
+    <a className={className ? `${className} ck-mlink ck-score-link` : 'ck-mlink ck-score-link'} href={url} target="_blank" rel="noopener noreferrer" draggable={false} tabIndex={-1} title="Game page: box score, win probability" data-testid="score-link" onClick={(e) => e.stopPropagation()}>
+      {children}
+    </a>
+  ) : (
+    <span className={className}>{children}</span>
+  );
+}

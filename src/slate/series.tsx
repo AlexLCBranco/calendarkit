@@ -33,35 +33,46 @@ export const seriesLine = (data: CalendarData, game: ScheduleGame) => {
   return s ? `Season series: ${seriesChip(s)} · ${seriesStatus(s.series, tri)}` : undefined;
 };
 
-function Square({ g, current, onPick, gameLink }: { g: ScheduleGame; current: boolean; onPick?: (g: ScheduleGame) => void; gameLink?: GameLink }) {
+/**
+ * One meeting of the season series. Round 22 (item 12, the click rule — game things open the game's page): the whole
+ * square is the game's hoopsjunkie page (a new tab); it was a button that showed that day in the League List, with a
+ * small "↗" beside it for the page. Without a URL (undecided teams, no host link) it is plain, not clickable-looking.
+ */
+function Square({ g, current, gameLink }: { g: ScheduleGame; current: boolean; gameLink?: GameLink }) {
   const r = finalScore(g, g.awayTeam.teamId);
   const ot = r && overtime(g);
   const url = gameLink?.(g);
   const date = fmtDate(g.dateEt, { month: 'short', day: 'numeric' });
   const where = `${tri(g.awayTeam.teamId)} @ ${tri(g.homeTeam.teamId)}`;
   const label = r ? `${date}, ${where}: ${r.win ? tri(g.awayTeam.teamId) : tri(g.homeTeam.teamId)} won ${Math.max(r.score, r.oppScore)}–${Math.min(r.score, r.oppScore)}${ot ? ` (${ot})` : ''}` : `${date}, ${where}: to come`;
+  const body = (
+    <>
+      {r && <span className="ck-series-win">{r.win ? tri(g.awayTeam.teamId) : tri(g.homeTeam.teamId)}</span>}
+      {r && (
+        <span className="ck-series-score">
+          {Math.max(r.score, r.oppScore)}–{Math.min(r.score, r.oppScore)}
+          {ot ? ` ${ot}` : ''}
+        </span>
+      )}
+      <span className="ck-series-date">{date}</span>
+    </>
+  );
   return (
     <div className={`ck-series-sq${r ? ' ck-series-played' : ' ck-series-next'}${current ? ' ck-series-current' : ''}`} data-game-id={g.gameId} data-testid="series-square">
-      <button type="button" className="ck-series-pick" onClick={onPick && (() => onPick(g))} disabled={!onPick} aria-label={onPick ? `${label}. Show this day` : label}>
-        {r && <span className="ck-series-win">{r.win ? tri(g.awayTeam.teamId) : tri(g.homeTeam.teamId)}</span>}
-        {r && (
-          <span className="ck-series-score">
-            {Math.max(r.score, r.oppScore)}–{Math.min(r.score, r.oppScore)}
-            {ot ? ` ${ot}` : ''}
-          </span>
-        )}
-        <span className="ck-series-date">{date}</span>
-      </button>
-      {url && (
-        <a className="ck-series-link" href={url} target="_blank" rel="noopener noreferrer" title="Open on hoopsjunkie" aria-label={`${where} ${date} on hoopsjunkie`} data-testid="series-link">
-          ↗
+      {url ? (
+        <a className="ck-series-pick" href={url} target="_blank" rel="noopener noreferrer" title="Open on hoopsjunkie" aria-label={`${label}. Open on hoopsjunkie`} data-testid="series-link">
+          {body}
         </a>
+      ) : (
+        <span className="ck-series-pick ck-series-plain" aria-label={label}>
+          {body}
+        </span>
       )}
     </div>
   );
 }
 
-function Popup({ s, current, onPick, gameLink }: { s: SeriesGame; current: string; onPick?: (g: ScheduleGame) => void; gameLink?: GameLink }) {
+function Popup({ s, current, gameLink }: { s: SeriesGame; current: string; gameLink?: GameLink }) {
   const [a, b] = s.series.teams;
   return (
     <>
@@ -75,7 +86,7 @@ function Popup({ s, current, onPick, gameLink }: { s: SeriesGame; current: strin
       </div>
       <div className="ck-series-row">
         {s.series.games.map((g) => (
-          <Square key={g.gameId} g={g} current={g.gameId === current} onPick={onPick} gameLink={gameLink} />
+          <Square key={g.gameId} g={g} current={g.gameId === current} gameLink={gameLink} />
         ))}
       </div>
     </>
@@ -83,13 +94,12 @@ function Popup({ s, current, onPick, gameLink }: { s: SeriesGame; current: strin
 }
 
 /** The widget's one series popup: spread `handlers` on the wrapper, render `node` inside it (round 21: on useHoverPopup). */
-export function useSeriesPopup(data: CalendarData | undefined, opts: { onPick?: (g: ScheduleGame) => void; gameLink?: GameLink } = {}) {
+export function useSeriesPopup(data: CalendarData | undefined, opts: { gameLink?: GameLink } = {}) {
   return useHoverPopup(
     'data-series-game',
-    (gameId, close) => {
+    (gameId) => {
       const s = data ? leagueSeries(data).get(gameId) : undefined;
-      const pick = opts.onPick && ((g: ScheduleGame) => (close(), opts.onPick!(g)));
-      return s ? <Popup s={s} current={gameId} onPick={pick} gameLink={opts.gameLink} /> : null;
+      return s ? <Popup s={s} current={gameId} gameLink={opts.gameLink} /> : null;
     },
     { className: 'ck-series-pop', label: 'Season series', testId: 'series-popup' },
   );

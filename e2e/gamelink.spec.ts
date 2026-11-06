@@ -248,7 +248,10 @@ test('Cup schedule: League and Team rows get the "↗" icon too, no game link ar
         .filter((r) => {
           const links = r.querySelectorAll('a[data-testid="game-link"]');
           const decided = !r.querySelector('.ck-matchup, .ck-cg-match')!.textContent!.includes('TBD');
-          return (decided && links.length !== 1) || !!r.querySelector('.ck-mlink') || [...links].some((a) => a.textContent !== '↗' || !a.closest('.ck-tags, .ck-cg-link'));
+          // round 22 (item 12): a final score is its own game link (.ck-score-link, same page); never one around the teams
+          const score = r.querySelector<HTMLAnchorElement>('a.ck-score-link');
+          const final = r.classList.contains('ck-cg-final');
+          return (decided && links.length !== 1) || !!r.querySelector('.ck-mlink:not(.ck-score-link)') || (final && (!score || score.href !== (links[0] as HTMLAnchorElement | undefined)?.href)) || [...links].some((a) => a.textContent !== '↗' || !a.closest('.ck-tags, .ck-cg-link'));
         })
         .map((r) => r.getAttribute('data-game-id')),
     );

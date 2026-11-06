@@ -117,6 +117,7 @@ export function MatchLink({ game, gameLink, className, children }: { game: Sched
 
 // round 10: the logo, the tip-off time and the season tooltip live with the Slate's part (src/slate/parts.tsx)
 export { seasonTip, TeamLogo, TipTime } from '../slate/parts';
+import { ScoreLink } from '../slate/parts';
 
 /** Small plane: the team changes city between the two nights of a back-to-back. */
 export const PlaneIcon = () => (
@@ -195,7 +196,9 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   // the spaces keep textContent readable ("BOS 113 @ 121 DET"); inline-flex drops them
   const score = (n: number | undefined, win: boolean) =>
     n !== undefined ? (
-      <span className={`ck-score${win ? ' ck-score-win' : ''}`}>{n}</span>
+      <ScoreLink url={iconUrl} className={`ck-score${win ? ' ck-score-win' : ''}`}>
+        {n}
+      </ScoreLink>
     ) : (
       slots && !!result && <span className="ck-score-slot" aria-hidden="true" />
     );

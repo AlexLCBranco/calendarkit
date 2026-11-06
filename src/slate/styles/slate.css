@@ -328,13 +328,16 @@
   border: 0;
   color: inherit;
   font: inherit;
+  text-decoration: none;
+  border-radius: 5px;
   cursor: pointer;
 }
-.ck-series-pick:disabled {
+/* round 22: no game page (undecided teams / no host link): plain, not clickable-looking */
+.ck-series-plain {
   cursor: default;
 }
-.ck-series-pick:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
+a.ck-series-pick:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 .ck-series-win {
   font-weight: 700;
@@ -349,17 +352,6 @@
 }
 .ck-series-next {
   opacity: 0.6;
-}
-.ck-series-link {
-  position: absolute;
-  top: 1px;
-  right: 3px;
-  color: var(--ck-muted);
-  font-size: 11px;
-  text-decoration: none;
-}
-.ck-series-link:hover {
-  color: var(--ck-text);
 }
 
 /* round 21 (item 8): the streak popup's rows (its box is the series popup's) */

@@ -21,7 +21,7 @@ import { HostTag, VenueBadge } from '../slate/VenueMarker';
 import { knockoutVenue, prepFor, venueArena } from '../data/knockout';
 import { cupBoard, cupNightHeading, cupNights, cupOpeningNight, cupTeamTag, type CupNight, groupNumberLine, groupShort, nightByGroup, teamCupGames } from '../data/cupSchedule';
 import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
-import { GameLinkIcon, TeamLogo, TipTime } from '../slate/parts';
+import { GameLinkIcon, ScoreLink, TeamLogo, TipTime } from '../slate/parts';
 import { seriesLine } from '../slate/series';
 import { TeamLink } from '../slate/teamLink';
 import type { GameLink } from './GameCard';
@@ -108,7 +108,9 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
     <span className={`ck-cg-res${r ? '' : ' ck-cg-time'}${!r && tip.tbd ? ' ck-tbd' : ''}`} data-testid="cup-result">
       {r ? (
         <>
-          <span className={r.win ? 'ck-score-win' : undefined}>{r.score}</span>–<span className={r.win ? undefined : 'ck-score-win'}>{r.oppScore}</span>
+          <ScoreLink url={url}>
+            <span className={r.win ? 'ck-score-win' : undefined}>{r.score}</span>–<span className={r.win ? undefined : 'ck-score-win'}>{r.oppScore}</span>
+          </ScoreLink>
           {ot && <span className="ck-ot"> {ot}</span>}
         </>
       ) : (
