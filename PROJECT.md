@@ -36,7 +36,7 @@ where-to-watch info, embedding in gauntlet.
 
 ## Current state / handoff (2026-11-06, round 21 in progress)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
-version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup).
+version per item. See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares).
 
 ## Previous handoff (2026-11-05, after round 20)
 v1.40.0: daily data deploys diagnosed and hardened, live data freshness alarm, Cup rule 3 on regulation points (OT
@@ -2401,3 +2401,12 @@ stay-open / Escape / position logic is now `useHoverPopup` (src/slate/hoverPopup
 carries `data-streak="teamId|gameId"` (gameId empty: the current streak) and no tooltip any more (its text is its
 aria-label); the popup is `data-capture-exclude`, never in a copy. The gauntlet's Slate widget shows the attribute but
 has no popup unless it renders `useStreakPopup` (see the gauntlet notes at the end of round 21).
+
+**Item 1 (v1.46.0): Slate Cup squares.** On a night with Cup group games (`isCupNight`) every card's team rows get the Cup
+track after the streak (`SLATE_CUP_TRACK` = 180 px): a Cup game's team shows its 4 group games as 37 × 22 px mini squares
+(the shared CupSquare, `margin`: "vs MEM" over "W +12"; tonight's ringed; each its hoopsjunkie page) and its group record
+over its differential; other cards keep the track empty, so the night's cards are one size. The card is no taller.
+Alex's answer (2026-11-06, after the measured ~170 px replaced my "+90 px" guess): the note boxes give up the room on Cup
+nights (207 px at 1920), the 300 px minimum waived to `SLATE_NOTE_MIN_CUP` = 200 those nights, so 2 columns stay. The
+records come from `cupStandingsOf(data)` (cup.ts: the standings once per data set, a team → line map). Copies get the
+track too. slate-same.spec.ts (pixel identity with v1.33.0) now leaves Cup nights out — they change on purpose.

@@ -44,7 +44,8 @@ describe('cards', () => {
     for (const date of nights.slice(0, 40)) {
       render(<SlateDay data={data} date={date} width={1840} timeZone="UTC" gameLink={(g) => `https://x.test/${g.gameId}`} />);
       const grid = document.querySelector<HTMLElement>('.ck-slate-grid')!;
-      expect(grid.dataset.cols).toBe(String(slateInfoColumns(1840)));
+      // round 21 (item 1): a Cup night's cards are wider (the Cup track)
+      expect(grid.dataset.cols).toBe(String(slateInfoColumns(1840, (data.byDate.get(date) ?? []).some((g) => g.isCupGroupGame))));
       for (const card of document.querySelectorAll<HTMLElement>('.ck-slate-card')) {
         const g = data.games.find((x) => x.gameId === card.dataset.gameId)!;
         expect(card.querySelector('.ck-slate-head')).toBeNull();

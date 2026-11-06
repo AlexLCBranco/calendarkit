@@ -412,3 +412,53 @@ a.ck-streak-game:hover {
 [data-streak] {
   cursor: default;
 }
+
+/* round 21 (item 1): the Cup track — 4 mini squares (two lines: "vs MEM" over "W +12"), then the group record over the
+   differential; the card's height is unchanged (the squares are 22 px, inside the team row) */
+.ck-slate-cup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.ck-slate-cup-squares {
+  display: grid;
+  grid-template-columns: repeat(4, 37px);
+  gap: 2px;
+}
+.ck-slate-cup .ck-cup-slot {
+  height: 22px;
+  min-width: 0;
+  padding: 0;
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 10px;
+  font-weight: 700;
+  color: #fff;
+}
+.ck-slate-cup .ck-cup-slot-next {
+  color: rgb(255 255 255 / 0.55);
+}
+.ck-slate-cup .ck-cup-slot-at {
+  font-size: 7px;
+  line-height: 0; /* the smaller text must not make its line taller than 10 px */
+}
+.ck-slate-cup .ck-cup-slot-opp {
+  height: 10px;
+}
+.ck-slate-cup-rec {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 22px;
+  font-size: 10px;
+  line-height: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ck-cup-pos-text {
+  color: var(--ck-tv);
+}
+.ck-cup-neg-text {
+  color: var(--ck-playoffs);
+}

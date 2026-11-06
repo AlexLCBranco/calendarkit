@@ -66,7 +66,7 @@ export const SLATE_CARD_BORDER = 1;
 /** An info-only card's width (notes hidden): the info block and the card's padding and border, nothing stretched. */
 export const SLATE_CARD_WIDTH = SLATE_INFO_WIDTH + 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER);
 /** Notes hidden: as many info-only cards per row as fit `width`, SLATE_GRID_GAP apart (at least 1). */
-export const slateInfoColumns = (width: number) => Math.max(1, Math.floor((width + SLATE_GRID_GAP) / (SLATE_CARD_WIDTH + SLATE_GRID_GAP)));
+export const slateInfoColumns = (width: number, cup = false) => Math.max(1, Math.floor((width + SLATE_GRID_GAP) / (slateCardWidth(cup) + SLATE_GRID_GAP)));
 
 /**
  * Round 9 (Part 3): each card is the game's info at its old size (the round 7 card's content width) beside a note box
@@ -79,8 +79,21 @@ export const SLATE_GRID_GAP = 12;
 /** The narrowest note box worth writing in (Alex: "~300 px"). */
 export const SLATE_NOTE_MIN = 300;
 
-/** The note box's width in a card `card` px wide. */
-export const slateNoteWidth = (card: number) => card - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - SLATE_INFO_WIDTH - SLATE_NOTE_GAP;
+/**
+ * Round 21 (item 1): on a night with NBA Cup group games, every card's team rows get one more track after the streak —
+ * the team's 4 group games as mini squares (37 px: "vs MEM" over "W +12" at 10 px) and its group record over its
+ * differential (22 px). Alex's choice (2026-11-06): the note boxes give up the room those nights (~220 px at 1920, the
+ * 300 px minimum waived down to SLATE_NOTE_MIN_CUP), so the cards keep 2 columns and their height.
+ */
+export const SLATE_CUP_TRACK = 4 * 37 + 3 * 2 + 4 + 22;
+export const SLATE_NOTE_MIN_CUP = 200;
+/** The info block's width on a Cup night or not. */
+export const slateInfoWidth = (cup = false) => SLATE_INFO_WIDTH + (cup ? SLATE_CUP_TRACK + SLATE_ROW_GAP : 0);
+/** An info-only card's width on a Cup night or not. */
+export const slateCardWidth = (cup = false) => slateInfoWidth(cup) + 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER);
 
-/** Columns of cards for a widget `width` px wide: 2 when each card's note box keeps SLATE_NOTE_MIN, else 1. */
-export const slateColumns = (width: number) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2) >= SLATE_NOTE_MIN ? 2 : 1);
+/** The note box's width in a card `card` px wide. */
+export const slateNoteWidth = (card: number, cup = false) => card - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - slateInfoWidth(cup) - SLATE_NOTE_GAP;
+
+/** Columns of cards for a widget `width` px wide: 2 when each card's note box keeps SLATE_NOTE_MIN (Cup nights: SLATE_NOTE_MIN_CUP), else 1. */
+export const slateColumns = (width: number, cup = false) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2, cup) >= (cup ? SLATE_NOTE_MIN_CUP : SLATE_NOTE_MIN) ? 2 : 1);

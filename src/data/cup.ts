@@ -335,3 +335,16 @@ export const CUP_GROUP_TEAMS: Readonly<Record<CupGroup, readonly string[]>> = {
   'East Group B': ['MIA', 'PHI', 'CLE', 'NYK', 'IND'],
   'East Group C': ['WAS', 'BOS', 'ATL', 'CHI', 'CHA'],
 };
+
+const standingsCache = new WeakMap<object, { standings: CupStandings; byTeam: Map<number, CupTeamLine> }>();
+
+/** Round 21: the standings of a data set (its games and regulation totals), worked out once; and each team's line. */
+export function cupStandingsOf(data: { games: readonly ScheduleGame[]; regulation?: RegulationTotals }) {
+  let out = standingsCache.get(data);
+  if (!out) {
+    const standings = cupStandings(data.games, data.regulation);
+    out = { standings, byTeam: new Map(standings.groups.flatMap((g) => g.teams.map((t) => [t.teamId, t] as const))) };
+    standingsCache.set(data, out);
+  }
+  return out;
+}

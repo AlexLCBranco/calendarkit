@@ -35,9 +35,16 @@ test.beforeAll(async ({}, info) => {
 test.afterAll(() => ref?.server.close());
 
 // the snapshot's regular-season / Cup nights, read here (not through the app)
-const raw = JSON.parse(readFileSync('public/data/schedule.json', 'utf8')) as { leagueSchedule: { gameDates: { games: { gameId: string; gameDateEst: string }[] }[] } };
+const raw = JSON.parse(readFileSync('public/data/schedule.json', 'utf8')) as { leagueSchedule: { gameDates: { games: { gameId: string; gameDateEst: string; gameSubtype?: string }[] }[] } };
 const nights: Record<string, string[]> = {};
-for (const d of raw.leagueSchedule.gameDates) for (const g of d.games) if (/^00[2456]/.test(g.gameId)) (nights[g.gameDateEst.slice(0, 10)] ??= []).push(g.gameId);
+// round 21 (item 1): Cup group nights are left out — their cards have the Cup track now, on purpose
+const cupNights = new Set<string>();
+for (const d of raw.leagueSchedule.gameDates)
+  for (const g of d.games) {
+    if (g.gameSubtype === 'in-season') cupNights.add(g.gameDateEst.slice(0, 10));
+    if (/^00[2456]/.test(g.gameId)) (nights[g.gameDateEst.slice(0, 10)] ??= []).push(g.gameId);
+  }
+for (const d of cupNights) delete nights[d];
 const dayWith = (n: number) => Object.keys(nights).sort().find((d) => nights[d]!.length === n)!;
 
 /** Notes on the first three games of each night: one per slot on show, the third long enough to grow its card. */
