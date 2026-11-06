@@ -54,7 +54,11 @@
   /* round 13: gaps 6 → 4 px and side padding 8 → 6 px (column widths unchanged) give the name's column the 14 px the
      game slots need beside "Minnesota Timberwolves" at 1600 × 1000 */
   column-gap: 4px;
-  padding: 0 6px;
+  /* round 21: 6 → 4 px, room for "vs MEM" beside "Minnesota Timberwolves" with Linux's font metrics too (CI) */
+  padding: 0 4px;
+}
+.ck-cup-pill .ck-cup-slot {
+  padding: 0;
 }
 .ck-cup-cols {
   color: var(--ck-muted);

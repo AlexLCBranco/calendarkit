@@ -2503,3 +2503,8 @@ named "In-Season Tournament" (Alex's brief).
   It is its own chunk with the History view (~112 KB raw), loaded when the tab is opened; no fetch.
 - The Slate part's bundle grew in this round (cup engine, geo data): slate.js 250.9 → 275.5 KB (gzip 80.2 → 89.2 KB).
   src/slate/index.ts now also exports useStreakPopup and useSeriesPopup for a host.
+
+**v1.54.1: CI fixes (red since v1.43.0, missed by testing only locally).** (1) Linux fonts: at 1600 × 1000 "vs MEM" spilled
+out of its square in Minnesota's Cup row on the CI runner — the Cup rows' side padding 6 → 4 px and the squares' padding 0
+there (13 px to spare beside "Minnesota Timberwolves" on Windows, was ~6). (2) The live job's hand-off test waited for
+the exact old URL; since v1.42.0 the page then adds its own `date=`.

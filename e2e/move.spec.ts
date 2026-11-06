@@ -120,7 +120,8 @@ test('notes on the old address are handed over once: same notes (every slot, the
   await page.clock.setFixedTime(NOW);
   await page.addInitScript(() => ((window as unknown as { __ckOpenDate?: string }).__ckOpenDate = '2026-11-02'));
   await page.goto(`${OLD}/?view=league&layout=slate`);
-  await page.waitForURL(`${NEW}/calendar/?view=league&layout=slate`);
+  // round 21 (item 6): the page then writes its own address (date= …): wait for the hand-off's last navigation
+  await page.waitForURL((u) => u.href.startsWith(`${NEW}/calendar/?view=league&layout=slate`));
   expect(nav.map((u) => u.replace(/#ck-handoff=.*/, '#…'))).toEqual([
     `${OLD}/?view=league&layout=slate`,
     `${NEW}/calendar/#…`,
