@@ -268,3 +268,187 @@
   opacity: 0.4;
   cursor: default;
 }
+
+/* Round 22 (item 9): one row, ~44 px (was two rows, 78 px): left — page history + destinations; centre — the
+   destination's control (Schedule: the date block); right — views, scope picker, options, TV chip, ⓘ, Quick standings and
+   Copy as icon buttons. Controls 32 px tall (were 36). A row too narrow for all of it wraps its right part under (the
+   window's width decides; at 1920 one row). Hidden while a list is scrolled down: .ck-bar-hidden (useAutoHideBar). */
+.ck-toolbar.ck-bar1 {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  min-height: 44px;
+  margin-bottom: 4px;
+  padding: 6px 0 0;
+  box-sizing: border-box;
+}
+.ck-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.ck-bar-local {
+  display: contents;
+}
+.ck-bar-center {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ck-bar1 .ck-bar-right {
+  margin-left: auto;
+  flex: none;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+.ck-root-fill.ck-bar-hidden > .ck-toolbar {
+  display: none;
+}
+/* 32 px controls */
+.ck-bar1 .ck-tabs,
+.ck-bar1 .ck-hist,
+.ck-bar1 .ck-button,
+.ck-bar1 .ck-arrow,
+.ck-bar1 .ck-today,
+.ck-bar1 .ck-date-pick,
+.ck-bar1 .ck-picker-scope .ck-picker-button,
+.ck-bar1 .ck-picker-clear,
+.ck-bar1 .ck-copy {
+  height: 32px;
+}
+.ck-bar1 .ck-tab {
+  padding: 0 11px;
+  font-size: 13px;
+}
+.ck-bar1 .ck-hist-btn {
+  width: 30px;
+  font-size: 16px;
+}
+.ck-bar1 .ck-arrow,
+.ck-bar1 .ck-date-pick,
+.ck-bar1 .ck-copy {
+  width: 32px;
+}
+.ck-bar1 .ck-nav-title {
+  font-size: 14px;
+}
+.ck-bar1 .ck-tabs-small .ck-tab {
+  padding: 0 8px;
+  font-size: 12px;
+}
+.ck-icon-button {
+  width: 32px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: var(--ck-muted);
+}
+.ck-icon-button:hover,
+.ck-icon-button[aria-expanded='true'] {
+  color: inherit;
+}
+/* "TV games only" / "Rest days" as small chips (the checkbox stays, for the keyboard and screen readers) */
+.ck-chip-check {
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 10px 0 8px;
+  border: 1px solid var(--ck-border);
+  border-radius: 999px;
+  font-size: 12px;
+  gap: 5px;
+  color: var(--ck-muted);
+}
+.ck-chip-check:hover {
+  color: var(--ck-text);
+}
+.ck-chip-check:has(input:checked) {
+  border-color: var(--ck-accent);
+  color: var(--ck-text);
+}
+.ck-chip-check input {
+  margin: 0;
+  width: 12px;
+  height: 12px;
+}
+/* ⓘ: the time zone and the data stamp in its tooltip; orange once the data is 36 h old */
+.ck-info {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border: 1px solid var(--ck-muted);
+  border-radius: 50%;
+  color: var(--ck-muted);
+  font-size: 12px;
+  font-style: italic;
+  font-weight: 700;
+  font-family: Georgia, serif;
+  cursor: help;
+  flex: none;
+}
+.ck-info:hover,
+.ck-info:focus-visible {
+  color: var(--ck-text);
+  border-color: var(--ck-text);
+}
+.ck-info.ck-info-stale {
+  color: var(--ck-stale);
+  border-color: var(--ck-stale);
+}
+.ck-bar-short .ck-bar1 .ck-nav-title {
+  width: 10.5em; /* "Wed, Sep 30, 2026" */
+}
+/* narrow desktops (< 1560 px): tighter tabs and gaps, a narrower scope picker, so every view keeps one row at 1280 */
+.ck-bar-short .ck-bar1 {
+  column-gap: 8px;
+}
+.ck-bar-short .ck-bar1 .ck-bar-right,
+.ck-bar-short .ck-bar1 .ck-bar-left,
+.ck-bar-short .ck-bar1 .ck-bar-center {
+  gap: 6px;
+}
+.ck-bar-short .ck-bar1 .ck-tab {
+  padding: 0 7px;
+}
+.ck-bar-short .ck-bar1 .ck-tabs-small .ck-tab {
+  padding: 0 6px;
+}
+.ck-bar-short .ck-bar1 .ck-picker-scope {
+  width: 128px;
+}
+.ck-bar-short .ck-bar1 .ck-chip-check {
+  padding: 0 8px 0 6px;
+}
+/* Schedule: the right group has one width in every view (its widest, the Team Calendar's), so the date block in the
+   centre and List · Calendar · Slate never move between views (round 21's rule); ⓘ, Quick standings and Copy keep the
+   right end */
+.ck-root:not(.ck-compact) .ck-bar1[data-destination='schedule'] .ck-bar-right {
+  width: 760px;
+  box-sizing: border-box;
+}
+.ck-root.ck-bar-short:not(.ck-compact) .ck-bar1[data-destination='schedule'] .ck-bar-right {
+  width: 572px;
+}
+.ck-bar-end {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+}
+/* tablets and phones (not a target, but never a sideways scroll): the right group takes its own width and wraps */
+.ck-root.ck-bar-wrap .ck-bar1 .ck-bar-right,
+.ck-root.ck-bar-wrap .ck-bar1[data-destination='schedule'] .ck-bar-right {
+  width: auto;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+.ck-root.ck-bar-wrap .ck-bar-center {
+  justify-content: flex-start;
+}

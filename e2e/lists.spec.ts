@@ -241,7 +241,7 @@ test('league list: a 15-game night scrolls within the day only', async ({ page }
   await expect.poll(() => list.evaluate((el) => Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 1)).toBe(true);
   const end = await shownList(page);
   expect([end.days, end.ids]).toEqual([[date], want]);
-  expect(end.title).toMatch(/November 2, 2026/);
+  expect(end.title).toMatch(/(November|Nov) 2, 2026/);
   // the end of the scroll is the day's last row (plus the day's own padding): no further days, no spacer
   const gap = await list.evaluate((el) => el.getBoundingClientRect().bottom - [...el.querySelectorAll('.ck-card')].at(-1)!.getBoundingClientRect().bottom);
   expect(gap).toBeGreaterThanOrEqual(0);

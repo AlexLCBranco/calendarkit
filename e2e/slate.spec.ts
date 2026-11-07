@@ -6,6 +6,7 @@ import { mkdirSync } from 'node:fs';
 import { test as plain } from '@playwright/test';
 import { expect, test, type Page } from './fixtures';
 import { copySlate } from './slatecopy';
+import { titleFor } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z'); // 12:00 in São Paulo (the projects' zone): Nov 15 is today
 const OUT = 'test-output/copy-images';
@@ -43,7 +44,7 @@ plain('opens on today (the clock), not on a date in the URL', async ({ page }) =
   await page.clock.setFixedTime(NOW);
   await page.goto('/calendar/?view=league&layout=slate&date=2026-12-25');
   await expect(page.getByTestId('slate')).toBeVisible();
-  expect(await page.getByTestId('day-title').textContent()).toBe('Sunday, November 15, 2026');
+  expect(await page.getByTestId('day-title').textContent()).toBe(titleFor(page, 'Sunday, November 15, 2026'));
   await expect(page.getByRole('tab', { name: 'Slate' })).toHaveAttribute('aria-selected', 'true');
 });
 
@@ -74,7 +75,7 @@ test('columns of cards (round 9: 2 at 1920, 1 at 1280 — notes.spec.ts); every 
     );
   const slate = await facts('[data-testid="slate"] .ck-slate-card');
   await page.getByRole('tab', { name: 'List', exact: true }).click();
-  await expect(page.getByTestId('day-title')).toHaveText('Sunday, November 15, 2026');
+  await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   const list = await facts('.ck-lday[data-day="2026-11-15"] .ck-card');
   for (const id of want) expect(slate[id], id).toEqual(list[id]);
 });
@@ -116,13 +117,13 @@ test('the day changes only with ← / → (keyboard and top bar), never by scrol
   const days = Object.keys(all).sort();
   const at = (d: string) => days.indexOf(d);
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByTestId('day-title')).toHaveText('Monday, November 16, 2026');
+  await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Monday, November 16, 2026'));
   expect((await ids(page)).sort()).toEqual(all[days[at('2026-11-15') + 1]!]!.map((g) => g.gameId).sort());
   await page.keyboard.press('ArrowLeft');
   await page.keyboard.press('ArrowLeft');
-  await expect(page.getByTestId('day-title')).toHaveText('Saturday, November 14, 2026');
+  await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Saturday, November 14, 2026'));
   await page.getByLabel('Next day').click();
-  await expect(page.getByTestId('day-title')).toHaveText('Sunday, November 15, 2026');
+  await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   // wheel over the cards (the busiest day scrolls inside the view): the day stays
   const busiest = days.reduce((a, d) => (all[d]!.length > all[a]!.length ? d : a));
   await openSlate(page, busiest);

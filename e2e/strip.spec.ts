@@ -62,7 +62,9 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; â€
       const rows = [...el.querySelectorAll<HTMLElement>('[data-row-date]')];
       return (rows.filter((r) => r.getBoundingClientRect().top <= top + 1).at(-1)?.dataset.rowDate ?? rows[0]!.dataset.rowDate)!;
     });
-  const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  // round 22 (item 9): the bar's short date under 1560 px
+  const w = page.viewportSize()!.width < 1560 ? 'short' : 'long';
+  const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: w, month: w, day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   await expect(title).toHaveText(long(await topRow()));
   // watch the rows: a scroll must not replace or change any of them
   await list.evaluate((el) => {

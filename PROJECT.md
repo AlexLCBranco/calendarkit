@@ -2566,3 +2566,22 @@ from the copy's real card height (measured once drawn; laid out once more if tha
 `SlateCopy` gets the same. Tests: tests/copyzoom.test.tsx; e2e slate.spec's column check now measures like with like
 (and its one-column gap, which had come out as −card width and let every comparison pass, is fixed); notes.spec's
 text sample stops short of the narrower box's label.
+
+**Item 9 (v1.58.0): one-row top bar, hides on scroll.** Round 21's two rows (78 px) are one row of 44 px (`.ck-bar1`):
+left — page history ← → and the destinations Schedule · Cup · Standings (`bar-global`); centre — the destination's
+control (Schedule: the date block ‹ date › · calendar · Today; Cup: Groups · Schedule · Simulator · History and the
+schedule's switches; Standings: the column sets); right — List · Calendar · Slate (always), the scope picker, the view's
+options (1 week | 2 weeks, the Team Calendar's span, "Rest days"), "TV games only" as a small chip, then ⓘ, Quick standings
+and Copy as 32 px icon buttons with tooltips. No standalone text: the time zone, "Data updated …" and the Cup stage are
+in ⓘ's tooltip (and its screen-reader text; ⓘ turns orange when the data is 36 h old). Controls 32 px tall (were 36).
+History, the scope picker and the fixed-width date block behave as before.
+- Narrow desktops (< `BAR_SHORT_BELOW` = 1560 px): the short date ("Fri, Nov 6, 2026"), "TV only", "1w / 2w / Mo" (their
+  accessible names stay "1 week" …), tighter tabs and a 128 px scope picker — so every view keeps one row at 1280 too.
+- Hides (`useAutoHideBar`): while the person scrolls a list down (League List, Team List, Slate; a wheel or a key in the
+  last 400 ms — never a jump to a row, a restore or a script) by 24 px past the first 60, it leaves the layout
+  (`ck-bar-hidden`) and the scroller moves up by its height in the same frame, so no row moves; a scroll up of 24 px, the
+  top of the list or the pointer at the window's top edge brings it back the same way. Not within 120 px of a list's end
+  (no room left to keep the rows in place). No React render. Calendars, Cup and Standings don't scroll: it stays.
+- Tests: tests/navbar.test.tsx (the row's pieces in every destination and view), e2e/autohide.spec.ts (44 px in 12 views at
+  1280 and 1920; wheel down hides with no row moving, up / top / top edge bring it back; a script's scroll doesn't hide;
+  non-scrolling views keep it).

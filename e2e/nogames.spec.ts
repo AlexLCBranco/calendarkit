@@ -4,6 +4,7 @@
 // game-less (read here from the raw feed).
 
 import { expect, test, type Page } from './fixtures';
+import { titleFor } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const NOV3 = '2026-11-03';
@@ -20,22 +21,22 @@ for (const layout of ['list', 'slate'] as const) {
   test(`${layout}: Nov 3 by →, by the key, by the strip and by the picker — "No games on Tuesday, November 3"`, async ({ page }) => {
     await page.clock.setFixedTime(NOW);
     await page.goto(`?view=league&layout=${layout}&date=2026-11-02`);
-    await expect(title(page)).toHaveText('Monday, November 2, 2026');
+    await expect(title(page)).toHaveText(titleFor(page, 'Monday, November 2, 2026'));
     expect(await gameDays(page)).not.toContain(NOV3);
     const empty = page.getByTestId('no-games');
     const check = async () => {
-      await expect(title(page)).toHaveText('Tuesday, November 3, 2026');
+      await expect(title(page)).toHaveText(titleFor(page, 'Tuesday, November 3, 2026'));
       await expect(empty).toHaveText('No games on Tuesday, November 3');
       await expect(page.locator('[data-testid="league-list"] article, [data-testid="slate"] .ck-slate-card')).toHaveCount(0);
     };
     await page.getByRole('button', { name: 'Next day' }).click();
     await check();
     await page.keyboard.press('ArrowRight');
-    await expect(title(page)).toHaveText('Wednesday, November 4, 2026');
+    await expect(title(page)).toHaveText(titleFor(page, 'Wednesday, November 4, 2026'));
     await page.keyboard.press('ArrowLeft');
     await check();
     await page.keyboard.press('ArrowLeft');
-    await expect(title(page)).toHaveText('Monday, November 2, 2026');
+    await expect(title(page)).toHaveText(titleFor(page, 'Monday, November 2, 2026'));
     // the strip (League List only: the Slate has none)
     if (layout === 'list') {
       await page.locator(`.ck-week-strip [data-date="${NOV3}"], [data-testid="week-strip"] [data-date="${NOV3}"]`).first().click();

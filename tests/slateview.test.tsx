@@ -35,20 +35,20 @@ describe('Slate view', () => {
     open();
     const title = () => screen.getByTestId('day-title').textContent;
     fireEvent.keyDown(window, { key: 'ArrowRight' });
-    expect(title()).toBe('Monday, November 16, 2026');
+    expect(title()).toBe('Mon, Nov 16, 2026');
     expect(cards().sort()).toEqual(dayGames('2026-11-16'));
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
-    expect(title()).toBe('Saturday, November 14, 2026');
+    expect(title()).toBe('Sat, Nov 14, 2026');
     fireEvent.click(screen.getByLabelText('Next day'));
-    expect(title()).toBe('Sunday, November 15, 2026');
+    expect(title()).toBe('Sun, Nov 15, 2026');
     // modifiers and fields keep their own arrow keys
     fireEvent.keyDown(window, { key: 'ArrowRight', shiftKey: true });
     fireEvent.keyDown(screen.getByLabelText('TV games only'), { key: 'ArrowRight' });
-    expect(title()).toBe('Sunday, November 15, 2026');
+    expect(title()).toBe('Sun, Nov 15, 2026');
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     fireEvent.click(screen.getByRole('button', { name: 'Today' }));
-    expect(title()).toBe('Sunday, November 15, 2026');
+    expect(title()).toBe('Sun, Nov 15, 2026');
   });
 
   it('no week toggle, no countdown; a team shows its List (Slate still offered, round 21) and All teams comes back to the Slate', () => {

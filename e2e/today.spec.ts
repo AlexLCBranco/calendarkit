@@ -2,6 +2,7 @@
 // one click, at once (no smooth scrolling), and the button is disabled once there. Clock: Nov 15, 2026 15:00 UTC.
 
 import { expect, test, type Page } from './fixtures';
+import { titleFor } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const today = (page: Page) => page.getByTestId('today');
@@ -30,14 +31,14 @@ const offsetInList = (page: Page, list: string, sel: string) =>
 
 test('League List: back to the default day, disabled there', async ({ page }) => {
   await open(page, '?view=league&layout=list');
-  await expect(page.getByTestId('day-title')).toHaveText('Sunday, November 15, 2026');
+  await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   await expect(today(page)).toBeDisabled();
   // round 8: scrolling never changes the day, so move away with the arrows
   for (let i = 0; i < 3; i++) await page.getByLabel('Next day').click();
-  await expect(page.getByTestId('day-title')).not.toHaveText('Sunday, November 15, 2026');
+  await expect(page.getByTestId('day-title')).not.toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   await expect(today(page)).toBeEnabled();
   const ms = await clickTime(page);
-  await expect(page.getByTestId('day-title')).toHaveText('Sunday, November 15, 2026');
+  await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   // the title changes with the click; the list jumps in its effect a frame later: wait for it
   await expect.poll(async () => Math.abs(await offsetInList(page, '[data-testid="league-list"]', '[data-day="2026-11-15"]').catch(() => 1e9))).toBeLessThan(1);
   await expect(today(page)).toBeDisabled();

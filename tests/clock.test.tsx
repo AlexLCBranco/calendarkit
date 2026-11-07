@@ -36,13 +36,13 @@ describe('the clock has no minute tick', () => {
     render(<CalendarView data={data} size={{ width: 1280, height: 900 }} timeZone="UTC" initial={{ mode: 'league', layout: 'list' }} />);
     expect(vi.getTimerCount(), 'timers').toBeLessThanOrEqual(2); // the midnight timeout (+ the stale stamp's, if any)
     const title = () => screen.getByTestId('day-title').textContent;
-    expect(title()).toBe('Sunday, November 15, 2026');
+    expect(title()).toBe('Sun, Nov 15, 2026');
     // the old clock ticked every minute: count clock reads over an hour
     const spy = vi.spyOn(Date, 'now');
     await act(async () => vi.advanceTimersByTime(60 * 60_000));
     expect(spy.mock.calls.length, 'Date.now() calls during an hour before midnight').toBe(0);
     await act(async () => vi.advanceTimersByTime(2 * 60 * 60_000)); // past midnight UTC
-    expect(title()).toBe('Monday, November 16, 2026');
+    expect(title()).toBe('Mon, Nov 16, 2026');
   });
 
   it('no countdown on today\'s games: the time, as on every other day', () => {

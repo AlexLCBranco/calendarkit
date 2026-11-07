@@ -3,7 +3,7 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange).
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject } from 'react';
 import { TeamLinkContext, teamLinkTarget, type TeamLinks } from '../slate/teamLink';
 import { addDays, addMonths, dateFormat, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
@@ -362,6 +362,8 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
 
   // Top bar navigation for the view on show.
   const days = useMemo(() => listDays(data, state.tvOnly), [data, state.tvOnly]);
+  // round 22 (item 9): below BAR_SHORT_BELOW px the one-row bar takes the short date ("Fri, Nov 6, 2026") and "TV only"
+  const barShort = !compact && size.width < BAR_SHORT_BELOW;
   let nav: PeriodNavProps | undefined;
   if (teamWeeks) {
     const span = 7 * teamWeeks;
@@ -379,7 +381,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     const cur = nearestDay(days, state.date);
     const i = days.findIndex((d) => d.date === cur);
     nav = {
-      title: listTitle(cur, compact),
+      title: listTitle(cur, compact || barShort),
       unit: 'day',
       testId: 'day-title',
       onPrev: () => days[i - 1] && update({ date: days[i - 1]!.date }),
@@ -746,10 +748,14 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     handle.current = { restore: (snap) => restoreRef.current(snap) };
     return () => void (handle.current = null);
   }, [handle]);
+  const bar = useRef<HTMLDivElement>(null);
+  // (e2e/fixtures.ts turns it off for the specs of other features: window.__ckNoAutoHide)
+  const autoHide = useAutoHideBar(root, bar, !compact && (list || slate) && !(globalThis as { __ckNoAutoHide?: boolean }).__ckNoAutoHide, `${destination}|${state.mode}|${state.layout}|${state.teamId}`);
   const onScrollCapture = (e: { target: EventTarget }) => {
     const el = e.target as HTMLElement;
     const id = el.dataset?.testid;
     if (id && el.hasAttribute('data-select-scroller')) scrollAt.current = { id, top: el.scrollTop };
+    autoHide.onScroll(el);
   };
 
   return (
@@ -759,7 +765,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         ref={root}
         onPointerDownCapture={teamHref ? teamPress : undefined}
         onClickCapture={teamHref ? teamClick : undefined}
-        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${teamMap ? ' ck-team-side' : ''}${list || slate ? ' ck-root-fill' : ' ck-root-grow'}`}
+        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${barShort ? ' ck-bar-short' : ''}${compact || size.width < 1200 ? ' ck-bar-wrap' : ''}${teamMap ? ' ck-team-side' : ''}${list || slate ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={selKind ? onMarquee : undefined}
         style={{ maxWidth: size.width, height: list || slate ? size.height : undefined, minHeight: list || slate || compact ? undefined : size.height }}
         onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e), streakPop.handlers.onMouseOver(e))}
@@ -767,44 +773,26 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave(), streakPop.handlers.onMouseLeave())}
         onBlur={tooltip.handlers.onBlur}
         onScrollCapture={onScrollCapture}
+        onWheelCapture={autoHide.onInput}
+        onKeyDownCapture={autoHide.onInput}
       >
-        <div className="ck-toolbar" data-testid="top-bar">
-          {/* round 21 (item 7): two rows. Row 1 is the same everywhere: page history, the destinations, then the notes,
-              Quick standings and Copy on the right. Row 2 belongs to the destination; in Schedule its pieces never move:
-              scope picker (fixed width), date block (fixed width), views, then the view's options on the right. */}
+        <div className="ck-toolbar ck-bar1" data-testid="top-bar" data-destination={destination} ref={bar}>
+          {/* round 22 (item 9): one row, ~44 px. Left: page history + destinations. Centre: the destination's own control —
+              Schedule: ‹ date › · calendar · Today; Cup: its views and switches; Standings: the column sets. Right: Schedule's
+              views, scope picker, options and the TV chip, then ⓘ (time zone + data stamp), Quick standings and Copy as icon
+              buttons. Round 21's behaviour is kept (history, scope picker, fixed date block); only the layout changed.
+              It hides while the list is scrolled down and comes back on a scroll up (useAutoHideBar). */}
           {title && <h1 className="ck-title ck-sr">{title}</h1>}
-          <div className="ck-bar-row" data-testid="bar-global">
+          <div className="ck-bar-left" data-testid="bar-global">
             {pageHistory && <PageArrows h={pageHistory} />}
             <Segmented label="Destination" className=" ck-tabs-dest" value={destination} options={[['schedule', 'Schedule'], ...(slateFits ? ([['cup', 'Cup'], ['standings', 'Standings']] as [Destination, string][]) : [])]} onChange={goDestination} />
-            <span className="ck-bar-right">
-              {note &&
-                (compact ? (
-                  <span className="ck-note ck-note-icon" data-tip={note} aria-label={note} role="img" tabIndex={0}>
-                    i
-                  </span>
-                ) : (
-                  <span className="ck-notes">
-                    <span className="ck-note" data-testid="tz-note">
-                      {note}
-                    </span>
-                    {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
-                  </span>
-                ))}
-              {slateFits && (
-                <button type="button" className="ck-button ck-st-button" aria-expanded={stPop} aria-haspopup="dialog" data-testid="standings-button" onClick={() => setStPop((o) => !o)}>
-                  Quick standings
-                </button>
-              )}
-              <CopyButton label="Copy as image" text={compact ? undefined : 'Copy'} copy={copyView} testId="copy-view" />
-            </span>
           </div>
-          <div className="ck-bar-row" data-testid="bar-local" data-destination={destination}>
-            {!other && (
-              <>
-                <TeamPicker allTeams teamId={team ? state.teamId : undefined} onChange={team ? pickTeam : (id) => openTeam(id, state.layout === 'calendar' && !slate ? 'calendar' : 'list')} onClear={toAllTeams} compact={compact} />
+          <div className="ck-bar-local" data-testid="bar-local" data-destination={destination}>
+            <div className="ck-bar-center">
+              {!other && (
                 <div className="ck-period-wrap ck-date-block" data-testid="date-block">
                   {team && list && !compact ? (
-                    <TeamListNav store={teamTop} games={teamPickGames} atNext={teamAtNext} pick={{ open: datePick, onToggle: () => setDatePick((o) => !o) }} onDate={(d) => teamList.current?.toDate(d)} onToday={() => ((jump.current = true), teamList.current?.toNext())} />
+                    <TeamListNav short={barShort} store={teamTop} games={teamPickGames} atNext={teamAtNext} pick={{ open: datePick, onToggle: () => setDatePick((o) => !o) }} onDate={(d) => teamList.current?.toDate(d)} onToday={() => ((jump.current = true), teamList.current?.toNext())} />
                   ) : (
                     nav && <PeriodNav {...nav} />
                   )}
@@ -845,40 +833,57 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
                     />
                   )}
                 </div>
-                <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(!slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />
-                <span className="ck-bar-right ck-bar-options">
-                  {weekView && <Segmented label="Weeks" value={String(state.weeks) as '1' | '2'} options={[['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
+              )}
+              {cup && (
+                <>
+                  <Segmented label="Cup view" value={cupView.tab} options={[['standings', 'Groups'], ['schedule', 'Schedule'], ['simulator', 'Simulator'], ['history', 'History']]} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />
+                  {cupSchedule && <Segmented label="Cup list" value={cupView.list} options={[['league', 'League'], ['team', 'Team']]} onChange={(list) => setCupView((v) => ({ ...v, list }))} />}
+                  {cupSchedule && !cupTeam && <Segmented label="Cup layout" value={cupView.by} options={[['group', 'By group'], ['date', 'By date']]} onChange={(by) => setCupView((v) => ({ ...v, by }))} />}
+                  {cupTeam && <TeamPicker teamId={cupView.teamId} onChange={(teamId) => setCupView((v) => ({ ...v, teamId }))} />}
+                </>
+              )}
+              {standings && <Segmented label="Standings columns" value={stSet} options={SET_OPTIONS} onChange={setStSet} />}
+            </div>
+            <div className="ck-bar-right">
+              {!other && (
+                <>
+                  <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(!slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />
+                  <TeamPicker allTeams teamId={team ? state.teamId : undefined} onChange={team ? pickTeam : (id) => openTeam(id, state.layout === 'calendar' && !slate ? 'calendar' : 'list')} onClear={toAllTeams} compact={compact} />
+                  {weekView && <Segmented label="Weeks" className=" ck-tabs-small" value={String(state.weeks) as '1' | '2'} options={barShort ? [['1', '1w', '1 week'], ['2', '2w', '2 weeks']] : [['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
                   {team && !list && !compact && (
                     <Segmented
                       label="Span"
+                      className=" ck-tabs-small"
                       value={String(state.teamSpan) as '1' | '2' | 'month'}
-                      options={[['1', '1 week'], ['2', '2 weeks'], ['month', 'Month']]}
+                      options={barShort ? [['1', '1w', '1 week'], ['2', '2w', '2 weeks'], ['month', 'Mo', 'Month']] : [['1', '1 week'], ['2', '2 weeks'], ['month', 'Month']]}
                       onChange={(v) => setTeamSpan(v === 'month' ? 'month' : v === '2' ? 2 : 1)}
                     />
                   )}
                   {team && list && !compact && (
-                    <label className="ck-check">
-                      <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Show rest days
+                    <label className="ck-check ck-chip-check" title="Show the days without a game between the rows">
+                      <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Rest days
                     </label>
                   )}
-                  <label className="ck-check">
-                    <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact ? 'TV only' : 'TV games only'}
+                  <label className="ck-check ck-chip-check" title="Only games on US national TV">
+                    <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact || barShort ? 'TV only' : 'TV games only'}
                   </label>
-                </span>
-              </>
-            )}
-            {cup && (
-              <>
-                <Segmented label="Cup view" value={cupView.tab} options={[['standings', 'Groups'], ['schedule', 'Schedule'], ['simulator', 'Simulator'], ['history', 'History']]} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />
-                {cupSchedule && <Segmented label="Cup list" value={cupView.list} options={[['league', 'League'], ['team', 'Team']]} onChange={(list) => setCupView((v) => ({ ...v, list }))} />}
-                {cupSchedule && !cupTeam && <Segmented label="Cup layout" value={cupView.by} options={[['group', 'By group'], ['date', 'By date']]} onChange={(by) => setCupView((v) => ({ ...v, by }))} />}
-                {cupTeam && <TeamPicker teamId={cupView.teamId} onChange={(teamId) => setCupView((v) => ({ ...v, teamId }))} />}
-                <span className="ck-bar-right ck-cup-stage" data-testid="cup-stage">
+                </>
+              )}
+              {cup && (
+                <span className="ck-sr" data-testid="cup-stage">
                   {cupStageLabel(cupNights(data), today)}
                 </span>
-              </>
-            )}
-            {standings && <Segmented label="Standings columns" value={stSet} options={SET_OPTIONS} onChange={setStSet} />}
+              )}
+              <span className="ck-bar-end">
+              {note && <BarInfo note={note} updatedAt={compact ? undefined : updatedAt} now={now} timeZone={timeZone} extra={cup ? cupStageLabel(cupNights(data), today) : undefined} />}
+              {slateFits && (
+                <button type="button" className="ck-button ck-icon-button ck-st-button" aria-label="Quick standings" title="Quick standings" aria-expanded={stPop} aria-haspopup="dialog" data-testid="standings-button" onClick={() => setStPop((o) => !o)}>
+                  <StandingsIcon />
+                </button>
+              )}
+              <CopyButton label="Copy as image" copy={copyView} testId="copy-view" />
+              </span>
+            </div>
           </div>
         </div>
         {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? teamListPeriod : undefined} />}
@@ -1102,14 +1107,14 @@ function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: numbe
  * the top ("Sunday, November 15, 2026") from the store, so scrolling re-renders only this; ‹ › go to the previous / next
  * game; Today (the next game) disabled while the list is there.
  */
-function TeamListNav({ store, games, atNext, pick, onDate, onToday }: { store: ValueStore<string>; games: readonly ScheduleGame[]; atNext: ValueStore<boolean>; pick: PeriodNavProps['pick']; onDate: (date: string) => void; onToday: () => void }) {
+function TeamListNav({ short = false, store, games, atNext, pick, onDate, onToday }: { short?: boolean; store: ValueStore<string>; games: readonly ScheduleGame[]; atNext: ValueStore<boolean>; pick: PeriodNavProps['pick']; onDate: (date: string) => void; onToday: () => void }) {
   const top = useValue(store);
   const at = useValue(atNext);
   const prev = top ? games.findLast((g) => g.dateEt < top) : undefined;
   const next = top ? games.find((g) => g.dateEt > top) : undefined;
   return (
     <PeriodNav
-      title={top ? listTitle(top, false) : ''}
+      title={top ? listTitle(top, short) : ''}
       unit="game"
       testId="team-day-title"
       titleClass=" ck-team-day-title"
@@ -1150,3 +1155,104 @@ export function fmtMonthSpan(from: string, to: string): string {
   const [a, b] = [fmtMonth(from), fmtMonth(to)];
   return from.slice(0, 4) === to.slice(0, 4) ? `${a.replace(/ \d{4}$/, '')} – ${b}` : `${a} – ${b}`;
 }
+
+/**
+ * Round 22 (item 9): the top bar hides while a list (League / Team List, Slate) is scrolled down by the person (wheel or
+ * keys — not a jump to a row, a restore or a script) and comes back on a scroll up, at the top, or with the pointer at
+ * the top edge. No React render: a class on the root (`ck-bar-hidden`, the bar out of the layout); the scroller is moved
+ * by the bar's height at the same time, so the rows on screen stay exactly where they were (no jump) and the list gains
+ * the bar's height. Off in other views (nothing scrolls) and on phones.
+ */
+function useAutoHideBar(root: RefObject<HTMLDivElement | null>, bar: RefObject<HTMLDivElement | null>, enabled: boolean, page: string) {
+  const s = useRef({ input: -Infinity, last: new WeakMap<HTMLElement, number>(), run: 0, skip: null as HTMLElement | null, hidden: false, scroller: null as HTMLElement | null });
+  const set = useCallback(
+    (hide: boolean, el?: HTMLElement) => {
+      const r = root.current;
+      const b = bar.current;
+      const st = s.current;
+      if (!r || !b || st.hidden === hide) return;
+      // the bar's height with its margin, measured while it is shown (before hiding it, after showing it)
+      const height = () => b.getBoundingClientRect().height + parseFloat(getComputedStyle(b).marginBottom || '0');
+      const sc = el ?? st.scroller;
+      const was = hide ? height() : 0;
+      st.hidden = hide;
+      r.classList.toggle('ck-bar-hidden', hide);
+      const h = hide ? was : height();
+      // keep the rows in place: the scroller moved up (or down) by the bar's height
+      if (sc && sc.isConnected) {
+        const before = sc.scrollTop;
+        sc.scrollTop = Math.max(0, before + (hide ? -h : h));
+        st.skip = sc;
+        st.last.set(sc, sc.scrollTop);
+      }
+      st.scroller = sc ?? null;
+      st.run = 0;
+    },
+    [root, bar],
+  );
+  // a new page, or the view can't scroll: the bar is back
+  useLayoutEffect(() => {
+    s.current.hidden && set(false);
+  }, [page, enabled, set]);
+  // the pointer at the window's top edge (above the widget too) brings it back
+  useEffect(() => {
+    if (!enabled) return;
+    const move = (e: PointerEvent) => {
+      const r = root.current;
+      if (s.current.hidden && r && e.clientY - Math.max(0, r.getBoundingClientRect().top) < 12) set(false);
+    };
+    window.addEventListener('pointermove', move, { passive: true });
+    return () => window.removeEventListener('pointermove', move);
+  }, [enabled, root, set]);
+  return {
+    onInput: (e: { type: string; key?: string }) => {
+      if (e.type !== 'keydown' || /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key ?? '')) s.current.input = performance.now();
+    },
+    onScroll: (el: HTMLElement) => {
+      const st = s.current;
+      if (!enabled || !(el instanceof HTMLElement) || el.closest('.ck-popover, [role="dialog"], [role="listbox"], .ck-capture-stage')) return;
+      const top = el.scrollTop;
+      const prev = st.last.get(el) ?? 0; // a scroller not seen yet started at its top
+      st.last.set(el, top);
+      if (st.skip === el) return void (st.skip = null);
+      if (top <= 2) return set(false, el);
+      // only the person's own scrolling (a wheel or a key in the last 400 ms) hides or shows it
+      if (performance.now() - st.input > 400) return;
+      const d = top - prev;
+      st.run = Math.sign(d) === Math.sign(st.run) ? st.run + d : d;
+      // (not at the very end: no room left there to keep the rows in place)
+      if (st.run > 24 && top > 60 && el.scrollHeight - el.clientHeight - top > 120) set(true, el);
+      else if (st.run < -24) set(false, el);
+    },
+  };
+}
+
+/** Round 22 (item 9): ⓘ — the time zone, the data stamp (orange once it is 36 h old) and, on the Cup, the stage, in its tooltip. */
+function BarInfo({ note, updatedAt, now, timeZone, extra }: { note: string; updatedAt?: string; now: number; timeZone?: string; extra?: string }) {
+  const t = updatedAt ? Date.parse(updatedAt) : NaN;
+  const stale = useClockValue((n) => !Number.isNaN(t) && n - t > STALE_AFTER_MS, now);
+  const when = Number.isNaN(t) ? undefined : dateFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
+  const tip = [note, when && `Data updated ${when}${stale ? ' — more than 36 hours old: the daily update may have failed' : ''}`, extra].filter(Boolean).join('\n');
+  return (
+    <span className={`ck-info${stale ? ' ck-info-stale' : ''}`} data-testid="bar-info" data-tip={tip} aria-label={tip} role="img" tabIndex={0}>
+      i
+      <span className="ck-sr">
+        <span className="ck-note" data-testid="tz-note">
+          {note}
+        </span>
+        {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
+      </span>
+    </span>
+  );
+}
+
+/** A small table: the Quick standings button's icon. */
+const StandingsIcon = () => (
+  <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+    <path fill="currentColor" d="M2 2.5h12v2H2zM2 6.5h12v1.6H2zM2 10h12v1.6H2zM2 13.4h12V15H2z" opacity=".95" />
+    <path fill="currentColor" d="M5.2 6.5h1.2V15H5.2z" opacity=".55" />
+  </svg>
+);
+
+/** Round 22 (item 9): the width under which the one-row bar uses its short labels (it fits one row down to ~1240 px). */
+export const BAR_SHORT_BELOW = 1560;

@@ -39,7 +39,7 @@ for (const [name, search, titleId] of [
     expect(target > down).toBe(true);
     await page.keyboard.press('Enter');
     await expect(popup).toHaveCount(0);
-    const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' });
+    const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: page.viewportSize()!.width < 1560 ? 'short' : 'long', day: 'numeric', timeZone: 'UTC' }); // round 22: the short title under 1560 px
     // the League List shows the day; the Team List the row of that day or the next game after it
     if (name === 'League List') await expect(page.getByTestId(titleId)).toContainText(long(target));
     else expect(((await page.getByTestId(titleId).textContent()) ?? '').length).toBeGreaterThan(0);

@@ -184,7 +184,7 @@ describe('week view: navigation', () => {
     const el = openWeek(realData, '2026-11-15');
     fireEvent.click(within(cellOf(el.container, '2026-11-18') as HTMLElement).getByTestId('day-header'));
     expect(screen.queryByRole('region', { name: 'League week' })).toBeNull();
-    expect(screen.getByTestId('day-title').textContent).toBe('Wednesday, November 18, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Wed, Nov 18, 2026');
     expect(screen.getByRole('tab', { name: 'List' }).getAttribute('aria-selected')).toBe('true');
   });
 

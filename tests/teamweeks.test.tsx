@@ -28,7 +28,7 @@ const open = (initial: object = {}, size = WIDE) => render(<CalendarView data={d
 describe('control + URL', () => {
   it('"1 week | 2 weeks | Month" only in Team → Calendar; Month by default; kept across teams and List ↔ Calendar', () => {
     open();
-    expect(within(screen.getByRole('tablist', { name: 'Span' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['1 week', '2 weeks', 'Month']);
+    expect(within(screen.getByRole('tablist', { name: 'Span' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['1w', '2w', 'Mo']); // round 22: short labels under 1560 px (names: '1 week', '2 weeks', 'Month')
     expect(spanTab('Month').getAttribute('aria-selected')).toBe('true');
     expect(document.querySelector('.ck-team-month')!.getAttribute('data-span')).toBe('month');
     fireEvent.click(spanTab('2 weeks'));

@@ -6,6 +6,7 @@
 import { expect, test, type Page } from './fixtures';
 import { APP } from './app';
 import { destination, pickScope } from './nav';
+import { titleFor } from './nav';
 
 test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
 
@@ -20,7 +21,7 @@ test('back / forward / in-app arrows walk the pages; a page comes back as it was
   await page.goto(`${APP}?view=league&layout=slate&date=2026-12-22`);
   await expect(page.locator('[data-testid="slate"] .ck-slate-card').first()).toBeVisible();
   await page.getByLabel('Next day').click();
-  await expect(page.getByTestId('day-title')).toHaveText('Wednesday, December 23, 2026');
+  await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Wednesday, December 23, 2026'));
   await expect(page.getByTestId('page-back')).toBeDisabled();
   // scroll the Slate down (a busy night), then go to a team's list and scroll it
   const slate = page.getByTestId('slate');

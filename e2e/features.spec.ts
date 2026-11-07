@@ -43,8 +43,8 @@ const sunday = (d: string) => addDays(d, -new Date(`${d}T00:00:00Z`).getUTCDay()
 /** Rows of the top bar: distinct vertical positions of its items (centers, 4 px tolerance). */
 const barRows = (page: Page) =>
   page.getByTestId('top-bar').evaluate((bar) => {
-    // round 21: the pieces of both rows (a row that wraps counts as more rows)
-    const items = [...bar.querySelectorAll(':scope > .ck-bar-row > *')].filter((c) => (c as HTMLElement).offsetWidth > 1);
+    // round 22: the pieces of the one row — left group, centre, right group (a row that wraps counts as more rows)
+    const items = [...bar.querySelectorAll(':scope > .ck-bar-left > *, .ck-bar-center > *, .ck-bar-right > *')].filter((c) => (c as HTMLElement).offsetWidth > 1);
     const centers = items.map((c) => {
       const r = c.getBoundingClientRect();
       return r.top + r.height / 2;
@@ -65,18 +65,19 @@ const cellSizes = (page: Page, sel: string) =>
     return { n: cells.length, wSpread: Math.max(...w) - Math.min(...w), hSpread: Math.max(...h) - Math.min(...h), h: Math.min(...h), w: Math.min(...w) };
   }, sel);
 
-test('top bar (round 21: two rows): two rows at 1920 px in every view, at most four on phones, never sideways scroll', async ({ page }, info) => {
+test('top bar (round 22: one row): one 44 px row on desktops (1280 and 1920) in every view, at most four on phones, never sideways scroll', async ({ page }, info) => {
   const errors = collectErrors(page);
   const p = info.project.name;
   for (const search of ['?view=league&layout=list', '?view=league&layout=calendar', '?view=league&layout=calendar&weeks=2', '?view=team&layout=list&team=POR', '?view=team&layout=calendar&team=POR']) {
     await open(page, search);
     const r = await barRows(page);
     console.log(`[${p}] top bar ${search}: ${r.rows} row(s), ${r.height.toFixed(0)} px, ${r.items} items`);
-    if (p === 'desktop-xl') {
-      expect(r.rows, search).toBe(2);
-      expect(r.height, search).toBeLessThanOrEqual(78);
+    if (p === 'desktop-xl' || p === 'desktop') {
+      expect(r.rows, search).toBe(1);
+      expect(r.height, search).toBe(44);
+      // the time zone is in ⓘ's tooltip, not a line of its own
       await expect(page.getByTestId('tz-note')).toHaveText(/^Times in your time zone \(America\/Sao_Paulo\)$/);
-      await expect(page.getByTestId('tz-note')).toHaveCSS('font-size', '12px');
+      await expect(page.getByTestId('bar-info')).toHaveAttribute('data-tip', /^Times in your time zone \(America\/Sao_Paulo\)\nData updated /);
     }
     if (p === 'phone') expect(r.rows, search).toBeLessThanOrEqual(4);
     expect(await sideways(page), search).toBeLessThanOrEqual(0);
@@ -349,7 +350,7 @@ test('league week view: 7 equal columns, counts match the data, toggle, prev/nex
   // day header → League List at that day
   await page.locator('[data-date="2026-12-23"] [data-testid="day-header"]').click();
   await expect(page.getByRole('region', { name: 'League schedule' })).toBeVisible();
-  await expect(page.getByTestId('day-title')).toHaveText(/December 23, 2026/);
+  await expect(page.getByTestId('day-title')).toHaveText(/(December|Dec) 23, 2026/);
   expect(errors).toEqual([]);
 });
 

@@ -15,26 +15,28 @@ const metaTime = async (page: Page) => {
 const expected = (iso: string) =>
   `Data updated ${new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'America/Sao_Paulo' }).format(Date.parse(iso))}, ${new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }).format(Date.parse(iso))}`;
 
-test('stamp in the viewer\'s zone, muted while fresh; orange with a tooltip after 36 h', async ({ page }, info) => {
+test('stamp in the viewer\'s zone (ⓘ\'s tooltip), muted while fresh; orange with a tooltip after 36 h', async ({ page }, { project: { name: infoName } }) => {
+  const info2 = (n: string) => n === 'desktop-xl' || n === 'desktop';
   const time = await metaTime(page);
   await page.clock.setFixedTime(Date.parse(time) + 2 * H);
   await page.goto('/calendar/');
+  // round 22 (item 9): no text line in the bar — the stamp is in ⓘ's tooltip (and its screen-reader text), ⓘ muted
   const stamp = page.getByTestId('data-updated');
   await expect(stamp).toHaveText(expected(time));
-  await expect(stamp).toHaveCSS('color', 'rgb(139, 147, 163)'); // --ck-muted
-  await expect(stamp).toHaveCSS('font-size', '11px');
-  // under the time-zone note, right-aligned with it
-  const [n, s] = [await page.getByTestId('tz-note').boundingBox(), await stamp.boundingBox()];
-  expect(s!.y).toBeGreaterThan(n!.y);
-  expect(Math.abs(s!.x + s!.width - (n!.x + n!.width))).toBeLessThan(1);
+  const info = page.getByTestId('bar-info');
+  await expect(info).toBeVisible();
+  await expect(info).toHaveCSS('color', 'rgb(139, 147, 163)'); // --ck-muted
   const bar = (await page.getByTestId('top-bar').boundingBox())!;
-  if (info.project.name === 'desktop-xl') expect(bar.height).toBeLessThanOrEqual(78); // round 21: two rows
-  expect(s!.y + s!.height).toBeLessThanOrEqual(bar.y + bar.height + 0.5);
+  const i = (await info.boundingBox())!;
+  expect(i.y >= bar.y && i.y + i.height <= bar.y + bar.height + 0.5, 'ⓘ inside the bar').toBe(true);
+  if (info2(infoName)) expect(bar.height).toBe(44);
+  await info.hover();
+  await expect(page.getByTestId('tooltip')).toContainText(`Data updated ${expected(time).replace(/^Data updated /, '')}`);
 
   await page.clock.setFixedTime(Date.parse(time) + 37 * H);
   await page.goto('/calendar/');
-  await expect(stamp).toHaveCSS('color', 'rgb(224, 138, 60)'); // --ck-stale orange (B2B is yellow since round 4)
-  await stamp.hover();
+  await expect(info).toHaveCSS('color', 'rgb(224, 138, 60)'); // --ck-stale orange (B2B is yellow since round 4)
+  await info.hover();
   await expect(page.getByTestId('tooltip')).toContainText('daily update may have failed');
 });
 

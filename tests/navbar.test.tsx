@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
-// Round 21 (item 7): the two-row top bar. Row 1 is the same in every destination (destinations, notes, Quick standings,
-// a labelled Copy); row 2 belongs to the destination — Schedule: scope picker, date block (‹ date › · calendar · Today,
-// in every view), List · Calendar · Slate always, then the view's options; Cup: Groups · Schedule + the stage label;
-// Standings: the column sets. Pixel positions are checked in e2e/navbar.spec.ts.
+// Round 22 (item 9): the one-row top bar (round 21's two rows, compacted). Left, the same everywhere: page history and the
+// destinations. Centre, the destination's: Schedule — the date block (‹ date › · calendar · Today, in every view); Cup —
+// its views and switches; Standings — the column sets. Right: Schedule's List · Calendar · Slate (always), the scope
+// picker, the view's options and the TV chip; then, everywhere, ⓘ (time zone + data stamp in its tooltip), Quick
+// standings and Copy as icon buttons with tooltips. Pixel positions and the 44 px height are checked in e2e/navbar.spec.ts.
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CalendarView } from '../src/components/CalendarView';
@@ -19,19 +20,27 @@ const open = (initial = {}) => render(<CalendarView data={data} size={XL} now={N
 const tabs = (name: string) => within(screen.getByRole('tablist', { name }));
 const selected = (list: string, name: string) => tabs(list).getByRole('tab', { name }).getAttribute('aria-selected') === 'true';
 const row1 = () => screen.getByTestId('bar-global');
-const row1Shape = () => [...row1().querySelectorAll('button, [data-testid="tz-note"], [data-testid="data-updated"]')].map((e) => e.getAttribute('aria-label') ?? e.textContent).join(' | ');
+/** The global pieces: the left group's buttons, and the right end (ⓘ, Quick standings, Copy). */
+const row1Shape = () =>
+  [...row1().querySelectorAll('button'), ...screen.getByTestId('top-bar').querySelectorAll('.ck-bar-end > *')].map((e) => e.getAttribute('aria-label')?.split('\n')[0] ?? e.textContent).join(' | ');
 const block = () => screen.getByTestId('date-block');
 /** The date block's pieces in order: ‹, title, ›, calendar, Today. */
 const blockShape = () => [...block().querySelector('.ck-period')!.children].map((e) => (e.classList.contains('ck-nav-title') ? 'title' : e.getAttribute('data-testid') ?? e.getAttribute('aria-label')?.split(' ')[0]));
 
 describe('top bar row 1 (global)', () => {
-  it('is the same in Schedule, Cup and Standings: destinations, notes, Quick standings, a labelled Copy', async () => {
+  it('is the same in Schedule, Cup and Standings: destinations; ⓘ, Quick standings and Copy as icon buttons at the right end', async () => {
     open();
     const shape = row1Shape();
+    expect(shape).toMatch(/ \| Times in UTC \| Quick standings \| Copy as image$/);
     expect(tabs('Destination').getAllByRole('tab').map((t) => t.textContent)).toEqual(['Schedule', 'Cup', 'Standings']);
-    expect(screen.getByTestId('standings-button').textContent).toBe('Quick standings');
+    const st = screen.getByTestId('standings-button');
+    expect([st.textContent, st.getAttribute('title'), st.getAttribute('aria-label')]).toEqual(['', 'Quick standings', 'Quick standings']);
     const copy = screen.getByTestId('copy-view');
-    expect([copy.textContent, copy.getAttribute('title'), copy.getAttribute('aria-label')]).toEqual(['Copy', 'Copy as image', 'Copy as image']);
+    expect([copy.textContent, copy.getAttribute('title'), copy.getAttribute('aria-label')]).toEqual(['', 'Copy as image', 'Copy as image']);
+    // no standalone text in the bar: the time zone and the data stamp are in ⓘ's tooltip (and its screen-reader text)
+    const info = screen.getByTestId('bar-info');
+    expect(info.getAttribute('data-tip')).toBe('Times in UTC\nData updated Nov 15, 11:00');
+    expect(info.contains(screen.getByTestId('tz-note')) && info.contains(screen.getByTestId('data-updated'))).toBe(true);
     // "Standings" is a destination only (the popup button says "Quick standings")
     expect(screen.getAllByText('Standings')).toHaveLength(1);
     goTo('Cup');
@@ -70,13 +79,15 @@ describe('Schedule row 2', () => {
     ['Team List', () => fireEvent.click(tabs('Layout').getByRole('tab', { name: 'List' }))],
   ];
 
-  it('every view: scope picker, then ‹ date › · calendar · Today, then List · Calendar · Slate (Slate always offered)', () => {
+  it('every view: ‹ date › · calendar · Today in the centre; List · Calendar · Slate (always) then the scope picker on the right', () => {
     open();
     for (const [name, go] of views) {
       go();
       const bar = screen.getByTestId('bar-local');
-      const order = [...bar.children].map((c) => (c.classList.contains('ck-picker') ? 'scope' : c.getAttribute('data-testid') ?? c.getAttribute('aria-label') ?? c.className));
-      expect(order.slice(0, 3), name).toEqual(['scope', 'date-block', 'Layout']);
+      expect([...bar.querySelector('.ck-bar-center')!.children].map((c) => c.getAttribute('data-testid')), name).toEqual(['date-block']);
+      const right = [...bar.querySelector('.ck-bar-right')!.children].map((c) => (c.classList.contains('ck-picker') ? 'scope' : c.getAttribute('aria-label') ?? c.getAttribute('data-testid') ?? c.className));
+      expect(right.slice(0, 2), name).toEqual(['Layout', 'scope']);
+      expect([...bar.querySelectorAll('.ck-bar-end > *')].map((c) => c.getAttribute('data-testid')), name).toEqual(['bar-info', 'standings-button', 'copy-view']);
       expect(blockShape(), name).toEqual(['Previous', 'title', 'Next', 'date-pick', 'today']);
       expect(tabs('Layout').getAllByRole('tab').map((t) => t.textContent), name).toEqual(['List', 'Calendar', 'Slate']);
     }

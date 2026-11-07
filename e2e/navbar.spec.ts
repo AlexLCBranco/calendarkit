@@ -6,6 +6,7 @@
 import { expect, test, type Page } from './fixtures';
 import { APP } from './app';
 import { destination, pickScope } from './nav';
+import { titleFor } from './nav';
 
 test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
 
@@ -70,9 +71,9 @@ test('Slate from a team on a day it doesn’t play: the day’s Slate with "XXX 
   });
   // the team's list opened on today (a team link's `on=`): with rest rows, its top row is today
   await page.goto(`${APP}?view=team&layout=list&team=${idle}&on=2026-11-15`);
-  await expect(page.getByTestId('team-day-title')).toHaveText('Sunday, November 15, 2026');
+  await expect(page.getByTestId('team-day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   await tab(page, 'Layout', 'Slate').click();
-  await expect(page.getByTestId('day-title')).toHaveText('Sunday, November 15, 2026');
+  await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   await expect(page.getByTestId('slate-no-team')).toHaveText(`${idle} doesn’t play today`);
   await expect(page.getByTestId('bar-local').getByTestId('team-picker')).toContainText('All teams');
 });

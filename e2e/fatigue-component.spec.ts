@@ -323,8 +323,8 @@ for (const size of SIZES) {
     expect(row.bad).toEqual([]);
     // game text: 1-week scale 1 at 1280 × 900; at 1920 × 911 1.05 since round 21 (the two-row top bar leaves the week 42 px
     // less height; round 5 left it at 1.1); round 22 (item 15): 1 — games with only a break now get the fatigue row too,
-    // so the busiest day is taller
-    expect(row.scale).toBe('1');
-    expect(row.tri).toBe('11px');
+    // so the busiest day is taller; then 1.1 at 1920 × 911 again — the one-row bar (item 9) gives the week 34 px back
+    expect(row.scale).toBe(size.width === 1920 ? '1.1' : '1');
+    expect(row.tri).toBe(size.width === 1920 ? '12.1px' : '11px');
   });
 }

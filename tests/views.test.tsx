@@ -19,7 +19,7 @@ const ids = (root: HTMLElement) => [...root.querySelectorAll('[data-game-id]')].
 describe('CalendarView (league)', () => {
   it('opens on the default day and lists that game date', () => {
     render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="America/Sao_Paulo" />);
-    expect(screen.getByTestId('day-title').textContent).toBe('Friday, October 23, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Fri, Oct 23, 2026');
     expect(ids(day('2026-10-23'))).toEqual(realData.byDate.get('2026-10-23')!.map((g) => g.gameId));
   });
 
@@ -37,12 +37,12 @@ describe('CalendarView (league)', () => {
   it('prev/next day arrows and the week strip change the date', () => {
     render(<CalendarView data={realData} size={WIDE} now={NOW} timeZone="UTC" />);
     fireEvent.click(screen.getByLabelText('Next day'));
-    expect(screen.getByTestId('day-title').textContent).toBe('Saturday, October 24, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Sat, Oct 24, 2026');
     fireEvent.click(screen.getByLabelText('Previous day'));
     fireEvent.click(screen.getByLabelText('Previous day'));
-    expect(screen.getByTestId('day-title').textContent).toBe('Thursday, October 22, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Thu, Oct 22, 2026');
     fireEvent.click(screen.getByRole('tab', { name: /^Tuesday, October 20/ }));
-    expect(screen.getByTestId('day-title').textContent).toBe('Tuesday, October 20, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Tue, Oct 20, 2026');
     expect((screen.getByLabelText('Previous day') as HTMLButtonElement).disabled).toBe(true); // season's first date
   });
 
@@ -53,7 +53,7 @@ describe('CalendarView (league)', () => {
     const header = within(nav).getByLabelText(`Wednesday, October 28: ${realData.byDate.get('2026-10-28')!.length} games`);
     fireEvent.click(header);
     expect(screen.queryByRole('region', { name: 'League week' })).toBeNull();
-    expect(screen.getByTestId('day-title').textContent).toBe('Wednesday, October 28, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Wed, Oct 28, 2026');
   });
 });
 

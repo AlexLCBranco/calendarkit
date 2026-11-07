@@ -73,7 +73,7 @@ describe('List | Calendar switch', () => {
     fireEvent.click(within(el.container.querySelector<HTMLElement>('[data-date="2026-11-14"]')!).getByTestId('day-header'));
     expect(view()).toBe('league-list');
     expect(selected('List')).toBe(true);
-    expect(screen.getByTestId('day-title').textContent).toBe('Saturday, November 14, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Sat, Nov 14, 2026');
     expect(days(el.container)).toContain('2026-11-14');
   });
 });
@@ -114,7 +114,7 @@ describe('league list: one day at a time (round 8)', () => {
   it("opens on the default day with its header and only that day's games", () => {
     const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
     const list = screen.getByTestId('league-list');
-    expect(title()).toBe('Friday, October 23, 2026');
+    expect(title()).toBe('Fri, Oct 23, 2026');
     expect(days(list)).toEqual(['2026-10-23']);
     const n = data.byDate.get('2026-10-23')!.length;
     expect(list.querySelector('[data-day="2026-10-23"] .ck-lday-head')!.textContent).toBe(`Fri, Oct 23 · ${n} games`);
@@ -143,7 +143,7 @@ describe('league list: one day at a time (round 8)', () => {
       fireEvent.scroll(list);
       fireEvent.wheel(list, { deltaY: 2000 });
     }
-    expect(title()).toBe('Friday, October 23, 2026');
+    expect(title()).toBe('Fri, Oct 23, 2026');
     expect(days(list)).toEqual(['2026-10-23']);
     expect(onStateChange).not.toHaveBeenCalled();
   });
@@ -156,35 +156,35 @@ describe('league list: one day at a time (round 8)', () => {
       expect(ids(screen.getByTestId('league-list'))).toEqual(data.byDate.get(date)!.map((g) => g.gameId));
     };
     fireEvent.click(screen.getByLabelText('Next day'));
-    only('2026-10-24', 'Saturday, October 24, 2026');
+    only('2026-10-24', 'Sat, Oct 24, 2026');
     fireEvent.keyDown(window, { key: 'ArrowRight' });
-    only('2026-10-25', 'Sunday, October 25, 2026');
+    only('2026-10-25', 'Sun, Oct 25, 2026');
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
-    only('2026-10-23', 'Friday, October 23, 2026');
+    only('2026-10-23', 'Fri, Oct 23, 2026');
     fireEvent.keyDown(window, { key: 'ArrowRight', ctrlKey: true }); // a modifier: not ours
-    only('2026-10-23', 'Friday, October 23, 2026');
+    only('2026-10-23', 'Fri, Oct 23, 2026');
     fireEvent.click(screen.getByRole('tab', { name: /^Wednesday, October 21/ }));
-    only('2026-10-21', 'Wednesday, October 21, 2026');
+    only('2026-10-21', 'Wed, Oct 21, 2026');
     fireEvent.click(screen.getByRole('button', { name: 'Today' }));
-    only('2026-10-23', 'Friday, October 23, 2026');
+    only('2026-10-23', 'Fri, Oct 23, 2026');
     fireEvent.click(screen.getByLabelText('Next week'));
-    only('2026-10-25', 'Sunday, October 25, 2026'); // the next week's first game day
+    only('2026-10-25', 'Sun, Oct 25, 2026'); // the next week's first game day
     fireEvent.click(screen.getByTestId('date-pick'));
     fireEvent.click(el.container.querySelector<HTMLElement>('[data-testid="date-picker"] [data-date="2026-10-28"]')!);
-    only('2026-10-28', 'Wednesday, October 28, 2026');
+    only('2026-10-28', 'Wed, Oct 28, 2026');
   });
 
   it('← / → move one day in the List and in the Slate (one listener, never twice), none in the Team List', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
     fireEvent.keyDown(window, { key: 'ArrowRight' });
-    expect(title()).toBe('Saturday, October 24, 2026');
+    expect(title()).toBe('Sat, Oct 24, 2026');
     fireEvent.click(tab('Slate'));
     fireEvent.keyDown(window, { key: 'ArrowRight' });
-    expect(title()).toBe('Sunday, October 25, 2026');
+    expect(title()).toBe('Sun, Oct 25, 2026');
     fireEvent.click(tab('List'));
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
-    expect(title()).toBe('Saturday, October 24, 2026');
+    expect(title()).toBe('Sat, Oct 24, 2026');
     pickScope('Atlanta Hawks');
     const looked = screen.getByTestId('team-day-title').textContent; // the team's row the list opened at
     fireEvent.keyDown(window, { key: 'ArrowRight' });
@@ -196,12 +196,12 @@ describe('league list: one day at a time (round 8)', () => {
   it('week strip click and prev/next arrows jump between game days', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
     fireEvent.click(screen.getByLabelText('Next day'));
-    expect(screen.getByTestId('day-title').textContent).toBe('Saturday, October 24, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Sat, Oct 24, 2026');
     fireEvent.click(screen.getByLabelText('Previous day'));
     fireEvent.click(screen.getByLabelText('Previous day'));
-    expect(screen.getByTestId('day-title').textContent).toBe('Thursday, October 22, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Thu, Oct 22, 2026');
     fireEvent.click(screen.getByRole('tab', { name: /^Tuesday, October 20/ }));
-    expect(screen.getByTestId('day-title').textContent).toBe('Tuesday, October 20, 2026');
+    expect(screen.getByTestId('day-title').textContent).toBe('Tue, Oct 20, 2026');
     expect(days(screen.getByTestId('league-list'))).toContain('2026-10-20');
     expect((screen.getByLabelText('Previous day') as HTMLButtonElement).disabled).toBe(true); // season's first date
     expect((screen.getByRole('tab', { name: /^Monday, October 19/ }) as HTMLButtonElement).disabled).toBe(true); // before the season

@@ -3,17 +3,22 @@
 // gets an init script that reads `date=` from the URL it is loading and hands it to the app's test hook
 // (`window.__ckOpenDate`, App.tsx) — as if the person had picked that day. The tests of the open-on-today rule itself
 // (today.spec.ts "page load") use Playwright's plain `test`, so nothing helps them.
+// Round 22 (item 9): the top bar hides while a list is wheel-scrolled down. Specs of other features scroll and then use the
+// bar, or measure positions under it, so here it stays (`window.__ckNoAutoHide`, CalendarView); e2e/autohide.spec.ts
+// tests the hiding itself with `test.use({ autoHide: true })`.
 
 import { test as base } from '@playwright/test';
 
 export { expect, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test';
 
-export const test = base.extend({
-  page: async ({ page }, use) => {
-    await page.addInitScript(() => {
+export const test = base.extend<{ autoHide: boolean }>({
+  autoHide: [false, { option: true }],
+  page: async ({ page, autoHide }, use) => {
+    await page.addInitScript((autoHide) => {
       const date = new URLSearchParams(location.search).get('date');
       if (date) (window as unknown as { __ckOpenDate?: string }).__ckOpenDate = date;
-    });
+      if (!autoHide) (window as unknown as { __ckNoAutoHide?: boolean }).__ckNoAutoHide = true;
+    }, autoHide);
     await use(page);
   },
 });
