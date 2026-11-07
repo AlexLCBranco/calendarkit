@@ -2585,3 +2585,5 @@ History, the scope picker and the fixed-width date block behave as before.
 - Tests: tests/navbar.test.tsx (the row's pieces in every destination and view), e2e/autohide.spec.ts (44 px in 12 views at
   1280 and 1920; wheel down hides with no row moving, up / top / top edge bring it back; a script's scroll doesn't hide;
   non-scrolling views keep it).
+- v1.58.1: two bits of style hygiene from the round's speed check — the TV / Rest days chips' "on" look is a class
+  (`ck-chip-on`), not a `:has()` selector, and only a Fatigue component with the break's corner tick is a positioned box.

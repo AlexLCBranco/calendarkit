@@ -56,9 +56,10 @@ function label(team: string, f: TeamFatigue): string {
 export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = false, shortChip = false }: { f?: TeamFatigue; team: string; size?: 'full' | 'compact'; badge?: 'left' | 'right'; focusable?: boolean; shortChip?: boolean }) {
   // round 14 (item 3): `shortChip` — full size, but the chip shows the stretch only ("7in11", as compact does) and its
   // track is narrower (the Slate's tight cards); tonight's place stays in the tooltip
-  const cls = `ck-fx ck-fx-${size}${badge === 'right' ? ' ck-fx-mirror' : ''}${shortChip && size === 'full' ? ' ck-fx-short' : ''}`;
   const pair = f?.pairs[0];
   const night = f?.nights[0];
+  const tick = !!f?.rest && !!pair && !!f.tif;
+  const cls = `ck-fx ck-fx-${size}${badge === 'right' ? ' ck-fx-mirror' : ''}${shortChip && size === 'full' ? ' ck-fx-short' : ''}${tick ? ' ck-fx-has-tick' : ''}`;
   if (!f || (!pair && !f.tif && !f.rest)) return <span className={`${cls} ck-fx-empty`} data-testid="fatigue" aria-hidden="true" />;
   const m = f.tif?.merged;
   return (

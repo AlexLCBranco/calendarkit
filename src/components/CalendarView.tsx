@@ -860,11 +860,11 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
                     />
                   )}
                   {team && list && !compact && (
-                    <label className="ck-check ck-chip-check" title="Show the days without a game between the rows">
+                    <label className={`ck-check ck-chip-check${state.showRest ? ' ck-chip-on' : ''}`} title="Show the days without a game between the rows">
                       <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Rest days
                     </label>
                   )}
-                  <label className="ck-check ck-chip-check" title="Only games on US national TV">
+                  <label className={`ck-check ck-chip-check${state.tvOnly ? ' ck-chip-on' : ''}`} title="Only games on US national TV">
                     <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact || barShort ? 'TV only' : 'TV games only'}
                   </label>
                 </>

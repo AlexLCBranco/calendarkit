@@ -164,7 +164,8 @@
    the game comes off a break of 3+ days; outlined: the break follows the game. It takes no width of its own: it sits in
    the B2B badge's track when the game isn't a back-to-back night (a teal badge where the yellow one would be), else in
    the 3-in-4 chip's track; with both there, a small teal corner tick marks it (the count is in its tooltip). */
-.ck-fx {
+/* only a component with the corner tick is a positioned box */
+.ck-fx.ck-fx-has-tick {
   position: relative;
 }
 .ck-fx-rest {

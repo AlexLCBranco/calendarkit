@@ -366,7 +366,7 @@
 .ck-chip-check:hover {
   color: var(--ck-text);
 }
-.ck-chip-check:has(input:checked) {
+.ck-chip-check.ck-chip-on {
   border-color: var(--ck-accent);
   color: var(--ck-text);
 }
