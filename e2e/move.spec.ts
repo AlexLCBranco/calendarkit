@@ -78,6 +78,9 @@ const nov2 = raw.leagueSchedule.gameDates.flatMap((d) => d.games).filter((g) => 
 const [A, B, C] = [nov2[0]!.gameId, nov2[1]!.gameId, nov2[2]!.gameId];
 const NOTES = { [A]: { pre: 'Pre note A', live: 'Live note A', post: 'Post note A', shown: 'live' }, [B]: { pre: '', live: '', post: 'Post only B', shown: 'post' } };
 
+/** Round 22: `url` once the page is there — with or without the date= it writes itself after loading (round 21). */
+const at = (url: string) => (u: URL) => u.href.replace(/([?&])date=\d{4}-\d{2}-\d{2}(&|$)/, (_, a: string, b: string) => (b ? a : '')).replace(/[?&]$/, '') === url;
+
 test('/calendar loads through the gauntlet (rewrite), all of it under /calendar/; no redirect there', async ({ page, context }) => {
   await serveBuild(context);
   const nav = navigations(page);
@@ -103,14 +106,14 @@ test('the old address, no notes there: straight on to the new one, path under /c
   const nav = navigations(page);
   await page.clock.setFixedTime(NOW);
   await page.goto(`${OLD}/?view=team&layout=list&team=BOS`);
-  await page.waitForURL(`${NEW}/calendar/?view=team&layout=list&team=BOS`);
+  await page.waitForURL(at(`${NEW}/calendar/?view=team&layout=list&team=BOS`));
   await expect(page.getByTestId('team-list')).toBeVisible();
   expect(nav).toEqual([`${OLD}/?view=team&layout=list&team=BOS`, `${NEW}/calendar/?view=team&layout=list&team=BOS`]);
   await page.waitForTimeout(1500); // and it stays there
   expect(nav).toHaveLength(2);
   // an old address already under /calendar/ keeps its path
   await page.goto(`${OLD}/calendar/?view=league`);
-  await page.waitForURL(`${NEW}/calendar/?view=league`);
+  await page.waitForURL(at(`${NEW}/calendar/?view=league`));
 });
 
 test('notes on the old address are handed over once: same notes (every slot, the one on show) at /calendar, shown in the Slate', async ({ page, context }) => {
@@ -144,7 +147,7 @@ test('notes on the old address are handed over once: same notes (every slot, the
   await page.goto(`${OLD}/?view=league&layout=list`);
   // round 22: as above, the page may already have written its own date= when the URL is checked (a race that failed
   // the live job about 1 run in 2): wait for the address, with or without it
-  await page.waitForURL((u) => u.href.startsWith(`${NEW}/calendar/?view=league&layout=list`));
+  await page.waitForURL(at(`${NEW}/calendar/?view=league&layout=list`));
   expect(nav2.map((u) => u.replace(/&date=\d{4}-\d{2}-\d{2}$/, ''))).toEqual([`${OLD}/?view=league&layout=list`, `${NEW}/calendar/?view=league&layout=list`]);
   expect((await notesAt(page))[A].live).toBe('Edited at the new address');
   expect(Object.keys(await notesAt(page))).toHaveLength(2);
@@ -158,8 +161,8 @@ test('notes already at the new address survive the hand-off (round 9 import rule
   await page.goto(`${NEW}/calendar/`);
   await expect.poll(() => notesAt(page)).toHaveProperty(C);
   await page.goto(`${OLD}/`);
-  await page.waitForURL(`${NEW}/calendar/`);
-  expect(await notesAt(page)).toEqual({
+  await page.waitForURL(at(`${NEW}/calendar/`));
+  await expect.poll(() => notesAt(page)).toEqual({
     [A]: { pre: 'old pre A', live: 'new live A', post: 'new post A', shown: 'pre' },
     [C]: { pre: 'only at the new address', live: '', post: '', shown: 'pre' },
   });

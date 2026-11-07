@@ -34,7 +34,10 @@ where-to-watch info, embedding in gauntlet.
 - [x] Round 10 (2026-10-31): the Slate's self-contained part (`src/slate/`) for the gauntlet's Slate widget, and the move
   under the gauntlet's address. Guide for the gauntlet: "## Using Slate in the gauntlet".
 
-## Current state / handoff (2026-11-06, after round 21)
+## Current state / handoff (2026-11-07, after round 22)
+Round 22 = a 15-item batch; items 1–8 (Cup) and 11 (streak popup) were already built in round 21. Built: item 13 (v1.54.2, records / streaks through a final game), 15 (v1.55.0, abnormal rest badge), 12 (v1.56.0, click rule + click audit), 14 (v1.57.0, larger info in Slate copies), 9 (v1.58.0, one-row bar that hides on scroll; v1.58.1 hygiene); item 10 was already true. See "### Round 22". slate-same's reference is v1.57.0 (e667036).
+
+## Previous handoff (2026-11-06, after round 21)
 Round 21 = a 14-item batch built in the order 7 → 6 → 5 → 3 → 8 → 1 → 4 → 2 → 11 → 12 → 10 → 13 → 14 → 9, one commit and
 version per item, all done (v1.41.0 – v1.54.0). See "### Round 21". Done: item 7 (v1.41.0, two-row top bar), item 6 (v1.42.0, page history), item 5 (v1.43.0, one Cup square), item 3 (v1.44.0, Team List load earlier / more), item 8 (v1.45.0, streak popup), item 1 (v1.46.0, Slate Cup squares), the Cup rules engine (v1.46.1), item 4 (v1.47.0, Cup simulator), item 2 (v1.48.0, IN / OUT tags), item 11 (v1.49.0, stakes chips), item 12 (v1.50.0, Tonight in the Cup), item 10 (v1.51.0, venue markers), item 13 (v1.52.0, rest / travel), item 14 (v1.53.0, prize money), item 9 (v1.54.0, Cup history).
 
