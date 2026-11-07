@@ -142,8 +142,10 @@ test('notes on the old address are handed over once: same notes (every slot, the
   await page.locator(`[data-game-id="${A}"] textarea`).blur();
   const nav2 = navigations(page);
   await page.goto(`${OLD}/?view=league&layout=list`);
-  await page.waitForURL(`${NEW}/calendar/?view=league&layout=list`);
-  expect(nav2).toEqual([`${OLD}/?view=league&layout=list`, `${NEW}/calendar/?view=league&layout=list`]);
+  // round 22: as above, the page may already have written its own date= when the URL is checked (a race that failed
+  // the live job about 1 run in 2): wait for the address, with or without it
+  await page.waitForURL((u) => u.href.startsWith(`${NEW}/calendar/?view=league&layout=list`));
+  expect(nav2.map((u) => u.replace(/&date=\d{4}-\d{2}-\d{2}$/, ''))).toEqual([`${OLD}/?view=league&layout=list`, `${NEW}/calendar/?view=league&layout=list`]);
   expect((await notesAt(page))[A].live).toBe('Edited at the new address');
   expect(Object.keys(await notesAt(page))).toHaveLength(2);
 });
