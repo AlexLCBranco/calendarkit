@@ -56,6 +56,16 @@ export interface ViewSnapshot {
 
 export interface CalendarHandle {
   restore: (snap: ViewSnapshot) => void;
+  /** The page on screen now, with the scroll position and the Team List's row at the top (the host keeps it for a reload). */
+  snap: () => ViewSnapshot;
+}
+
+/** A page snapshot read back from storage (a reloaded tab's history entry): usable only if it has the fields a page needs. */
+export function isViewSnapshot(x: unknown): x is ViewSnapshot {
+  const s = x as ViewSnapshot | undefined;
+  const day = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const month = (v: unknown) => typeof v === 'string' && /^\d{4}-\d{2}$/.test(v);
+  return !!s && !!s.state && typeof s.state.mode === 'string' && day(s.state.date) && month(s.leagueMonth) && month(s.teamMonth) && day(s.teamWeek) && month(s.teamListMonth) && !!s.cup && typeof s.cup.tab === 'string';
 }
 
 /** The in-app ← →: the labels of the pages before / after (undefined: nothing there), in a store only the buttons read. */

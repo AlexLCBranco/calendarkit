@@ -69,6 +69,8 @@ export interface ScheduleProps extends DestinationProps {
   odds?: SlateOdds;
   /** A team link opened in a new tab: the Team view opens on this date instead of the next game. */
   teamDate?: string;
+  /** A reloaded tab: its months, weeks and Team List row as they were (the shell sets the state). */
+  initialSnap?: ViewSnapshot;
   /** A team link's or the scope picker's team: that team's Team view (the shell's team-link rule). */
   openTeam: (teamId: number, view?: TeamLayout) => void;
   /** Page history: the Team List's row at the top changed while its page is the one on screen. */
@@ -79,13 +81,14 @@ export interface ScheduleProps extends DestinationProps {
 export function ScheduleDestination(p: ScheduleProps) {
   const { active, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, barEnd, selection, jump, odds, openTeam } = p;
   const { team, slate, list, teamMap } = scheduleShape(state, size);
-  const [leagueMonth, setLeagueMonth] = useState(() => monthOf(state.date));
+  const snap0 = p.initialSnap;
+  const [leagueMonth, setLeagueMonth] = useState(() => snap0?.leagueMonth ?? monthOf(state.date));
   const initialTeamDate = p.teamDate && /^\d{4}-\d{2}-\d{2}$/.test(p.teamDate) ? p.teamDate : undefined;
-  const [teamMonth, setTeamMonth] = useState(() => monthOf(initialTeamDate ?? teamDefaultDate(data, state.teamId, now) ?? state.date));
+  const [teamMonth, setTeamMonth] = useState(() => snap0?.teamMonth ?? monthOf(initialTeamDate ?? teamDefaultDate(data, state.teamId, now) ?? state.date));
   // Team week views: the first shown day (a Sunday)
-  const [teamWeek, setTeamWeek] = useState(() => weekOf(initialTeamDate ?? teamDefaultDate(data, state.teamId, now) ?? state.date)[0]!);
-  // Team List: the row a team link asked for (once; the list scrolls it to the top)
-  const [teamOpen, setTeamOpen] = useState<TeamListOpen | undefined>(() => (initialTeamDate ? { date: teamListTarget(data, state.teamId, state.tvOnly, state.showRest && !compact, initialTeamDate) } : undefined));
+  const [teamWeek, setTeamWeek] = useState(() => snap0?.teamWeek ?? weekOf(initialTeamDate ?? teamDefaultDate(data, state.teamId, now) ?? state.date)[0]!);
+  // Team List: the row a team link (or a reloaded page) asked for (once; the list scrolls it to the top)
+  const [teamOpen, setTeamOpen] = useState<TeamListOpen | undefined>(() => (snap0?.top && state.mode === 'team' ? { date: snap0.top } : initialTeamDate ? { date: teamListTarget(data, state.teamId, state.tvOnly, state.showRest && !compact, initialTeamDate) } : undefined));
   // the League week view's week picker
   const [picking, setPicking] = useState(false);
   // the lists' date picker
@@ -169,7 +172,7 @@ export function ScheduleDestination(p: ScheduleProps) {
   // Team List: one calendar month at a time. Opening the list, another team or the TV filter → the month of
   // the next game not over (the row the list opens at); the strip, the date picker and Today move it from there.
   const teamListKey = `${state.teamId}|${state.tvOnly}|${team && list}`;
-  const [teamListAt, setTeamListAt] = useState<{ key: string; month: string; to?: string }>(() => ({ key: teamListKey, month: teamOpen ? monthOf(teamOpen.date) : teamListMonthOf(data, state.teamId, state.tvOnly, now) }));
+  const [teamListAt, setTeamListAt] = useState<{ key: string; month: string; to?: string }>(() => (snap0 && team && list ? { key: teamListKey, month: snap0.teamListMonth, to: snap0.teamListTo } : { key: teamListKey, month: teamOpen ? monthOf(teamOpen.date) : teamListMonthOf(data, state.teamId, state.tvOnly, now) }));
   let teamListMonth = teamListAt.month;
   // The last month loaded (Load earlier / more games); one month unless the buttons added some
   let teamListTo = teamListAt.to ?? teamListMonth;

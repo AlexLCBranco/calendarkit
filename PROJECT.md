@@ -54,7 +54,7 @@ measurement; open it only when a question needs the backstory.
 
 ## Where things live
 - `src/App.tsx` — app shell, URL state (`?view=&layout=&team=&weeks=&span=&tv=&cup=…`; `date=` is written but never
-  read on load), page history.
+  read on load), page history, the reload keeping its page (`reloadedState`).
 - `src/components/` — one file per view/component. `CalendarView.tsx` is the shell: the shared `CalendarState`, the
   top bar's frame (← →, destination switch, ⓘ / Quick standings / Copy), page history, team links, sizing, overlays;
   it re-exports the widgets (hosts and tests import from it). One component per destination, each owning its state and
@@ -124,7 +124,10 @@ measurement; open it only when a question needs the backstory.
 - Playoff round is read from the gameId (`playoffRound()`) until rotationkit's module provides it.
 
 **Behaviour**
-- The page always opens on today; a URL's `date=` is never read back. Midnight with the tab open moves today along.
+- A fresh visit (new tab, typed address, bookmark) opens on today; a URL's `date=` is never read back. A reload of
+  the same tab keeps its page (day, month / week, Team List row, scroll) from the tab's history entry (`history.state`,
+  written on every change and a moment after scrolling stops); "Show rest days" still resets. Midnight with the tab open moves
+  today along.
 - Defaults are never stored (rest days on, Hide all notes off, TV filter) until a settings page exists. Slate notes are
   stored (content): localStorage `ck:notes:v1`, per game, three slots (pre / live / post), the slot switched only by the
   person — format and rules in docs/slate-in-gauntlet.md.

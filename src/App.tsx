@@ -3,6 +3,7 @@
 
 import { liveOddsStore } from './slate/odds';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import { isViewSnapshot } from './components/calendarState';
 import { CalendarView, type CalendarHandle, type CalendarState, type CupState, type PageHistory, type PageHistoryLabels, type TeamTarget, type ViewSnapshot } from './components/CalendarView';
 import { createValueStore } from './components/valueStore';
 import { gameLinkUrl, isGameLinkConfigured, isRotationkitConfigured } from './config';
@@ -50,7 +51,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
 /**
  * A team link's URL — that team's Team view in the last-used Team mode, the other toggles as now, and
  * `on=` the date being looked at. `on` is read once at load (the Team view opens there) and dropped from the address
- * then, so a reload opens on today as always.
+ * then (a reload keeps its page from the tab's history entry instead).
  */
 export function teamLinkUrl({ teamId, layout, date, state }: TeamTarget, pathname = window.location.pathname): string {
   const p = new URLSearchParams();
@@ -71,8 +72,8 @@ export function teamLinkUrl({ teamId, layout, date, state }: TeamTarget, pathnam
 const e2eOpenDate = () => (window as { __ckOpenDate?: unknown }).__ckOpenDate as string | undefined;
 
 /**
- * A page's address — the view, the team, the date looked at (`date=`: written for the record, but a
- * load still opens on today), the options, and the Cup's sub-view (`cup=`, `cl=`, `by=`, `ct=`).
+ * A page's address — the view, the team, the date looked at (`date=`: written for the record, never read: a fresh
+ * visit opens on today, a reload keeps its page from history.state), the options, and the Cup's sub-view (`cup=`, `cl=`, `by=`, `ct=`).
  */
 export function urlOf(snap: ViewSnapshot, pathname = window.location.pathname): string {
   const s = snap.state;
@@ -106,6 +107,17 @@ export interface HistEntry {
   snap: ViewSnapshot;
 }
 const isEntry = (x: unknown): x is HistEntry => !!x && (x as HistEntry).ck === 1 && typeof (x as HistEntry).i === 'number';
+
+/**
+ * A reloaded tab's starting point: the page its history entry holds (its state, months, weeks, Team List row, scroll),
+ * or undefined for a fresh visit (no entry of ours) or an entry this version can't read. "Show rest days" goes back to
+ * its default as on every load (the defaults are never kept).
+ */
+export function reloadedState(entry: unknown): (Partial<CalendarState> & { cup?: Partial<CupState>; snap: ViewSnapshot }) | undefined {
+  if (!isEntry(entry) || !isViewSnapshot(entry.snap)) return undefined;
+  const snap = entry.snap;
+  return { ...snap.state, showRest: true, cup: snap.cup, snap };
+}
 
 /**
  * The widget's pages as real history entries, so the browser's back / forward (buttons, Alt+← →, the
@@ -209,13 +221,36 @@ export function App() {
   const appRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const size = useContentSize(appRef, widgetRef);
-  // The page always opens on today. An old link's `date=` is never read back (and never
-  // written), so a bookmark or a reloaded tab doesn't pin an old day; view, layout, team, weeks and the toggles still come from it.
-  const [initial] = useState(() => ({ ...readUrlState(), date: e2eOpenDate() }));
+  // A fresh visit (new tab, typed address, bookmark) opens on today: an address's `date=` is never read back, so a
+  // bookmark doesn't pin an old day; view, layout, team, weeks and the toggles still come from it. A reload of the same
+  // tab keeps the page it showed — its day, month or week — from the tab's own history entry (history.state, which a
+  // reload keeps and a new visit doesn't have), never from the address.
+  const [initial] = useState(() => reloadedState(window.history.state) ?? { ...readUrlState(), date: e2eOpenDate() });
   // A team link's `on=` is for this load only — the widget's first page replaces the address (its
   // own URL, without `on=`) as it renders
   const view = useRef<CalendarHandle>(null);
   const { onNavigate, pageHistory } = usePageHistory(view);
+  // The entry is written on every change of page or day. The Team List's row at the top and the scroll position change
+  // by scrolling: written a moment after the scrolling stops, so a reload puts them back too (Chrome drops a history
+  // write made while the page unloads, so pagehide alone is too late)
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const keep = () => {
+      const e: unknown = window.history.state;
+      if (isEntry(e) && view.current) window.history.replaceState({ ...e, snap: view.current.snap() } satisfies HistEntry, '');
+    };
+    const later = () => {
+      clearTimeout(timer);
+      timer = setTimeout(keep, 250);
+    };
+    document.addEventListener('scroll', later, { capture: true, passive: true });
+    window.addEventListener('pagehide', keep);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('scroll', later, { capture: true });
+      window.removeEventListener('pagehide', keep);
+    };
+  }, []);
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   // No handler while rotationkit has no URL: GameCard only offers the action when onOpenGame is given.
   const onOpenGame = isRotationkitConfigured() ? (id: string) => openGameInRotationkit(id) : undefined;

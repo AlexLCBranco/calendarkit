@@ -1,8 +1,8 @@
 // The page always opens on today, and follows midnight while you're on today. Uses Playwright's plain
 // `test` — not ./fixtures, whose init script hands a URL's date to the app — so these pages see exactly what a person's
 // browser does. In both zones the app is used from (America/New_York, America/Sao_Paulo), at 1920 px.
-//  - B2: an old date in the URL (a bookmark like "?view=league&layout=list&date=2026-10-22") and a reload after moving
-//    to another day both open on today, in the League List and the week view.
+//  - B2: an old date in the URL (a bookmark like "?view=league&layout=list&date=2026-10-22") opens on today, in the
+//    League List and the week view. (A reload of the same tab keeps its day: e2e/reload.spec.ts.)
 //  - B3: Playwright's clock crosses local midnight (the app's midnight timer fires; It has no minute tick): on today the view moves to the new
 //    day (the week view to the new week); on another day it stays. After a sleep (no timer ran), coming back to the tab
 //    (visibilitychange) moves it too.
@@ -27,19 +27,19 @@ for (const zone of Object.keys(OFFSET) as Zone[]) {
   test.describe(zone, () => {
     test.use({ timezoneId: zone });
 
-    test('an old date in the URL, or a reload after moving, opens on today (List and week view)', async ({ page }) => {
+    test('an old date in the URL opens on today; a reload after moving keeps the day (List and week view)', async ({ page }) => {
       await page.clock.setFixedTime(local(zone, '2026-11-15T10:00:00'));
       await page.goto('/calendar/?view=league&layout=list&date=2026-10-22'); // Alex's bookmark, as saved
       await ready(page);
       await expect(title(page)).toHaveText('Sunday, November 15, 2026');
       await expect(page.getByTestId('today')).toBeDisabled();
-      // move to another day: the URL names it, and a reload still opens on today
+      // move to another day: the URL names it; a reload keeps it
       await page.getByLabel('Next day').click();
       await expect(title(page)).toHaveText('Monday, November 16, 2026');
       expect(new URL(page.url()).searchParams.get('date')).toBe('2026-11-16');
       await page.reload();
       await ready(page);
-      await expect(title(page)).toHaveText('Sunday, November 15, 2026');
+      await expect(title(page)).toHaveText('Monday, November 16, 2026');
       // the week view: the week of today, whatever the URL says
       await page.goto('/calendar/?view=league&layout=calendar&date=2026-10-22');
       await ready(page);

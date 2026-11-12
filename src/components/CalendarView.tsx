@@ -48,9 +48,10 @@ export interface CalendarViewProps {
   size: WidgetSize;
   /**
    * Initial state; anything missing gets a default (League → List, default day). `teamDate` (a team link
-   * opened in a new tab): the Team view opens on this date instead of the next game.
+   * opened in a new tab): the Team view opens on this date instead of the next game. `snap` (a reloaded tab): the page
+   * as it was — its months, weeks, the Team List's row at the top and the scroll position (the state comes in the rest).
    */
-  initial?: Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState> };
+  initial?: Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState>; snap?: ViewSnapshot };
   /**
    * The URL of a team's Team view (team links: Ctrl / middle-click → new tab). Given → every team name, logo
    * and tricode is a link (a plain click switches to that Team view here); none → no team links.
@@ -212,7 +213,8 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const jump = useRef(false); // a picked date or Today: a new page although only the date changed
   const markJump = useCallback(() => void (jump.current = true), []);
   const restoring = useRef(false);
-  const pendingScroll = useRef<{ id: string; top: number }>(undefined);
+  // a reloaded page's scroll position comes back like a restored one's (the Team List uses its row at the top instead)
+  const pendingScroll = useRef<{ id: string; top: number } | undefined>(initial?.snap?.scroll && initial.snap.scroll.id !== 'team-list' ? initial.snap.scroll : undefined);
   const last = useRef<{ page: string; date: string; snap?: ViewSnapshot }>({ page: '', date: '' });
   const onNavigateRef = useRef(onNavigate);
   onNavigateRef.current = onNavigate;
@@ -287,7 +289,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   restoreRef.current = restore;
   useEffect(() => {
     if (!handle) return;
-    handle.current = { restore: (snap) => restoreRef.current(snap) };
+    handle.current = { restore: (snap) => restoreRef.current(snap), snap: () => ({ ...historyRef.current.snap(), scroll: scrollAt.current }) };
     return () => void (handle.current = null);
   }, [handle]);
 
@@ -350,7 +352,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
           </div>
         </div>
         {/* every destination stays mounted, so its state lasts as long as the page; only the active one renders */}
-        <ScheduleDestination {...shared} active={destination === 'schedule'} odds={odds} teamDate={initial?.teamDate} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
+        <ScheduleDestination {...shared} active={destination === 'schedule'} odds={odds} teamDate={initial?.teamDate} initialSnap={initial?.snap} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
         <CupDestination {...shared} active={cup} initial={initial?.cup} api={cupApi} />
         <StandingsDestination {...shared} active={standings} api={standingsApi} />
         {stPop && slateFits && (
