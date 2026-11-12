@@ -16,6 +16,8 @@ measurement; open it only when a question needs the backstory.
 - Every app change bumps the version in package.json (patch fix / minor feature / major big change); CI enforces it.
 - Every fix gets a test that fails on the old code.
 - `timeout 300` on every long local test command, output to a file; never pipe test output into grep.
+- **New tests assert behaviour and data** ("the BOS row shows B2B 2/2"), not pixel positions or exact layout, unless
+  Alex says a view is locked. See Test tiers.
 
 ## Current state / handoff (2026-11-12)
 - All features of rounds 1–22 are built (history: docs/HISTORY.md).
@@ -79,6 +81,13 @@ measurement; open it only when a question needs the backstory.
   each halved by test), merges the reports. `npx playwright test --project=desktop-xl` for one project. Specs import
   `test` from `./fixtures` (it hands a URL's `date=` to the app's test hook), except `open-today.spec.ts`.
   Parked narrow projects: `E2E_NARROW=1 npx playwright test --project=tablet --project=phone`.
+- **Test tiers.** Every view is either *settled* or *in flux*:
+  - **Settled** (everything not listed below): full e2e as before — behaviour, data and the layout checks they have.
+  - **In flux**: one smoke test each in `e2e/in-flux.spec.ts` (loads, shows the right games for a fixed date, no
+    console errors) and **no layout or position assertions** anywhere (e2e or unit). Unit tests of the logic behind
+    them (fatigue, Cup rules, streaks, standings) are not affected. Currently in flux: **the top bar / menu** and
+    **the League List rows** (and the legend's place). A view leaves the list when Alex says it is settled or locked;
+    then it gets its full e2e back.
 - **Perf guard**: `npm run perf` (alone on the machine; compares main-thread time against a reference build run in the
   same session, `scripts/perf-ref.ts`; frame baselines per OS in `e2e/perf-baseline.json`).
 - **Live**: `npm run e2e:live -- https://gauntlet-home.vercel.app` (move, smoke, version against the deployed site).

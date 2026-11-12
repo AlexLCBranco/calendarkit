@@ -90,13 +90,3 @@ test('Team List: scrolls back to the next game not over, disabled there', async 
   for (let i = 0; i < 5; i++) await page.mouse.wheel(0, 150);
   await expect(today(page)).toBeEnabled();
 });
-
-test('the top bar keeps its height when Today changes state; one row at 1920 px', async ({ page }, info) => {
-  await open(page, '?view=league&layout=list');
-  const bar = page.getByTestId('top-bar');
-  const h0 = (await bar.boundingBox())!.height;
-  await page.getByLabel('Next day').click();
-  await expect(today(page)).toBeEnabled();
-  expect((await bar.boundingBox())!.height).toBe(h0);
-  if (info.project.name === 'desktop-xl') expect(h0).toBeLessThanOrEqual(78); // never taller than two rows
-});

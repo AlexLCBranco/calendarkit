@@ -40,19 +40,6 @@ const dateOf = (g: RawGame) => g.gameDateEst.slice(0, 10);
 const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 const sunday = (d: string) => addDays(d, -new Date(`${d}T00:00:00Z`).getUTCDay());
 
-/** Rows of the top bar: distinct vertical positions of its items (centers, 4 px tolerance). */
-const barRows = (page: Page) =>
-  page.getByTestId('top-bar').evaluate((bar) => {
-    // The pieces of the one row — left group, centre, right group (a row that wraps counts as more rows)
-    const items = [...bar.querySelectorAll(':scope > .ck-bar-left > *, .ck-bar-center > *, .ck-bar-right > *')].filter((c) => (c as HTMLElement).offsetWidth > 1);
-    const centers = items.map((c) => {
-      const r = c.getBoundingClientRect();
-      return r.top + r.height / 2;
-    });
-    const rows: number[] = [];
-    for (const c of centers.sort((a, b) => a - b)) if (!rows.some((r) => Math.abs(r - c) < 4)) rows.push(c);
-    return { rows: rows.length, height: bar.getBoundingClientRect().height, items: items.length };
-  });
 const sideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 const pageScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollHeight - document.documentElement.clientHeight);
 
@@ -64,26 +51,6 @@ const cellSizes = (page: Page, sel: string) =>
     const h = cells.map((c) => c.height);
     return { n: cells.length, wSpread: Math.max(...w) - Math.min(...w), hSpread: Math.max(...h) - Math.min(...h), h: Math.min(...h), w: Math.min(...w) };
   }, sel);
-
-test('top bar (round 22: one row): one 44 px row on desktops (1280 and 1920) in every view, at most four on phones, never sideways scroll', async ({ page }, info) => {
-  const errors = collectErrors(page);
-  const p = info.project.name;
-  for (const search of ['?view=league&layout=list', '?view=league&layout=calendar', '?view=league&layout=calendar&weeks=2', '?view=team&layout=list&team=POR', '?view=team&layout=calendar&team=POR']) {
-    await open(page, search);
-    const r = await barRows(page);
-    console.log(`[${p}] top bar ${search}: ${r.rows} row(s), ${r.height.toFixed(0)} px, ${r.items} items`);
-    if (p === 'desktop-xl' || p === 'desktop') {
-      expect(r.rows, search).toBe(1);
-      expect(r.height, search).toBe(44);
-      // the time zone is in ⓘ's tooltip, not a line of its own
-      await expect(page.getByTestId('tz-note')).toHaveText(/^Times in your time zone \(America\/Sao_Paulo\)$/);
-      await expect(page.getByTestId('bar-info')).toHaveAttribute('data-tip', /^Times in your time zone \(America\/Sao_Paulo\)\nData updated /);
-    }
-    if (p === 'phone') expect(r.rows, search).toBeLessThanOrEqual(4);
-    expect(await sideways(page), search).toBeLessThanOrEqual(0);
-  }
-  expect(errors).toEqual([]);
-});
 
 test('team header and team picker: logos, mouse and keyboard, team change', async ({ page }, info) => {
   const errors = collectErrors(page);

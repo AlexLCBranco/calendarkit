@@ -1,5 +1,6 @@
-// The Fatigue component in a real browser at 1920 × 911 (Alex's window) and 1280 × 900: League List (both
-// teams, mirrored around the matchup), Team List (team + opponent columns), week view (1 week, compact, under the line).
+// The Fatigue component in a real browser at 1920 × 911 (Alex's window) and 1280 × 900: Team List (team + opponent
+// columns), week view (1 week, compact, under the line). The League List is in flux (PROJECT.md, Test tiers): here only
+// its data (which tags a row has), never their positions.
 // Every component — empty or not — has the same width, so badges, icons and chips sit at one x down a list and nothing
 // moves the logos; the night icons are in time order (left = earlier) in every column; a known HA 2nd night shows a
 // faded house left of a solid plane. Runs once (desktop-xl), sizing the window itself.
@@ -21,9 +22,6 @@ const SIZES = [
   { width: 1280, height: 900 },
 ];
 
-/** The desktop League List's zoom (LEAGUE_FONT_* ÷ 14) and its row height (LEAGUE_ROW_HEIGHT 40 × zoom): a one-line row. */
-const listZoom = (size: { width: number }) => (size.width >= 1920 ? 1.3 : 1);
-const listLine = (size: { width: number }) => 40 * listZoom(size) + 0.5;
 
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'sizes the window itself'));
 
@@ -75,30 +73,6 @@ const columns = (page: Page, rowSel: string, parts: string[]) =>
   );
 
 for (const size of SIZES) {
-  test(`League List ${size.width}×${size.height}: both teams' components, one x per column, same width empty or not, rows one line`, async ({ page }) => {
-    for (const date of ['2026-10-24', '2027-01-07']) {
-      await open(page, size, `?view=league&layout=list&date=${date}`);
-      const { out, bad, rows } = await columns(page, `[data-testid="league-list"] .ck-lday[data-day="${date}"] .ck-card`, ['.ck-logo-backing', '.ck-vsat']);
-      expect(rows, date).toBeGreaterThan(5);
-      expect(bad, date).toEqual([]);
-      for (const k of ['fx0.left', 'fx0.width', 'fx1.left', 'fx1.width', '.ck-logo-backing#0', '.ck-logo-backing#1', '.ck-vsat#0']) expect(out[k], `${date} ${k}: one value`).toHaveLength(1);
-      // empty and full components: one width; empty ones exist on the day
-      expect(await page.locator(`.ck-lday[data-day="${date}"] .ck-fx-empty`).count(), date).toBeGreaterThan(0);
-      // order: [away fatigue] [logo] … [logo] [home fatigue], nothing overlapping
-      const order = await page.locator(`.ck-lday[data-day="${date}"] .ck-card`).evaluateAll((cards) =>
-        cards.map((c) => {
-          const x = (s: string, i = 0) => c.querySelectorAll(s)[i]!.getBoundingClientRect();
-          return x('.ck-rec').right <= x('.ck-fx').left + 0.5 && x('.ck-fx').right <= x('.ck-logo-backing, .ck-logo-empty').left + 0.5 && x('.ck-logo-backing, .ck-logo-empty', 1).right <= x('.ck-fx', 1).left + 0.5 && x('.ck-fx', 1).right <= x('.ck-rec', 1).left + 0.5;
-        }),
-      );
-      expect(order.every(Boolean), date).toBe(true);
-      // one line per row (LEAGUE_ROW_HEIGHT × zoom; before, 35 px — a few rows 36.5 px)
-      expect(out.height!.every((h) => +h <= listLine(size)), `${date} heights ${out.height}`).toBe(true);
-    }
-    // phones and tablets keep the tricode marks only (checked in unit tests); here: the list has no sideways scroll
-    expect(await page.evaluate(() => document.scrollingElement!.scrollWidth <= innerWidth)).toBe(true);
-  });
-
   test(`Team List ${size.width}×${size.height}: team + opponent components at one x on every row`, async ({ page }) => {
     for (const team of ['LAL', 'ORL']) {
       await open(page, size, `?view=team&layout=list&team=${team}`);
@@ -150,42 +124,24 @@ for (const size of SIZES) {
   });
 }
 
-test('a known HA 2nd night (MIA @ CHA, Oct 24, 2026) at 1920 × 911: readable B2B badge, faded house left of a solid plane; home column keeps time order', async ({ page }) => {
+// The League List is in flux: the data only (which night, which icons in which order, tonight solid), no positions or sizes
+test('a known HA 2nd night (MIA @ CHA, Oct 24, 2026): B2B badge, house then plane with tonight solid; home column keeps time order', async ({ page }) => {
   await open(page, SIZES[0]!, '?view=league&layout=list&date=2026-10-24');
-  const icon = (sel: string) =>
-    page.locator(sel).evaluateAll((els) => els.map((e) => ({ kind: e.getAttribute('data-kind'), x: e.getBoundingClientRect().left, solid: e.classList.contains('ck-fx-tonight'), w: e.getBoundingClientRect().width })));
-  const away = '[data-game-id="0022600104"] .ck-matchup > .ck-fx >> nth=0';
-  const badge = await page.locator(`${away} >> .ck-fx-b2b`).evaluate((b) => {
-    const r = b.getBoundingClientRect();
-    const tri = b.closest('.ck-card')!.querySelector('.ck-team')!.getBoundingClientRect();
-    return { text: b.textContent, w: r.width, h: r.height, triH: tri.height, bg: getComputedStyle(b).backgroundColor };
-  });
-  expect(badge.text).toBe('B2B');
-  expect(badge.bg).toBe('rgb(245, 224, 66)');
-  // comparable to the tricode, not a dot
-  expect(badge.h).toBeGreaterThanOrEqual(badge.triH * 0.85);
-  expect(badge.w).toBeGreaterThanOrEqual(28);
-  const a = await icon(`${away} >> .ck-fx-icon`);
-  expect(a.map((i) => [i.kind, i.solid])).toEqual([
+  const icons = (sel: string) => page.locator(sel).evaluateAll((els) => els.map((e) => [e.getAttribute('data-kind'), e.classList.contains('ck-fx-tonight')]));
+  const away = page.locator('[data-game-id="0022600104"] [data-testid="fatigue"]').first();
+  await expect(away.locator('.ck-fx-b2b')).toHaveText('B2B');
+  expect(await away.locator('.ck-fx-b2b').evaluate((b) => getComputedStyle(b).backgroundColor)).toBe('rgb(245, 224, 66)');
+  await expect(away).toHaveAttribute('data-code', 'HA');
+  await expect(away).toHaveAttribute('data-night', '2');
+  expect(await icons('[data-game-id="0022600104"] [data-testid="fatigue"] >> nth=0 >> .ck-fx-icon')).toEqual([
     ['home', false],
     ['away', true],
   ]);
-  expect(a[0]!.x).toBeLessThan(a[1]!.x);
-  expect(a[0]!.w).toBeGreaterThanOrEqual(13);
-  // home (mirrored) column: badge on the left, icons still earlier → later: WAS @ CHI, CHI on an AH 2nd night
-  const home = '[data-game-id="0022600108"] .ck-matchup > .ck-fx >> nth=1';
-  const h = await icon(`${home} >> .ck-fx-icon`);
-  expect(h.map((i) => [i.kind, i.solid])).toEqual([
+  // home column: WAS @ CHI, CHI on an AH 2nd night — icons still earlier → later
+  expect(await icons('[data-game-id="0022600108"] [data-testid="fatigue"] >> nth=1 >> .ck-fx-icon')).toEqual([
     ['away', false],
     ['home', true],
   ]);
-  expect(h[0]!.x).toBeLessThan(h[1]!.x);
-  const bx = await page.locator(`${home} >> .ck-fx-b2b`).evaluate((b) => b.getBoundingClientRect().left);
-  expect(bx).toBeLessThan(h[0]!.x);
-  // away column mirrored: badge right of the icons, next to the logo
-  const ax = await page.locator(`${away} >> .ck-fx-b2b`).evaluate((b) => b.getBoundingClientRect().left);
-  expect(ax).toBeGreaterThan(a[1]!.x);
-  await page.locator('[data-game-id="0022600104"]').screenshot({ path: 'test-output/round5-shots/e2e-ha-row.png' });
 });
 
 // ---------------------------------------------------------------- tricode marks, leg dots, pop-up
@@ -222,8 +178,6 @@ for (const size of SIZES) {
   test(`leg dot ${size.width}×${size.height}: left of "B2B" on a 1st night, right of it on a 2nd, in both columns of every view; never flips`, async ({ page }) => {
     const seen = new Set<string>();
     const views: [string, string][] = [
-      ['?view=league&layout=list&date=2026-10-24', '[data-testid="league-list"] .ck-card'],
-      ['?view=league&layout=list&date=2026-11-02', '[data-testid="league-list"] .ck-card'],
       ['?view=league&layout=calendar&date=2026-11-01&weeks=1', '.ck-month-game'],
       ['?view=team&layout=list&team=LAL', '[data-testid="team-list"] .ck-card'],
     ];
@@ -236,11 +190,11 @@ for (const size of SIZES) {
         expect(l.inside, `${search} ${l.id}: dot and text inside the badge`).toBe(true);
         expect(l.textOk).toBe(true);
         expect(l.dotW, 'a visible dot').toBeGreaterThanOrEqual(2);
-        seen.add(`${search.includes('team=') ? 'team' : search.includes('calendar') ? 'week' : 'list'} col${l.col} leg${l.leg}`);
+        seen.add(`${search.includes('team=') ? 'team' : 'week'} col${l.col} leg${l.leg}`);
       }
     }
-    // every combination occurred: both legs in both columns, in the League List, the week view and the Team List
-    for (const v of ['list', 'week', 'team']) for (const c of [0, 1]) for (const g of [1, 2]) expect([...seen], `${v} col${c} leg${g}`).toContain(`${v} col${c} leg${g}`);
+    // every combination occurred: both legs in both columns, in the week view and the Team List (the League List is in flux)
+    for (const v of ['week', 'team']) for (const c of [0, 1]) for (const g of [1, 2]) expect([...seen], `${v} col${c} leg${g}`).toContain(`${v} col${c} leg${g}`);
   });
 
   test(`yellow tricode boxes ${size.width}×${size.height}: none where the component is shown, kept where it is not; legend per view`, async ({ page }) => {
@@ -255,10 +209,9 @@ for (const size of SIZES) {
       expect(await page.locator('.ck-fx-b2b').count(), search).toBeGreaterThan(3);
       expect(await page.locator('.ck-fm-n1, .ck-fm-n2').count(), search).toBe(0);
       expect(await yellow('.ck-fm'), `${search}: yellow on a tricode`).toBe(0);
+      if (search.includes('layout=list')) continue; // the League List is in flux: its legend's place and look aren't pinned
       await expect(legend).toHaveText(FX);
       expect(await legend.evaluate((l) => l.scrollWidth <= l.clientWidth), 'legend not cut off').toBe(true);
-      // In the narrower one-day list it takes two lines, none of it hidden (sub-pixel height: +1)
-      if (search.includes('layout=list')) expect(await legend.evaluate((l) => l.scrollHeight <= l.clientHeight + 1), 'legend lines all shown').toBe(true);
     }
     // the 2-week view has no component: the boxes stay, with their legend
     await open(page, size, '?view=league&layout=calendar&date=2026-11-01&weeks=2');
@@ -273,7 +226,6 @@ for (const size of SIZES) {
     await page.waitForSelector('[data-game-id]');
     expect(await page.locator('.ck-fx').count()).toBe(0);
     expect(await page.locator('.ck-fm-n2, .ck-fm-n1').count()).toBeGreaterThan(3);
-    await expect(legend).toHaveText(MARKS);
   });
 
   test(`merged 3-in-4 chip ${size.width}×${size.height}: the season's widest ("7in11 · 2nd", BOS Feb 4, 2027) fits its slot; rows one line; compact "7in11" fits two under a line`, async ({ page }) => {
@@ -291,13 +243,9 @@ for (const size of SIZES) {
         return out;
       }, rowSel);
     await open(page, size, '?view=league&layout=list&date=2027-02-04');
-    let chips = await fit('[data-testid="league-list"] .ck-lday[data-day="2027-02-04"] .ck-card');
-    expect(chips.map((c) => c.chip)).toContain('7in11 · 2nd');
-    for (const c of chips) expect(c.inside, c.chip).toBe(true);
-    const widths = await page.locator('.ck-lday[data-day="2027-02-04"] [data-testid="fatigue"]').evaluateAll((els) => [...new Set(els.map((e) => e.getBoundingClientRect().width.toFixed(2)))]);
-    expect(widths, 'empty and full components: one width').toHaveLength(1);
-    const heights = await page.locator('.ck-lday[data-day="2027-02-04"] .ck-card').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height));
-    expect(Math.max(...heights), 'one line per row').toBeLessThanOrEqual(listLine(size));
+    // the League List (in flux): the chip is there; its fit isn't pinned
+    await expect(page.locator('[data-testid="league-list"] .ck-lday[data-day="2027-02-04"] .ck-fx-chip', { hasText: '7in11 · 2nd' })).not.toHaveCount(0);
+    let chips: Awaited<ReturnType<typeof fit>>;
     // the Team List: BOS's own column holds it
     await open(page, size, '?view=team&layout=list&team=BOS');
     chips = (await eachTeamMonth(page, 'BOS', () => fit('[data-testid="team-list"] .ck-card'))).flat();

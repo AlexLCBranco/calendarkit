@@ -1,7 +1,8 @@
 // Fatigue on the tricodes in the league views, in a real browser at 1280 and 1920: the marks take
 // no width (week-view lines stay 155 px in 2-week mode, nothing overflows its line or column), the plane clears the
 // "@" and the TV pill, the colours (yellow fill / ring, purple underline), the tooltip for that team on hover and
-// focus, and the legend under the week grid and the League List. Prints the line widths.
+// focus, and the legend under the week grid. Prints the line widths. (The League List is in flux — PROJECT.md, Test
+// tiers — so its marks' geometry and its legend's place are not tested here.)
 
 import { expect, test, type Page } from './fixtures';
 
@@ -56,19 +57,17 @@ const geometry = (page: Page, lineSel: string) =>
 for (const [name, search] of [
   ['week view, 2 weeks', '?view=league&layout=calendar&date=2027-01-03&weeks=2'],
   ['week view, 1 week', '?view=league&layout=calendar&date=2027-01-03'],
-  ['League List', '?view=league&layout=list&date=2027-01-07'],
 ] as const) {
   test(`${name}: marks take no width, plane clear of "@" / TV / tricodes, colours, tooltip, legend`, async ({ page }, info) => {
     await open(page, search);
-    const list = name === 'League List';
-    const r = await geometry(page, list ? '[data-testid="league-list"] .ck-card' : '.ck-month-game');
+    const r = await geometry(page, '.ck-month-game');
     console.log(`[league-fatigue] ${info.project.name} ${name}: ${r.marks} marks, line widths ${r.widths.join(', ')}`);
     expect(r.marks).toBeGreaterThan(10);
     expect(r.bad).toEqual([]);
     if (name === 'week view, 2 weeks') expect(r.widths).toEqual(['155.00']); // the aligned line
     // tooltip for that team, on hover and on focus
     const tip = page.getByTestId('tooltip');
-    const scope = list ? '[data-day="2027-01-07"] ' : '';
+    const scope = '';
     // a team on its 2nd night (where the component is shown the tricode has no yellow fill — found by its tooltip)
     const mark = page.locator(`${scope}.ck-fm[data-tip*="2/2 · "]`).first();
     await mark.hover();
@@ -84,11 +83,11 @@ for (const [name, search] of [
     await expect(tip).toHaveText(/^[A-Z]{3} — rested( Record (going in|after the game): \d+-\d+)?$/);
     // legend: visible, inside the window, under the grid / list
     const legend = page.getByTestId('fatigue-legend');
-    // The views with the Fatigue component (League List, 1 week) explain it; 2 weeks keeps the tricode legend
+    // The view with the Fatigue component (1 week) explains it; 2 weeks keeps the tricode legend
     await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next$/);
     const lb = (await legend.boundingBox())!;
     expect(lb.y + lb.height).toBeLessThanOrEqual(page.viewportSize()!.height);
-    const above = (await page.locator(list ? '[data-testid="league-list"]' : '.ck-week-grid').boundingBox())!;
+    const above = (await page.locator('.ck-week-grid').boundingBox())!;
     expect(lb.y).toBeGreaterThanOrEqual(above.y + above.height - 0.5);
     expect(await page.evaluate(() => document.documentElement.scrollHeight - document.documentElement.clientHeight)).toBeLessThanOrEqual(0);
   });

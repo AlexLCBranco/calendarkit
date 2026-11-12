@@ -26,23 +26,25 @@ const played = game({ date: '2026-11-10', utc: '2026-11-11T00:00:00Z', away: TEA
 const upcoming = game({ date: '2026-11-25', utc: '2026-11-26T00:00:00Z', away: TEAM.LAL, home: TEAM.BOS });
 const data = dataOf([played, upcoming]);
 
+// The League List is in flux (PROJECT.md, Test tiers): its data — teams, scores, records, tags — not its slots or layout
 describe('League List', () => {
-  it('desktop and tablet: [logo] AWAY a @ h HOME [logo], scores in their slots; no score slots when not played', () => {
+  it('desktop and tablet: [logo] AWAY a @ h HOME [logo]; no scores when not played', () => {
     for (const size of [XL, TABLET]) {
       for (const [g, want] of [
         [played, ['[BOS]', 'BOS', '113', '@', '121', 'NYK', '[NYK]']],
         [upcoming, ['[LAL]', 'LAL', '@', 'BOS', '[BOS]']],
       ] as const) {
         const el = render(<CalendarView data={data} size={size} now={NOW} timeZone="UTC" initial={{ date: g.dateEt }} />).container;
-        const m = el.querySelector(`.ck-card[data-game-id="${g.gameId}"] .ck-matchup`)!;
-        expect(parts(m), `${size.width} ${g.gameId}`).toEqual(want);
-        expect(m.classList.contains('ck-slots')).toBe(true);
-        expect(m.classList.contains('ck-noscore'), 'tight around the "@"').toBe(g === upcoming);
+        const m = el.querySelector(`.ck-card[data-game-id="${g.gameId}"]`)!;
+        expect(parts(m).filter((p) => p !== '_'), `${size.width} ${g.gameId}`).toEqual(want);
         cleanup();
       }
     }
-    const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: played.dateEt }} />).container;
-    expect(text(el.querySelector(`.ck-card[data-game-id="${played.gameId}"] .ck-matchup`)!)).toBe('0-115d BOS 113 @ 121 NYK 1-0'); // records after the game: both teams' first game, BOS lost; BOS's next game is 15 days later: its break badge "15d" (outlined)
+    // records after the game: both teams' first game, BOS lost; BOS's next game is 15 days later: its break badge "15d"
+    const card = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: played.dateEt }} />).container.querySelector(`.ck-card[data-game-id="${played.gameId}"]`)!;
+    expect([...card.querySelectorAll('.ck-rec')].map((r) => r.textContent)).toEqual(['0-1', '1-0']);
+    expect(text(card)).toContain('BOS 113 @ 121 NYK');
+    expect(card.querySelector('[data-break="before"]')?.textContent).toBe('15d');
   });
 
   it('phone: mirrored logos, natural widths (no score on phones)', () => {

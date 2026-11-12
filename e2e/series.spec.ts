@@ -49,10 +49,6 @@ for (const size of SIZES) {
       const list = await read('[data-testid="league-list"] [data-testid="series-chip"]');
       expect(list.length).toBe(await page.getByTestId('league-list').locator('article').count());
       for (const [id, t] of list) expect(t, id).toBe(want[id!]);
-      // one line = every part's middle within 4 px (a wrap moves a part a whole line, 20+ px; rounding each middle
-      // split 1028.49 from 1028.5)
-      const oneLine = await page.getByTestId('league-list').locator('article').evaluateAll((as) => as.filter((a) => { const mids = [...a.children].filter((k) => !k.matches('.ck-copy') && getComputedStyle(k).position !== 'absolute' && k.getBoundingClientRect().width).map((k) => k.getBoundingClientRect().top + k.getBoundingClientRect().height / 2); return Math.max(...mids) - Math.min(...mids) > 4; }).map((a) => a.getAttribute('aria-label')));
-      expect(oneLine).toEqual([]);
       await page.goto('?view=team&layout=list&team=MIN');
       await expect(page.getByTestId('team-list').locator('article').first()).toBeVisible();
       const team = await read('[data-testid="team-list"] [data-testid="series-chip"]');

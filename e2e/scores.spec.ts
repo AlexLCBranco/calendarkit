@@ -133,7 +133,6 @@ test('overtime marker: League List, Team List (worst case in its slot), week vie
     const card = page.locator(`.ck-card[data-game-id="${g.gameId}"]`);
     expect(norm(await card.locator('.ck-matchup').evaluate((m) => [...m.querySelectorAll('.ck-team, .ck-score, .ck-vsat, .ck-ot')].map((e) => e.textContent).join(' ')))).toBe(`${g.away.teamTricode} ${g.away.score} @ ${g.home.score} ${g.home.teamTricode} ${g.ot}`);
     expect(await card.getAttribute('aria-label')).toContain(`(${g.ot})`);
-    expect(await oneLine(`.ck-card[data-game-id="${g.gameId}"]`), `${g.gameId} League List one line`).toBe(true);
     for (const tri of [g.away.teamTricode, g.home.teamTricode]) {
       await open(page, `?view=team&layout=list&team=${tri}`);
       await showMonth(page, g.date.slice(0, 7)); // The Team List shows one month

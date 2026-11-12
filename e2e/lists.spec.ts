@@ -185,13 +185,6 @@ test('league list: one day at a time, never changed by scrolling, every navigati
   };
   await expectDay(DEFAULT_DAY);
 
-  // rows: bigger on desktop (zoom from LEAGUE_FONT_*: 1.3 at 1920, 1 at 1280; LEAGUE_ROW_HEIGHT 40), as before elsewhere
-  expect(await rowsWithoutLogosDiffer(page)).toEqual([]);
-  const zoom = project === 'desktop-xl' ? 1.3 : 1;
-  const single = await list.evaluate((el) => [...new Set([...el.querySelectorAll('.ck-card')].map((c) => Math.round(c.getBoundingClientRect().height * 2) / 2))]);
-  expect(Math.min(...single)).toBe(desktop ? 40 * zoom : project === 'phone' ? 27 : 35);
-  expect(await list.evaluate((el) => el.querySelector('.ck-card .ck-logo-backing')!.getBoundingClientRect().height)).toBeCloseTo(16 * zoom, 1);
-
   // the wheel and a scrollbar jump never change the day (the list may scroll within it)
   await list.hover();
   for (let i = 0; i < 12; i++) await page.mouse.wheel(0, i < 8 ? 600 : -300);

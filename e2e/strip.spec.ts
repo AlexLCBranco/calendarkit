@@ -49,12 +49,11 @@ test('League List: compact strip, fixed week on a click, ‹ › weeks', async (
   expect(await dates()).not.toEqual(week);
 });
 
-test('Team List: title and strip follow the wheel, rows untouched; day click; ‹ ›; top bar one row at 1920', async ({ page }, info) => {
+test('Team List: title and strip follow the wheel, rows untouched; day click; ‹ ›', async ({ page }, info) => {
   test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop widths');
   await open(page, '?view=team&layout=list&team=LAL');
   const list = page.getByTestId('team-list');
   const title = page.getByTestId('team-day-title');
-  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // never taller than two rows
   /** Date of the row whose top is at (or just above) the list's top edge. */
   const topRow = () =>
     list.evaluate((el) => {

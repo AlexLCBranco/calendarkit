@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
-// The one-row top bar. Left, the same everywhere: page history and the
-// destinations. Centre, the destination's: Schedule — the date block (‹ date › · calendar · Today, in every view); Cup —
-// its views and switches; Standings — the column sets. Right: Schedule's List · Calendar · Slate (always), the scope
-// picker, the view's options and the TV chip; then, everywhere, ⓘ (time zone + data stamp in its tooltip), Quick
-// standings and Copy as icon buttons with tooltips. Pixel positions and the 44 px height are checked in e2e/navbar.spec.ts.
+// The top bar's controls and what they do: the destinations; Schedule's date block (‹ date › · calendar · Today, in
+// every view), List · Calendar · Slate (always) and the scope picker; the Cup's views; the Standings' column sets; ⓘ,
+// Quick standings and Copy everywhere. The bar is in flux (PROJECT.md, Test tiers): which controls exist and what they
+// do is tested, never where they sit or in what order.
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CalendarView } from '../src/components/CalendarView';
@@ -19,19 +18,16 @@ const XL = { width: 1600, height: 1000 };
 const open = (initial = {}) => render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" note="Times in UTC" updatedAt="2026-11-15T11:00:00Z" initial={initial} />);
 const tabs = (name: string) => within(screen.getByRole('tablist', { name }));
 const selected = (list: string, name: string) => tabs(list).getByRole('tab', { name }).getAttribute('aria-selected') === 'true';
-const row1 = () => screen.getByTestId('bar-global');
-/** The global pieces: the left group's buttons, and the right end (ⓘ, Quick standings, Copy). */
-const row1Shape = () =>
-  [...row1().querySelectorAll('button'), ...screen.getByTestId('top-bar').querySelectorAll('.ck-bar-end > *')].map((e) => e.getAttribute('aria-label')?.split('\n')[0] ?? e.textContent).join(' | ');
 const block = () => screen.getByTestId('date-block');
-/** The date block's pieces in order: ‹, title, ›, calendar, Today. */
-const blockShape = () => [...block().querySelector('.ck-period')!.children].map((e) => (e.classList.contains('ck-nav-title') ? 'title' : e.getAttribute('data-testid') ?? e.getAttribute('aria-label')?.split(' ')[0]));
+/** The date block's controls, in any order: ‹, title, ›, calendar, Today. */
+const blockParts = () => [...block().querySelector('.ck-period')!.children].map((e) => (e.classList.contains('ck-nav-title') ? 'title' : e.getAttribute('data-testid') ?? e.getAttribute('aria-label')?.split(' ')[0])).sort();
+/** The shell's controls every destination has: the destinations, ⓘ, Quick standings, Copy. */
+const globals = () => [screen.queryAllByRole('tablist', { name: 'Destination' }).length, ...['bar-info', 'standings-button', 'copy-view'].map((id) => screen.queryAllByTestId(id).length)];
 
-describe('top bar row 1 (global)', () => {
-  it('is the same in Schedule, Cup and Standings: destinations; ⓘ, Quick standings and Copy as icon buttons at the right end', async () => {
+describe('top bar, global controls', () => {
+  it('in Schedule, Cup and Standings: the destinations; ⓘ, Quick standings and Copy as icon buttons', async () => {
     open();
-    const shape = row1Shape();
-    expect(shape).toMatch(/ \| Times in UTC \| Quick standings \| Copy as image$/);
+    expect(globals()).toEqual([1, 1, 1, 1]);
     expect(tabs('Destination').getAllByRole('tab').map((t) => t.textContent)).toEqual(['Schedule', 'Cup', 'Standings']);
     const st = screen.getByTestId('standings-button');
     expect([st.textContent, st.getAttribute('title'), st.getAttribute('aria-label')]).toEqual(['', 'Quick standings', 'Quick standings']);
@@ -45,12 +41,12 @@ describe('top bar row 1 (global)', () => {
     expect(screen.getAllByText('Standings')).toHaveLength(1);
     goTo('Cup');
     await screen.findByTestId('cup');
-    expect(row1Shape()).toBe(shape);
+    expect(globals()).toEqual([1, 1, 1, 1]);
     goTo('Standings');
-    expect(row1Shape()).toBe(shape);
+    expect(globals()).toEqual([1, 1, 1, 1]);
     goTo('Schedule');
     pickScope('Boston Celtics');
-    expect(row1Shape()).toBe(shape);
+    expect(globals()).toEqual([1, 1, 1, 1]);
   });
 
   it('League and Team are one destination: Schedule comes back to the scope used last', () => {
@@ -68,7 +64,7 @@ describe('top bar row 1 (global)', () => {
   });
 });
 
-describe('Schedule row 2', () => {
+describe('Schedule controls', () => {
   const views: [string, () => void][] = [
     ['League List', () => {}],
     ['Slate', () => fireEvent.click(tabs('Layout').getByRole('tab', { name: 'Slate' }))],
@@ -79,16 +75,14 @@ describe('Schedule row 2', () => {
     ['Team List', () => fireEvent.click(tabs('Layout').getByRole('tab', { name: 'List' }))],
   ];
 
-  it('every view: ‹ date › · calendar · Today in the centre; List · Calendar · Slate (always) then the scope picker on the right', () => {
+  it('every view: ‹ date › · calendar · Today; List · Calendar · Slate (always); the scope picker', () => {
     open();
     for (const [name, go] of views) {
       go();
-      const bar = screen.getByTestId('bar-local');
-      expect([...bar.querySelector('.ck-bar-center')!.children].map((c) => c.getAttribute('data-testid')), name).toEqual(['date-block']);
-      const right = [...bar.querySelector('.ck-bar-right')!.children].map((c) => (c.classList.contains('ck-picker') ? 'scope' : c.getAttribute('aria-label') ?? c.getAttribute('data-testid') ?? c.className));
-      expect(right.slice(0, 2), name).toEqual(['Layout', 'scope']);
-      expect([...bar.querySelectorAll('.ck-bar-end > *')].map((c) => c.getAttribute('data-testid')), name).toEqual(['bar-info', 'standings-button', 'copy-view']);
-      expect(blockShape(), name).toEqual(['Previous', 'title', 'Next', 'date-pick', 'today']);
+      expect(screen.getAllByTestId('date-block'), name).toHaveLength(1);
+      expect(screen.getAllByTestId('team-picker'), name).toHaveLength(1);
+      expect(globals(), name).toEqual([1, 1, 1, 1]);
+      expect(blockParts(), name).toEqual(['Next', 'Previous', 'date-pick', 'title', 'today']);
       expect(tabs('Layout').getAllByRole('tab').map((t) => t.textContent), name).toEqual(['List', 'Calendar', 'Slate']);
     }
   });
@@ -153,7 +147,7 @@ describe('Schedule row 2', () => {
   // "XXX doesn't play today" needs the Team List's row at the top, which only a real layout gives: e2e/navbar.spec.ts
 });
 
-describe('Cup and Standings row 2', () => {
+describe('Cup and Standings controls', () => {
   it('Cup: Groups · Schedule · Simulator · History and the stage label; Standings: the column sets', async () => {
     open({ mode: 'cup' });
     await screen.findByTestId('cup');

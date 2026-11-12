@@ -5,7 +5,7 @@
 // (today.spec.ts "page load") use Playwright's plain `test`, so nothing helps them.
 // The top bar hides while a list is wheel-scrolled down. Specs of other features scroll and then use the
 // bar, or measure positions under it, so here it stays (`window.__ckNoAutoHide`, CalendarView); e2e/autohide.spec.ts
-// tests the hiding itself with `test.use({ autoHide: true })`.
+// tested the hiding itself; the top bar is in flux now (PROJECT.md, Test tiers), so nothing does.
 
 import { test as base } from '@playwright/test';
 
