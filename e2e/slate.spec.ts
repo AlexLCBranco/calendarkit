@@ -7,6 +7,7 @@ import { test as plain } from '@playwright/test';
 import { expect, test, type Page } from './fixtures';
 import { copySlate } from './slatecopy';
 import { titleFor } from './nav';
+import { FEED_TEAMS } from './feedTeams';
 
 const NOW = new Date('2026-11-15T15:00:00Z'); // 12:00 in São Paulo (the projects' zone): Nov 15 is today
 const OUT = 'test-output/copy-images';
@@ -16,7 +17,7 @@ test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info
 plain.beforeEach(({}, info) => plain.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
 test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
 
-type RawTeam = { teamId: number; teamTricode: string; teamName: string; score: number; wins: number; losses: number };
+type RawTeam = { teamId: number; teamTricode: string; score: number };
 type RawGame = { gameId: string; gameDateEst: string; gameStatus: number; gameStatusText: string; awayTeam: RawTeam; homeTeam: RawTeam };
 
 /** The served snapshot's regular-season / Cup games by ET date (independent of the app's code). */
@@ -92,8 +93,8 @@ test('cards: full team names, "@" before the home team, time or final score with
   for (const g of games) {
     const card = page.locator(`.ck-slate-card[data-game-id="${g.gameId}"]`);
     const rows = card.locator('.ck-slate-row');
-    await expect(rows.nth(0).locator('.ck-slate-name')).toHaveText(g.awayTeam.teamName);
-    await expect(rows.nth(1).locator('.ck-slate-name')).toHaveText(g.homeTeam.teamName);
+    await expect(rows.nth(0).locator('.ck-slate-name')).toHaveText(FEED_TEAMS[g.awayTeam.teamId]!.name);
+    await expect(rows.nth(1).locator('.ck-slate-name')).toHaveText(FEED_TEAMS[g.homeTeam.teamId]!.name);
     await expect(rows.nth(0).locator('.ck-slate-at')).toHaveText('');
     await expect(rows.nth(1).locator('.ck-slate-at')).toHaveText('@');
     await expect(rows.nth(0).locator('.ck-slate-score')).toHaveText(String(g.awayTeam.score));

@@ -368,21 +368,25 @@ test('team list season line: game number + record + streak on the right (after a
   const want = await page.evaluate(async () => {
     const BOS = 1610612738;
     const raw = await (await fetch('/calendar/data/schedule.json')).json();
-    type T = { teamId: number; teamTricode: string; score: number; wins: number; losses: number };
+    type T = { teamId: number; teamTricode: string; score: number };
     const games = (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string; gameStatus: number; homeTeam: T; awayTeam: T }[] }[])
       .flatMap((d) => d.games)
       .filter((g) => /^00[2456]/.test(g.gameId) && (g.homeTeam.teamId === BOS || g.awayTeam.teamId === BOS))
       .sort((a, b) => a.gameDateEst.localeCompare(b.gameDateEst));
     let n = 0;
     let rec: string | null = '0-0';
+    let won = 0;
+    let lost = 0; // counted here from the scores (the snapshot carries no W-L of its own)
     let streak = ''; // e.g. "L1": the run of equal results ending with the previous regular-season game
     return games.map((g) => {
       const [self, opp] = g.homeTeam.teamId === BOS ? [g.homeTeam, g.awayTeam] : [g.awayTeam, g.homeTeam];
       const final = g.gameStatus === 3;
       const regular = g.gameId.startsWith('002');
       if (regular && final && rec !== null) {
-        rec = `${self.wins}-${self.losses}`;
         const k = self.score > opp.score ? 'W' : 'L';
+        if (k === 'W') won++;
+        else lost++;
+        rec = `${won}-${lost}`;
         streak = streak.startsWith(k) ? `${k}${Number(streak.slice(1)) + 1}` : `${k}1`;
       }
       const row = { id: g.gameId, game: regular ? `G${++n}` : null, record: regular ? (rec ?? '') : null, streak: regular ? (rec === null ? '' : streak) : null, scores: final ? [String(self.score), String(opp.score)] : [] };

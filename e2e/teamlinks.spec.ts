@@ -10,6 +10,7 @@
 import { expect, test, type Locator, type Page } from './fixtures';
 import { APP } from './app';
 import { clearScope, destination } from './nav';
+import { FEED_TEAMS } from './feedTeams';
 
 const NOW = new Date('2026-11-15T15:00:00Z'); // Sun Nov 15, 12:00 in São Paulo (the tests' zone)
 const TODAY = '2026-11-15';
@@ -29,14 +30,8 @@ async function open(page: Page, search: string, ready = '[data-game-id], .ck-cup
   await page.evaluate(() => document.fonts.ready);
 }
 
-/** The snapshot's teams, by id (independent of the app's code). */
-const snapshotTeams = (page: Page) =>
-  page.evaluate(async (app) => {
-    const raw = await (await fetch(`${app}data/schedule.json`)).json();
-    const out: Record<number, { id: number; tri: string; name: string; city: string }> = {};
-    for (const d of raw.leagueSchedule.gameDates) for (const g of d.games) for (const t of [g.homeTeam, g.awayTeam]) if (t.teamId) out[t.teamId] = { id: t.teamId, tri: t.teamTricode, name: t.teamName, city: t.teamCity };
-    return out;
-  }, APP);
+/** The teams, by id (the raw feed's names and cities, independent of the app's code). */
+const snapshotTeams = async (_page: Page) => FEED_TEAMS;
 
 /** Team elements on show that are not links (expected: none). */
 const plainTeamElements = (page: Page, scope: string) =>

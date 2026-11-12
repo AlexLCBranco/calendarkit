@@ -17,10 +17,18 @@ measurement; open it only when a question needs the backstory.
 - Every fix gets a test that fails on the old code.
 - `timeout 300` on every long local test command, output to a file; never pipe test output into grep.
 
-## Current state / handoff (2026-11-11)
-- Live at v1.58.1 before this round. All features of rounds 1–22 are built (history: docs/HISTORY.md).
-- **Maintenance round, part 1 of 3** (phases 1–3): phase 1 cleanup (this file, comments, phone/tablet parked), phase 2
-  ESLint, phase 3 slimmed `public/data/schedule.json`. **Parts 2 and 3 (phases 4–8) are still to come.**
+## Current state / handoff (2026-11-12)
+- All features of rounds 1–22 are built (history: docs/HISTORY.md).
+- **Maintenance round, part 1 of 3 done** (phases 1–3):
+  - v1.58.2 — phase 1: history out of comments, this file shrunk (old content in docs/HISTORY.md, Slate guide in
+    docs/slate-in-gauntlet.md), phone/tablet e2e parked (`E2E_NARROW=1`).
+  - v1.58.3 — phase 2: ESLint (`npm run lint`, in CI). Plus two fixes the Nov 7–11 snapshots needed: list rows show at
+    most two TV networks + "+N" (`TV_NAMES_MAX`), and the Team Calendar's probe cell always uses the widest tricode.
+  - Phase 3 (data + scripts only, no version): `public/data/schedule.json` keeps only the fields the app reads
+    (`scripts/slim-schedule.ts`, ~4.1 MB → ~0.6 MB); `tests/slim-schedule.test.ts` fails if code starts reading a
+    dropped field. e2e reads team names from the raw fixture (`e2e/feedTeams.ts`).
+- **Parts 2 and 3 of this round (phases 4–8) are still to come.** A separate "CalendarView component split" session
+  works in this folder too; it was paused while part 1 ran (its `tsconfig.tsbuildinfo` is untracked, left alone).
 
 ## What the app is
 - **Destinations** (one-row 44 px top bar; hides while a list is scrolled down): **Schedule** (League or Team by the

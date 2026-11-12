@@ -65,8 +65,9 @@ test('Slate from a team on a day it doesn’t play: the day’s Slate with "XXX 
   // a team without a game today (Nov 15), from the served snapshot
   const idle = await page.evaluate(async () => {
     const raw = await (await fetch('/calendar/data/schedule.json')).json();
-    const day = raw.leagueSchedule.gameDates.find((d: { gameDate: string }) => d.gameDate.startsWith('11/15/2026'));
-    const busy = new Set(day.games.flatMap((g: { homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } }) => [g.homeTeam.teamTricode, g.awayTeam.teamTricode]));
+    type G = { gameDateEst: string; homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } };
+    const games = (raw.leagueSchedule.gameDates as { games: G[] }[]).flatMap((d) => d.games).filter((g) => g.gameDateEst.startsWith('2026-11-15'));
+    const busy = new Set(games.flatMap((g: { homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } }) => [g.homeTeam.teamTricode, g.awayTeam.teamTricode]));
     return ['BOS', 'MIA', 'DEN', 'LAL', 'NYK', 'ATL', 'CHI', 'DAL', 'PHX', 'UTA'].find((t) => !busy.has(t))!;
   });
   // the team's list opened on today (a team link's `on=`): with rest rows, its top row is today

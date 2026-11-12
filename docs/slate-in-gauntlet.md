@@ -86,7 +86,7 @@ same origin, no CORS — e2e `move.spec.ts` fetches it from a gauntlet page). Th
 snapshotted daily at 11:00 UTC by this repo's GitHub Action (`.github/workflows/schedule-update.yml`; GitHub may start it
 hours late), committed to `public/data/schedule.json`, deployed by Vercel; the action then waits until the live file is
 the committed one (`scripts/verify-deploy.ts`, polling the address above). Final scores therefore appear the morning
-after (live scores would need another source — phase 5). 4.1 MB, ~110 KB brotli; `Cache-Control: public, max-age=60, stale-while-revalidate=300`.
+after (live scores would need another source — phase 5). ~0.6 MB (only the fields the app reads; the raw feed is ~4 MB), ~18 KB brotli; `Cache-Control: public, max-age=60, stale-while-revalidate=300`.
 (A long stale-while-revalidate served day-old data through the rewrite.)
 
 **Must know:**
