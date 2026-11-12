@@ -27,8 +27,9 @@ measurement; open it only when a question needs the backstory.
   - Phase 3 (data + scripts only, no version): `public/data/schedule.json` keeps only the fields the app reads
     (`scripts/slim-schedule.ts`, ~4.1 MB → ~0.6 MB); `tests/slim-schedule.test.ts` fails if code starts reading a
     dropped field. e2e reads team names from the raw fixture (`e2e/feedTeams.ts`).
-- **Parts 2 and 3 of this round (phases 4–8) are still to come.** A separate "CalendarView component split" session
-  works in this folder too; it was paused while part 1 ran (its `tsconfig.tsbuildinfo` is untracked, left alone).
+- **Part 2 of 3 done** (phase 4, v1.58.4): `CalendarView.tsx` split with no behaviour change into a thin shell and one
+  component per destination (file layout under "Where things live").
+- **Part 3 (phases 5–8) is still to come.**
 
 ## What the app is
 - **Destinations** (one-row 44 px top bar; hides while a list is scrolled down): **Schedule** (League or Team by the
@@ -52,8 +53,14 @@ measurement; open it only when a question needs the backstory.
 ## Where things live
 - `src/App.tsx` — app shell, URL state (`?view=&layout=&team=&weeks=&span=&tv=&cup=…`; `date=` is written but never
   read on load), page history.
-- `src/components/` — one file per view/component; `CalendarView.tsx` combines them behind the top bar and re-exports
-  them (hosts and tests import from it). Styles: `calendar.css` is an ordered list of `@import`s of `styles/*.css`.
+- `src/components/` — one file per view/component. `CalendarView.tsx` is the shell: the shared `CalendarState`, the
+  top bar's frame (← →, destination switch, ⓘ / Quick standings / Copy), page history, team links, sizing, overlays;
+  it re-exports the widgets (hosts and tests import from it). One component per destination, each owning its state and
+  filling the bar's centre / right slots through portals: `ScheduleDestination.tsx` (League + Team),
+  `CupDestination.tsx`, `StandingsDestination.tsx`. All three stay mounted (their state lasts as long as the page);
+  only the active one renders. `destination.tsx` = the shell ↔ destination contract and the shared selection copy;
+  `calendarState.ts` = state / page types and pure helpers; `TopBar.tsx` = the shell's bar parts and auto-hide.
+  Styles: `calendar.css` is an ordered list of `@import`s of `styles/*.css`.
 - `src/data/` — pure derivations (`model.ts`, `cup*.ts`, `fatigue.ts`, `rest.ts`, `streak.ts`, `standings.ts`,
   `odds.ts`, `regulation.ts`), loading (`load.ts`).
 - `src/slate/` — the Slate's self-contained part (imports only `src/slate`, `src/data`, `src/shared`, React); the
