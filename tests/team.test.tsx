@@ -140,7 +140,7 @@ describe('team picker', () => {
   });
 
   it('a pointer resting where the list opens (hover events without movement) never overrides the keyboard; a moving one highlights', () => {
-    // round 6: Chrome sends mouseover/mouseenter with no movement to the option under a resting pointer when the list
+    // Chrome sends mouseover/mouseenter with no movement to the option under a resting pointer when the list
     // appears; arriving after "o" it replaced Orlando with Miami (the flaky e2e "team header and team picker")
     team(TEAM.MIA, 'list');
     const btn = screen.getByTestId('team-picker');
@@ -252,7 +252,7 @@ describe('back-to-back pairs (team views)', () => {
       const pairs = expectedPairs(data, teamId);
       expect(pairs.length).toBeGreaterThan(5);
       const want = new Map<string, { text: string; night: string; plane: boolean }[]>();
-      // round 9: the bracket only where the other night is in the shown month (labels stay on both)
+      // The bracket only where the other night is in the shown month (labels stay on both)
       const bracket = new Map<string, string[]>();
       for (const p of pairs) {
         want.set(p.a.gameId, [...(want.get(p.a.gameId) ?? []), { text: `1/2 · ${p.code}`, night: '1', plane: p.travels }]);

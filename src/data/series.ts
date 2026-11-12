@@ -1,4 +1,4 @@
-// Round 14 (item 5): the regular-season series between two teams — which meeting a game is ("G2/4") and how the series
+// The regular-season series between two teams — which meeting a game is ("G2/4") and how the series
 // stands. Counts regular-season games only (the feed's gameType "regular"): NBA Cup group games and the Cup's
 // quarterfinals and semifinals included, the Cup Championship (gameType "cup-final"), play-in and playoffs not — NBA.com
 // "NBA Cup 101": every Cup game counts toward the regular-season standings except the Championship. A knockout game

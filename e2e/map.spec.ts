@@ -1,4 +1,4 @@
-// Round 8 (Part 2): the League List's map in a real browser at 1280 × 900 (desktop) and 1920 × 1080 (desktop-xl):
+// The League List's map in a real browser at 1280 × 900 (desktop) and 1920 × 1080 (desktop-xl):
 // beside the list and never over it, one dot per game where the feed says it's played, yellow for back-to-backs, edge
 // markers for places off the map, out of every copy, not in the Slate or on tablets/phones.
 
@@ -107,7 +107,7 @@ test('places off the map: an edge marker with the place and its direction; no ar
     expect(l!.x + l!.width).toBeLessThanOrEqual(m!.x + m!.width + 0.5);
     expect(l!.y + l!.height).toBeLessThanOrEqual(m!.y + m!.height + 0.5);
   }
-  // Cup knockout games the feed hasn't placed yet (no arena; Dec 4–8 in the snapshot of round 8): listed as unknown,
+  // Cup knockout games the feed hasn't placed yet (no arena; Dec 4–8 in an early-season snapshot): listed as unknown,
   // never guessed. The day comes from the served snapshot; once the NBA places them, the unit test (fixture) still covers it.
   const day = await page.evaluate(async () => {
     const raw = await (await fetch('/calendar/data/schedule.json')).json();

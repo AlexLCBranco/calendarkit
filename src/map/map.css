@@ -1,4 +1,4 @@
-/* Round 8: the League List's map (LeagueMap). Loaded with the map's own chunk. Time zones: faint tints, apart from the
+/* The League List's map (LeagueMap). Loaded with the map's own chunk. Time zones: faint tints, apart from the
    B2B yellow (dots) and the accent blue (hover); the bands are approximate (zones.ts). */
 .ck-map {
   position: relative;

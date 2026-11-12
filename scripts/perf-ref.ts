@@ -1,4 +1,4 @@
-// The perf guard's reference build (round 6): the app at a fixed earlier commit, built once into
+// The perf guard's reference build: the app at a fixed earlier commit, built once into
 // test-output/perf-ref/<commit>/ and measured in the same run as the current build, interleaved (e2e/perf.spec.ts).
 // Builds from a temporary git worktree inside test-output (so Node finds this checkout's node_modules by walking up),
 // with Vite only (no typecheck). CI checks out 2 commits, so the reference commit is fetched when it's missing.

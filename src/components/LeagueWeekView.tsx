@@ -62,12 +62,12 @@ export function MonthGameLine({ data, game, gameLink, fxRow = false }: { data: C
     <li
       className={`ck-month-game${fin ? ' ck-month-final' : ''}${fx ? ' ck-month-fx' : ''}`}
       data-game-id={game.gameId}
-      // round 14 (item 5): no room for the series chip on a line; the series is the line's tooltip (its marks and TV
+      // No room for the series chip on a line; the series is the line's tooltip (its marks and TV
       // pill keep their own)
       data-tip={seriesLine(data, game)}
       aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}${ot ? ` (${ot})` : ''}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
     >
-      {/* logos, tricodes, scores and "@": the link to the game page (a subgrid on the line's columns, round 5) */}
+      {/* logos, tricodes, scores and "@": the link to the game page (a subgrid on the line's columns) */}
       <MatchLink game={game} gameLink={gameLink} className="ck-mline">
         <TeamLogo team={game.awayTeam} />
         <MonthTri team={game.awayTeam} fatigue={away} component={fxRow} score={fin && { n: fin.score, win: fin.win }} />
@@ -115,9 +115,9 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
   }, [data]);
   const busiest = useMemo(() => busiestDayHeight(data.byDate, timeZone, weeks === 1 ? fxGame : undefined), [data, timeZone, weeks, fxGame]);
   const grid = useRef<HTMLDivElement>(null);
-  // v1.40.1: undefined until measured, and the days' games render only then. Before, the first render laid out every
+  // Undefined until measured, and the days' games render only then. Before, the first render laid out every
   // line at scale 1, the measure (a forced layout) changed the scale and everything rendered and laid out again — on
-  // the load path; the second pass grew with the Fatigue rows of 71de8aa (v1.16.0). Both passes run before the first
+  // the load path; the second pass grew with the Fatigue rows of 71de8aa. Both passes run before the first
   // paint, so nothing visible changes.
   const [gridTop, setGridTop] = useState<number | undefined>(undefined);
   useLayoutEffect(() => {

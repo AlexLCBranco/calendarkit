@@ -106,7 +106,7 @@ describe('teamThreeInFour on the real feed, all 30 teams', () => {
   });
 });
 
-// Round 6 (E): overlapping 3-in-4 sets merged into one stretch, chained; label = games "in" days first→last inclusive,
+// Overlapping 3-in-4 sets merged into one stretch, chained; label = games "in" days first→last inclusive,
 // with tonight's place; the pop-up's day strip.
 describe('merged 3-in-4 stretches', () => {
   const HOU = TEAMS.find((t) => t.tricode === 'HOU')!.id;

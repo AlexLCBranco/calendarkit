@@ -1,7 +1,7 @@
 // After the daily snapshot commit: wait until the live site serves that snapshot. Polls the deployed
 // /data/schedule.json (cache-busting query, no-cache) until its meta.time equals the committed file's, for up to
 // ~30 minutes; exits 1 otherwise, so the workflow run fails and GitHub emails the repo owner.
-// v1.40.0: was ~10 minutes. On 2026-11-05 Vercel built the bot's commit 20 min after the push (Vercel received the push
+// Was ~10 minutes. On 2026-11-05 Vercel built the bot's commit 20 min after the push (Vercel received the push
 // 7 min late, then the build queued 12 min — Hobby builds one deployment at a time) and the check failed although the
 // deploy then went live. After 10 minutes without the new snapshot it also calls the Vercel Deploy Hook in the secret
 // VERCEL_DEPLOY_HOOK_URL once, when set (optional: Vercel deploys the bot's commits from Git on its own).
@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-// round 10: calendarkit lives under the gauntlet's address (the old one only redirects browsers)
+// Calendarkit lives under the gauntlet's address (the old one only redirects browsers)
 export const LIVE_URL = 'https://gauntlet-home.vercel.app/calendar/data/schedule.json';
 export const TRIES = 60;
 /** Tries before the deploy hook is called (10 minutes). */

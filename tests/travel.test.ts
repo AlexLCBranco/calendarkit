@@ -1,4 +1,4 @@
-// Round 8 (3.2): a hovered game's back-to-back travel lines, checked against every game of the season worked out here
+// A hovered game's back-to-back travel lines, checked against every game of the season worked out here
 // independently: a team on the 2nd night (it also played the calendar day before) gets a line from that game's arena to
 // tonight's; on the 1st night (it plays again the next day), from tonight's to that game's. Both ends: the feed's arena.
 import { describe, expect, it } from 'vitest';

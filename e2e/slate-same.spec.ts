@@ -1,4 +1,4 @@
-// Round 10 (1.4): the Slate drawn from its self-contained part (src/slate/) is pixel for pixel the reference Slate (REF below; v1.27.0 until round 14, v1.33.0 until round 22 — tight cards, odds, series chip —, now v1.57.0: records / streaks through a final game, the break badge, the copies' larger info) — on
+// The Slate drawn from its self-contained part (src/slate/) is pixel for pixel the reference Slate (REF below) — on
 // screen and in its copied images — measured in the same run against that build (scripts/perf-ref.ts, served with the
 // same snapshot). At 1280 × 900 (desktop) and 1920 × 1080 (desktop-xl); days of 1, 5, 12 and 15 games; with notes, with
 // no notes at all, and with notes but "Hide all notes". Move REF on purpose only when the Slate is meant to change.
@@ -14,7 +14,7 @@ const REF = { commit: 'e667036f80594a0940113d0003db6c2edf0050fb', version: '1.57
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [1, 5, 12, 15];
 
-// Round 14 (item 1): the cause of the flaky screen comparisons (about 1 in 3 runs locally). Chromium re-rasterizes only the
+// The cause of the flaky screen comparisons (about 1 in 3 runs locally). Chromium re-rasterizes only the
 // rect of an image that finishes loading after its tile was first rasterized ("partial raster"); the logo disc's
 // antialiased edge pixels inside that rect then come out up to 38 levels apart from a full-tile raster. Which cards get it
 // depends on load timing, so under CPU load the same build gave up to 10 distinct screenshots in 12 loads
@@ -37,16 +37,16 @@ test.afterAll(() => ref?.server.close());
 // the snapshot's regular-season / Cup nights, read here (not through the app)
 const raw = JSON.parse(readFileSync('public/data/schedule.json', 'utf8')) as { leagueSchedule: { gameDates: { games: { gameId: string; gameDateEst: string; gameSubtype?: string }[] }[] } };
 const nights: Record<string, string[]> = {};
-// round 21 (item 1): Cup group nights are left out — their cards have the Cup track now, on purpose
+// Cup group nights are left out — their cards have the Cup track now, on purpose
 const cupNights = new Set<string>();
 for (const d of raw.leagueSchedule.gameDates)
   for (const g of d.games) {
-    // (and knockout nights: their cards have the venue track, item 10)
+    // (and knockout nights: their cards have the venue track)
     if (g.gameSubtype === 'in-season' || g.gameSubtype === 'in-season-knockout' || /^006/.test(g.gameId)) cupNights.add(g.gameDateEst.slice(0, 10));
     if (/^00[2456]/.test(g.gameId)) (nights[g.gameDateEst.slice(0, 10)] ??= []).push(g.gameId);
   }
 for (const d of cupNights) delete nights[d];
-// a night of n games, else the night with the closest count (round 21: the only 1-game night is the Cup final, left out)
+// a night of n games, else the night with the closest count (the only 1-game night is the Cup final, left out)
 const dayWith = (n: number) => Object.keys(nights).sort().find((d) => nights[d]!.length === n) ?? Object.keys(nights).sort().reduce((b, d) => (Math.abs(nights[d]!.length - n) < Math.abs(nights[b]!.length - n) ? d : b));
 
 /** Notes on the first three games of each night: one per slot on show, the third long enough to grow its card. */
@@ -96,7 +96,7 @@ async function open(browser: Browser, base: string, date: string, variant: Varia
  */
 const LIVE = !!process.env.E2E_BASE_URL;
 /**
- * Round 21 (item 7): the current top bar has two rows, so its Slate starts lower — and Chromium rasterizes the same card
+ * The current top bar has two rows, so its Slate starts lower — and Chromium rasterizes the same card
  * up to 1 level apart (logo discs more) at another y. The screen is taken with the top bar out of the layout in both
  * builds, so the Slate fills the same box in both; the bar is put back for the copies (their button is in it).
  */
@@ -137,7 +137,7 @@ const diff = (page: Page, a: string, b: string, skip: { x: number; y: number; w:
 /**
  * The 10 × 10 px corners of every card and note box on the Slate (in the Slate's screenshot), skipped against the live
  * site only: there their rounded, antialiased edges came out up to 2 levels apart on 7–17 px between two page loads of
- * identical markup (round 10). Locally everything must match exactly.
+ * identical markup. Locally everything must match exactly.
  */
 const corners = (page: Page) =>
   page.locator('.ck-slate').evaluate((slate) => {

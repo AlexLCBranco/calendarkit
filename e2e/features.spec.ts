@@ -43,7 +43,7 @@ const sunday = (d: string) => addDays(d, -new Date(`${d}T00:00:00Z`).getUTCDay()
 /** Rows of the top bar: distinct vertical positions of its items (centers, 4 px tolerance). */
 const barRows = (page: Page) =>
   page.getByTestId('top-bar').evaluate((bar) => {
-    // round 22: the pieces of the one row — left group, centre, right group (a row that wraps counts as more rows)
+    // The pieces of the one row — left group, centre, right group (a row that wraps counts as more rows)
     const items = [...bar.querySelectorAll(':scope > .ck-bar-left > *, .ck-bar-center > *, .ck-bar-right > *')].filter((c) => (c as HTMLElement).offsetWidth > 1);
     const centers = items.map((c) => {
       const r = c.getBoundingClientRect();
@@ -89,7 +89,7 @@ test('team header and team picker: logos, mouse and keyboard, team change', asyn
   const errors = collectErrors(page);
   const p = info.project.name;
   await open(page, '?view=team&layout=list&team=BOS');
-  const header = page.getByTestId('team-header').locator('.ck-team-name'); // (the Team List adds its month, round 9)
+  const header = page.getByTestId('team-header').locator('.ck-team-name'); // (the Team List adds its month)
   await expect(header).toHaveText('Boston Celtics');
   await imagesLoaded(page);
   const h = await page.getByTestId('team-header').evaluate((el) => {
@@ -136,7 +136,7 @@ test('team header and team picker: logos, mouse and keyboard, team change', asyn
   expect(errors).toEqual([]);
 });
 
-// Round 6 (A3): the cause of the flaky "Miami instead of Orlando" above. When the list opens under a pointer that isn't
+// The cause of the flaky "Miami instead of Orlando" above. When the list opens under a pointer that isn't
 // moving, Chrome sends the option under it a mouseover/mouseenter (no movement); the picker took that as a hover and
 // replaced the keyboard's choice whenever it arrived after the key. Here the pointer rests where Atlanta will be, the
 // list opens from the keyboard, and Enter is pressed only once the browser has hovered Atlanta — on the old build that
@@ -145,7 +145,7 @@ test('team picker: a pointer resting where the list opens never overrides the ke
   test.skip(info.project.name === 'phone', 'touch device: no hover');
   await open(page, '?view=team&layout=list&team=MIA');
   const btn = page.getByTestId('team-picker');
-  const header = page.getByTestId('team-header').locator('.ck-team-name'); // (the Team List adds its month, round 9)
+  const header = page.getByTestId('team-header').locator('.ck-team-name'); // (the Team List adds its month)
   const list = page.getByRole('listbox', { name: 'Teams' });
   await btn.click();
   const atl = (await page.getByRole('option', { name: 'Atlanta Hawks' }).boundingBox())!;
@@ -177,7 +177,7 @@ test('team views: selected team first, vs/@ from its side, two loaded logos per 
   })()).filter((g) => g.homeTeam.teamId === ORL || g.awayTeam.teamId === ORL);
   const want = (g: RawGame) => (g.homeTeam.teamId === ORL ? `ORL vs ${g.awayTeam.teamTricode}` : `ORL @ ${g.homeTeam.teamTricode}`);
   await imagesLoaded(page);
-  // round 9: month by month
+  // Month by month
   const rows = (await eachTeamMonth(page, 'ORL', async () => (await imagesLoaded(page), page.getByTestId('team-list').evaluate((el) =>
     [...el.querySelectorAll<HTMLElement>('article')].map((a) => ({
       id: a.dataset.gameId!,
@@ -293,7 +293,7 @@ test('team calendar: content scaled to the cell, nothing clipped in any cell —
       expect(r.scroll, name).toBeLessThanOrEqual(0);
       for (const gap of r.bars) expect(gap, `${name}: B2B bar at the bottom edge of its cells`).toBeGreaterThanOrEqual(0), expect(gap, name).toBeLessThanOrEqual(6);
       if (p === 'desktop-xl') {
-        expect(r.scale, name).toBeGreaterThanOrEqual(1.2); // round 4's short chip + TV pill: 1.15 → 1.2
+        expect(r.scale, name).toBeGreaterThanOrEqual(1.2); // the short chip + TV pill: 1.2
         if (r.logo) expect(r.logo, name).toBeCloseTo(16 * r.scale, 1);
       } else expect(r.scale, name).toBeGreaterThanOrEqual(0.8); // TEAM_SCALE_MIN: 1280 × 900 (a 2-line score line, see TeamMonthGrid)
       const prev = seen.get(r.weeks);
@@ -336,7 +336,7 @@ test('league week view: 7 equal columns, counts match the data, toggle, prev/nex
   await page.mouse.move(0, 0);
   await shot(page, 'league-calendar-2w', p);
 
-  // month popup (round 21: the calendar icon after ›, as in every view): counts per day, jump to any week
+  // month popup (the calendar icon after ›, as in every view): counts per day, jump to any week
   await page.getByTestId('date-pick').click();
   const popup = page.getByRole('dialog', { name: 'Jump to a week' });
   await expect(popup).toBeVisible();
@@ -374,7 +374,7 @@ test('league week view fits without page scroll (1920×1080 and 1280×900): ever
     const size = await page.evaluate(() => ({ scale: Number(document.querySelector<HTMLElement>('.ck-week-view')!.dataset.scale), line: document.querySelector('.ck-month-game')!.getBoundingClientRect().width, logo: document.querySelector('.ck-month-game .ck-logo-backing')?.getBoundingClientRect().width ?? 0 /* 0: every game of the week is final */, font: getComputedStyle(document.querySelector('.ck-mtri')!).fontSize }));
     console.log(`[${P}] ${weeks} week(s): scale ${size.scale}, line ${size.line} px, logo ${size.logo} px, tricode ${size.font}`);
     lineWidths[weeks] = size.line;
-    // round 4's aligned 155 px line: 1 week about 1.25× at 1920 (1.5× with the 119 px line), 1× at 1280
+    // the aligned 155 px line: 1 week about 1.25× at 1920 (1.5× with the 119 px line), 1× at 1280
     if (weeks === 1) expect(size.scale).toBeGreaterThanOrEqual(P === 'desktop-xl' ? 1.25 : 1);
     else expect([size.scale, size.line, size.font]).toEqual([1, 155, '11px']);
     for (let guard = 0; guard < 40; guard++) {
@@ -392,7 +392,7 @@ test('league week view fits without page scroll (1920×1080 and 1280×900): ever
               // a tricode wider than its column would run into the next logo
               [...c.querySelectorAll('.ck-mtri-text')].filter((t) => t.getBoundingClientRect().width > t.parentElement!.getBoundingClientRect().width + 0.5).length,
             h: b.height,
-            // aligned columns (round 4): logos, tricodes (away left edge, home right edge), scores and "@" at one x
+            // aligned columns: logos, tricodes (away left edge, home right edge), scores and "@" at one x
             // down the day (one column of games per day)
             crooked: (['.ck-mline > :nth-child(1)', '.ck-mline > :nth-child(2) .ck-mtri-text', '.ck-at', '.ck-mline > :nth-child(6) .ck-mtri-text', '.ck-mline > :nth-child(7)', '.ck-mline > :nth-child(3)', '.ck-mline > :nth-child(5)'] as const).filter((sel, k) => {
               const xs = [...c.querySelectorAll(sel)].map((e) => (k === 3 ? e.getBoundingClientRect().right : e.getBoundingClientRect().left).toFixed(1));
@@ -402,7 +402,7 @@ test('league week view fits without page scroll (1920×1080 and 1280×900): ever
         });
         return { start: cells[0]!.dataset.date!, scroll: document.documentElement.scrollHeight - document.documentElement.clientHeight, games: document.querySelectorAll('.ck-week-view li').length, cells: out };
       });
-      // no page scroll anywhere (round 5: 2 weeks at 1280 × 900 used to scroll by up to 164 px; e2e/two-week-fit.spec.ts)
+      // no page scroll anywhere (2 weeks at 1280 × 900 used to scroll by up to 164 px; e2e/two-week-fit.spec.ts)
       maxScroll = Math.max(maxScroll, r.scroll);
       expect(r.scroll, `${weeks}w ${r.start}`).toBeLessThanOrEqual(0);
       // the crooked check must see every line's parts (it silently checked nothing once the line got its link wrapper)
@@ -574,7 +574,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
         const cs = getComputedStyle(row(id), '::before');
         const b = row(id).getBoundingClientRect();
         return { color: cs.borderLeftColor, left: cs.borderLeftWidth, top: parseFloat(cs.top), bottom: parseFloat(cs.bottom), h: b.height, ...(() => {
-          // desktop: the Fatigue component (round 5); tablet/phone: the "1/2 · HA" label as before
+          // desktop: the Fatigue component; tablet/phone: the "1/2 · HA" label as before
           const fx = row(id).querySelector('[data-testid="fatigue-team"] .ck-fx');
           const label = row(id).querySelector('.ck-b2b-label')?.textContent ?? '';
           return fx ? { code: fx.getAttribute('data-code'), night: fx.getAttribute('data-night'), plane: null } : { code: label.slice(6), night: label.slice(0, 1), plane: !!row(id).querySelector('.ck-b2b-label [data-testid="plane"]') };
@@ -586,7 +586,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
     const name = `list ${dateOf(x.a)}`;
     expect(r.a.left, name).toBe('2px');
     expect(r.a.color).toBe('rgb(245, 224, 66)'); // --ck-b2b yellow
-    // round 5: the Fatigue component in the team column (travel is in its tooltip; the plane there means "away")
+    // The Fatigue component in the team column (travel is in its tooltip; the plane there means "away")
     expect([r.a.code, r.a.night, r.b.code, r.b.night]).toEqual([x.code, '1', x.code, '2']);
     if (r.a.plane !== null) expect(r.a.plane && r.b.plane).toBe(x.travels);
     // night 1's bracket runs from its middle down past its edge, night 2's from above its edge to its middle: they meet in the gap
@@ -608,9 +608,9 @@ test('lists capped at ~960 px (Team List 1110 px) and centered — the desktop L
       return { root: root.width, w: list.width, leftGap: list.left - root.left, rightGap: root.right - list.right, outside: inner.filter((b) => b.width && (b.left < list.left - 0.5 || b.right > list.right + 0.5)).length };
     }, sel);
     console.log(`[${p}] ${sel}: ${r.w.toFixed(0)} px of ${r.root.toFixed(0)} px`);
-    // round 8: the desktop League List is left-aligned, LEAGUE_LIST_COLUMN (910) × its zoom (1.3 at 1920, 1 at 1280), the map
+    // The desktop League List is left-aligned, LEAGUE_LIST_COLUMN (910) × its zoom (1.3 at 1920, 1 at 1280), the map
     // on its right; tablets and phones keep the centered 960 px column
-    // after round 8 the Team List is left-aligned too where its map fits (desktop-xl), at its 1110 px
+    // the Team List is left-aligned too where its map fits (desktop-xl), at its 1110 px
     const side = (sel === '.ck-league-list' && (p === 'desktop' || p === 'desktop-xl')) || (sel === '.ck-team-list' && p === 'desktop-xl');
     const cap = side && sel === '.ck-league-list' ? Math.round(910 * (p === 'desktop-xl' ? 1.3 : 1)) : sel === '.ck-team-list' && r.root >= 1110 ? 1110 : 960; // the Team List is 1110 px where its fatigue columns show
     expect(r.w).toBeLessThanOrEqual(cap + 0.5);
@@ -630,7 +630,7 @@ test('lists capped at ~960 px (Team List 1110 px) and centered — the desktop L
 
 test('TV games only: per day never more games than without the filter, and every game shown has a national broadcaster', async ({ page }, info) => {
   const p = info.project.name;
-  // round 8: the list shows one day — Nov 16, which has a national TV game (Nov 15 has none)
+  // The list shows one day — Nov 16, which has a national TV game (Nov 15 has none)
   await open(page, weekView(p) ? '?view=league&layout=calendar&date=2026-11-15&weeks=2' : '?view=league&layout=list&date=2026-11-16');
   const games = await feed(page);
   const national = new Set(games.filter((g) => (g.broadcasters.nationalBroadcasters ?? []).length > 0).map((g) => g.gameId));

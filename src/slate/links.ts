@@ -1,4 +1,4 @@
-// The game page link on each Slate card (the hoopsjunkie "↗" icon; round 10: moved here from config.ts, which
+// The game page link on each Slate card (the hoopsjunkie "↗" icon; Moved here from config.ts, which
 // re-exports it).
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';

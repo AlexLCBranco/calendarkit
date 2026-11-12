@@ -1,4 +1,4 @@
-// An earlier build of the app, served on a port of its own for an A/B in the same run (round 10, from perf.spec.ts's
+// An earlier build of the app, served on a port of its own for an A/B in the same run (from perf.spec.ts's
 // reference server): built once by scripts/perf-ref.ts, its own files at its root, /data/ from this checkout's public/
 // (today's snapshot, as the current build serves it), so both builds show the same data.
 

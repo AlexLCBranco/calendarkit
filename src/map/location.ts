@@ -1,4 +1,4 @@
-// Round 8 (2.4, 2.5): where a game is played, from the feed's own location fields (arenaName / arenaCity /
+// Where a game is played, from the feed's own location fields (arenaName / arenaCity /
 // arenaState) — not the home team's usual arena, so neutral-site and international games land where they're played.
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -14,7 +14,7 @@ export type GameLocation =
   /** The feed names no arena (e.g. Cup knockout games not scheduled yet) or one not in ARENAS: never guessed. */
   | { kind: 'unknown'; label: string };
 
-/** The table entry for the feed's arena, if any (round 21: src/data/geo.ts). */
+/** The table entry for the feed's arena, if any (src/data/geo.ts). */
 export { arenaOf } from '../data/geo';
 import { arenaOf } from '../data/geo';
 

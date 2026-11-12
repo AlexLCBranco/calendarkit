@@ -1,4 +1,4 @@
-// Date picker (round 4, item 9) in a real browser, desktop widths: the icon opens the popup inside the window, the
+// Date picker in a real browser, desktop widths: the icon opens the popup inside the window, the
 // keyboard works (arrows move between days, Enter picks, Escape closes with the focus back on the icon), a pick jumps
 // there in both lists, the top bar stays one row at 1920.
 
@@ -21,7 +21,7 @@ for (const [name, search, titleId] of [
 ] as const) {
   test(`${name}: icon, popup in the window, keyboard (arrows, Enter, Escape), pick jumps`, async ({ page }, info) => {
     await open(page, search);
-    if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // round 21: two rows
+    if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // never taller than two rows
     const icon = page.getByRole('button', { name: 'Pick a date' });
     await expect(page.getByRole('dialog')).toHaveCount(0); // rendered only while open
     await icon.click();
@@ -39,7 +39,7 @@ for (const [name, search, titleId] of [
     expect(target > down).toBe(true);
     await page.keyboard.press('Enter');
     await expect(popup).toHaveCount(0);
-    const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: page.viewportSize()!.width < 1560 ? 'short' : 'long', day: 'numeric', timeZone: 'UTC' }); // round 22: the short title under 1560 px
+    const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { month: page.viewportSize()!.width < 1560 ? 'short' : 'long', day: 'numeric', timeZone: 'UTC' }); // The short title under 1560 px
     // the League List shows the day; the Team List the row of that day or the next game after it
     if (name === 'League List') await expect(page.getByTestId(titleId)).toContainText(long(target));
     else expect(((await page.getByTestId(titleId).textContent()) ?? '').length).toBeGreaterThan(0);

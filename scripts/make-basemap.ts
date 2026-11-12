@@ -1,4 +1,4 @@
-// Round 8 (2.2): writes src/map/basemap.ts, the League map's outline — once, by hand (`npx tsx scripts/make-basemap.ts`);
+// Writes src/map/basemap.ts, the League map's outline — once, by hand (`npx tsx scripts/make-basemap.ts`);
 // nothing here runs in the app or loads anything at runtime.
 // Sources (devDependencies, no network): us-atlas 3.0.1 `states-10m.json` (US Census Bureau cartographic boundaries,
 // 1:10m) for the lower 48 states + DC; world-atlas 2.0.2 `countries-50m.json` (Natural Earth 1:50m, public domain) for

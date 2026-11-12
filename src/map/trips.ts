@@ -1,4 +1,4 @@
-// Team map (after round 8): a team's road trips — runs of consecutive games played away from its home metro, by the
+// Team map: a team's road trips — runs of consecutive games played away from its home metro, by the
 // feed's own arena for each game (so SAS's "home" games in Austin and IND's in Mexico City are travel too) — and each
 // trip's numbers. Pure; tests/trips.test.ts checks them against the season.
 
@@ -33,7 +33,7 @@ export interface TripStats {
   b2b: number;
 }
 
-/** The team's home arena, miles and time zones: src/data/geo.ts (round 21), re-exported. */
+/** The team's home arena, miles and time zones: src/data/geo.ts, re-exported. */
 export { homeArena, miles, zoneOf } from '../data/geo';
 import { homeArena, miles, zoneOf } from '../data/geo';
 

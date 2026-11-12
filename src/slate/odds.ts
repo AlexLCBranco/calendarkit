@@ -1,4 +1,4 @@
-// Round 14 (item 4): the Slate's moneyline odds — an optional input of the part, like the notes store. calendarkit passes
+// The Slate's moneyline odds — an optional input of the part, like the notes store. calendarkit passes
 // `liveOddsStore()`; without a store (slate.html, the gauntlet until it opts in) the part makes no request and sets no
 // timer for odds. The store fetches one ET date at a time from /calendar/api/odds (api/odds.ts → ESPN), only when a
 // Slate showing that date asks for it (after the cards are on screen: an effect), keeps it in memory for the page, and

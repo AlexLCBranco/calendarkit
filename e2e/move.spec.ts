@@ -1,4 +1,4 @@
-// Round 10 (1.1, 1.5): calendarkit moved to gauntlet-home.vercel.app/calendar/. A browser visit to the old address
+// Calendarkit moved to gauntlet-home.vercel.app/calendar/. A browser visit to the old address
 // (calendarkit-brown.vercel.app) hands its notes over once and goes on to the new address, path and query kept; a
 // failure shows why, with Export notes. A gauntlet page reads the schedule from /calendar/data/ and the notes from the
 // same localStorage (one origin).
@@ -32,7 +32,7 @@ async function serveBuild(ctx: BrowserContext, headers: Record<string, string> =
     const old = u.origin === OLD;
     let f: string | null = null;
     // calendarkit's vercel.json: /calendar, /calendar/ → index.html; /calendar/* → the file; anything else: the file
-    // round 14: the odds function (api/odds.ts) answers as under vite preview: no odds (the live run reaches the real one)
+    // The odds function (api/odds.ts) answers as under vite preview: no odds (the live run reaches the real one)
     if (u.pathname === '/calendar/api/odds') return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ date: u.searchParams.get('date'), games: {} }) });
     if (u.pathname === '/calendar' || u.pathname === '/calendar/') f = file('index.html');
     else if (u.pathname.startsWith('/calendar/')) f = file(u.pathname.slice('/calendar/'.length));
@@ -44,7 +44,7 @@ async function serveBuild(ctx: BrowserContext, headers: Record<string, string> =
 }
 
 /** Every top-level navigation of `page`, in order. */
-/** Real navigations (round 21: the app writes its own address once it renders — `date=` and the like —, a same-document
+/** Real navigations (the app writes its own address once it renders — `date=` and the like —, a same-document
  * change Playwright also reports; such a follow-up of the same page is left out). */
 const navigations = (page: Page) => {
   const urls: string[] = [];
@@ -78,7 +78,7 @@ const nov2 = raw.leagueSchedule.gameDates.flatMap((d) => d.games).filter((g) => 
 const [A, B, C] = [nov2[0]!.gameId, nov2[1]!.gameId, nov2[2]!.gameId];
 const NOTES = { [A]: { pre: 'Pre note A', live: 'Live note A', post: 'Post note A', shown: 'live' }, [B]: { pre: '', live: '', post: 'Post only B', shown: 'post' } };
 
-/** Round 22: `url` once the page is there — with or without the date= it writes itself after loading (round 21). */
+/** `url` once the page is there — with or without the date= it writes itself after loading. */
 const at = (url: string) => (u: URL) => u.href.replace(/([?&])date=\d{4}-\d{2}-\d{2}(&|$)/, (_, a: string, b: string) => (b ? a : '')).replace(/[?&]$/, '') === url;
 
 test('/calendar loads through the gauntlet (rewrite), all of it under /calendar/; no redirect there', async ({ page, context }) => {
@@ -123,7 +123,7 @@ test('notes on the old address are handed over once: same notes (every slot, the
   await page.clock.setFixedTime(NOW);
   await page.addInitScript(() => ((window as unknown as { __ckOpenDate?: string }).__ckOpenDate = '2026-11-02'));
   await page.goto(`${OLD}/?view=league&layout=slate`);
-  // round 21 (item 6): the page then writes its own address (date= …): wait for the hand-off's last navigation
+  // The page then writes its own address (date= …): wait for the hand-off's last navigation
   await page.waitForURL((u) => u.href.startsWith(`${NEW}/calendar/?view=league&layout=slate`));
   expect(nav.map((u) => u.replace(/#ck-handoff=.*/, '#…'))).toEqual([
     `${OLD}/?view=league&layout=slate`,
@@ -145,7 +145,7 @@ test('notes on the old address are handed over once: same notes (every slot, the
   await page.locator(`[data-game-id="${A}"] textarea`).blur();
   const nav2 = navigations(page);
   await page.goto(`${OLD}/?view=league&layout=list`);
-  // round 22: as above, the page may already have written its own date= when the URL is checked (a race that failed
+  // As above, the page may already have written its own date= when the URL is checked (a race that failed
   // the live job about 1 run in 2): wait for the address, with or without it
   await page.waitForURL(at(`${NEW}/calendar/?view=league&layout=list`));
   expect(nav2.map((u) => u.replace(/&date=\d{4}-\d{2}-\d{2}$/, ''))).toEqual([`${OLD}/?view=league&layout=list`, `${NEW}/calendar/?view=league&layout=list`]);

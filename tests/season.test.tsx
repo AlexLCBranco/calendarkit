@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Team list season line: regular-season game number, the record and the win/loss streak — after the game once it is
-// final, going into it before (round 22, item 13: no one-game lag) — on the right side of the row,
+// final, going into it before (no one-game lag) — on the right side of the row,
 // and the final score beside each tricode once a game is Final.
 
 import { afterEach, describe, expect, it } from 'vitest';

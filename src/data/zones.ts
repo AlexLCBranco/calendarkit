@@ -1,4 +1,4 @@
-// Round 8 (2.3): a faint band per US time zone, by state. Not exact: several states are split between two zones; each
+// A faint band per US time zone, by state. Not exact: several states are split between two zones; each
 // is shaded by the zone of its NBA arena city, or, without an arena, by its main (most populous) zone. PROJECT.md lists
 // them. Alaska and Hawaii aren't drawn; Canada and Mexico aren't shaded (only Toronto has an NBA arena: ET).
 

@@ -1,4 +1,4 @@
-// Round 10 (1.2, 1.3, 1.7): the Slate's self-contained part on a page of its own (slate.html: src/slate/ only, no app
+// The Slate's self-contained part on a page of its own (slate.html: src/slate/ only, no app
 // shell). Its cards are calendarkit's Slate cards pixel for pixel (same day, same width, same notes — one origin, one
 // localStorage); nothing is drawn between them; its only requests are its own files, the snapshot (once, however many
 // widgets) and the logos; nothing ticks at rest; a note typed in calendarkit shows in the widget and back, live.

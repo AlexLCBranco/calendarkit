@@ -1,4 +1,4 @@
-// v1.40.0: regulation-time totals for Cup group games that went to overtime. The schedule feed has only final scores;
+// Regulation-time totals for Cup group games that went to overtime. The schedule feed has only final scores;
 // the NBA's per-game boxscore (cdn.nba.com/static/json/liveData/boxscore/boxscore_<gameId>.json) has period scores.
 // The daily snapshot job (scripts/update-schedule.ts) fetches the boxscore of every finished Cup group game it hasn't
 // stored yet and keeps the regulation totals in the snapshot under `calendarkit.regulation`; the site only reads them

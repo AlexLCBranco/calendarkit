@@ -1,4 +1,4 @@
-// slate.html (round 10): the Slate's part on a page of its own, built from src/slate/ only — no calendarkit app shell.
+// slate.html: the Slate's part on a page of its own, built from src/slate/ only — no calendarkit app shell.
 // The tests compare it with calendarkit's Slate and check its requests, timers and storage listeners; it is also a
 // working example for the gauntlet's Slate widget. URL: ?date=YYYY-MM-DD (the NBA / ET date; default today in ET)
 // &width=<px> (default: the window less the page's padding) &tz=<IANA zone> &notes=0 (info-only cards) &n=<widgets>

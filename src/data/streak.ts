@@ -1,4 +1,4 @@
-// Round 21 (item 8): the games of a win / loss streak — the ones behind "W6" / "L2" wherever a streak is shown. Pure,
+// The games of a win / loss streak — the ones behind "W6" / "L2" wherever a streak is shown. Pure,
 // from the schedule already loaded (no request). Same rule as the season lines (model.ts teamSeason): regular-season
 // games with a final score, in date order.
 
@@ -19,7 +19,7 @@ export interface StreakGame {
 
 /**
  * The streak shown on `gameId`'s line (or the current streak, without one): through that game when it is final (its
- * own result included, round 22), going into it when it isn't — its last finished regular-season games of the same
+ * own result included), going into it when it isn't — its last finished regular-season games of the same
  * result, newest first. Empty before the first result.
  */
 export function streakGames(data: CalendarData, teamId: number, gameId?: string): StreakGame[] {

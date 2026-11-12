@@ -1,4 +1,4 @@
-// Round 8 (3.2): a hovered game's back-to-back travel, per team: on the 2nd night, from where it played yesterday to
+// A hovered game's back-to-back travel, per team: on the 2nd night, from where it played yesterday to
 // tonight's game; on the 1st night, from tonight's game to where it plays tomorrow. Both ends are the feed's own
 // location for each game (gameLocation), never the home arena. Shown only for the hovered game (3.3).
 

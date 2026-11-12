@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Compact week strip in both lists (round 4, item 8): a fixed Sun–Sat week, month over day number, the League List's
+// Compact week strip in both lists: a fixed Sun–Sat week, month over day number, the League List's
 // game count (TV filter respected) or the Team List's opponent under each date, selected day filled, today blue, ‹ ›
 // for the previous / next week with games. Team List: the strip and the date title follow the row at the top through a
 // store — scrolling re-renders no row.
@@ -82,7 +82,7 @@ describe('Team List strip and title', () => {
     fakeLayout();
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const all = teamGames(data, LAL);
-    // opens at the next game not over (Nov 15 15:00 UTC), in its month (round 9: the list holds that month's rows)
+    // opens at the next game not over (Nov 15 15:00 UTC), in its month (the list holds that month's rows)
     const next = all.find((g) => Date.parse(g.startTimeUtc!) + 3 * 3_600_000 > NOW)!;
     const games = all.filter((g) => monthOf(g.dateEt) === monthOf(next.dateEt));
     expect(screen.getByTestId('team-day-title').textContent).toMatch(new RegExp(`${Number(next.dateEt.slice(8))}, 2026$`));
@@ -103,7 +103,7 @@ describe('Team List strip and title', () => {
     fakeLayout();
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const games = teamGames(data, LAL);
-    // the row's place in its month's list (round 9)
+    // the row's place in its month's list
     const at = (date: string) => games.filter((g) => monthOf(g.dateEt) === monthOf(date)).findIndex((g) => g.dateEt === date);
     await scrollTo(5 * 40);
     const target = days().find((d) => !(d as HTMLButtonElement).disabled && d.getAttribute('aria-selected') !== 'true')!;

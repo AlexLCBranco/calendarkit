@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// The widget clock without the countdown (round 7, 2.3): no minute tick — one timeout, to the next local midnight
+// The widget clock without the countdown: no minute tick — one timeout, to the next local midnight
 // (right on DST days), then the next; today's date still follows midnight. And no countdown text anywhere.
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 22 (item 9): the one-row top bar (round 21's two rows, compacted). Left, the same everywhere: page history and the
+// The one-row top bar. Left, the same everywhere: page history and the
 // destinations. Centre, the destination's: Schedule — the date block (‹ date › · calendar · Today, in every view); Cup —
 // its views and switches; Standings — the column sets. Right: Schedule's List · Calendar · Slate (always), the scope
 // picker, the view's options and the TV chip; then, everywhere, ⓘ (time zone + data stamp in its tooltip), Quick

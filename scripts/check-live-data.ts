@@ -1,4 +1,4 @@
-// v1.40.0: data freshness alarm. Fails (exit 1, a red run, GitHub emails the repo owner) when
+// Data freshness alarm. Fails (exit 1, a red run, GitHub emails the repo owner) when
 //  - the live site's snapshot (meta.time of https://gauntlet-home.vercel.app/calendar/data/schedule.json) is more than
 //    1 day behind the latest committed snapshot (public/data/schedule.json on main), or
 //  - the latest committed snapshot itself is more than 2 days old (the daily job stopped: GitHub disables scheduled

@@ -1,6 +1,6 @@
-/* Cup view (round 11): the 3 × 2 group cards, team pills in the team's color, the rules and wild-card panels. The whole
+/* Cup view: the 3 × 2 group cards, team pills in the team's color, the rules and wild-card panels. The whole
    view fits the window without scrolling (1920 × 950, 1600 × 1000; e2e/cup.spec.ts): the group grid keeps its full
-   size (v1.29.0, Alex: "it was great"); the height comes from the panels below it — rules text in two columns, the
+   size (the owner's call); the height comes from the panels below it — rules text in two columns, the
    wild-card race West | East side by side. */
 .ck-cupview {
   display: flex;
@@ -47,14 +47,14 @@
 /* one grid for the header and every pill, so W, L and DIFF line up */
 .ck-cup-row {
   display: grid;
-  /* round 21 (item 5): W and L 22 → 18 px, DIFF 50 → 42 px (its chip 44 → 40 px), so the squares' "vs" / "@" fit beside
+  /* W and L 22 → 18 px, DIFF 50 → 42 px (its chip 44 → 40 px), so the squares' "vs" / "@" fit beside
      "Minnesota Timberwolves" at 1600 × 1000 */
   grid-template-columns: 26px 24px minmax(0, 1fr) 18px 18px 42px;
   align-items: center;
-  /* round 13: gaps 6 → 4 px and side padding 8 → 6 px (column widths unchanged) give the name's column the 14 px the
+  /* Gaps 6 → 4 px and side padding 8 → 6 px (column widths unchanged) give the name's column the 14 px the
      game slots need beside "Minnesota Timberwolves" at 1600 × 1000 */
   column-gap: 4px;
-  /* round 21: 6 → 4 px, room for "vs MEM" beside "Minnesota Timberwolves" with Linux's font metrics too (CI) */
+  /* 6 → 4 px, room for "vs MEM" beside "Minnesota Timberwolves" with Linux's font metrics too (CI) */
   padding: 0 4px;
 }
 .ck-cup-pill .ck-cup-slot {
@@ -91,7 +91,7 @@
   font-weight: 600;
   text-shadow: 0 1px 1px rgb(0 0 0 / 0.35);
 }
-/* round 13: the name, then the 4 game slots right-aligned against W; the name never shrinks or wraps */
+/* The name, then the 4 game slots right-aligned against W; the name never shrinks or wraps */
 .ck-cup-main {
   min-width: 0;
   display: flex;
@@ -116,7 +116,7 @@
   line-height: 13px;
   font-weight: 600;
 }
-/* the squares themselves: src/slate/styles/cup-square.css (round 21, item 5: one square everywhere) */
+/* the squares themselves: src/slate/styles/cup-square.css (one square everywhere) */
 .ck-cup-markcell {
   display: flex;
   flex-direction: column;
@@ -265,7 +265,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Cup → Schedule, League (round 18): By group (3 × 2 group panels + a knockout column) and By date (the Cup nights'
+/* Cup → Schedule, League: By group (3 × 2 group panels + a knockout column) and By date (the Cup nights'
    strip, one night grouped by group). Rows at the League List's text size (its zoom, set inline); every row one line;
    the whole view fits the window without scrolling (1920 × 950, 1600 × 1000; e2e/cupschedule.spec.ts). */
 .ck-cup-sched {
@@ -415,7 +415,7 @@
 .ck-cup-strip .ck-strip-days {
   grid-template-columns: repeat(var(--ck-nights), minmax(0, 1fr));
 }
-/* round 21: one line per night ("Fri Nov 6 · 9"), so the By date view still fits the window under the two-row top bar */
+/* One line per night ("Fri Nov 6 · 9"), so the By date view still fits the window under the two-row top bar */
 .ck-cup-strip .ck-strip-day {
   flex-direction: row;
   justify-content: center;
@@ -465,7 +465,7 @@
   text-align: center;
 }
 
-/* ---- Round 21 (item 4): the simulator — one screen: the games by night, the six tables (West | East), the wild-card
+/* ---- The simulator — one screen: the games by night, the six tables (West | East), the wild-card
    race and the bracket */
 .ck-sim {
   display: flex;
@@ -777,7 +777,7 @@
   }
 }
 
-/* round 21 (item 12): Tonight in the Cup — one compact row of tonight's Cup games (wraps only if it must) */
+/* Tonight in the Cup — one compact row of tonight's Cup games (wraps only if it must) */
 .ck-tonight {
   display: flex;
   flex-wrap: wrap;
@@ -828,14 +828,14 @@
   padding: 0;
   border: 0;
 }
-/* round 21 (item 14): the prize per player under each knockout round */
+/* The prize per player under each knockout round */
 .ck-prize {
   margin: 0 0 4px;
   color: var(--ck-muted);
   font-size: 10px;
 }
 
-/* ---- Round 21 (item 9): Cup history — the summary (West | East), then one season's tables and bracket */
+/* ---- Cup history — the summary (West | East), then one season's tables and bracket */
 .ck-history {
   display: flex;
   flex-direction: column;

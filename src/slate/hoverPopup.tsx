@@ -1,4 +1,4 @@
-// Round 21 (item 8): the widget's hover popup, from the season-series popup (round 14): opens over an element carrying
+// The widget's hover popup, from the season-series popup: opens over an element carrying
 // `attr`, below it (above when there is no room), stays open while the pointer is on the element or on the popup — so
 // its rows can be clicked —, closes a moment after the pointer leaves, and on Escape; never in a copied image
 // (data-capture-exclude). It starts no timer at rest. The series popup and the streak popup both use it.

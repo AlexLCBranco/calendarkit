@@ -1,9 +1,9 @@
-// Round 14 (item 2): the whole functional e2e suite in one command, `npm run e2e:all` — no manual splitting.
+// The whole functional e2e suite in one command, `npm run e2e:all` — no manual splitting.
 // Builds once and serves the build (the shards reuse the server: Playwright's webServer would rebuild per process),
 // then runs the functional suite as the groups below one after another, each its own Playwright process with its own
 // time limit (default 300 s, so no single process can hang a terminal), the blob reports merged at the end into the
-// list + html reports. Groups are by project (desktop-only specs skip themselves on tablet / phone, so a plain
-// --shard of all projects came out 46 s vs 300+ s), the two desktop projects halved by test (`fullyParallel` in
+// list + html reports. Groups are by project (a plain --shard of all projects came out uneven), the two desktop
+// projects halved by test (`fullyParallel` in
 // playwright.config.ts). CI runs the same groups as parallel jobs (GROUPS is the one list; ci.yml mirrors it). The perf
 // guard is separate (`npx playwright test --project=perf --no-deps`): it must run alone.
 //   npm run e2e:all                 every group, 300 s each
@@ -21,7 +21,6 @@ const GROUPS = [
   ['--project=desktop-xl', '--shard=2/2'],
   ['--project=desktop', '--shard=1/2'],
   ['--project=desktop', '--shard=2/2'],
-  ['--project=tablet', '--project=phone'],
 ];
 const killTree = (pid?: number) => (process.platform === 'win32' && pid ? spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore' }) : undefined);
 const BLOB = 'test-output/blob-report';
@@ -34,7 +33,7 @@ const sec = (ms: number) => `${(ms / 1000).toFixed(0)} s`;
 console.log('[e2e:all] building…');
 if (spawnSync(npm, ['run', 'build'], { stdio: 'inherit', shell: process.platform === 'win32' }).status !== 0) process.exit(1);
 // node runs vite directly (no shell, no npx in between), so killing this one process stops the server: through a shell
-// the tree kill could miss it and leave the port taken after the run. v1.40.0: a free port (was 4180, which collided
+// the tree kill could miss it and leave the port taken after the run. A free port (a fixed one collided
 // with other sessions' leftover servers), and the server is stopped however this script ends (failure, Ctrl+C, error).
 const PORT = await freePort();
 const server = spawn(process.execPath, ['node_modules/vite/bin/vite.js', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });

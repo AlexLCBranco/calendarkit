@@ -1,4 +1,4 @@
-// Standings (round 17; round 18: West and East side by side, four column sets) and the header’s condensed popup,
+// Standings (West and East side by side, four column sets) and the header’s condensed popup,
 // against the served snapshot — every W / L worked out here from the raw feed, the fit at 1600 × 1000 and 1920 × 950 in
 // every set (both tables, no scroll, one line per row, the longest name with a clinch marker), the lines, sorting both
 // tables, tie hovers, team links, the copies read back from the clipboard, and the popup opening and closing over every view.
@@ -310,7 +310,7 @@ test.describe('Standings popup', () => {
       await v.then?.(page);
       const marker = page.locator(v.marker).first();
       await expect(marker).toBeVisible();
-      await page.waitForFunction(() => (history.state as { ck?: number } | null)?.ck === 1); // round 21: the first page has its entry
+      await page.waitForFunction(() => (history.state as { ck?: number } | null)?.ck === 1); // The first page has its entry
       const url = page.url();
       const button = page.getByTestId('standings-button');
       const pop = page.getByTestId('standings-popup');

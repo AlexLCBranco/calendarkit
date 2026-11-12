@@ -1,4 +1,4 @@
-// Round 21 (item 8): the streak popup on a real browser — hovering a Slate card's streak opens it with that streak's
+// The streak popup on a real browser — hovering a Slate card's streak opens it with that streak's
 // games, it stays open while the pointer moves into it, a game opens its hoopsjunkie page in a new tab; the Standings'
 // streaks have it too; no request is made on hover. Desktop widths.
 

@@ -1,4 +1,4 @@
-// Frozen copy of v1.40.0 src/data/fatigue.ts (eager leagueFatigue): the reference for tests/fatigue-lazy.test.ts.
+// Frozen copy of the eager src/data/fatigue.ts (eager leagueFatigue): the reference for tests/fatigue-lazy.test.ts.
 // Schedule fatigue for every team in every game, for the league views (week view and League List): back-to-back
 // nights (with the plane on a change of metro), 3-in-4 positions and a tooltip per team. Same rules as the team views
 // (teamB2BPairs, teamThreeInFour, leagueRecords); computed once per data set, never per render or scroll.
@@ -54,7 +54,7 @@ export function leagueFatigue(data: CalendarData): Map<string, Map<number, TeamF
         ...(pair.travels ? [`Travels ${pair.fromCity} → ${pair.toCity}`] : []),
       ]);
       if (!legs.length) lines.push(`${tri} — ${tif ? mergedChip(tif.merged) : 'rested'}`);
-      // round 6: overlapping 3-in-4 sets as one stretch (was a line per set); the tooltip draws its days under the text
+      // Overlapping 3-in-4 sets as one stretch (was a line per set); the tooltip draws its days under the text
       if (tif) lines.push(`${mergedChip(tif.merged)}: ${mergedTip(tif.merged)}`);
       if (rec) lines.push(`Record going in: ${rec.wins}-${rec.losses}`);
       let m = out.get(g.gameId);

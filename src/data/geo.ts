@@ -1,4 +1,4 @@
-// Round 21 (item 13): where a game is, how far apart two arenas are and in which time zone — the pure part of the map's
+// Where a game is, how far apart two arenas are and in which time zone — the pure part of the map's
 // location / trip logic (src/map/location.ts, trips.ts re-export these), in the data layer so the Slate part can use it
 // without the map's drawing code.
 

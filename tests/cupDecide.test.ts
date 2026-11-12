@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 2): "IN" / "OUT" only when mathematically certain — every completion of the conference's remaining
+// "IN" / "OUT" only when mathematically certain — every completion of the conference's remaining
 // games run through the shared engine with margins unknown. Clinched, eliminated and still-alive cases, wild cards
 // included, and nothing claimed while too many games are left.
 import { describe, expect, it } from 'vitest';

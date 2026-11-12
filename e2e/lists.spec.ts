@@ -1,4 +1,4 @@
-// List | Calendar switch, the one-day league list (round 8) and team list, in a real browser at every project width.
+// List | Calendar switch, the one-day league list and team list, in a real browser at every project width.
 // The clock is fixed (Nov 15, 2026, 15:00 UTC) so the default day / next game are known. Screenshots of the four
 // views go to e2e/screenshots/<project>-<league|team>-<list|calendar>.png.
 
@@ -81,7 +81,7 @@ const rowsWithoutLogosDiffer = (page: Page) =>
     const without = h();
     st.remove();
     // rows with national TV names may take a second line for them on phones anyway (e.g. ORL @ BOS "Peacock · NBC
-    // Sports Network", 47.5 px, before and after round 4); since the league "B2B" badge left (round 4) such a row can
+    // Sports Network", 47.5 px); since the league "B2B" badge left such a row can
     // fit one line without logos, so those rows are left out here (no row grew: heights diffed, PROJECT.md)
     return cards.filter((c, i) => withLogos[i] !== without[i] && !c.querySelector('.ck-tv-name')).map((c) => c.textContent);
   });
@@ -99,7 +99,7 @@ test('List | Calendar switch: both options in League and Team, four views, layou
     ['Team', 'List', () => expect(page.getByRole('region', { name: 'Celtics games' })).toBeVisible()],
   ];
   for (const [mode, layout, check] of views) {
-    // round 21: League / Team is the scope picker (All teams / a team)
+    // League / Team is the scope picker (All teams / a team)
     const team = await scopeTeamId(page);
     if (mode === 'League' && team) await clearScope(page);
     if (mode === 'Team' && !team) await pickScope(page, 'Boston Celtics');
@@ -160,7 +160,7 @@ const shownList = (page: Page) =>
     title: document.querySelector('[data-testid="day-title"]')!.textContent!,
   }));
 
-// Round 8 (1.1–1.3): one day on screen; only the arrows, the arrow keys, the date picker, Today and the day strip change it.
+// One day on screen; only the arrows, the arrow keys, the date picker, Today and the day strip change it.
 test('league list: one day at a time, never changed by scrolling, every navigation lands on the right day', async ({ page }, info) => {
   const errors = collectErrors(page);
   const cdn = collectCdn(page);
@@ -190,7 +190,7 @@ test('league list: one day at a time, never changed by scrolling, every navigati
   await settle(page);
   await expect.poll(() => shownList(page).then((x) => [x.days, x.ids])).toEqual([[DEFAULT_DAY], await feedDay(page, DEFAULT_DAY)]);
   await expect(page.getByTestId('day-title')).toHaveText(/Nov(ember)? 15, 2026/);
-  expect(new URL(page.url()).searchParams.get('date')).toBe(DEFAULT_DAY); // round 21: the address names the day on show
+  expect(new URL(page.url()).searchParams.get('date')).toBe(DEFAULT_DAY); // The address names the day on show
 
   // every way to change the day; a new day starts at its top
   await page.getByLabel('Next day').click();
@@ -219,12 +219,12 @@ test('league list: one day at a time, never changed by scrolling, every navigati
     await page.getByTestId('date-picker').locator('[data-date="2026-11-27"]').click();
     await expectDay('2026-11-27');
   }
-  expect(new URL(page.url()).searchParams.get('date')).toBe(desktop ? '2026-11-27' : '2026-11-22'); // round 21
+  expect(new URL(page.url()).searchParams.get('date')).toBe(desktop ? '2026-11-27' : '2026-11-22');
   expect(cdn).toEqual([]);
   expect(errors).toEqual([]);
 });
 
-// Round 8 (1.2): on a busy night the list scrolls within that day only.
+// On a busy night the list scrolls within that day only.
 test('league list: a 15-game night scrolls within the day only', async ({ page }, info) => {
   test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop widths');
   const width = page.viewportSize()!.width;
@@ -248,7 +248,7 @@ test('league list: a 15-game night scrolls within the day only', async ({ page }
   expect(gap).toBeLessThan(20);
 });
 
-// Round 8 (1.4): the list starts at the page's left edge; the right side is free for the map.
+// The list starts at the page's left edge; the right side is free for the map.
 test('league list: left-aligned at 1280 and 1920, right side free', async ({ page }, info) => {
   test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop widths');
   await open(page, '');
@@ -276,12 +276,12 @@ test('team list: every game in order, opens at the next game, earlier games abov
     const a = el.querySelector<HTMLElement>('article[data-next]')!;
     return { id: a.dataset.gameId!, offset: a.getBoundingClientRect().top - el.getBoundingClientRect().top };
   });
-  // round 9: one month at a time — every month in turn
+  // One month at a time — every month in turn
   const rows = (await eachTeamMonth(page, 'LAL', () => list.evaluate((el) =>
     [...el.querySelectorAll<HTMLElement>('article')].map((a) => ({
       id: a.dataset.gameId!,
       next: a.hasAttribute('data-next'),
-      b2b: !!a.querySelector('.ck-b2b-n2, [data-testid="fatigue-team"] [data-night="2"]'), // round 5: the Fatigue component on desktop
+      b2b: !!a.querySelector('.ck-b2b-n2, [data-testid="fatigue-team"] [data-night="2"]'), // The Fatigue component on desktop
       date: a.querySelector('.ck-date')!.textContent!,
       matchup: [...a.querySelector('.ck-matchup')!.querySelectorAll('.ck-self, .ck-vsat, .ck-opp')].map((e) => e.textContent).join(' '), // without scores
       imgs: a.querySelectorAll('.ck-logo-backing img').length,
@@ -355,7 +355,7 @@ test('team list season line: game number + record + streak on the right (after a
   const list = page.getByTestId('team-list');
   await expect(list.locator('article').first()).toBeAttached();
   // expected straight from the served snapshot: regular games (002…) numbered in order; a Final game (gameStatus 3) shows
-  // the feed's own W-L on it and the streak through it (round 22, item 13); a game to come, the last Final's
+  // the feed's own W-L on it and the streak through it; a game to come, the last Final's
   const want = await page.evaluate(async () => {
     const BOS = 1610612738;
     const raw = await (await fetch('/calendar/data/schedule.json')).json();
@@ -420,7 +420,7 @@ test('TV games only in all four views', async ({ page }, info) => {
   const errors = collectErrors(page);
   const noTv = (sel: string) => page.locator(sel).count();
   await open(page, '?view=league&layout=list&tv=1');
-  // round 14 (item 6): every day is listed, so today (Nov 15: 9 games, none on national TV) says so instead of jumping
+  // Every day is listed, so today (Nov 15: 9 games, none on national TV) says so instead of jumping
   await expect(page.getByTestId('no-games')).toHaveText('No national TV games today');
   await expect(page.locator('[data-testid="league-list"] article')).toHaveCount(0);
   await page.getByRole('button', { name: 'Next day' }).click();

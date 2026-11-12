@@ -36,7 +36,7 @@
   content: '!';
   font-weight: 700;
 }
-/* round 21: the top bar's Copy has its label, the shared button size */
+/* The top bar's Copy has its label, the shared button size */
 .ck-copy.ck-copy-text {
   width: auto;
   height: 36px;
@@ -115,8 +115,8 @@
   font-weight: 600;
 }
 
-/* The matchup as the link to the game's page (round 5, MatchLink in GameCard.tsx; Team Calendar cells and week lines —
-   round 16: List rows use the Slate's "↗" icon instead, .ck-slate-link): text
+/* The matchup as the link to the game's page (MatchLink in GameCard.tsx; Team Calendar cells and week lines —
+   List rows use the Slate's "↗" icon instead, .ck-slate-link): text
    colours as before, a pointer and an underline on hover, the accent ring on keyboard focus. Never link-styled in an
    image: .ck-capturing (suspendForCapture) drops the underline and the ring. */
 .ck-mlink {

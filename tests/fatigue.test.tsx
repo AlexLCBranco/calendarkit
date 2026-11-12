@@ -39,7 +39,7 @@ function tifOf(teamId: number) {
 }
 /**
  * gameId → [games in its merged 3-in-4 stretch, days from its first to its last game inclusive, the game's place]
- * (round 6), independently: from a set's first game, the stretch grows while another set starts inside it (and so
+ *, independently: from a set's first game, the stretch grows while another set starts inside it (and so
  * shares a game with it).
  */
 function stretchOf(teamId: number) {
@@ -70,7 +70,7 @@ function expected(teamId: number, g: ScheduleGame) {
   const icons = prev ? [[home(prev), false], [home(g), true]] : next ? [[home(g), true], [home(next), false]] : [];
   const [pos] = tifOf(teamId).get(g.gameId) ?? [0, 0];
   const st = stretchOf(teamId).get(g.gameId);
-  // round 22 (item 15): the break chip — days to the team's previous / next game by date, 3+ flagged (filled: after)
+  // The break chip — days to the team's previous / next game by date, 3+ flagged (filled: after)
   const all = gamesOf(teamId).map((x) => x.dateEt).sort();
   const i = all.indexOf(g.dateEt);
   const gap = (a?: string, b?: string) => (a && b ? Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000) : 0);
@@ -125,7 +125,7 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
       const el = render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId }} />);
       const counts = { n1: 0, n2: 0, tif: 0, empty: 0, oppN1: 0, oppN2: 0, oppTif: 0, oppEmpty: 0 };
       let checked = 0;
-      // round 9: month by month (the full-season values on every month's rows)
+      // Month by month (the full-season values on every month's rows)
       eachTeamMonth(data, teamId, (m) => {
       for (const g of gamesOf(teamId).filter((x) => x.dateEt.startsWith(m))) {
         checked++;
@@ -144,7 +144,7 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
         const o = checkFatigue(opp[0]!, opponentOf(g, teamId).teamId, g, `${label} opp`);
         // the old labels and chips are gone from the row (not among the tags either)
         expect(row.querySelectorAll('.ck-b2b-label, .ck-tif, .ck-b2b-opp'), label).toHaveLength(0);
-        // round 7 (1.4): no dot on the opponent's tricode (its component says it), also on its 2nd night
+        // No dot on the opponent's tricode (its component says it), also on its 2nd night
         expect(row.querySelector('.ck-opp .ck-b2b-mark'), `${label} dot`).toBeNull();
         counts.n1 += +(t.night === '1'); counts.n2 += +(t.night === '2'); counts.tif += +!!t.pos; counts.empty += +(!t.night && !t.pos);
         counts.oppN1 += +(o.night === '1'); counts.oppN2 += +(o.night === '2'); counts.oppTif += +!!o.pos; counts.oppEmpty += +(!o.night && !o.pos);
@@ -173,7 +173,7 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
 
   it('rest rows have no fatigue columns; the TV filter never changes the labels', () => {
     render(<CalendarView data={data} size={DESKTOP} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.LAL, showRest: true }} />);
-    // v1.40.0: one walk of the season reads both the rest rows and the labels (was a walk each: this test and the next
+    // One walk of the season reads both the rest rows and the labels (was a walk each: this test and the next
     // walked 9 seasons between them and went past Vitest's 5 s under load)
     const rest: number[] = [];
     const rows = () => [...document.querySelectorAll('[data-game-id]')].map((r) => [r.getAttribute('data-game-id'), [...r.querySelectorAll('.ck-fat')].map((c) => c.textContent).join('|')] as const);
@@ -200,7 +200,7 @@ describe('Team List fatigue columns (desktop, round 5: the Fatigue component)', 
       const sum = acrossMonths(data, TEAM.BOS, () => [[count('.ck-fat, .ck-fx, .ck-tif, .ck-b2b-opp'), count('.ck-tags .ck-b2b-label'), count('.ck-opp .ck-b2b-mark')]]).reduce((a, b) => a.map((x, i) => x + b[i]!), [0, 0, 0]);
       expect(sum[0]).toBe(0);
       expect(sum[1]).toBeGreaterThan(5);
-      // no opponent component here, so the opponent's 2nd night keeps its dot (round 7, 1.4)
+      // no opponent component here, so the opponent's 2nd night keeps its dot
       expect(sum[2]).toBeGreaterThan(5);
       cleanup();
     }
@@ -221,7 +221,7 @@ describe('Team Calendar: 3-in-4 chip next to the B2B label', () => {
         const g = byDate.get(cell.dataset.date!);
         const want = g ? expected(TEAM.LAL, g).chip : '';
         const chip = cell.querySelector('[data-testid="tif"]');
-        // round 7 (1.3): the merged chip "4in6 · 2nd", as in the Fatigue component (was the short "3in4·2nd")
+        // The merged chip "4in6 · 2nd", as in the Fatigue component (was the short "3in4·2nd")
         expect(chip?.textContent ?? '', `${cell.dataset.date}`).toBe(want);
         if (chip) {
           expect(chip.getAttribute('data-tip')).toMatch(new RegExp(`^${want}: \\d+ games in \\d+ days \\(.+\\), tonight the \\d+(st|nd|rd|th)$`));

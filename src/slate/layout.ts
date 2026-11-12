@@ -1,9 +1,8 @@
-// Slate (round 7): pure layout rules for the copied image of a day's game cards.
+// Slate: pure layout rules for the copied image of a day's game cards.
 
 /**
  * Sketching space (CSS px) between the cards of a copied slate, and half of it around them: everything there is
- * transparent, for drawing on the whiteboard. The site's own gap is 12 px. One constant, to tune. Round 7: 120 px. Round 9:
- * 24 px — each card now carries its own note box (the space written over on the whiteboard) and is ~2× wider, and with
+ * transparent, for drawing on the whiteboard. The site's own gap is 12 px. One constant, to tune. 120 px. * 24 px — each card now carries its own note box (the space written over on the whiteboard) and is ~2× wider, and with
  * 120 px a 12- or 15-game night fitted to a 1920 × 911 page showed the team names at ~10 px (24 px: ≥ 12.9 px).
  */
 export const SLATE_COPY_GAP = 24;
@@ -46,12 +45,12 @@ export function slateCopyColumns(n: number, card: { width: number; height: numbe
 export const slatePixelRatio = (img: { width: number; height: number }, page = SLATE_PAGE) => Math.max(4, Math.ceil(2 * fitScale(img, page) * 4) / 4);
 
 /**
- * Round 14 (item 3): the tight info block. A narrow strip on the left (tip-off time or "Final", then a wrapping row of the
+ * The tight info block. A narrow strip on the left (tip-off time or "Final", then a wrapping row of the
  * ↗ link, the season-series chip, the TV pill and the Cup / play-off tags) beside the two team rows, whose tracks are
- * fixed and sized to their widest content at the text sizes used since round 7 (nothing shrunk): "@" 13, logo 28,
+ * fixed and sized to their widest content at the app's text sizes (nothing shrunk): "@" 13, logo 28,
  * name 110 ("Timberwolves" is 109.7 px at 16 px semibold), record 39 ("41-41" at 12 px), streak 28 ("W12"), Fatigue 102
  * (B2B badge, two nights, the "7in11" chip — the stretch, tonight's place is in its tooltip), score 35 ("128" at 18 px),
- * odds 34 (item 4: "10.50" at 12 px semibold, 34.3 px; reserved whether or not odds came), 4 px apart. All CSS px; the CSS reads them as variables (slateVars), so this is the one source.
+ * odds 34 ("10.50" at 12 px semibold, 34.3 px; reserved whether or not odds came), 4 px apart. All CSS px; the CSS reads them as variables (slateVars), so this is the one source.
  */
 export const SLATE_STRIP = 68; // "00:30 (+1)" is 66 px; the widest chip 56.8 px (Cup tags), chips ≤ 2 lines from 60 px (measured over the season)
 export const SLATE_STRIP_GAP = 6;
@@ -60,7 +59,7 @@ export const SLATE_ROW_GAP = 4;
 const trackSum = (t: Record<string, number>) => Object.values(t).reduce((a, b) => a + b, 0) + (Object.keys(t).length - 1) * SLATE_ROW_GAP;
 /** The info block's width: strip, its gap, the team rows. */
 export const SLATE_INFO_WIDTH = SLATE_STRIP + SLATE_STRIP_GAP + trackSum(SLATE_ROW_TRACKS);
-/** Card padding (round 14: 8 px, was 12 / 14) and border. */
+/** Card padding (8 px, was 12 / 14) and border. */
 export const SLATE_CARD_PAD = 8;
 export const SLATE_CARD_BORDER = 1;
 /** An info-only card's width (notes hidden): the info block and the card's padding and border, nothing stretched. */
@@ -69,7 +68,7 @@ export const SLATE_CARD_WIDTH = SLATE_INFO_WIDTH + 2 * (SLATE_CARD_PAD + SLATE_C
 export const slateInfoColumns = (width: number, cup: CupTrackKind = false) => Math.max(1, Math.floor((width + SLATE_GRID_GAP) / (slateCardWidth(cup) + SLATE_GRID_GAP)));
 
 /**
- * Round 9 (Part 3): each card is the game's info at its old size (the round 7 card's content width) beside a note box
+ * Each card is the game's info at its old size (the info-only card's content width) beside a note box
  * that takes the rest of the card. The grid starts at the page's left edge and fills the widget: two columns while each
  * card's note box keeps SLATE_NOTE_MIN, else one.
  */
@@ -80,7 +79,7 @@ export const SLATE_GRID_GAP = 12;
 export const SLATE_NOTE_MIN = 300;
 
 /**
- * Round 21 (item 1): on a night with NBA Cup group games, every card's team rows get one more track after the streak —
+ * On a night with NBA Cup group games, every card's team rows get one more track after the streak —
  * the team's 4 group games as mini squares (37 px: "vs MEM" over "W +12" at 10 px) and its group record over its
  * differential (22 px). Alex's choice (2026-11-06): the note boxes give up the room those nights (~220 px at 1920, the
  * 300 px minimum waived down to SLATE_NOTE_MIN_CUP), so the cards keep 2 columns and their height.
@@ -88,13 +87,13 @@ export const SLATE_NOTE_MIN = 300;
 export const SLATE_CUP_TRACK = 4 * 37 + 3 * 2 + 4 + 22;
 export const SLATE_NOTE_MIN_CUP = 175;
 /**
- * Round 21 (item 2): on a Cup night where a team on show has clinched ("IN") or is out ("OUT"), the track gets the tag
+ * On a Cup night where a team on show has clinched ("IN") or is out ("OUT"), the track gets the tag
  * after the squares (only those nights: the last group nights). The note boxes give those 24 px too (~183 px at 1920;
  * SLATE_NOTE_MIN_CUP 200 → 175 for that, so 2 columns stay).
  */
 export const SLATE_CUP_TAG = 24;
 /**
- * Round 21 (item 11): on a night where tonight can settle something for a team on show, that column holds the stakes
+ * On a night where tonight can settle something for a team on show, that column holds the stakes
  * chips ("Win = clinch", "+8 to pass ORL", two lines at most) and is 72 px; the note boxes give it (~135 px at 1920;
  * SLATE_NOTE_MIN_STAKES 130 those nights, so the 2 columns stay) — flagged to Alex.
  */
@@ -116,7 +115,7 @@ export const slateNoteWidth = (card: number, cup: CupTrackKind = false) => card 
 export const slateColumns = (width: number, cup: CupTrackKind = false) => (slateNoteWidth((width - SLATE_GRID_GAP) / 2, cup) >= (cup === 3 ? SLATE_NOTE_MIN_STAKES : cup ? SLATE_NOTE_MIN_CUP : SLATE_NOTE_MIN) ? 2 : 1);
 
 /**
- * Round 22 (item 14): in a copied slate with note boxes, the game's info is drawn larger inside the card — the card keeps
+ * In a copied slate with note boxes, the game's info is drawn larger inside the card — the card keeps
  * its on-screen width, the note box gives the room (down to SLATE_COPY_NOTE_MIN), at most ×SLATE_COPY_ZOOM_MAX; the card
  * only grows in height as much as the bigger content needs. Pasted and shrunk on the whiteboard, the text, logos and
  * scores stay readable. CSS `zoom` (layout, not a transform), so the image stays crisp at its pixel ratio. Info-only

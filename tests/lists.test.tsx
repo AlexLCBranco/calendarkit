@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// List | Calendar switch (League and Team), the one-day league list (round 8), team list. Real scrolling is covered by
+// List | Calendar switch (League and Team), the one-day league list, team list. Real scrolling is covered by
 // e2e/lists.spec.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -15,7 +15,7 @@ import { clearScope, pickScope } from './nav';
 afterEach(cleanup);
 
 const WIDE = { width: 1000, height: 800 };
-const WEEK = { width: 1248, height: 800 }; // the week view needs ≥ 1179 px since round 4 (1280 px window)
+const WEEK = { width: 1248, height: 800 }; // the week view needs ≥ 1179 px (1280 px window)
 const PHONE = { width: 360, height: 700 };
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 const tab = (name: string) => screen.getByRole('tab', { name });
@@ -189,7 +189,7 @@ describe('league list: one day at a time (round 8)', () => {
     const looked = screen.getByTestId('team-day-title').textContent; // the team's row the list opened at
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     expect(screen.getByTestId('team-day-title').textContent).toBe(looked); // no day keys in the Team List
-    clearScope(); // round 21: All teams comes back on the date looked at in the team's view
+    clearScope(); // All teams comes back on the date looked at in the team's view
     expect(title()).toBe(looked);
   });
 

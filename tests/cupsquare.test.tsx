@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 5): the one Cup group-game square (src/slate/CupSquare.tsx) — "vs" / "@" before the opponent in its own
+// The one Cup group-game square (src/slate/CupSquare.tsx) — "vs" / "@" before the opponent in its own
 // smaller element, W / L (and the margin where asked) for a played game, the opponent alone for one to come, tonight's
 // marked, the final score as the tooltip, and the game page as a new-tab link (none: a plain square).
 import { cleanup, render } from '@testing-library/react';

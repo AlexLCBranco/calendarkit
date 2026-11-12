@@ -1,5 +1,5 @@
-// Team Calendar cells (round 4, item 4): one green "TV" pill with the names in the floating tooltip (hover and focus);
-// round 7 (1.3): the merged 3-in-4 chip "4in6 · 2nd" as everywhere else (was the short "3in4·2nd"), its tooltip the
+// Team Calendar cells: one green "TV" pill with the names in the floating tooltip (hover and focus);
+// The merged 3-in-4 chip "4in6 · 2nd" as everywhere else (was the short "3in4·2nd"), its tooltip the
 // stretch in words + the day strip. The Team List keeps the names. Desktop widths.
 
 import { expect, test } from './fixtures';
@@ -26,6 +26,6 @@ test('Team Calendar: merged "4in6 · 2nd" chip and "TV" pill with full-text tool
   await expect(tip).toContainText(/^\d+in\d+ · \d+(st|nd|rd|th): \d+ games in \d+ days \(/);
   await expect(page.getByTestId('tip-days')).toBeVisible();
   await page.goto('/calendar/?view=team&layout=list&team=LAL');
-  await expect(page.locator('[data-testid="team-list"] .ck-fx-chip').first()).toHaveText(/^\d+in\d+ · \d+(st|nd|rd|th)$/); // the Fatigue component's chip (round 6: the merged stretch)
+  await expect(page.locator('[data-testid="team-list"] .ck-fx-chip').first()).toHaveText(/^\d+in\d+ · \d+(st|nd|rd|th)$/); // the Fatigue component's chip (the merged stretch)
   await expect(page.locator('[data-testid="team-list"] .ck-tv-name').first()).toBeAttached();
 });

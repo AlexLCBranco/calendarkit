@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 10): knockout venue markers, from data only — the Championship neutral at the feed's arena (Hinkle
+// Knockout venue markers, from data only — the Championship neutral at the feed's arena (Hinkle
 // Fieldhouse for 2026: checked here against the feed, not assumed), a quarterfinal / semifinal hosted by the feed's home
 // team once the feed has the teams and the arena, "venue TBD" before; on the Slate's knockout cards and the Cup schedule.
 import { cleanup, render, screen } from '@testing-library/react';

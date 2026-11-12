@@ -1,4 +1,4 @@
-// Slate copies in e2e (round 7, shared since round 9): click a copy button, read the PNG back from the clipboard, measure
+// Slate copies in e2e (shared): click a copy button, read the PNG back from the clipboard, measure
 // the capture stage while it is on screen, count transparent / opaque pixels; readPng samples regions of the image.
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -21,11 +21,11 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
           height: root.offsetHeight,
           cols: getComputedStyle(root).gridTemplateColumns.split(' ').length,
           nameFont: parseFloat(getComputedStyle(card).fontSize),
-          // round 14: links (the ↗ icons) in the copied node; the strip's chips reflow without them
+          // Links (the ↗ icons) in the copied node; the strip's chips reflow without them
           links: root.querySelectorAll('a').length,
           cards: [...root.querySelectorAll('.ck-slate-card')].map((c) => {
             const r = c.getBoundingClientRect();
-            // round 9: the note box (its rect in the image, the slot label, its text, controls left in it)
+            // The note box (its rect in the image, the slot label, its text, controls left in it)
             const n = c.querySelector('.ck-gnote');
             const nr = n?.getBoundingClientRect();
             const note = n && nr ? { x: nr.left - r0.left, y: nr.top - r0.top, w: nr.width, h: nr.height, slot: n.querySelector('.ck-gnote-slot')?.textContent ?? '', text: n.querySelector('.ck-gnote-text')?.textContent ?? '', controls: n.querySelectorAll('button, textarea, [data-testid="note-switch"]').length } : null;

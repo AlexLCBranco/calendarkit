@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 10 (1.2, 1.3, 1.7): the Slate's self-contained part (src/slate/). It imports nothing of calendarkit's app shell;
+// The Slate's self-contained part (src/slate/). It imports nothing of calendarkit's app shell;
 // its notes store is an input (the default, localNotesStore, is one per page with one storage listener however many
 // grids show it); at rest it starts no timer and makes no request — typing starts only the save's debounce.
 

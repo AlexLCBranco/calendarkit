@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// v1.40.1: the league week view renders its game lines once on load. Before, the lines rendered at scale 1, the grid's
+// The league week view renders its game lines once on load. Before, the lines rendered at scale 1, the grid's
 // top was measured, the scale changed and every line rendered (and was laid out) again — ~45 ms of the 1920 × 1080 load
 // on the Windows PC. Lines counted through leagueFatigue, which each MonthGameLine calls once per render. jsdom has no
 // layout, so the grid's top is faked (40 px below the widget's top, as a top bar puts it).

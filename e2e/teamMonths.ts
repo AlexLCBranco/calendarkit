@@ -1,4 +1,4 @@
-// Round 9: the Team List shows one calendar month. e2e checks that cover every row of a season walk its months through
+// The Team List shows one calendar month. e2e checks that cover every row of a season walk its months through
 // the UI: the date picker's ‹ › and the month's first enabled day (desktop/tablet), or the month title's ‹ › (phones).
 
 import { expect, type Page } from '@playwright/test';
@@ -32,7 +32,7 @@ export const teamMonths = (page: Page, tri: string) =>
 export const shownMonth = async (page: Page) => monthOfTitle((await page.getByTestId('team-month').first().textContent())!);
 
 /**
- * Shows `month` in the Team List through the UI. Round 14 (item 2): on desktop the same clicks a person makes — the date
+ * Shows `month` in the Team List through the UI. On desktop the same clicks a person makes — the date
  * picker's icon, its ‹ › months, the month's first open day — dispatched in the page in one go (a frame between steps)
  * instead of one Playwright action each: a season walk of 30 teams made ~2 500 round trips this way and took ~50 s per
  * project. The picker itself is tested click by click in datepicker.spec.ts.

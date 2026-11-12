@@ -42,7 +42,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// The Oct 21 section (round 8: the only day the list shows).
+// The Oct 21 section (the only day the list shows).
 const pastDay = () => document.querySelector<HTMLElement>('[data-day="2026-10-21"]')!;
 const renderApp = async () => {
   (window as { __ckOpenDate?: string }).__ckOpenDate = '2026-10-21';
@@ -110,7 +110,7 @@ describe('App: URL state for the List | Calendar switch', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'List' }));
     expect(window.location.search).toMatch(/weeks=2/); // kept from the URL
     expect(screen.getByTestId('day-title').textContent).toMatch(/^Fri(day)?, Oct(ober)? 23, 2026$/); // today, not the URL's Dec 1
-    // round 21 (item 6): the address names the day on show (today), though a load never reads it
+    // The address names the day on show (today), though a load never reads it
     expect(new URLSearchParams(window.location.search).get('date')).toBe('2026-10-23');
   });
 
@@ -162,7 +162,7 @@ describe('App: URL state for the List | Calendar switch', () => {
     for (const q of ['', '&rest=1', '&rest=0']) {
       await open(`?view=team&layout=list&team=BOS${q}`);
       expect(box().checked, `opened with "${q}"`).toBe(true);
-      expect(document.querySelectorAll('[data-rest]').length).toBeGreaterThan(3); // one month's (round 9)
+      expect(document.querySelectorAll('[data-rest]').length).toBeGreaterThan(3); // one month's
       cleanup();
     }
     localStorage.clear();

@@ -1,7 +1,7 @@
-// Cup → Schedule against the served snapshot. League (round 18): By group (6 panels = each group's 10 games in date order
+// Cup → Schedule against the served snapshot. League: By group (6 panels = each group's 10 games in date order
 // with dates, teams and results; the knockout column) and By date (the strip = the Cup and knockout nights as dates; every
 // night = its Cup games grouped by group, no game twice); fatigue marks from the whole schedule with one legend line; the
-// row tooltip (group game numbers, season series). Team (round 12, unchanged): Played / Remaining. Copies and the marquee,
+// row tooltip (group game numbers, season series). Team: Played / Remaining. Copies and the marquee,
 // and the fit rule — all 67 games with no vertical scrolling at 1920 × 950 and 1600 × 1000, every row one line, text at
 // the List views' size. A "full Cup" version of the snapshot (every group game final, BOS through to the Final, a non-Cup
 // game added on a quarterfinal night) stands in for the knockout games the feed hasn't filled in yet.
@@ -158,7 +158,7 @@ test.describe('Cup schedule', () => {
     await expect(page.getByRole('tablist', { name: 'Cup layout' })).toHaveCount(0);
     await expect(page.getByTestId('team-picker')).toHaveText(/Pick a team/);
     await expect(page.getByTestId('cup-pick')).toBeVisible();
-    // round 21 (item 6): the address names the sub-view, so a reload keeps it (no team picked yet: none in the address)
+    // The address names the sub-view, so a reload keeps it (no team picked yet: none in the address)
     await page.reload();
     await expect(page.getByTestId('cup-pick')).toBeVisible();
     await expect(page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' })).toHaveAttribute('aria-selected', 'true');
@@ -428,7 +428,7 @@ test.describe('Cup schedule', () => {
   });
 });
 
-// The fit rule (as round 11's Standings): no vertical scrolling, nothing clipped, every row one line, text at the List
+// The fit rule (as the Cup Standings'): no vertical scrolling, nothing clipped, every row one line, text at the List
 // views' size.
 test.describe('Cup schedule fits the window', () => {
   test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'fixed window sizes: one desktop project is enough'));

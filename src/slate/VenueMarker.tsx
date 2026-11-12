@@ -1,4 +1,4 @@
-// Round 21 (items 4 and 10): the one knockout venue marker. A home-court game: a "HOST" tag on the host team (put it next
+// The one knockout venue marker. A home-court game: a "HOST" tag on the host team (put it next
 // to that team). A neutral-court game: a high-contrast "NEUTRAL · Hinkle Fieldhouse, Indianapolis" badge, and no host
 // tag on either team. Unknown venue: "venue TBD". The venue always comes from data (the feed's arena, a stored past
 // season, or the rules' "higher seed hosts" for an undecided game in the simulator) — never assumed here.

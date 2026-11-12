@@ -21,7 +21,7 @@ export interface ThreeInFourSet {
 }
 
 /**
- * Round 6: the team's 3-in-4 sets that overlap (share a game), chained, as one stretch: "4in6" = 4 games in the 6 days
+ * The team's 3-in-4 sets that overlap (share a game), chained, as one stretch: "4in6" = 4 games in the 6 days
  * from the first to the last (inclusive), and tonight's place in it. A set that overlaps no other is its own stretch.
  */
 export interface MergedThreeInFour {
@@ -39,7 +39,7 @@ export interface ThreeInFour {
   sets: ThreeInFourSet[];
   /** Highest position over those sets (the most fatigue-relevant). */
   position: Position;
-  /** The merged stretch this game is in (round 6). */
+  /** The merged stretch this game is in. */
   merged: MergedThreeInFour;
 }
 
@@ -94,14 +94,14 @@ export const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 't
 /** The merged stretch's label: "4in6" (games in days, first to last game inclusive). */
 export const mergedLabel = (m: MergedThreeInFour) => `${m.ids.length}in${m.days}`;
 
-/** The Fatigue component's chip (round 6): "4in6 · 2nd" — the stretch, then tonight's place in it. */
+/** The Fatigue component's chip: "4in6 · 2nd" — the stretch, then tonight's place in it. */
 export const mergedChip = (m: MergedThreeInFour) => `${mergedLabel(m)} · ${ordinal(m.position)}`;
 
 /** Pop-up line: "4 games in 6 days (Oct 28 – Nov 2), tonight the 2nd". */
 export const mergedTip = (m: MergedThreeInFour) => `${m.ids.length} games in ${m.days} days (${shortDate(m.dates[0]!)} – ${shortDate(m.dates.at(-1)!)}), tonight the ${ordinal(m.position)}`;
 
 /**
- * The pop-up's day strip (round 6): every day from the stretch's first game to its last — "g" a game day, "r" a rest
+ * The pop-up's day strip: every day from the stretch's first game to its last — "g" a game day, "r" a rest
  * day, "t" tonight — as "YYYY-MM-DD:k" joined by spaces (an attribute the shared tooltip draws, Tooltip.tsx).
  */
 export function mergedDays(m: MergedThreeInFour): string {

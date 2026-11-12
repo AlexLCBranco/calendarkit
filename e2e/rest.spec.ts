@@ -1,4 +1,4 @@
-// Team List "Show rest days" (desktop widths): on at every load, never saved (round 7, 2.2), row order and dates against the served snapshot,
+// Team List "Show rest days" (desktop widths): on at every load, never saved, row order and dates against the served snapshot,
 // rest rows about half a game row tall, nothing clipped, no sideways scroll, opens / Today at the next game.
 
 import { expect, test, type Page } from './fixtures';
@@ -63,7 +63,7 @@ test('show rest days: on by default, order and dates vs snapshot, half-height ro
   const expected = await expectedRows(page, BOS);
   // opened at the next game, at the top (with the rest rows above it in its month)
   expect(Math.abs(await nextOffset(page))).toBeLessThan(1.5);
-  // round 9: the rows month by month
+  // The rows month by month
   const rows = (await eachTeamMonth(page, 'BOS', () => rowsOnPage(page))).flat();
   expect(rows.map((r) => r.key)).toEqual(expected.map((e) => e.key));
   const fmt = (d: string) => `${new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' })} ${d.slice(8)}/${d.slice(5, 7)}`;

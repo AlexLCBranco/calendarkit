@@ -14,7 +14,7 @@ const BG = [0x0f, 0x11, 0x15]; // --ck-bg
 const RATIO = 4;
 const MAX_SIDE = 16000;
 
-// Round 3's images (rest rows, fatigue columns, team week views, selections) are read back at 1280 × 900 too.
+// The images of rest rows, fatigue columns, team week views, selections) are read back at 1280 × 900 too.
 const AT_1280 = /selection|full team list|team calendar in 1 and 2 weeks|a single day/;
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl' && !(info.project.name === 'desktop' && AT_1280.test(info.title)), 'runs once, at 1920 × 1080'));
 test.beforeAll(() => mkdirSync(OUT, { recursive: true }));
@@ -37,15 +37,15 @@ const MEASURE = `(root) => {
   add('logo', '.ck-logo-backing img');
   add('text', '.ck-team, .ck-mtri-text, .ck-vsat, .ck-at');
   add('score', '.ck-score, .ck-mscore:not(:empty)'); // the week view's score slots are empty before the game
-  add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp, .ck-fm-n2, .ck-fx-b2b:not(:empty)'); // round 5: the Fatigue component's badge
-  add('b2b', '.ck-fm-n1', 1); // league views' 1st night: the yellow ring around the tricode (round 4)
+  add('b2b', '.ck-b2b-label, .ck-b2b-mark, .ck-b2b-opp, .ck-fm-n2, .ck-fx-b2b:not(:empty)'); // the Fatigue component's badge
+  add('b2b', '.ck-fm-n1', 1); // league views' 1st night: the yellow ring around the tricode
   add('tif', '.ck-tif, .ck-fx-chip');
-  add('leg', '.ck-fx .ck-fx-leg'); // round 6: the badges' leg dots (not the legend's: 3 px, read too faintly on Linux)
+  add('leg', '.ck-fx .ck-fx-leg'); // the badges' leg dots (not the legend's: 3 px, read too faintly on Linux)
   add('tv', '.ck-tv, .ck-tv-pill, .ck-tv-name');
   add('rest', '.ck-rest-row .ck-date, .ck-rest');
-  // round 8: an element inside the zoomed League List is copied at its on-screen size (its layout size × currentCSSZoom)
+  // an element inside the zoomed League List is copied at its on-screen size (its layout size × currentCSSZoom)
   const z = root.currentCSSZoom ?? 1;
-  // round 9: the Team List's rows and month in the copy
+  // the Team List's rows and month in the copy
   const rows = root.querySelectorAll('.ck-team-rows > [data-row-date]').length;
   const month = root.querySelector('[data-testid="team-month"]')?.textContent ?? null;
   return { width: z === 1 ? root.offsetWidth : r0.width, height: z === 1 ? root.offsetHeight : r0.height, regions: out, rows, month };
@@ -220,10 +220,10 @@ test('whole view: team calendar and the whole Team List month', async ({ page },
   if (info.project.name !== 'desktop-xl') return;
 
   await page.getByRole('tab', { name: 'List', exact: true }).click();
-  // round 9: the Team List shows a month; the copy is that month — all its rows, not only those on screen. A short
+  // The Team List shows a month; the copy is that month — all its rows, not only those on screen. A short
   // window, so the month doesn't fit on screen.
   await page.setViewportSize({ width: 1920, height: 600 });
-  await page.getByLabel('Show rest days').uncheck(); // on by default since round 7: first the games only
+  await page.getByLabel('Show rest days').uncheck(); // on by default: first the games only
   const shown = await page.locator('.ck-team-rows > .ck-card').count();
   const visible = await page.getByTestId('team-list').evaluate((l) => l.clientHeight);
   expect(await page.getByTestId('team-list').evaluate((l) => l.querySelector('.ck-team-rows')!.getBoundingClientRect().height)).toBeGreaterThan(visible);
@@ -234,7 +234,7 @@ test('whole view: team calendar and the whole Team List month', async ({ page },
   expect(view.target.rows, 'image rows = the month’s rows').toBe(shown);
   expect(view.target.month).toBe(month);
   const r = await check(page, 'view-team-list', view, ['logo', 'text', 'b2b', 'tv', 'tif']);
-  // both Fatigue columns are in the image (round 5): every badge and chip of the team and the opponent
+  // both Fatigue columns are in the image: every badge and chip of the team and the opponent
   expect(view.target.regions.filter((x) => x.kind === 'tif').length).toBe(await page.locator('.ck-team-rows :is(.ck-tif, .ck-fx-chip)').count());
   expect(view.target.regions.filter((x) => x.kind === 'b2b').length).toBe(await page.locator('.ck-team-rows :is(.ck-b2b-label, .ck-b2b-mark, .ck-fx-b2b:not(:empty))').count());
   expect(r.height / view.target.ratio, 'taller than the list on screen').toBeGreaterThan(visible);
@@ -265,12 +265,12 @@ test('whole view and a day: team calendar in 1 and 2 weeks', async ({ page }) =>
   }
 });
 
-// Round 8 (1.6): the League List's view copy is the day on show (the week copy is gone), its rows as big as on screen.
+// The League List's view copy is the day on show (the week copy is gone), its rows as big as on screen.
 test('whole view: league list copies the day on show, at its on-screen size', async ({ page }) => {
   await open(page, '?view=league&layout=list&date=2026-11-18');
   const view = await copyView(page);
   await check(page, 'view-league-list', view, ['logo', 'text', 'tv', 'b2b', 'tif', 'leg']);
-  // the Fatigue components are in the image (round 5): badges and chips; round 6: merged chips and leg dots
+  // the Fatigue components are in the image: badges and chips; Merged chips and leg dots
   const badges = view.target.regions.filter((r) => r.kind === 'b2b' && r.what === 'B2B').length;
   expect(badges).toBeGreaterThan(0);
   expect(view.target.regions.filter((r) => r.kind === 'tif' && /^\d+in\d+ · \d+(st|nd|rd|th)$/.test(r.what)).length).toBeGreaterThan(0);
@@ -307,15 +307,15 @@ test('a single game: league list card, team list card with B2B and TV', async ({
   await check(page, 'game-league-list', await copyPart(page, card, 'copy-game'), ['logo', 'text', 'tv']);
 
   await open(page, '?view=team&layout=list&team=ORL');
-  // both teams' B2B badges (round 7: the opponent's dot is gone beside its component)
+  // both teams' B2B badges (the opponent's dot is gone beside its component)
   const row = page.locator('.ck-team-rows > .ck-card:has(.ck-fat-team .ck-fx-b2b:not(:empty)):has(.ck-fat-opp .ck-fx-b2b:not(:empty))').first();
   await check(page, 'game-team-list', await copyPart(page, row, 'copy-game'), ['logo', 'text', 'b2b']);
 });
 
 test('final scores are in the images: week view (1 and 2 weeks), league list day, team calendar, team list', async ({ page }) => {
-  // seven copies, the last a full Team List (~4500 × 13600 px). Measured (round 6, after trimming the copied style
-  // properties, copyAsImage.ts CAPTURE_SKIP_STYLE): 18.7 s locally, 23.7 s on a CI runner before the trim. Round 5's
-  // three CI failures were not a slow test but one stalled copy (the full Team List still "idle" after 40+ s, where it
+  // seven copies, the last a full Team List (~4500 × 13600 px). Measured (after trimming the copied style
+  // properties, copyAsImage.ts CAPTURE_SKIP_STYLE): 18.7 s locally, 23.7 s on a CI runner before the trim. Earlier
+  // CI failures were not a slow test but one stalled copy (the full Team List still "idle" after 40+ s, where it
   // normally takes ~5 s); the 150 s budget hid that. 90 s = ~4× the CI time.
   test.setTimeout(90_000);
   await open(page, '?view=league&layout=calendar&date=2026-10-20');
@@ -333,7 +333,7 @@ test('final scores are in the images: week view (1 and 2 weeks), league list day
 
   let v = await copyView(page);
   expect(scores(v)).toBe(2 * inWeek);
-  // logos on every line since round 4 (scores in their own slots)
+  // logos on every line (scores in their own slots)
   await check(page, 'scores-league-week', v, ['logo', 'text', 'score']);
   await page.getByRole('tab', { name: '2 weeks' }).click();
   v = await copyView(page);
@@ -355,7 +355,7 @@ test('final scores are in the images: week view (1 and 2 weeks), league list day
   await check(page, 'scores-team-calendar-day', await copyPart(page, cell, 'copy-day'), ['logo', 'text', 'score']);
 
   await page.getByRole('tab', { name: 'List', exact: true }).click();
-  await showMonth(page, '2026-10'); // round 9: the month with the final scores
+  await showMonth(page, '2026-10'); // The month with the final scores
   await check(page, 'scores-team-list', await copyView(page), ['logo', 'text', 'score']);
 });
 
@@ -419,7 +419,7 @@ async function selectRange(page: Page, sel: string, from: number, to: number) {
   await page.mouse.move(b.x, b.y, { steps: 10 });
   await page.mouse.up();
   // the selected games in on-screen order, with their text as drawn — less the controls an image never has
-  // (data-capture-exclude: copy buttons, round 16's "↗" in List rows)
+  // (data-capture-exclude: copy buttons, the "↗" in List rows)
   return page.evaluate(() => {
     const drawn = (e: HTMLElement) => {
       const c = e.cloneNode(true) as HTMLElement;
@@ -509,7 +509,7 @@ test('selection images: only the selected games, in on-screen order, as drawn in
     // day headers: one per day with selected games (calendars and the League List), none in the Team List
     const days = [...new Set(picked.map((x) => x.date))];
     expect(shot.stage.heads.length, `${k.name} headers`).toBe(k.heads ? days.length : 0);
-    // 2 logos per game (the week view too since round 4: scores in their own slots), + the team header in team views
+    // 2 logos per game (the week view too: scores in their own slots), + the team header in team views
     const logos = shot.target.regions.filter((r) => r.kind === 'logo').length;
     expect(logos, k.name).toBe(2 * picked.length + (k.search.includes('view=team') ? 1 : 0));
     console.log(`[copy] selection-${k.name}: ${picked.length} games, ${days.length} day(s)`);
@@ -545,5 +545,4 @@ test('selection image of the Team List: the B2B bracket only when both nights ar
   await check(page, 'selection-team-list-b2b', shot, ['logo', 'text', 'b2b']);
 });
 
-// (Round 4's "active-day highlight not in the image" test for League List days left with the highlight in round 8; the
-// Team List row highlight is lifted the same way, covered by tests/activeday.test.tsx "copies".)
+// (The League List has no active-day highlight to keep out of the image; the Team List row highlight is lifted the same way, covered by tests/activeday.test.tsx "copies".)

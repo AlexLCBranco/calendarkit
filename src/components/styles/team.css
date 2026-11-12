@@ -240,7 +240,7 @@
   color: #e9d5ff;
   border-color: #7c4dcc;
 }
-/* Team list (desktop): the two Fatigue columns (round 5: the team's between the time and the team, the opponent's after
+/* Team list (desktop): the two Fatigue columns (the team's between the time and the team, the opponent's after
    the opponent). The Fatigue component has a fixed width, empty or not, so the selected team and the tags start at the
    same x on every row. */
 .ck-fat {
@@ -255,7 +255,7 @@
   flex: none;
 }
 
-/* round 21 (item 3): Load earlier / more games, the season's edges and the month dividers in the Team List */
+/* Load earlier / more games, the season's edges and the month dividers in the Team List */
 .ck-load-more {
   display: block;
   margin: 6px auto;

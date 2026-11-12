@@ -1,4 +1,4 @@
-/* Standings (round 17; round 18: West and East side by side): one line per row, text at the app's sizes (13 px cells,
+/* Standings (West and East side by side): one line per row, text at the app's sizes (13 px cells,
    11 px headers). Both tables in every column set fit at 1600 × 1000 without shrinking text (e2e/standings.spec.ts). */
 .ck-standings {
   display: flex;

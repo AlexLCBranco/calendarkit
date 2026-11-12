@@ -35,7 +35,7 @@
 .ck-root-fill > .ck-team-header {
   flex: none;
 }
-/* Desktop League List (round 8): one day, left-aligned (the map takes the right), drawn at a zoom set inline with the
+/* Desktop League List: one day, left-aligned (the map takes the right), drawn at a zoom set inline with the
    column width (leagueListStyle); rows at least --ck-row-h tall (LEAGUE_ROW_HEIGHT), content centered in them. */
 .ck-league-list.ck-league-side {
   margin-left: 0;
@@ -97,7 +97,7 @@
   text-align: center;
   padding: 24px 0;
 }
-/* Round 8: the desktop League List and its map side by side (the map's own styles load with it, src/map/map.css) */
+/* The desktop League List and its map side by side (the map's own styles load with it, src/map/map.css) */
 .ck-league-split {
   display: flex;
   flex: 1 1 auto;
@@ -112,7 +112,7 @@
   min-width: 0;
   padding-top: 4px;
 }
-/* Round 8 (3.1): the row of the game hovered on the map (or in the list) — a sky bar on its left and a thin ring, drawn
+/* The row of the game hovered on the map (or in the list) — a sky bar on its left and a thin ring, drawn
    as box-shadows: nothing moves, and it never looks like the marquee selection (accent outline + tint); never in an image */
 .ck-league-split .ck-card.ck-map-hot {
   box-shadow: inset 4px 0 0 #5ec8ff, inset 0 0 0 1px rgba(94, 200, 255, 0.6);
@@ -122,7 +122,7 @@
 .ck-league-split .ck-card.ck-map-hot.ck-capturing {
   box-shadow: none;
 }
-/* the Team List with its map (after round 8): list and header left-aligned, the map on the right */
+/* the Team List with its map: list and header left-aligned, the map on the right */
 .ck-league-split > .ck-team-list {
   flex: none;
   margin: 0;
@@ -131,7 +131,7 @@
   margin-left: 0;
 }
 
-/* round 21 (item 7): Slate opened from a team's view — that team's game outlined (never in a copy: copies render their own cards) */
+/* Slate opened from a team's view — that team's game outlined (never in a copy: copies render their own cards) */
 .ck-slate-card.ck-slate-focus {
   outline: 2px solid var(--ck-accent);
   outline-offset: 1px;

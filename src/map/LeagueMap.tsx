@@ -1,4 +1,4 @@
-// Round 8 (Part 2): the League List's map — where the day's games are played, beside the list (desktop). A static SVG
+// The League List's map — where the day's games are played, beside the list (desktop). A static SVG
 // outline bundled with the app (src/map/basemap.ts, loaded as its own chunk), states faintly shaded by time zone, one
 // dot per game at the feed's arena, labeled with the home team; yellow when either team is on a back-to-back. Never in a
 // copied image (outside the copied nodes, and data-capture-exclude).
@@ -69,7 +69,7 @@ export interface LeagueMapProps {
   games: readonly ScheduleGame[];
   /** The room beside the list (CSS px): the map is as wide as it can be there, at MAP_W : MAP_H. */
   room: { width: number; height: number };
-  /** The hovered game (MapHover.tsx), shared with the list (round 8, Part 3). */
+  /** The hovered game (MapHover.tsx), shared with the list. */
   hover: ValueStore<string>;
 }
 
@@ -130,7 +130,7 @@ function hoverInfo(m: MapGame, lines: TravelLine[]): { place: string; travel: st
   return { place, travel: travel.join(' · ') || 'no back-to-back travel' };
 }
 
-/** "BOS @ DET", each tricode a team link (round 15). */
+/** "BOS @ DET", each tricode a team link. */
 const Teams = ({ game }: { game: MapGame['game'] }) => (
   <>
     <TeamLink teamId={game.awayTeam.teamId}>{teamLabel(game.awayTeam)}</TeamLink> @ <TeamLink teamId={game.homeTeam.teamId}>{teamLabel(game.homeTeam)}</TeamLink>
@@ -161,7 +161,7 @@ export default function LeagueMap({ data, games, room, hover }: LeagueMapProps) 
               title={`${teamLabel(m.game.awayTeam)} @ ${teamLabel(m.game.homeTeam)} · ${m.loc.label}${m.loc.kind === 'edge' ? ' (off this map)' : ''}`}
             >
               <span className="ck-map-pin" aria-hidden="true" />
-              {/* round 15: plain text, click-through (as a link it would take a nearby pin's hover where labels overlap pins) */}
+              {/* Plain text, click-through (as a link it would take a nearby pin's hover where labels overlap pins) */}
               <span className="ck-map-code">{m.loc.kind === 'edge' ? `${teamLabel(m.game.homeTeam)} · ${m.loc.arena.city} ${m.loc.arrow}` : teamLabel(m.game.homeTeam)}</span>
             </div>
           ),

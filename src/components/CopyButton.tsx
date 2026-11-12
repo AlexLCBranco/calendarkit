@@ -20,7 +20,7 @@ export interface CopyButtonProps {
   /** `hover`: shown on hover/focus of the parent only (day cells, game cards). */
   hover?: boolean;
   testId?: string;
-  /** Round 21 (item 7): a visible label after the glyph ("Copy"); the tooltip stays `label`. */
+  /** A visible label after the glyph ("Copy"); the tooltip stays `label`. */
   text?: string;
 }
 

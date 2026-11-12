@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 9): the Cup history — the stored editions are complete (6 groups of 5, 7 knockout games, every group
+// The Cup history — the stored editions are complete (6 groups of 5, 7 knockout games, every group
 // game scored), the summary's counts come from the per-season data, venues come from the stored arenas, and the view
 // shows the summary first, then the picked season (its URL value), with the shared square and the prize line.
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';

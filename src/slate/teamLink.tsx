@@ -1,4 +1,4 @@
-// Round 15: every team name, logo and tricode is a link to that team's Team view. One shared piece for calendarkit's
+// Every team name, logo and tricode is a link to that team's Team view. One shared piece for calendarkit's
 // views and the Slate part: `TeamLink` renders an <a> only under a `TeamLinkContext` provider (calendarkit's
 // CalendarView), else the plain <span> it always was (the gauntlet's Slate, tests without a host).
 //

@@ -23,7 +23,7 @@ export interface CalendarData {
   teamDates: Map<number, Set<string>>;
   /** When the feed was generated (its own `meta.time`, ISO); set by the loader. */
   updatedAt?: string;
-  /** v1.40.0: regulation totals of finished Cup group games (snapshot's `calendarkit.regulation`); set by the loader. */
+  /** Regulation totals of finished Cup group games (snapshot's `calendarkit.regulation`); set by the loader. */
   regulation?: RegulationTotals;
 }
 
@@ -236,7 +236,7 @@ export function markers(g: ScheduleGame): Marker[] {
   return out;
 }
 
-/** NBA Cup rounds (round 12, the Cup schedule): group play, quarterfinals, semifinals, the Final. */
+/** NBA Cup rounds (the Cup schedule): group play, quarterfinals, semifinals, the Final. */
 export type CupRound = 'group' | 'qf' | 'sf' | 'final';
 
 /** A Cup game's round from the feed's own fields; undefined for every other game. "Semifinal" is checked before "final". */
@@ -367,13 +367,13 @@ export interface SeasonLine {
   record?: { wins: number; losses: number };
   /** Win/loss streak with the same rule (a final win after a loss: W1); undefined before the first result or with the record. */
   streak?: { kind: 'W' | 'L'; n: number };
-  /** The game is final and record / streak include it (round 22, item 13; before, every line was "going in"). */
+  /** The game is final and record / streak include it (else the line is "going in"). */
   after?: boolean;
 }
 
 /**
  * A team's regular-season game numbers and its record and streak in each game, counted from the final scores (the Cup
- * Final doesn't count, as in the standings): after the game when it is final, going in when it isn't (round 22).
+ * Final doesn't count, as in the standings): after the game when it is final, going in when it isn't.
  * Both are known up to the first game not yet final, inclusive.
  */
 export type TeamRecord = NonNullable<SeasonLine['record']>;
@@ -402,7 +402,7 @@ export function leagueRecords(data: CalendarData): Map<string, Map<number, TeamR
 const linesCache = new WeakMap<CalendarData, Map<string, Map<number, SeasonLine>>>();
 
 /**
- * Round 9 (Slate streaks): every game's season line for both teams (gameId → teamId → line) — teamSeason for all 30
+ * Every game's season line for both teams (gameId → teamId → line) — teamSeason for all 30
  * teams, so a game's record and streak are as of that game (only the games final before it). Once per data set.
  */
 export function leagueSeasonLines(data: CalendarData): Map<string, Map<number, SeasonLine>> {
@@ -430,7 +430,7 @@ export function teamSeason(data: CalendarData, teamId: number): Map<string, Seas
       out.set(g.gameId, {});
       continue;
     }
-    // round 22 (item 13): a final game's line includes its own result (no one-game lag); a game to come keeps the
+    // A final game's line includes its own result (no one-game lag); a game to come keeps the
     // line going in, which is the team's current record and streak for its next game
     const r = finalScore(g, teamId);
     if (rec && r) rec = { wins: rec.wins + (r.win ? 1 : 0), losses: rec.losses + (r.win ? 0 : 1) };

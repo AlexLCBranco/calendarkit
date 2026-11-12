@@ -1,4 +1,4 @@
-// Round 14 (item 5): the season-series chip and popup in the real browser at 1920 × 950 and 1600 × 1000 — chip text vs
+// The season-series chip and popup in the real browser at 1920 × 950 and 1600 × 1000 — chip text vs
 // the served snapshot (worked out here from the raw feed), the popup on hover inside the window and kept while the
 // pointer moves onto it, a square → that day in the League List with the game highlighted, its ↗ → the game page in
 // a new tab; the chip in the copied Slate image; rows still one line (the row walks in fatigue / mirror specs too).
@@ -81,7 +81,7 @@ for (const size of SIZES) {
       const n = await squares.count();
       expect(`G?/${n}`).toBe((await chip.textContent())!.replace(/\d+\//, '?/'));
       expect(await pop.locator('.ck-series-current').count()).toBe(1);
-      // round 22 (item 12): a square (here the first) is the game page, in a new tab
+      // A square (here the first) is the game page, in a new tab
       const link = squares.first().getByTestId('series-link');
       const [tab] = await Promise.all([context.waitForEvent('page'), link.click()]);
       expect(tab.url()).toMatch(/^https:\/\/hoopsjunkie\.io\/games\/\d{4}-\d{2}-\d{2}\/[a-z]{3}-vs-[a-z]{3}$/);

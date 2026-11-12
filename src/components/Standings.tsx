@@ -1,4 +1,4 @@
-// Standings (round 17; round 18: both conferences side by side): the standings worked out from the schedule already
+// Standings (both conferences side by side): the standings worked out from the schedule already
 // loaded (src/data/standings.ts, computed once per data set) — West and East tables next to each other, in one of four
 // column sets (both tables at once), one sort for both, with the playoff (after 6) and play-in (after 10) lines, clinch
 // markers, and each tied seed’s tiebreakers on hover. Plus the condensed popup the top bar’s "Standings" button opens

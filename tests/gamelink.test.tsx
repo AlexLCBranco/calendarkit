@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-// Game page link (round 4, item 12): hoopsjunkie.io game pages (injury report, win probability, box score). URL
+// Game page link: hoopsjunkie.io game pages (injury report, win probability, box score). URL
 // verified on the live site 2026-10-29 (Alex's Chrome): /games/<NBA ET date>/<away>-vs-<home>, lowercase tricodes —
 // the ET date also for games after midnight (POR @ LAL, ET Oct 27, 03:00 UTC Oct 28: 2026-10-27/por-vs-lal loads,
-// 2026-10-28/por-vs-lal redirects to that day's scores). Round 5: the matchup is an <a> to it (new tab), the URL rule
+// 2026-10-28/por-vs-lal redirects to that day's scores). The matchup is an <a> to it (new tab), the URL rule
 // from the shell (gameLink). Undecided teams: no link.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -60,7 +60,7 @@ describe('widgets: a real <a> to the game page (round 5: the matchup; round 16: 
       expect(a.draggable).toBe(false);
       const icon = name.endsWith('List');
       if (icon) {
-        // round 16: List rows — the Slate's "↗" icon among the tags, never in a copy; the matchup is no link
+        // List rows — the Slate's "↗" icon among the tags, never in a copy; the matchup is no link
         expect(a.textContent!.trim()).toBe('↗');
         expect(a.className).toBe('ck-slate-link');
         expect(a.title).toBe('Open on hoopsjunkie');

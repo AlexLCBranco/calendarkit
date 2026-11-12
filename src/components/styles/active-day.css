@@ -1,4 +1,4 @@
-/* Active day in the lists (round 4): the strip's selected day — League List: its header in the accent and a faint
+/* Active day in the lists: the strip's selected day — League List: its header in the accent and a faint
    accent band with a thin accent bar over its rows; Team List: over that day's row. The band is one of two overlay
    layers (ActiveHighlight.tsx) that crossfade, the header an accent copy of its text over it (::after) that fades in:
    opacity only, so a change never repaints the rows. Lifted while an image is copied. */

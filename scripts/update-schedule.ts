@@ -1,7 +1,7 @@
 // Daily snapshot: download the schedule feed with the shared module's Node helper, check it parses, and save the
 // raw JSON (unchanged, every field) to public/data/schedule.json, which the app reads. The browser cannot fetch
 // cdn.nba.com directly (CORS allows only https://www.nba.com; see PROJECT.md "Probe").
-// v1.40.0: plus `calendarkit.regulation` — regulation-time totals of finished Cup group games, from each game's
+// Plus `calendarkit.regulation` — regulation-time totals of finished Cup group games, from each game's
 // boxscore, fetched once per game (games already in the previous snapshot are carried over; see src/data/regulation.ts).
 // Usage: npx tsx scripts/update-schedule.ts [outFile]
 

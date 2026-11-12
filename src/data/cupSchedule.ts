@@ -1,4 +1,4 @@
-// NBA Cup schedule (round 12): the Cup's nights and each team's Cup games, from the schedule already loaded. Pure: no UI,
+// NBA Cup schedule: the Cup's nights and each team's Cup games, from the schedule already loaded. Pure: no UI,
 // no clock of its own; the Cup view calls it only when its Schedule tab is opened.
 //
 // What the feed gives for knockout games (checked 2026-10-31): gameSubtype "in-season-knockout", gameSubLabel
@@ -61,9 +61,9 @@ export function teamCupGames(data: CalendarData, teamId: number): { played: Sche
   return { played: games.filter((g) => g.status === 'final'), remaining: games.filter((g) => g.status !== 'final') };
 }
 
-// ---------------------------------------------------------------- group play by group and by date (round 18)
+// ---------------------------------------------------------------- group play by group and by date
 //
-// Round 18 (Alex): the rounds are gone as navigation — the feed has no rounds (group games are on shared Cup nights; 16 of
+// The rounds are gone as navigation — the feed has no rounds (group games are on shared Cup nights; 16 of
 // the 60 are one team's Nth group game and the other's (N+1)th), so "Round 1" mixed dates and listed split games twice.
 // The League list now shows group play by group (6 panels of 10 games + the knockout) or by date (the real Cup nights).
 // A team's group game number stays, in the game's tooltip ("CHA's 2nd group game, WAS's 1st") and the Team list's tag.
@@ -149,7 +149,7 @@ export const cupTeamTag = (data: CalendarData, teamId: number) => (g: ScheduleGa
 const fmtNight = (date: string) => dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 
 /**
- * Round 21 (item 7): the Cup bar's stage label for `today` (local date) — "Group play starts Fri, Oct 30", "Group play ·
+ * The Cup bar's stage label for `today` (local date) — "Group play starts Fri, Oct 30", "Group play ·
  * night 2 of 7" on a Cup night, "Group play · next night Fri, Nov 13 (3 of 7)" between, "Quarterfinals · tonight" /
  * "Semifinals · Tue, Dec 8", "Cup complete" after the last night. From the schedule's Cup nights only.
  */

@@ -1,4 +1,4 @@
-// The lists' date picker (round 4): a calendar icon next to the date title opens a month popup (MonthNavigator) —
+// The lists' date picker: a calendar icon next to the date title opens a month popup (MonthNavigator) —
 // ‹ › months, a day jumps there; keyboard: arrows, Enter, Escape (focus back on the icon). Rendered only while open.
 
 import { useEffect, useRef, useState } from 'react';

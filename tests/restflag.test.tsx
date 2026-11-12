@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 22 (item 15): abnormal rest. Rest = the difference of two game dates (ET game dates; tip-off times don't count):
+// Abnormal rest. Rest = the difference of two game dates (ET game dates; tip-off times don't count):
 // B2B = 1, one empty day = 2, two empty days = 3. Gaps of 3+ flag BOTH games (before / after the break). Shown as a teal
 // "4d" badge in the Fatigue component (no width of its own: in a free track) (filled: off the break; outlined: the break follows), its tooltip the exact count.
 

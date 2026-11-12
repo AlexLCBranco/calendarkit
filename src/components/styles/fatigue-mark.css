@@ -42,9 +42,9 @@
   line-height: 0;
   pointer-events: none;
 }
-/* 2-week view (round 6): the away team's plane sits inside the line, in the free band above the letters and just right
+/* 2-week view: the away team's plane sits inside the line, in the free band above the letters and just right
    of them. Over the line it ran into a long time label ("00:00 (+1)") above a group's first game — 42 places over the
-   season. Round 7 (1.5): the home team's plane likewise, mirrored — just left of its letters, above the home score's
+   season. The home team's plane likewise, mirrored — just left of its letters, above the home score's
    digits. Over the corner it overlapped the line above (102 places over the stretches walked) and its own logo's disc
    (276). */
 .ck-week-view[data-weeks='2'] .ck-mline > .ck-mtri .ck-fm-plane {
@@ -82,7 +82,7 @@
   text-decoration: underline 2px #7c4dcc;
   text-underline-offset: 1px;
 }
-/* round 8: the one-day League List's column (910 px before its zoom) is narrower than the legend's one line: two lines */
+/* The one-day League List's column (910 px before its zoom) is narrower than the legend's one line: two lines */
 .ck-league-side .ck-fm-legend {
   height: auto;
   white-space: normal;

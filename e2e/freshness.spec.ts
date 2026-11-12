@@ -20,7 +20,7 @@ test('stamp in the viewer\'s zone (ⓘ\'s tooltip), muted while fresh; orange wi
   const time = await metaTime(page);
   await page.clock.setFixedTime(Date.parse(time) + 2 * H);
   await page.goto('/calendar/');
-  // round 22 (item 9): no text line in the bar — the stamp is in ⓘ's tooltip (and its screen-reader text), ⓘ muted
+  // No text line in the bar — the stamp is in ⓘ's tooltip (and its screen-reader text), ⓘ muted
   const stamp = page.getByTestId('data-updated');
   await expect(stamp).toHaveText(expected(time));
   const info = page.getByTestId('bar-info');
@@ -35,7 +35,7 @@ test('stamp in the viewer\'s zone (ⓘ\'s tooltip), muted while fresh; orange wi
 
   await page.clock.setFixedTime(Date.parse(time) + 37 * H);
   await page.goto('/calendar/');
-  await expect(info).toHaveCSS('color', 'rgb(224, 138, 60)'); // --ck-stale orange (B2B is yellow since round 4)
+  await expect(info).toHaveCSS('color', 'rgb(224, 138, 60)'); // --ck-stale orange (B2B is yellow)
   await info.hover();
   await expect(page.getByTestId('tooltip')).toContainText('daily update may have failed');
 });

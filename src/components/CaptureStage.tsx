@@ -32,7 +32,7 @@ export function CaptureStage({ onReady, width, minHeight, className, children }:
   return createPortal(
     <div className="ck-capture-stage" aria-hidden="true">
       <div ref={ref} className={`ck-root ck-capture${className}`} style={{ width, minHeight }}>
-        {/* round 15: an image has no links — the team names render as the plain text they were */}
+        {/* An image has no links — the team names render as the plain text they were */}
         <TeamLinkContext.Provider value={undefined}>{children}</TeamLinkContext.Provider>
       </div>
     </div>,

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// League → Slate (round 7): desktop only, its own layout next to List | Calendar; the day changes with ← / → only; Team
+// League → Slate: desktop only, its own layout next to List | Calendar; the day changes with ← / → only; Team
 // views show their List while the layout is Slate; the URL carries layout=slate.
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';

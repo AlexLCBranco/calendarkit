@@ -1,4 +1,4 @@
-// Round 21 (item 9): Cup → History on a real layout — the summary and a season's tables and bracket on one screen at
+// Cup → History on a real layout — the summary and a season's tables and bracket on one screen at
 // 1920 × 950 and 1600 × 1000, every season, nothing clipped; the season in the address; no request for the data
 // (it ships with its own chunk).
 

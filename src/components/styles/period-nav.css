@@ -112,7 +112,7 @@
   cursor: default;
 }
 
-/* Date picker icon (lists, round 4): next to the date title, the arrows' size */
+/* Date picker icon (lists): next to the date title, the arrows' size */
 .ck-date-pick {
   flex: none;
   display: grid;

@@ -1,4 +1,4 @@
-// Round 21 (item 1): the Slate's Cup track on a real layout — on a Cup night every Cup game's team row shows its 4
+// The Slate's Cup track on a real layout — on a Cup night every Cup game's team row shows its 4
 // group games (in order, tonight's ringed, "vs"/"@" before the opponent, W/L + margin for played ones) and its group
 // record over its differential; non-Cup cards keep the track empty; the cards don't get taller and stay 2 columns at
 // 1920; every square opens hoopsjunkie in a new tab; the copy has the squares too. Desktop widths.

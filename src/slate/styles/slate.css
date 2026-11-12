@@ -1,4 +1,4 @@
-/* League → Slate (round 7, SlateView.tsx): a day's games as cards, two columns in the lists' 960 px column; the cards
+/* League → Slate (SlateView.tsx): a day's games as cards, two columns in the lists' 960 px column; the cards
    scroll inside the view. */
 .ck-slate {
   display: flex;
@@ -12,16 +12,16 @@
   overflow-y: auto;
   position: relative;
 }
-/* round 14 (item 3): notes hidden — as many tight cards as fit (slateInfoColumns), each exactly its content's width,
+/* Notes hidden — as many tight cards as fit (slateInfoColumns), each exactly its content's width,
    filled left to right, then down, in tip-off order */
 .ck-slate-grid {
-  margin: 0; /* round 9: from the page's left edge, like the League List */
+  margin: 0; /* From the page's left edge, like the League List */
   padding: 8px 0 16px;
   display: grid;
   grid-template-columns: repeat(var(--ck-slate-cols), var(--ck-slate-card-w));
   gap: var(--ck-slate-grid-gap);
 }
-/* Round 9 (Part 3): with the note boxes, the grid fills the widget in 1 or 2 columns (slateColumns) */
+/* With the note boxes, the grid fills the widget in 1 or 2 columns (slateColumns) */
 .ck-slate-grid.ck-slate-wide {
   max-width: none;
   grid-template-columns: repeat(var(--ck-slate-cols), minmax(0, 1fr));
@@ -81,7 +81,7 @@
   line-height: 14px;
   cursor: default;
 }
-/* round 9 (2.3): the game page link, a small "↗" after the time; no underline, a slight brightening on hover */
+/* The game page link, a small "↗" after the time; no underline, a slight brightening on hover */
 .ck-slate-link {
   color: var(--ck-muted);
   font-size: 14px;
@@ -95,7 +95,7 @@
   color: var(--ck-text);
   text-decoration: none;
 }
-/* round 9 (2.2): national TV games — the TV badge's green as an outline (border + inset ring: no layout change) and a
+/* National TV games — the TV badge's green as an outline (border + inset ring: no layout change) and a
    faint tint over the opaque card, so copies keep it on their transparent page */
 .ck-slate-card.ck-slate-tv {
   border-color: var(--ck-tv);
@@ -148,7 +148,7 @@
   text-align: right;
   white-space: nowrap;
 }
-/* streak going in (round 9): the Team List's colours (.ck-streak-w / -l); its own column, so "W2" lines up across cards */
+/* streak going in: the Team List's colours (.ck-streak-w / -l); its own column, so "W2" lines up across cards */
 .ck-slate-streak {
   font-size: 12px;
   font-weight: 600;
@@ -167,7 +167,7 @@
   color: var(--ck-text);
   font-weight: 700;
 }
-/* round 14 (item 4): the moneyline (decimal), muted, after the score; reserved width (layout.ts) so it never shifts */
+/* The moneyline (decimal), muted, after the score; reserved width (layout.ts) so it never shifts */
 .ck-slate-odds {
   font-size: 12px;
   font-weight: 600;
@@ -185,7 +185,7 @@
   padding: 0;
   background: transparent;
 }
-/* round 22 (item 14): the copy's info block, drawn larger inside its card (slateCopyZoom; the note box gives the room) */
+/* The copy's info block, drawn larger inside its card (slateCopyZoom; the note box gives the room) */
 .ck-slate-copy .ck-slate-info {
   zoom: var(--ck-copy-zoom, 1);
 }
@@ -197,7 +197,7 @@
   align-items: stretch;
 }
 
-/* the notes toolbar above the cards (round 9): Switch all, Hide all notes, Export / Import; never in a copy */
+/* the notes toolbar above the cards: Switch all, Hide all notes, Export / Import; never in a copy */
 .ck-slate-tools {
   display: flex;
   align-items: center;
@@ -251,13 +251,13 @@
 .ck-slate-tools-msg.ck-error {
   color: var(--ck-playoffs);
 }
-/* Round 10: the Slate's part in a host page (the gauntlet's Slate widget, slate.html): the cards on nothing — no page
+/* The Slate's part in a host page (the gauntlet's Slate widget, slate.html): the cards on nothing — no page
    background behind or between them, only the cards are opaque (as in the copies) */
 .ck-root.ck-slate-widget {
   background: none;
 }
 
-/* Round 14 (item 5): the season-series chip ("G2/4") and its popup (series.tsx). The popup is fixed and clamped into
+/* The season-series chip ("G2/4") and its popup (series.tsx). The popup is fixed and clamped into
    the window like the tooltip, above everything, never in a copy (data-capture-exclude). */
 .ck-series {
   display: inline-block;
@@ -336,7 +336,7 @@
   border-radius: 5px;
   cursor: pointer;
 }
-/* round 22: no game page (undecided teams / no host link): plain, not clickable-looking */
+/* No game page (undecided teams / no host link): plain, not clickable-looking */
 .ck-series-plain {
   cursor: default;
 }
@@ -358,7 +358,7 @@ a.ck-series-pick:hover {
   opacity: 0.6;
 }
 
-/* round 21 (item 8): the streak popup's rows (its box is the series popup's) */
+/* The streak popup's rows (its box is the series popup's) */
 .ck-streak-rows {
   display: grid;
   grid-template-columns: auto 18px auto auto;
@@ -409,7 +409,7 @@ a.ck-streak-game:hover {
   cursor: default;
 }
 
-/* round 21 (item 1): the Cup track — 4 mini squares (two lines: "vs MEM" over "W +12"), then the group record over the
+/* The Cup track — 4 mini squares (two lines: "vs MEM" over "W +12"), then the group record over the
    differential; the card's height is unchanged (the squares are 22 px, inside the team row) */
 .ck-slate-cup {
   display: flex;
@@ -459,7 +459,7 @@ a.ck-streak-game:hover {
   color: var(--ck-playoffs);
 }
 
-/* round 21 (item 2): the IN / OUT tag after the squares; an eliminated team's row slightly dimmed */
+/* The IN / OUT tag after the squares; an eliminated team's row slightly dimmed */
 .ck-slate-cup-fate {
   width: 20px;
   display: flex;
@@ -485,7 +485,7 @@ a.ck-streak-game:hover {
   opacity: 0.6;
 }
 
-/* round 21 (item 11): the stakes chips (the 3-in-4 chip's look), two lines at most in the row */
+/* The stakes chips (the 3-in-4 chip's look), two lines at most in the row */
 .ck-slate-cup-chips {
   width: 68px;
   display: flex;
@@ -515,7 +515,7 @@ a.ck-streak-game:hover {
   color: #ffb3ae;
 }
 
-/* round 21 (items 4, 10): the one venue marker (VenueMarker.tsx): HOST on the host team, a high-contrast NEUTRAL badge with the arena */
+/* The one venue marker (VenueMarker.tsx): HOST on the host team, a high-contrast NEUTRAL badge with the arena */
 .ck-venue-host {
   padding: 0 4px;
   border-radius: 4px;
@@ -544,7 +544,7 @@ a.ck-streak-game:hover {
   font-size: 10px;
 }
 
-/* round 21 (item 13): rest / travel before a knockout game ("2d rest · ✈ 1,140 mi, ET→CT"; details on hover) */
+/* Rest / travel before a knockout game ("2d rest · ✈ 1,140 mi, ET→CT"; details on hover) */
 .ck-ko-prep {
   color: var(--ck-muted);
   font-size: 10px;

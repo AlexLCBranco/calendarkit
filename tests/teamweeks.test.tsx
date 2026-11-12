@@ -28,7 +28,7 @@ const open = (initial: object = {}, size = WIDE) => render(<CalendarView data={d
 describe('control + URL', () => {
   it('"1 week | 2 weeks | Month" only in Team → Calendar; Month by default; kept across teams and List ↔ Calendar', () => {
     open();
-    expect(within(screen.getByRole('tablist', { name: 'Span' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['1w', '2w', 'Mo']); // round 22: short labels under 1560 px (names: '1 week', '2 weeks', 'Month')
+    expect(within(screen.getByRole('tablist', { name: 'Span' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['1w', '2w', 'Mo']); // Short labels under 1560 px (names: '1 week', '2 weeks', 'Month')
     expect(spanTab('Month').getAttribute('aria-selected')).toBe('true');
     expect(document.querySelector('.ck-team-month')!.getAttribute('data-span')).toBe('month');
     fireEvent.click(spanTab('2 weeks'));
@@ -124,7 +124,7 @@ describe('start week, navigation, Today, Month ↔ weeks', () => {
 });
 
 describe('cells and bars', () => {
-  // round 14 (item 2): one test per team and span (was one test for all four: ~6 s under a busy full suite, past
+  // One test per team and span (was one test for all four: ~6 s under a busy full suite, past
   // Vitest's 5 s); the arrows found by their label, not getByRole (which reads every element's role and name)
   const arrow = (dir: 'Previous' | 'Next') => document.querySelector<HTMLButtonElement>(`button[aria-label^="${dir}"]`)!;
   it.each([['BOS', 1, TEAM.BOS], ['BOS', 2, TEAM.BOS], ['LAL', 1, TEAM.LAL], ['LAL', 2, TEAM.LAL]] as const)('every week of the season, %s, %i week(s): every game in its cell, nothing else', (_, span, teamId) => {

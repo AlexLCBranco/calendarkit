@@ -1,4 +1,4 @@
-// Round 8 (3.1, 3.4): the game hovered in the League List or on its map, shared by both: a value store ("list:<id>" /
+// The game hovered in the League List or on its map, shared by both: a value store ("list:<id>" /
 // "map:<id>", "" for none). The list side reads it here without re-rendering the list: the hovered row gets a class
 // (an outline — no layout shift), and when the hover comes from the map, the row is scrolled into view if it's off
 // screen on a busy night. The map (src/map/LeagueMap.tsx) reads the same store.

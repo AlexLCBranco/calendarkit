@@ -1,4 +1,4 @@
-// Slate copy layout (round 7): the column count of the copied image follows the page's shape, not the screen's two
+// Slate copy layout: the column count of the copied image follows the page's shape, not the screen's two
 // columns; the pixel ratio keeps it sharp at 2× its fitted size.
 import { describe, expect, it } from 'vitest';
 import { fitScale, slateCopyColumns, slateImageSize, slatePixelRatio, SLATE_COPY_GAP, SLATE_PAGE } from '../src/components/slate';
@@ -30,7 +30,7 @@ describe('slate copy layout', () => {
     expect(table).toEqual([[1, 1], [3, 1], [5, 1], [12, 2], [15, 2]]);
     // team names are 16 px on the card: fitted to the page, at least 12 px up to the season's busiest night (15 games)
     for (const n of [1, 5, 12, 15]) expect(16 * fitScale(slateImageSize(n, slateCopyColumns(n, wide), wide), SLATE_PAGE), `${n} games`).toBeGreaterThanOrEqual(12);
-    // with round 7's 120 px gap they would not be
+    // with a 120 px gap they would not be
     expect(16 * fitScale(slateImageSize(15, slateCopyColumns(15, wide, SLATE_PAGE, 120), wide, 120), SLATE_PAGE)).toBeLessThan(12);
   });
 

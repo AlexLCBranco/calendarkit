@@ -56,7 +56,7 @@ body {
   font-variant-numeric: tabular-nums;
   cursor: default;
 }
-/* round 10: the old address's page when its notes could not be moved (HandoffFailed.tsx) */
+/* The old address's page when its notes could not be moved (HandoffFailed.tsx) */
 .handoff {
   max-width: 640px;
   margin: 64px auto;

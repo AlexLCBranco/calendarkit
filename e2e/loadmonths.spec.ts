@@ -1,4 +1,4 @@
-// Round 21 (item 3): on a real layout, "Load earlier games" adds the month above without moving the row on screen,
+// On a real layout, "Load earlier games" adds the month above without moving the row on screen,
 // "Load more games" adds the month below without moving it either, and only the months asked for are rendered; the map
 // keeps following the hovered row. Desktop widths.
 

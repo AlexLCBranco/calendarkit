@@ -15,10 +15,10 @@ const ALL_TEAMS = { id: ALL, tricode: '', city: 'All', name: 'teams' } as Team;
  * Team picker with logos: a button (logo + name; tricode on phones) opening a listbox grouped by conference and
  * division. Keyboard: Enter/Space/↓ open; arrows move (←/→ jump a division), Home/End, a letter jumps to the next
  * team starting with it, Enter selects, Escape closes; focus returns to the button.
- * Without a team (the Cup Team list, round 12: nothing picked yet) the button reads "Pick a team" and has no logo.
+ * Without a team (the Cup Team list: nothing picked yet) the button reads "Pick a team" and has no logo.
  */
 /**
- * Round 21 (item 7): `allTeams` — the Schedule's scope picker: no team = "All teams" (the league views), a team = its
+ * `allTeams` — the Schedule's scope picker: no team = "All teams" (the league views), a team = its
  * tricode with a "×" beside the button that goes back to All teams (`onClear`); the list starts with an "All teams"
  * option. Fixed width, so the date block after it never moves.
  */
@@ -168,7 +168,7 @@ export function TeamPicker({ teamId, onChange, compact = false, allTeams = false
                   onClick={() => pick(t.id)}
                   // only a pointer that really moves takes the highlight: when the list opens (or scrolls) under a
                   // resting pointer, Chrome sends that option a mouseover/mouseenter with no movement, which used to
-                  // overwrite a keyboard choice made just before (round 6: the flaky "Miami instead of Orlando")
+                  // overwrite a keyboard choice made just before (the flaky "Miami instead of Orlando")
                   onMouseMove={(e) => (e.movementX || e.movementY) && setActive(t.id)}
                 >
                   <TeamLogo team={{ teamId: t.id } as ScheduleGame['homeTeam']} link={false} />

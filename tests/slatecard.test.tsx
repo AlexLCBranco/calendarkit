@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 9, Part 2: Slate cards — the streak after each team's record (as of that game: through it once final, round 22), national TV games
+// Slate cards — the streak after each team's record (as of that game: through it once final), national TV games
 // outlined and tinted green (only they), and the hoopsjunkie link as a "↗" icon after the time (team names no link).
 // Expected streaks are worked out here from the scores, independently of model.ts.
 
@@ -21,7 +21,7 @@ const cards = () => [...document.querySelectorAll<HTMLElement>('[data-testid="sl
 
 /**
  * A team's streak on `g`'s card: the run of equal results over its regular-season games final up to `g` — `g` itself
- * included once it is final (round 22, item 13: no one-game lag), the streak going in while it isn't.
+ * included once it is final (no one-game lag), the streak going in while it isn't.
  */
 function streakInto(games: ScheduleGame[], teamId: number, g: ScheduleGame): string {
   if (g.gameType !== 'regular') return '';
@@ -67,7 +67,7 @@ describe('streak on the card (through the game once final, going in before)', ()
           expect(s.textContent, `${date} ${side}`).toBe(want);
           expect(s.classList.contains('ck-streak-w'), `${date} ${side} green`).toBe(want.startsWith('W'));
           expect(s.classList.contains('ck-streak-l'), `${date} ${side} red`).toBe(want.startsWith('L'));
-          // round 21 (item 8): the text is the aria-label; hovering opens the streak popup (data-streak), not a tooltip
+          // The text is the aria-label; hovering opens the streak popup (data-streak), not a tooltip
           if (want) expect(s.dataset.streak).toBe(`${t.teamId}|${g.gameId}`);
           if (want) expect(s.getAttribute('aria-label')).toMatch(new RegExp(`^${t.teamTricode}: Game \\d+, record \\d+-\\d+ ${g.status === 'final' ? 'after it' : 'going in'}, on a ${want.slice(1)}-game ${want[0] === 'W' ? 'winning' : 'losing'} streak$`));
           else expect(s.dataset.streak).toBeUndefined();
@@ -157,7 +157,7 @@ describe('hoopsjunkie link as an icon', () => {
       expect(a.getAttribute('title')).toBe('Open on hoopsjunkie');
       expect(a.getAttribute('target')).toBe('_blank');
       expect(a.getAttribute('data-capture-exclude')).toBe('true');
-      // round 14: in the strip, first in the chip row right under the start time / "Final"
+      // In the strip, first in the chip row right under the start time / "Final"
       expect(a.closest('.ck-slate-strip')).toBeTruthy();
       expect(a.parentElement!.firstElementChild).toBe(a);
       expect(a.parentElement!.previousElementSibling!.matches('[data-testid="tipoff"], [data-testid="slate-status"]')).toBe(true);

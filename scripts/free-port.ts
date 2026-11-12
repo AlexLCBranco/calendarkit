@@ -1,4 +1,4 @@
-// v1.40.0: a free TCP port for the local test servers (e2e, perf), so they never collide with — or reuse — another
+// A free TCP port for the local test servers (e2e, perf), so they never collide with — or reuse — another
 // session's leftover server on a fixed port (4180 / 4190 before).
 
 import { createServer } from 'node:net';

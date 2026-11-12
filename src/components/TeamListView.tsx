@@ -21,7 +21,7 @@ export interface TeamListViewProps {
   showRest?: boolean;
   /** Selection image: only these games (no rest rows); a B2B bracket only where both nights are in. */
   only?: ReadonlySet<string>;
-  /** Round 14 (item 5): the season-series chip on each row (default); off in the Cup schedule. */
+  /** The season-series chip on each row (default); off in the Cup schedule. */
   series?: boolean;
   size: WidgetSize;
   now: number;
@@ -41,28 +41,28 @@ export interface TeamListViewProps {
   /** Local calendar date shown in blue in the strip. */
   today?: string;
   /**
-   * Round 9: only this month's rows ("YYYY-MM"); undefined = the whole season. Numbers, records, streaks and B2B nights
+   * Only this month's rows ("YYYY-MM"); undefined = the whole season. Numbers, records, streaks and B2B nights
    * still come from the whole season; a B2B whose other night is in another month keeps its marks but no bracket.
    */
   month?: string;
   /**
-   * Round 21 (item 3): the last month shown (default `month`): "Load earlier games" / "Load more games" add a month
+   * The last month shown (default `month`): "Load earlier games" / "Load more games" add a month
    * before `month` / after it, one at a time, a divider row between months.
    */
   monthTo?: string;
   /** The buttons asked for a range of months (`from`–`to`); none: no buttons. */
   onLoadMonths?: (from: string, to: string) => void;
-  /** Round 15: open at this row (a team link) instead of the next game. */
+  /** Open at this row (a team link) instead of the next game. */
   openAt?: TeamListOpen;
   /** The strip, the picker or "Today" asked for a row in another month: the host shows that month (then the row is put at the top). */
   onMonthChange?: (month: string) => void;
   /** Mark the next game not over (accent border; default). The Cup Team list's "Played" section has none to mark. */
   markNext?: boolean;
-  /** Cup schedule (round 12): the Cup tag's text per game ("Group play · West A"). */
+  /** Cup schedule: the Cup tag's text per game ("Group play · West A"). */
   cupTag?: (g: ScheduleGame) => string | undefined;
 }
 
-/** Round 15: a row asked for by a team link (put at the top once, on the render that brings it). */
+/** A row asked for by a team link (put at the top once, on the render that brings it). */
 export interface TeamListOpen {
   date: string;
   /** set by the list once it has scrolled there (a remount or a later change of rows doesn't go back to it) */
@@ -87,7 +87,7 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
 /**
  * One team's games in order, one row each ("BOS vs CHI", both logos). Opens scrolled to the next game not over
  * (marked); the earlier games are above it. Back-to-back nights are bracketed on the left.
- * v1.40.0: memo — the date picker's open state lives in CalendarView, and each open / close redrew the whole month
+ * memo — the date picker's open state lives in CalendarView, and each open / close redrew the whole month
  * (tests/teamlist-rerender.test.tsx).
  */
 export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, monthTo, onLoadMonths, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
@@ -125,11 +125,11 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     const list = el?.querySelector<HTMLElement>('.ck-daylist');
     if (!el || !list) return;
     const rows = [...list.querySelectorAll<HTMLElement>(':scope > [data-row-date]')];
-    // round 21 (item 3): from the scroller's own top (a "Load earlier games" button or "Season start" sits above the rows)
+    // From the scroller's own top (a "Load earlier games" button or "Season start" sits above the rows)
     tops.current = rows.map((r) => ({ top: scrollPos(el, r), date: r.dataset.rowDate! }));
     // room after the last row so every row can reach the top (a strip day click, ‹ ›), as in the League List; written
     // straight to the spacer, no render
-    // (round 21: less whatever sits between the last row and the spacer — "Load more games" / "End of schedule" — so the
+    // (less whatever sits between the last row and the spacer — "Load more games" / "End of schedule" — so the
     // last row still reaches the top, the button under it, when scrolled to the bottom)
     const lastRow = rows.at(-1);
     if (tail.current) {
@@ -161,7 +161,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
   // A row in another month: the host switches months first, then the layout effect below puts it at the top.
   const pending = useRef<{ next: true } | { date: string }>(undefined);
   const otherMonth = (date: string) => !!month && !!onMonthChange && !inRange(monthOf(date));
-  // Round 21 (item 3): a month added above or below keeps the row on screen where it was (the row at the top and how far
+  // A month added above or below keeps the row on screen where it was (the row at the top and how far
   // into it the list was scrolled, put back after the new rows are laid out)
   const anchor = useRef<{ date: string; at: number }>(undefined);
   /** A row's top on screen, relative to the scroller's top (what must not change). */
@@ -246,7 +246,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     } else scrollTo(nextTop() ?? 0);
   }, [rows, openAt]);
   // rows change size after the first layout (the font arriving, another width): measure again whenever the list does;
-  // and when the scroller does (round 9: the week strip mounts above it after the first render, so the room after the
+  // and when the scroller does (the week strip mounts above it after the first render, so the room after the
   // last row, sized from the scroller's height, was short and a month's last row couldn't reach the top)
   useLayoutEffect(() => {
     const list = scroller.current?.querySelector('.ck-daylist');
@@ -371,7 +371,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
 });
 
 /**
- * The scrollTop that puts `row` at the scroller's top: its place in the list (offsetTop, as before round 21) plus where
+ * The scrollTop that puts `row` at the scroller's top: its place in the list (offsetTop) plus where
  * the list starts inside the scroller (below "Load earlier games" / "Season start").
  */
 const scrollPos = (el: HTMLElement, row: HTMLElement) => {

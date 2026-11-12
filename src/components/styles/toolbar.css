@@ -1,12 +1,12 @@
 /* Top bar: title, League | Team, List | Calendar, team picker, period navigation, weeks, TV filter, note — one row
    on desktop; wraps (two rows on phones), never wider than the widget. */
-/* Round 21 (item 7): two rows — row 1 global (history, destinations | notes, Quick standings, Copy), row 2 the
+/* Two rows — row 1 global (history, destinations | notes, Quick standings, Copy), row 2 the
    destination's (Schedule: scope picker, date block, views | options). Every row piece has a fixed width up to the
    views, so nothing moves between views; the options sit on the right. */
 .ck-toolbar {
   display: flex;
   flex-direction: column;
-  /* round 21: 6 px between the rows and 8 px under the bar (was one row, 12 px under), so the Cup views still fit */
+  /* 6 px between the rows and 8 px under the bar (was one row, 12 px under), so the Cup views still fit */
   gap: 6px;
   margin-bottom: 8px;
   min-width: 0;
@@ -65,7 +65,7 @@
   cursor: pointer;
   white-space: nowrap;
 }
-/* round 21: each tab is as wide as its bold (selected) text, so selecting one never shifts its neighbours */
+/* Each tab is as wide as its bold (selected) text, so selecting one never shifts its neighbours */
 .ck-tab {
   display: inline-flex;
   flex-direction: column;
@@ -160,7 +160,7 @@
   gap: 4px;
 }
 
-/* One button style (round 21): Quick standings, Copy, Today, the picker — 36 px tall, 8 px corners */
+/* One button style: Quick standings, Copy, Today, the picker — 36 px tall, 8 px corners */
 .ck-button,
 .ck-st-button {
   height: 36px;
@@ -181,7 +181,7 @@
 .ck-st-button:hover {
   border-color: var(--ck-accent);
 }
-/* round 22 (item 12): a disabled button looks it — no pointer (e.g. the simulator's Reset with nothing picked) */
+/* A disabled button looks it — no pointer (e.g. the simulator's Reset with nothing picked) */
 .ck-button:disabled {
   cursor: default;
   opacity: 0.5;
@@ -234,7 +234,7 @@
   width: auto;
 }
 
-/* round 21 (item 6): page history ← → — long arrows in one joined, square-cornered pill at the far left; the date
+/* Page history ← → — long arrows in one joined, square-cornered pill at the far left; the date
    block's ‹ › (a day) are separate round-cornered buttons, so the two never look alike */
 .ck-hist {
   display: inline-flex;
@@ -269,7 +269,7 @@
   cursor: default;
 }
 
-/* Round 22 (item 9): one row, ~44 px (was two rows, 78 px): left — page history + destinations; centre — the
+/* One row, ~44 px (was two rows, 78 px): left — page history + destinations; centre — the
    destination's control (Schedule: the date block); right — views, scope picker, options, TV chip, ⓘ, Quick standings and
    Copy as icon buttons. Controls 32 px tall (were 36). A row too narrow for all of it wraps its right part under (the
    window's width decides; at 1920 one row). Hidden while a list is scrolled down: .ck-bar-hidden (useAutoHideBar). */
@@ -426,7 +426,7 @@
   padding: 0 8px 0 6px;
 }
 /* Schedule: the right group has one width in every view (its widest, the Team Calendar's), so the date block in the
-   centre and List · Calendar · Slate never move between views (round 21's rule); ⓘ, Quick standings and Copy keep the
+   centre and List · Calendar · Slate never move between views; ⓘ, Quick standings and Copy keep the
    right end */
 .ck-root:not(.ck-compact) .ck-bar1[data-destination='schedule'] .ck-bar-right {
   width: 760px;

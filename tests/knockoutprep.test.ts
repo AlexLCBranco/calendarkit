@@ -1,4 +1,4 @@
-// Round 21 (item 13): rest and travel before a knockout game — days off since the previous game, the road team's trip
+// Rest and travel before a knockout game — days off since the previous game, the road team's trip
 // from that game's arena (miles, time-zone change), the host none; a game without a date: "TBD".
 import { describe, expect, it } from 'vitest';
 import { prepFor } from '../src/data/knockout';

@@ -1,4 +1,4 @@
-// Round 14 (item 6): Nov 3, 2026 (no NBA game) in the real browser — reached by the top bar's →, the arrow key, the day
+// Nov 3, 2026 (no NBA game) in the real browser — reached by the top bar's →, the arrow key, the day
 // strip and the date picker, in the League List and the Slate; "No games on …" shown, nothing else; the week view shows
 // it as an empty day; the season's first and last days stop the arrows. The served snapshot decides which days are
 // game-less (read here from the raw feed).

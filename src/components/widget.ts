@@ -18,7 +18,7 @@ export const isCompact = (size: WidgetSize) => size.width < COMPACT_WIDTH;
 /** List layouts: content column width cap (centered); calendars use the full width. */
 export const LIST_MAX_WIDTH = 960;
 /**
- * League List rows on desktop (round 8, 1.5): one day at a time, bigger, left-aligned, the map beside them. The whole
+ * League List rows on desktop: one day at a time, bigger, left-aligned, the map beside them. The whole
  * list (strip, day header, rows) is drawn at a CSS zoom of `font ÷ 14` (14 px = the rows' base font everywhere else),
  * so every per-row part grows together. Tune here:
  * - LEAGUE_FONT_MIN / _MAX: the rows' base font (px) at a widget LEAGUE_ZOOM_FROM / _TO wide (1280 / 1920 windows

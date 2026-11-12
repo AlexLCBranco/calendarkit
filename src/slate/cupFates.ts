@@ -1,4 +1,4 @@
-// Round 21 (item 2): the real Cup's IN / OUT for a view, worked out after the view is on screen (an idle moment, at
+// The real Cup's IN / OUT for a view, worked out after the view is on screen (an idle moment, at
 // most a few hundred ms late in group play) and cached per data set: the first render never waits for it.
 import { useEffect, useState } from 'react';
 import { cupFatesNow, cupFatesOf, type Decided } from '../data/cupDecide';
@@ -21,7 +21,7 @@ export function useCupFates(data: CalendarData, enabled: boolean): Decided | und
   return enabled ? fates : undefined;
 }
 
-/** Round 21 (item 11): tonight's stakes chips for `date`, the same way (idle, cached). */
+/** Tonight's stakes chips for `date`, the same way (idle, cached). */
 export function useCupStakes(data: CalendarData, date: string, enabled: boolean): Map<number, StakeChip[]> | undefined {
   const [chips, setChips] = useState(() => cupStakesNow(data, date));
   useEffect(() => {

@@ -1,4 +1,4 @@
-// Standings (round 17): src/data/standings.ts against NBA.com's own standings for one date, then targeted tie-break,
+// Standings: src/data/standings.ts against NBA.com's own standings for one date, then targeted tie-break,
 // split and schedule cases on synthetic games.
 // Fixture: tests/fixtures/standings-feed-2026-11-05.json = the live schedule feed fetched 2026-11-05 (regular-season +
 // Cup final games, through the Nov 4 games); tests/fixtures/nba-standings-2026-11-05.json = NBA's standings at the same

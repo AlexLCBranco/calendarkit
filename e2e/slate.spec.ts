@@ -1,4 +1,4 @@
-// Slate view (round 7, part 3): a day of games as cards in two columns, the day changed only by ← / → (top bar and
+// Slate view: a day of games as cards in two columns, the day changed only by ← / → (top bar and
 // keyboard), opening on today. Its copy: a transparent PNG where only the cards are opaque, SLATE_COPY_GAP apart, in a
 // column count that suits the page (1920 × 911 here), sharp at 2× its fitted size. Desktop widths.
 
@@ -52,7 +52,7 @@ test('columns of cards (round 9: 2 at 1920, 1 at 1280 — notes.spec.ts); every 
   await openSlate(page, '2026-11-15');
   const want = (await snapshot(page))['2026-11-15']!.map((g) => g.gameId);
   expect((await ids(page)).sort()).toEqual([...want].sort());
-  // round 9: two columns at 1920, one at 1280 (the note box needs 300 px); cards of equal width, none outside the view
+  // Two columns at 1920, one at 1280 (the note box needs 300 px); cards of equal width, none outside the view
   const boxes = await page.locator('[data-testid="slate"] .ck-slate-card').evaluateAll((cs) => cs.map((c) => c.getBoundingClientRect().toJSON() as DOMRect));
   expect(new Set(boxes.map((b) => Math.round(b.left))).size).toBe(page.viewportSize()!.width >= 1920 ? 2 : 1);
   expect(new Set(boxes.map((b) => Math.round(b.width))).size).toBe(1);
@@ -172,10 +172,10 @@ test('copy: 1, 5, 12 and 15 games — transparent around the cards, page-shaped,
     expect(r.ratio, 'pixels per CSS px ≥ 2 × the fitted scale').toBeGreaterThanOrEqual(2 * s);
     // page-shaped: no other column count would show the cards larger
     const [cw, ch] = [r.stage.cards[0]!.w, Math.max(...r.stage.cards.map((k) => k.h))];
-    // the gap between cards: side by side, or (one column) one under the other — round 22: was the x step only, which in
+    // the gap between cards: side by side, or (one column) one under the other — was the x step only, which in
     // one column came out as −card width and let every comparison pass
     const gap = r.stage.cards.length < 2 ? r.stage.cards[0]!.x * 2 : r.stage.cols > 1 ? r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw : r.stage.cards[1]!.y - r.stage.cards[0]!.y - r.stage.cards[0]!.h;
-    // round 22 (item 14): the copy's zoomed cards have fractional heights while the image is whole pixels, so the shown
+    // The copy's zoomed cards have fractional heights while the image is whole pixels, so the shown
     // layout is measured the same way as the alternatives
     const fitOf = (c: number) => fit({ width: c * (cw + gap), height: Math.ceil(n / c) * (ch + gap) });
     const shown = fitOf(r.stage.cols);
@@ -210,7 +210,7 @@ test('marquee in the Slate: 3 selected games copy by the same rule as the whole 
   const r = await copySlate(page, 'copy-selection', 'slate-selection-3');
   expect(r.stage.cards).toHaveLength(3);
   // the same rule as the whole day (largest cards on the page; Alex, 2026-10-30): no other column count shows them larger
-  // (round 7's narrow cards came out 2 + 1; round 9's wide cards with their note boxes come out one column)
+  // (narrow cards would come out 2 + 1; the wide cards with their note boxes come out one column)
   const [cw, ch] = [r.stage.cards[0]!.w, Math.max(...r.stage.cards.map((k) => k.h))];
   const gap = r.stage.cards.length > 1 ? Math.max(r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw, r.stage.cards[1]!.y - r.stage.cards[0]!.y - ch) : 0;
   for (let c = 1; c <= 3; c++) expect(fit({ width: c * (cw + gap), height: Math.ceil(3 / c) * (ch + gap) }), `${c} columns would be no larger`).toBeLessThanOrEqual(fit(r.stage) + 1e-6);

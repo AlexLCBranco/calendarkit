@@ -1,4 +1,4 @@
-// Round 9: the Team List shows one calendar month. Tests that check every row of a season walk its months through the
+// The Team List shows one calendar month. Tests that check every row of a season walk its months through the
 // real UI — desktop/tablet: the date picker (its ‹ › months, then the month's first day); phones: the top bar's ‹ ›.
 
 import { fireEvent, screen, within } from '@testing-library/react';
@@ -23,7 +23,7 @@ function monthFromTitle(text: string): string {
 export const shownMonth = () => monthFromTitle(screen.getByTestId('team-month').textContent!);
 
 /**
- * The one button labelled `label` under `root`. Round 14 (item 2): a direct selector, not Testing Library's
+ * The one button labelled `label` under `root`. A direct selector, not Testing Library's
  * getByRole — that computes the role and accessible name of every element in the document (13–21 ms per call over a
  * Team List month, whose rows each carry a copy button), and a season walk made ~5 of them per month: the main cost of
  * rest.test.tsx, which went past Vitest's 5 s under the full suite. The date picker's own tests check roles and names.

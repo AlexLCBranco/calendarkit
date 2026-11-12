@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Date picker (round 4, item 9): a calendar icon button next to the date title in the League List and the Team List
+// Date picker: a calendar icon button next to the date title in the League List and the Team List
 // opens a month popup (MonthNavigator): ‹ › months, a date jumps there. League List: game count per day (TV filter);
 // Team List: game days marked with the opponent, a day without a game goes to the next game. Keyboard: arrows move
 // between days (across months), Enter picks, Escape closes (focus back on the icon). Rendered only while open.
@@ -27,7 +27,7 @@ describe('League List', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     const icon = screen.getByRole('button', { name: 'Pick a date' });
     expect(icon.getAttribute('aria-expanded')).toBe('false');
-    // round 21: ‹ title › · calendar · Today
+    // ‹ title › · calendar · Today
     expect(screen.getByTestId('day-title').nextElementSibling!.getAttribute('aria-label')).toBe('Next day');
     expect(screen.getByTestId('day-title').nextElementSibling!.nextElementSibling).toBe(icon);
     expect(icon.nextElementSibling).toBe(screen.getByTestId('today'));
@@ -37,7 +37,7 @@ describe('League List', () => {
     for (const c of popup().querySelectorAll<HTMLButtonElement>('[data-date]')) {
       const n = data.byDate.get(c.dataset.date!)?.length ?? 0;
       expect(c.querySelector('.ck-count')?.textContent ?? '', c.dataset.date).toBe(n ? String(n) : '');
-      // round 14, item 6: every day of the season can be picked (a game-less one shows "No games")
+      // Every day of the season can be picked (a game-less one shows "No games")
       const d = c.dataset.date!;
       expect(c.disabled, d).toBe(d < data.dates[0]! || d > data.dates.at(-1)!);
     }
@@ -91,9 +91,9 @@ describe('Team List', () => {
     fakeLayout();
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
     const all = teamGames(data, LAL);
-    // round 9: the list holds November's rows (the month of the next game); these picks stay in it
+    // The list holds November's rows (the month of the next game); these picks stay in it
     const games = all.filter((g) => g.dateEt.startsWith('2026-11'));
-    // round 21: ‹ title › · calendar · Today, as in every view (‹ › = previous / next game)
+    // ‹ title › · calendar · Today, as in every view (‹ › = previous / next game)
     expect(screen.getByTestId('team-day-title').nextElementSibling!.getAttribute('aria-label')).toBe('Next game');
     expect(screen.getByTestId('team-day-title').nextElementSibling!.nextElementSibling).toBe(screen.getByRole('button', { name: 'Pick a date' }));
     open();

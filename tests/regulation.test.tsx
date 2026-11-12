@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// v1.40.0: Cup tiebreaker 3 (points scored) leaves overtime points out. Regulation totals from a real boxscore of a
+// Cup tiebreaker 3 (points scored) leaves overtime points out. Regulation totals from a real boxscore of a
 // game that went to OT (tests/fixtures/boxscore-0022600110-ot.json: NOP 135 @ DEN 141, Final/OT, 126-126 after four
 // periods; saved 2026-11-05 from cdn.nba.com, trimmed to the fields used), the snapshot job's fetch step, the loader,
 // the standings and the rules panel.

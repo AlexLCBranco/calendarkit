@@ -1,4 +1,4 @@
-/* Compact week strip (lists, round 4): no boxes; a small weekday + month over the day number, the count / opponent
+/* Compact week strip (lists): no boxes; a small weekday + month over the day number, the count / opponent
    under it; the selected day in a filled pill, today's number in blue; ‹ › on the sides. ~44 px tall (the old boxed
    strip was 61 px + 12 px margin). */
 .ck-strip {

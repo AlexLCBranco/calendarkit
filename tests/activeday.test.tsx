@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Active day in the lists (round 4, item 10): the day selected in the strip is highlighted — League List: that day's
+// Active day in the lists: the day selected in the strip is highlighted — League List: that day's
 // section (header in the accent, a thin left bar and a faint tint on its rows), Team List: that day's row — by a class
 // on the old and the new day only, written when the active day changes (no day section or row re-renders). Never in
 // a copied image: the class is lifted while an image is taken.
@@ -33,11 +33,11 @@ function countTipoffs() {
 }
 
 describe('League List', () => {
-  // round 8: one day at a time — nothing to tell apart, so the strip-day highlight is gone (1.3)
+  // One day at a time — nothing to tell apart, so the strip-day highlight is gone (1.3)
   it('no active-day class or band: the list shows one day', () => {
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-17' }} />);
     expect(active()).toEqual([]);
-    // v1.40.0: a direct selector, not getByRole over the whole XL League view (the costly part of this test: it timed
+    // A direct selector, not getByRole over the whole XL League view (the costly part of this test: it timed
     // out at 5 s in 2 of 8 runs of the suite under load)
     fireEvent.click([...document.querySelectorAll<HTMLElement>('[role="tab"][aria-label^="Thursday, November 19"]')].at(0)!);
     expect(active()).toEqual([]);

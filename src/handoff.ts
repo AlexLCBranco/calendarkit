@@ -1,9 +1,9 @@
-// Round 10: calendarkit moved from calendarkit-brown.vercel.app to gauntlet-home.vercel.app/calendar/ (one origin with
+// Calendarkit moved from calendarkit-brown.vercel.app to gauntlet-home.vercel.app/calendar/ (one origin with
 // the gauntlet). A browser visit to the old address is sent on to the new one, path (under /calendar/) and query kept —
 // but first its Slate notes (localStorage `ck:notes:v1`, per origin) are handed over once, so none are stranded there:
 //
 //   old page  → new /calendar/#ck-handoff=<notes>        (top-level navigation; the fragment never reaches a server)
-//   new page  → merges them (round 9's import rule), → old /calendar/?ck-handoff=done&nonce=…  (or =failed&reason=…)
+//   new page  → merges them (the notes import rule), → old /calendar/?ck-handoff=done&nonce=…  (or =failed&reason=…)
 //   old page  → marks the hand-off done, → the new address
 //
 // Not an iframe or a pop-up: vercel.app is a public suffix, so the two hosts are different sites, and a cross-site
@@ -140,7 +140,7 @@ function onNew({ location, referrer, local, replaceUrl = (u) => history.replaceS
   }
 }
 
-/** The failure page's Export: the notes as round 9's export file (or, when they can't be read, as they are stored). */
+/** The failure page's Export: the notes as the notes' export file (or, when they can't be read, as they are stored). */
 export function exportText(raw: string, now = new Date()) {
   try {
     return exportFile(parseNotes(JSON.parse(raw)), now);

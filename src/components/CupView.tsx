@@ -1,11 +1,11 @@
-// Cup (round 11): NBA Cup group standings "if group play ended today", worked out from the schedule already loaded
+// Cup: NBA Cup group standings "if group play ended today", worked out from the schedule already loaded
 // (src/data/cup.ts) — six group cards (West A/B/C over East A/B/C), then who advances + the tiebreakers, and each
 // conference's wild-card race. Desktop only; its own chunk, loaded and computed only when the Cup view is opened.
-// Round 12: Standings | Schedule (the switch is in the top bar); the Schedule (CupSchedule.tsx) is worked out only once
+// Standings | Schedule (the switch is in the top bar); the Schedule (CupSchedule.tsx) is worked out only once
 // its tab is opened.
 
 import { lazy, Suspense, useMemo, type CSSProperties, type ReactNode } from 'react';
-/** Round 21 (item 9): the history and its data file, their own chunk, loaded when the tab is opened. */
+/** The history and its data file, their own chunk, loaded when the tab is opened. */
 const CupHistory = lazy(() => import('./CupHistory'));
 import { CupTonight } from './CupTonight';
 import { cupStandings, type CupSlot, type CupTeamLine, type Tiebreak, type WildCardRace } from '../data/cup';
@@ -40,15 +40,15 @@ const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 export interface CupViewProps {
   data: CalendarData;
-  /** Round 21: every game square is its game page (new tab). */
+  /** Every game square is its game page (new tab). */
   gameLink?: GameLink;
-  /** Round 21 (item 12): the local date — "Tonight in the Cup" on a night with Cup games. */
+  /** The local date — "Tonight in the Cup" on a night with Cup games. */
   today?: string;
-  /** Round 12: the schedule instead of the standings (default: standings). */
+  /** The schedule instead of the standings (default: standings). */
   schedule?: Omit<CupScheduleProps, 'data'>;
-  /** Round 21 (item 9): the history instead (its season, and the season picked). */
+  /** The history instead (its season, and the season picked). */
   history?: { season?: number; onSeason: (year: number) => void };
-  /** Round 21 (item 4): the simulator instead. */
+  /** The simulator instead. */
   sim?: Omit<CupSimulatorProps, 'data' | 'gameLink'>;
 }
 
@@ -168,7 +168,7 @@ function TeamPill({ t, gameLink }: { t: CupTeamLine; gameLink?: GameLink }) {
 }
 
 /**
- * Round 13: the team's 4 group games in date order, between the name and W / L — round 21 (item 5): the shared CupSquare
+ * The team's 4 group games in date order, between the name and W / L — the shared CupSquare
  * ("@PHX" / "vs HOU" over W / L; upcoming games the opponent alone, muted), each one its game page. No per-game margin
  * here (it doesn't fit beside the longest name at 1600 × 1000, e2e/cup.spec.ts); the full final score is the tooltip.
  */

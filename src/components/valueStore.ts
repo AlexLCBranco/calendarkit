@@ -1,5 +1,5 @@
 // A single value outside React state (like selection.ts's store): what follows a scroll or a clock writes here, and only
-// the components reading it re-render — never the list or view around them (Rule #1, round 4).
+// the components reading it re-render — never the list or view around them (Rule #1).
 
 import { useSyncExternalStore } from 'react';
 

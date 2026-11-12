@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Overtime marker (round 4, item 1): a final game whose status text is "Final/OT" (or "Final/2OT", …) shows a small
+// Overtime marker: a final game whose status text is "Final/OT" (or "Final/2OT", …) shows a small
 // muted "OT" / "2OT" after the final score in every view with scores, and says so in its aria-label.
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -43,7 +43,7 @@ describe('League List', () => {
   it('"NYK 118 @ 121 BOS OT": the marker after the last score, muted; aria-label says overtime', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-10' }} />).container;
     const c = el.querySelector(`.ck-card[data-game-id="${ot.gameId}"]`)!;
-    expect(text(c.querySelector('.ck-matchup')!)).toBe('0-1 NYK 118 @ 121 BOS 1-0 OT'); // records after the game (round 22, item 13) outside the logos
+    expect(text(c.querySelector('.ck-matchup')!)).toBe('0-1 NYK 118 @ 121 BOS 1-0 OT'); // records after the game outside the logos
     expect(otOf(c)).toBe('OT');
     expect(c.getAttribute('aria-label')).toContain('final NYK 118, BOS 121 (OT)');
     expect(otOf(el.querySelector(`.ck-card[data-game-id="${ot2.gameId}"]`)!)).toBe('2OT');

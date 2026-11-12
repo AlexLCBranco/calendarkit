@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-// Scores next to each other, logos mirrored (round 4, item 2): "[logo] BOS 113 @ 121 DET [logo]" in the League List,
+// Scores next to each other, logos mirrored: "[logo] BOS 113 @ 121 DET [logo]" in the League List,
 // Team List (desktop, tablet, phone) and Team Calendar; team views keep the selected team first ("BOS 113 vs 121 CHI").
-// Lists on desktop/tablet put every part in a fixed slot; round 7 (2.4): a game without a score has no score slots and
+// Lists on desktop/tablet put every part in a fixed slot; A game without a score has no score slots and
 // its tricodes stand against the "@" (class ck-noscore).
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -42,7 +42,7 @@ describe('League List', () => {
       }
     }
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: played.dateEt }} />).container;
-    expect(text(el.querySelector(`.ck-card[data-game-id="${played.gameId}"] .ck-matchup`)!)).toBe('0-115d BOS 113 @ 121 NYK 1-0'); // records after the game (round 22, item 13): both teams' first game, BOS lost; BOS's next game is 15 days later: its break badge "15d" (outlined, round 22 item 15)
+    expect(text(el.querySelector(`.ck-card[data-game-id="${played.gameId}"] .ck-matchup`)!)).toBe('0-115d BOS 113 @ 121 NYK 1-0'); // records after the game: both teams' first game, BOS lost; BOS's next game is 15 days later: its break badge "15d" (outlined)
   });
 
   it('phone: mirrored logos, natural widths (no score on phones)', () => {

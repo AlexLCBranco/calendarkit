@@ -1,13 +1,13 @@
-// Builds tests/fixtures/cup-knockout-2025.json (round 6, A4): NBA Cup 2025 knockout games in the schedule feed's real
+// Builds tests/fixtures/cup-knockout-2025.json : NBA Cup 2025 knockout games in the schedule feed's real
 // format (scheduleLeagueV2), for the game-link tests. Last season's knockout games aren't in any data reachable from
 // here, so each game is a real game object from the saved 2026-10-23 feed with its fields set as the feed sets them for
 // knockout games: gameId 002… (quarterfinals, semifinals: regular-season games) or 006… (the final), gameSubtype
 // "in-season-knockout", gameLabel "Emirates NBA Cup" + gameSubLabel, isNeutral + Las Vegas arena for the semifinals and
 // final, every date/time field in the feed's own conventions (gameDateEst = the ET date at 00:00 with a misleading "Z",
-// gameDateTimeEst = ET wall time with "Z", gameDateTimeUTC = real UTC). Round 7 (1.2): the ET dates, matchups, away/home
+// gameDateTimeEst = ET wall time with "Z", gameDateTimeUTC = real UTC). The ET dates, matchups, away/home
 // sides and final scores were checked 2026-10-30 against hoopsjunkie.io's real game pages (each page names its first
 // team "Away"); two had the sides swapped (NYK was away at TOR, and the designated away team vs ORL) and PHX scored
-// 89, now fixed. Round 8 (0.1): game ids, ET dates and tip-off times, sides, scores and arenas taken from the NBA feed's
+// 89, now fixed. Game ids, ET dates and tip-off times, sides, scores and arenas taken from the NBA feed's
 // own boxscores (cdn.nba.com/static/json/liveData/boxscore/boxscore_<gameId>.json, fetched 2026-10-30 with the module's
 // DEFAULT_HEADERS; gameEt / gameTimeUTC / arena). That showed the ids 0022501201 and 0022501202 had been swapped and every
 // quarterfinal time was made up. There was no 11:30 pm ET game: the latest is SAS @ LAL at 10:00 pm ET = 03:00 UTC on

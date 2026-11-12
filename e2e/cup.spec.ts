@@ -1,4 +1,4 @@
-// Cup view (round 11): the NBA Cup group standings from the served snapshot — opened from the View switch (desktop
+// Cup view: the NBA Cup group standings from the served snapshot — opened from the View switch (desktop
 // only), a 3 × 2 grid of group cards (West over East), every team's W / L / DIFF equal to sums worked out here from the
 // snapshot's finished group games, one ★ per group and one WC per conference, the panels, the copy (the grid, not the
 // panels), and the Cup's code loaded only when the view is opened.
@@ -30,7 +30,7 @@ const snapshotTable = (page: Page) =>
         const h = t[g.homeTeam.teamTricode]!;
         const a = t[g.awayTeam.teamTricode]!;
         const m = g.homeTeam.score - g.awayTeam.score;
-        // NBA.com Cup rules (v1.34.0): an OT game counts 0 in the differential
+        // NBA.com Cup rules: an OT game counts 0 in the differential
         const d = /^Final\/\d*OT$/i.test(g.gameStatusText.trim()) ? 0 : m;
         h.diff += d;
         a.diff -= d;
@@ -165,7 +165,7 @@ test.describe('Cup view', () => {
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     await allPlayed(page); // every slot played: 120 W / L slots to find in the image
     await openCup(page);
-    // round 21 (item 12): "Tonight in the Cup" (in the header's row on a Cup night) is left out of the copy: measured as copied
+    // "Tonight in the Cup" (in the header's row on a Cup night) is left out of the copy: measured as copied
     await page.addStyleTag({ content: '[data-testid="cup-tonight"] { display: none !important; }' });
     const grid = await page.getByTestId('cup-grid').boundingBox();
     // each slot: its top-centre (1 px inside, above its text) relative to the grid, and its colour on screen
@@ -220,7 +220,7 @@ test.describe('Cup view', () => {
   });
 });
 
-// Round 13: each team row's 4 group games, worked out here from the served snapshot's raw feed — real data and every game
+// Each team row's 4 group games, worked out here from the served snapshot's raw feed — real data and every game
 // played.
 test.describe('Cup standings: game slots', () => {
   test.beforeEach(({}, info) => test.skip(!desktop(info.project.name), 'desktop only'));
@@ -239,7 +239,7 @@ test.describe('Cup standings: game slots', () => {
         const played = g.gameStatus === 3 && date >= '2026-10-30' && date <= '2026-11-27';
         const tip = played ? `${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.teamTricode} ${g.homeTeam.score} · ${g.gameStatusText.trim()}` : null;
         for (const [me, opp] of [[g.homeTeam, g.awayTeam], [g.awayTeam, g.homeTeam]] as const)
-          // round 21 (item 5): "vs" (home) / "@" (away) before the opponent
+          // "vs" (home) / "@" (away) before the opponent
           (out[me.teamTricode] ??= []).push({ opp: `${me === g.homeTeam ? 'vs' : '@'}${opp.teamTricode}`, res: played ? (me.score > opp.score ? 'W' : 'L') : null, tip });
       }
       return out;
@@ -296,7 +296,7 @@ test.describe('Cup standings: game slots', () => {
     });
 });
 
-// Round 11b: the whole view fits the window — no page scroll, nothing clipped — with the real snapshot and with a
+// The whole view fits the window — no page scroll, nothing clipped — with the real snapshot and with a
 // worst case where all 60 group games are final (some in OT), so it can't pass only while most teams are 0-0.
 test.describe('Cup view fits the window', () => {
   test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'fixed window sizes: one desktop project is enough'));
@@ -334,7 +334,7 @@ test.describe('Cup view fits the window', () => {
           // the wild-card rows: one compact unit — the record starts within 16 px of the group label; West left of East
           const gaps = [...document.querySelectorAll('.ck-cup-race-row')].map((row) => box(row.querySelector('.ck-cup-rec')!).left - box(row.querySelector('.ck-cup-sub')!).right);
           const races = [...document.querySelectorAll('.ck-cup-race')].map((e) => ({ c: e.getAttribute('data-conference'), x: box(e).left, y: box(e).top }));
-          // round 13, the game slots: after the name with no overlap, inside the row's name column (before W), every
+          // the game slots: after the name with no overlap, inside the row's name column (before W), every
           // slot's text inside its box, the name at its full text width
           const slotGaps: number[] = [];
           for (const p of document.querySelectorAll('.ck-cup-pill')) {

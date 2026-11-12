@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Records in the League List (round 4, item 5): next to both teams on every row, the team's W-L — after the game once
-// it is final (round 22, item 13: its own result counted), before it otherwise — by the Team List's season-line rule (counted from final scores, regular-season games only, unknown
+// Records in the League List: next to both teams on every row, the team's W-L — after the game once
+// it is final (its own result counted), before it otherwise — by the Team List's season-line rule (counted from final scores, regular-season games only, unknown
 // after the first regular-season game that isn't final, then left out). Desktop/tablet; phones have no records.
 
 import { afterEach, describe, expect, it } from 'vitest';
@@ -82,7 +82,7 @@ describe('League List rows', () => {
           const m = c.querySelector('.ck-matchup')!;
           const recs = [...m.querySelectorAll('.ck-rec')];
           expect(recs.map((x) => x.textContent), `${size.width} ${g.gameId}`).toEqual([want.get(g.gameId)!.get(g.awayTeam.teamId) ?? '', want.get(g.gameId)!.get(g.homeTeam.teamId) ?? '']);
-          // outside the logos (and outside the Fatigue components on desktop, round 5): first and last part of the matchup
+          // outside the logos (and outside the Fatigue components on desktop): first and last part of the matchup
           const parts = [...m.children].map((x) => x.className.split(' ')[0]).filter((x) => x !== 'ck-ot');
           expect(parts, `${size.width} ${g.gameId}`).toEqual(size === XL ? ['ck-rec', 'ck-fx', 'ck-teams', 'ck-fx', 'ck-rec'] : ['ck-rec', 'ck-teams', 'ck-rec']);
           const a = want.get(g.gameId)!.get(g.awayTeam.teamId);

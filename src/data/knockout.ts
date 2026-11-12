@@ -1,9 +1,9 @@
-// Round 21 (items 10, 13): a Cup knockout game's venue and each team's rest / travel before it — from data only.
+// A Cup knockout game's venue and each team's rest / travel before it — from data only.
 // Venue: the schedule feed's arena. A quarterfinal / semifinal is played at a team market: once the feed has the teams
 // and the arena, the feed's home team is the host; before that, "venue TBD". The Championship is neutral (the feed names
 // the arena: Hinkle Fieldhouse, Indianapolis, for 2026). In the simulator a game that isn't set yet is hosted by the
 // higher seed (NBA.com "Cup 101"), at that team's home arena (src/map: the feed's arenas, never a guess).
-// Rest / travel (item 13): days since the team's previous game before the game's date; for a team not at home, the trip
+// Rest / travel: days since the team's previous game before the game's date; for a team not at home, the trip
 // from that previous game's arena (the map's arenas: src/data/geo.ts) — miles and time-zone change. A missing date or arena: TBD.
 
 import { arenaOf, homeArena, miles, zoneOf } from './geo';

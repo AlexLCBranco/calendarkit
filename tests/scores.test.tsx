@@ -17,7 +17,7 @@ const XL = { width: 1840, height: 1000 };
 const PHONE = { width: 360, height: 700 };
 const finals = data.games.filter((g) => g.status === 'final');
 const text = (el: Element) => el.textContent!.replace(/\s+/g, ' ').trim();
-/** Matchup text without the League List's records going in (round 4, tests/records.test.tsx) and Fatigue components (round 5). */
+/** Matchup text without the League List's records going in (tests/records.test.tsx) and Fatigue components. */
 const bare = (el: Element) => {
   const c = el.cloneNode(true) as Element;
   c.querySelectorAll('.ck-rec, .ck-fx').forEach((r) => r.remove());

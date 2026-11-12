@@ -219,7 +219,7 @@
   width: 1.3em;
   text-align: center;
 }
-/* round 7 (2.4): a row without a score has no score slots and its tricodes stand against the "@" ("CHA @ WAS"); the
+/* A row without a score has no score slots and its tricodes stand against the "@" ("CHA @ WAS"); the
    tricode slots stay, so unplayed rows line up among themselves, not with played ones (Alex's trade-off) */
 .ck-slots.ck-noscore .ck-team {
   text-align: right;

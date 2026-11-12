@@ -1,5 +1,5 @@
-// Active day (round 4, item 10) in a real browser: the Team List highlights the row at the top (the League List did the
-// same for its top day until round 8, which shows one day at a time). 150 ms fade (opacity only).
+// Active day in a real browser: the Team List highlights the row at the top (the League List did the
+// which shows one day at a time). 150 ms fade (opacity only).
 
 import { expect, test, type Page } from './fixtures';
 
@@ -14,7 +14,7 @@ async function open(page: Page, search: string) {
   await page.waitForFunction(() => !!document.querySelector('[data-game-id]'));
 }
 
-// Round 8 (1.3): the League List shows one day, so the strip-day highlight (header, band) is gone.
+// The League List shows one day, so the strip-day highlight (header, band) is gone.
 test('League List: no active-day highlight (one day on screen), also after the wheel and a strip click', async ({ page }) => {
   await open(page, '?view=league&layout=list&date=2026-11-17');
   const lit = () => page.evaluate(() => document.querySelectorAll('.ck-active-day, .ck-hl.ck-hl-on').length);

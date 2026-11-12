@@ -1,4 +1,4 @@
-// Round 22 (item 12): the click rule, audited in every desktop view at 1920 × 1080 against the built app.
+// The click rule, audited in every desktop view at 1920 × 1080 against the built app.
 //   1. Nothing looks clickable and does nothing: every element whose own cursor is a pointer (where the pointer starts —
 //      children inherit it) is, or sits inside, a real control: a link with an href, an enabled button / input /
 //      select / label, a tab / option / checkbox / sortable header, or a hover-popup trigger (streak, season series).

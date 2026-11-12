@@ -1,6 +1,6 @@
 // The widget's clock: a ValueStore with the time, read by what depends on today's date (the day strip's today, the
 // Today buttons, the views that follow midnight) and the stale-data stamp, so a change re-renders those only.
-// Round 7 (2.3): no minute tick any more — the countdowns it fed are gone. It moves at the next local midnight (one
+// No minute tick any more — the countdowns it fed are gone. It moves at the next local midnight (one
 // timeout, worked out in the widget's zone, so DST days are right), when the page comes back from sleep, a background
 // tab or the back/forward cache, and when a test asks (CLOCK_TICK_EVENT). Nothing runs between those moments.
 

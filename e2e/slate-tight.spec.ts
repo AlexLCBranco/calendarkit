@@ -1,5 +1,5 @@
-// Round 14 (item 3): the Slate's tight cards at 1920 × 950 and 1600 × 1000. Notes hidden: as many columns as fit, filled
-// left to right then down in tip-off order, the busiest night with no scrolling; cards ≥ 30 % shorter than round 9's
+// The Slate's tight cards at 1920 × 950 and 1600 × 1000. Notes hidden: as many columns as fit, filled
+// left to right then down in tip-off order, the busiest night with no scrolling; cards ≥ 30 % shorter than the old
 // 117 px; every row one line with nothing overlapping, also in the worst case written into a real card ("Timberwolves"
 // / "Trail Blazers" with B2B + night icons + "7in11"); the strip never taller than the two team rows on any night of
 // the season. Notes shown: two columns, the note box taking the rest of the card.
@@ -11,7 +11,7 @@ const SIZES = [
   { width: 1920, height: 950 },
   { width: 1600, height: 1000 },
 ];
-const OLD_CARD = 117; // round 9's card (head line + two rows)
+const OLD_CARD = 117; // the old card (head line + two rows)
 
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'desktop sizes set here'));
 

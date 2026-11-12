@@ -19,7 +19,7 @@
 [data-tip] {
   cursor: help;
 }
-/* round 6: the 3-in-4 stretch's days under the text (Tooltip.tsx DayStrip): game days filled purple, rest days empty,
+/* The 3-in-4 stretch's days under the text (Tooltip.tsx DayStrip): game days filled purple, rest days empty,
    tonight yellow-ringed; the date under each cell */
 .ck-tip-days {
   display: flex;

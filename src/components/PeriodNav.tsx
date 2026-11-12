@@ -18,7 +18,7 @@ export interface PeriodNavProps {
   /** "Today" button after the next arrow (back to today's games); disabled when already there. */
   onToday?: () => void;
   todayDisabled?: boolean;
-  /** A calendar icon after the next arrow that opens a date picker (round 21: every view with a date). */
+  /** A calendar icon after the next arrow that opens a date picker (every view with a date). */
   pick?: { open: boolean; onToggle: () => void };
   /** Extra class on the title (the Team List's: its own paint layer, week-strip.css). */
   titleClass?: string;
@@ -45,7 +45,7 @@ export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisab
       <button type="button" className="ck-arrow" aria-label={`Next ${unit}`} disabled={nextDisabled} onClick={onNext}>
         ›
       </button>
-      {/* round 21 (item 7): the date block is always ‹ date › · calendar · Today */}
+      {/* The date block is always ‹ date › · calendar · Today */}
       {pick && <DatePickButton open={pick.open} onClick={pick.onToggle} />}
       {onToday && <TodayButton onClick={onToday} disabled={!!todayDisabled} />}
     </div>

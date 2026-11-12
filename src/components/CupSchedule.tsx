@@ -1,4 +1,4 @@
-// Cup → Schedule (round 12; League list redone in round 18): the NBA Cup's games from the schedule already loaded
+// Cup → Schedule: the NBA Cup's games from the schedule already loaded
 // (src/data/cupSchedule.ts).
 // League, two layouts (the top bar's "By group | By date", By group first):
 //  - By group: six panels (West A/B/C over East A/B/C), each its group's 10 games in date order, and a fourth column with
@@ -8,7 +8,7 @@
 //  Rows are compact (one line): the tricodes carry the League views' fatigue marks (FatigueMark: yellow back-to-back,
 //  purple 3-in-4) with one legend line; the teams are team links, the game page the shared "↗" icon; the rest (each
 //  team's group game number, season series, national TV) is in the row's tooltip.
-// Team: one team's Cup games under "Played" and "Remaining", drawn with the Team List (unchanged since round 12).
+// Team: one team's Cup games under "Played" and "Remaining", drawn with the Team List.
 // Fatigue and records come from the whole schedule (leagueFatigue reads `data`, not the Cup games). Part of the Cup
 // view's chunk; nothing here runs until the Schedule tab is opened.
 
@@ -52,7 +52,7 @@ export interface CupScheduleProps {
 }
 
 export default function CupSchedule(p: CupScheduleProps) {
-  // round 21 (item 11): tonight's stakes, worked out after the first render; the rows read them (cupStakesNow)
+  // Tonight's stakes, worked out after the first render; the rows read them (cupStakesNow)
   useCupStakes(p.data, p.today, true);
   if (p.list === 'team') return <CupTeam {...p} />;
   return p.by === 'date' ? <CupByDate {...p} /> : <CupByGroup {...p} />;
@@ -85,12 +85,12 @@ function rowTip(data: CalendarData, g: ScheduleGame, timeZone?: string) {
  * The cells sit in the list's grid columns (subgrid), so every row of a list lines up.
  */
 function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: { g: ScheduleGame; data: CalendarData; fatigue: Fatigue; by: CupLayout; pill?: string; timeZone?: string; gameLink?: GameLink; groupStart?: boolean }) {
-  // round 21 (item 11): tonight's stakes (worked out after the first render, cached): a compact mark on the row (the
+  // Tonight's stakes (worked out after the first render, cached): a compact mark on the row (the
   // view must keep its one-line rows and fit the window), the chips themselves in the row's tooltip
   const chips = cupStakesNow(data, g.dateEt);
-  // round 21 (item 10): a knockout game's venue (the feed's: HOST on the host team, the Championship's neutral arena, or TBD)
+  // A knockout game's venue (the feed's: HOST on the host team, the Championship's neutral arena, or TBD)
   const venue = g.isCupKnockout || g.gameType === 'cup-final' ? knockoutVenue(g) : undefined;
-  // round 21 (item 13): rest / travel before a knockout game — in the row's tooltip (the rows keep one line)
+  // Rest / travel before a knockout game — in the row's tooltip (the rows keep one line)
   const preps = venue ? [g.awayTeam, g.homeTeam].filter((t) => t.teamId).map((t) => prepFor(data, t.teamId, g.dateEt, venueArena(g)).tip) : [];
   const stakes = chips && g.isCupGroupGame ? [g.awayTeam, g.homeTeam].flatMap((t) => (chips.get(t.teamId) ?? []).map((c) => `${teamLabel(t)}: ${c.text} (${c.tip})`)) : [];
   const r = finalScore(g, g.awayTeam.teamId);
@@ -253,7 +253,7 @@ function CupByDate({ data, size, today, timeZone, gameLink, onNight }: CupSchedu
                 <section key={night.date} className={`ck-cg-night${night.date === n.date ? ' ck-cg-picked' : ''}`} data-testid="cup-night" data-night={night.date} aria-label={cupNightHeading(night)} aria-current={night.date === n.date || undefined}>
                   <h3 className="ck-cg-head">
                     {cupNightHeading(night)} · {plural(games.length)}
-                    {/* round 21 (item 10): a neutral-court night's venue, once (the rows keep one line) */}
+                    {/* A neutral-court night's venue, once (the rows keep one line) */}
                     {night.round === 'final' && games[0] && knockoutVenue(games[0]).kind === 'neutral' && (
                       <>
                         {' '}

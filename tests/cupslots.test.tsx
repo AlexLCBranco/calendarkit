@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Cup standings, round 13: each team row's 4 group games (src/data/cup.ts cupSlots, CupView's slots) — date order, the
+// Cup standings: each team row's 4 group games (src/data/cup.ts cupSlots, CupView's slots) — date order, the
 // opponent, W / L and the differential from the final score, upcoming games muted with no result, teams with 0, 2 and 4
 // games played; and the real feed saved 2026-10-31.
 
@@ -57,7 +57,7 @@ describe('cupSlots', () => {
       ['HOU', 'away', true, true, 7],
       ['PHX', 'away', true, false, -11],
       ['DAL', 'home', true, true, 22],
-      ['UTA', 'away', true, true, 0], // 128-116 in OT: 0 to the differential (v1.34.0, NBA.com Cup rules)
+      ['UTA', 'away', true, true, 0], // 128-116 in OT: 0 to the differential (NBA.com Cup rules)
     ]);
   });
 

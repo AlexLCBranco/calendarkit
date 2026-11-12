@@ -1,4 +1,4 @@
-// v1.40.0: the live data freshness alarm (scripts/check-live-data.ts) and the data cache header that bounds how long
+// The live data freshness alarm (scripts/check-live-data.ts) and the data cache header that bounds how long
 // the gauntlet's edge may keep serving an old snapshot after a deploy.
 
 import { readFileSync } from 'node:fs';

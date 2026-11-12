@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 14): prize money per player by season, each with a source; the bracket's lines under each round.
+// Prize money per player by season, each with a source; the bracket's lines under each round.
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CalendarView } from '../src/components/CalendarView';

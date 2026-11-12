@@ -13,7 +13,7 @@ export const FATIGUE_LEGEND_H = 22;
 /**
  * The tricode with its fatigue marks; `className` joins the mark's own (e.g. the week view's ck-mtri-text).
  * `component`: the Fatigue component is shown for this team (League List on desktop, 1-week view) — then the tricode
- * drops its plane (the component's plane means "away", round 5) and its yellow fill / outline (round 6: the badge and
+ * drops its plane (the component's plane means "away") and its yellow fill / outline (the badge and
  * its leg dot say it); the 3-in-4 underline and the tooltip stay.
  */
 export function FatigueMark({ f, className = '', component = false, children }: { f?: TeamFatigue; className?: string; component?: boolean; children: ReactNode }) {
@@ -43,7 +43,7 @@ export function FatigueMark({ f, className = '', component = false, children }: 
 
 /**
  * "■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4", each key drawn like its mark. `component`: the views with the
- * Fatigue component explain it instead (round 6: the leg dot, the night icons and the merged chip; the tricodes there
+ * Fatigue component explain it instead (the leg dot, the night icons and the merged chip; the tricodes there
  * have no yellow marks any more, so their keys are gone).
  */
 export const FatigueLegend = ({ component = false }: { component?: boolean }) =>

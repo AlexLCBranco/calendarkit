@@ -1,4 +1,4 @@
-// League standings (round 17), worked out from the schedule already loaded — finished regular-season games only, no
+// League standings, worked out from the schedule already loaded — finished regular-season games only, no
 // other fetch. Pure: no UI, no clock. `leagueStandings(data)` computes once per data set (WeakMap), so the Standings view
 // and the header popup share one result and nothing is recomputed per render.
 //

@@ -1,5 +1,5 @@
-// Fatigue on the tricodes in the league views (round 4, item 6), in a real browser at 1280 and 1920: the marks take
-// no width (week-view lines stay 155 px in 2-week mode (119 before item 7), nothing overflows its line or column), the plane clears the
+// Fatigue on the tricodes in the league views, in a real browser at 1280 and 1920: the marks take
+// no width (week-view lines stay 155 px in 2-week mode, nothing overflows its line or column), the plane clears the
 // "@" and the TV pill, the colours (yellow fill / ring, purple underline), the tooltip for that team on hover and
 // focus, and the legend under the week grid and the League List. Prints the line widths.
 
@@ -65,11 +65,11 @@ for (const [name, search] of [
     console.log(`[league-fatigue] ${info.project.name} ${name}: ${r.marks} marks, line widths ${r.widths.join(', ')}`);
     expect(r.marks).toBeGreaterThan(10);
     expect(r.bad).toEqual([]);
-    if (name === 'week view, 2 weeks') expect(r.widths).toEqual(['155.00']); // round 4's aligned line
+    if (name === 'week view, 2 weeks') expect(r.widths).toEqual(['155.00']); // the aligned line
     // tooltip for that team, on hover and on focus
     const tip = page.getByTestId('tooltip');
     const scope = list ? '[data-day="2027-01-07"] ' : '';
-    // a team on its 2nd night (round 6: where the component is shown the tricode has no yellow fill — found by its tooltip)
+    // a team on its 2nd night (where the component is shown the tricode has no yellow fill — found by its tooltip)
     const mark = page.locator(`${scope}.ck-fm[data-tip*="2/2 · "]`).first();
     await mark.hover();
     await expect(tip).toContainText((await mark.getAttribute('data-tip'))!.replace(/\n/g, ' '));
@@ -84,7 +84,7 @@ for (const [name, search] of [
     await expect(tip).toHaveText(/^[A-Z]{3} — rested( Record (going in|after the game): \d+-\d+)?$/);
     // legend: visible, inside the window, under the grid / list
     const legend = page.getByTestId('fatigue-legend');
-    // round 5: the views with the Fatigue component (League List, 1 week) explain it; 2 weeks keeps the tricode legend
+    // The views with the Fatigue component (League List, 1 week) explain it; 2 weeks keeps the tricode legend
     await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next$/);
     const lb = (await legend.boundingBox())!;
     expect(lb.y + lb.height).toBeLessThanOrEqual(page.viewportSize()!.height);

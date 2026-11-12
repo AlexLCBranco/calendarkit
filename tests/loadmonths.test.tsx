@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 3): the Team List opens on one month; "Load earlier games" adds the month before (rest days too),
+// The Team List opens on one month; "Load earlier games" adds the month before (rest days too),
 // "Load more games" the month after, one month per click; "Season start" / "End of schedule" at the team's ends; a
 // divider row between months; the header names the range; back restores the loaded months. That the row on screen
 // stays put is checked on a real layout (e2e/loadmonths.spec.ts).

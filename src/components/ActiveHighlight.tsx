@@ -1,4 +1,4 @@
-// The lists' active-day highlight (round 4): a faint accent band with a thin accent bar on the left, over the active
+// The lists' active-day highlight: a faint accent band with a thin accent bar on the left, over the active
 // day's rows. Two overlay layers in the scroller crossfade (opacity only, 150 ms) when the day changes, so the fade runs
 // on the compositor: fading the rows' own background and shadow repainted them every frame of the fade and cost the
 // League List scroll ~30 % more main-thread time (PROJECT.md). Outside the rows, so never part of a copied row or day.

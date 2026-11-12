@@ -18,8 +18,8 @@ afterEach(cleanup);
 const { CalendarView, monthColumns } = CV;
 const WEEK_MIN_WIDTH = (CV as Record<string, unknown>).WEEK_MIN_WIDTH as number | undefined;
 
-const WIDE = { width: 1248, height: 800 }; // 1280 px window (the week view needs ≥ 1179 px since round 4's 155 px line)
-const XL = { width: 1840, height: 1000 }; // 1920 px window (1 column per day since round 4)
+const WIDE = { width: 1248, height: 800 }; // 1280 px window (the week view needs ≥ 1179 px for its 155 px line)
+const XL = { width: 1840, height: 1000 }; // 1920 px window (1 column per day)
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 
 function openWeek(data: CalendarData, date: string, size = WIDE, timeZone = 'UTC', weeks: 1 | 2 = 1, onStateChange?: (s: CV.CalendarState) => void) {
@@ -84,7 +84,7 @@ describe('week view: structure', () => {
       const g = games.find((x) => x.gameId === l.getAttribute('data-game-id'))!;
       expect(tris(l)).toEqual([g.awayTeam.teamTricode, g.homeTeam.teamTricode]);
       expect(l.textContent).toBe(`${g.awayTeam.teamTricode}@${g.homeTeam.teamTricode}`);
-      // round 5: the parts up to the home logo are the game link's (a subgrid on the same columns)
+      // The parts up to the home logo are the game link's (a subgrid on the same columns)
       expect([...l.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-mline', 'ck-tv-slot']);
       expect([...l.querySelector('.ck-mline')!.children].map((c) => c.className.split(' ')[0])).toEqual(['ck-logo-backing', 'ck-mtri', 'ck-mscore', 'ck-at', 'ck-mscore', 'ck-mtri', 'ck-logo-backing']);
       expect([...l.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual([`/calendar/logos/${g.awayTeam.teamTricode}.svg`, `/calendar/logos/${g.homeTeam.teamTricode}.svg`]);
@@ -306,7 +306,7 @@ describe('TV pill and fatigue marks (league)', () => {
       game({ id: '0022609902', date: '2026-11-02', utc: '2026-11-03T00:30:00Z', home: TEAM.DEN, away: TEAM.NYK }),
     ]);
     const one = openWeek(d, '2026-11-02');
-    // 1 week shows the Fatigue component under the line: the tricodes keep no yellow fill or ring (round 6)
+    // 1 week shows the Fatigue component under the line: the tricodes keep no yellow fill or ring
     expect(one.container.querySelectorAll('.ck-mfx .ck-fx-b2b').length).toBeGreaterThan(0);
     expect(one.container.querySelector('.ck-fm-n1, .ck-fm-n2')).toBeNull();
     cleanup();

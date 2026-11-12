@@ -115,7 +115,7 @@ test('Team Calendar: every team with a final game, every final cell; scale print
   expect(n).toBe(2 * all.length);
 });
 
-// Overtime (round 4, item 1): "OT" / "2OT" after the final score, in the snapshot's own "Final/OT" games. The marker
+// Overtime: "OT" / "2OT" after the final score, in the snapshot's own "Final/OT" games. The marker
 // must not change any width budget: League List and Team List rows stay one line, the Team List matchup (worst case
 // written in: widest tricodes, 3-digit scores, "3OT") stays inside its fixed slot, week-view lines keep their width.
 test('overtime marker: League List, Team List (worst case in its slot), week view', async ({ page }, info) => {
@@ -136,7 +136,7 @@ test('overtime marker: League List, Team List (worst case in its slot), week vie
     expect(await oneLine(`.ck-card[data-game-id="${g.gameId}"]`), `${g.gameId} League List one line`).toBe(true);
     for (const tri of [g.away.teamTricode, g.home.teamTricode]) {
       await open(page, `?view=team&layout=list&team=${tri}`);
-      await showMonth(page, g.date.slice(0, 7)); // round 9: the Team List shows one month
+      await showMonth(page, g.date.slice(0, 7)); // The Team List shows one month
       const row = page.locator(`[data-testid="team-list"] .ck-card[data-game-id="${g.gameId}"]`);
       expect(await row.locator('.ck-ot').textContent()).toBe(g.ot);
       expect(await oneLine(`[data-testid="team-list"] .ck-card[data-game-id="${g.gameId}"]`), `${g.gameId} Team List one line`).toBe(true);

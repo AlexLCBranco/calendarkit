@@ -33,7 +33,7 @@ test('League List: back to the default day, disabled there', async ({ page }) =>
   await open(page, '?view=league&layout=list');
   await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   await expect(today(page)).toBeDisabled();
-  // round 8: scrolling never changes the day, so move away with the arrows
+  // Scrolling never changes the day, so move away with the arrows
   for (let i = 0; i < 3; i++) await page.getByLabel('Next day').click();
   await expect(page.getByTestId('day-title')).not.toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   await expect(today(page)).toBeEnabled();
@@ -98,5 +98,5 @@ test('the top bar keeps its height when Today changes state; one row at 1920 px'
   await page.getByLabel('Next day').click();
   await expect(today(page)).toBeEnabled();
   expect((await bar.boundingBox())!.height).toBe(h0);
-  if (info.project.name === 'desktop-xl') expect(h0).toBeLessThanOrEqual(78); // round 21: two rows
+  if (info.project.name === 'desktop-xl') expect(h0).toBeLessThanOrEqual(78); // never taller than two rows
 });

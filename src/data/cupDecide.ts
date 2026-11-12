@@ -1,4 +1,4 @@
-// Round 21 (items 2, 11): what is mathematically certain in the NBA Cup — a team that has clinched a knockout spot
+// What is mathematically certain in the NBA Cup — a team that has clinched a knockout spot
 // ("IN"), one that can no longer get one ("OUT"), and what tonight's results would settle. Uses the shared engine only
 // (cupEngine.ts): every win/loss completion of a conference's remaining group games is run through computeCup with the
 // margins unknown, so the engine itself says when a spot would depend on a margin — such a completion counts as "could

@@ -1,7 +1,7 @@
-// Scores next to each other, logos mirrored (round 4, item 2), League List at every width: "[logo] BOS 113 @ 121 DET
-// [logo]", with each team's record going in on the outside (item 5). Desktop/tablet: away record, away logo, away
+// Scores next to each other, logos mirrored, League List at every width: "[logo] BOS 113 @ 121 DET
+// [logo]", with each team's record going in on the outside. Desktop/tablet: away record, away logo, away
 // tricode, "@", home tricode (right edge), home logo and home record at one x on every row
-// of a day of the same kind (fixed slots). Round 7 (2.4): an unplayed row has no score slots, its tricodes stand against
+// of a day of the same kind (fixed slots). An unplayed row has no score slots, its tricodes stand against
 // the "@" (the gap between the two codes is measured); played and unplayed rows of a mixed day don't line up, on purpose
 // (Alex's trade-off), so the one-x check runs within each kind. Every row one line. Phones: the same order, no scores (rows with long TV
 // names wrap there as before). Prints the widest row.
@@ -13,7 +13,7 @@ const NOW = new Date('2026-11-15T15:00:00Z');
 test('League List: mirrored matchup, one x per part down every day, one line per row', async ({ page }, info) => {
   test.setTimeout(120_000);
   const phone = info.project.name === 'phone';
-  const zoom = info.project.name === 'desktop-xl' ? 1.3 : 1; // round 8: the desktop League List's zoom (1 at 1280)
+  const zoom = info.project.name === 'desktop-xl' ? 1.3 : 1; // The desktop League List's zoom (1 at 1280)
   let widest = 0;
   let maxGap = 0;
   // played days (Oct 21–27), today's mixed day and later ones
@@ -30,7 +30,7 @@ test('League List: mirrored matchup, one x per part down every day, one line per
         for (const c of day.querySelectorAll<HTMLElement>('.ck-card')) {
           const m = c.querySelector('.ck-matchup')!;
           const kind = m.querySelector('.ck-score') ? 'played ' : 'unplayed ';
-          // the gap between the two codes' letters (round 7, 2.4): tight on unplayed rows
+          // the gap between the two codes' letters: tight on unplayed rows
           const ink = (e: Element) => {
             const r = document.createRange();
             r.selectNodeContents(document.createTreeWalker(e, NodeFilter.SHOW_TEXT).nextNode()!);
@@ -45,7 +45,7 @@ test('League List: mirrored matchup, one x per part down every day, one line per
           col(kind + 'at').push(round(m.querySelector('.ck-vsat')!.getBoundingClientRect().left));
           col(kind + 'home').push(round(teams[1]!.right));
           col(kind + 'logo2').push(round(logos[1]!.left));
-          // records (round 4, item 5; after the game once final, round 22): slots outside the logos, desktop/tablet only
+          // records (after the game once final): slots outside the logos, desktop/tablet only
           const recs = [...m.querySelectorAll('.ck-rec')].map((r) => r.getBoundingClientRect());
           if (recs.length === 2) col(kind + 'rec1').push(round(recs[0]!.right)), col(kind + 'rec2').push(round(recs[1]!.left));
           else if (recs.length || !phone) out.bad.push(`${c.dataset.gameId}: ${recs.length} record slots`);
@@ -75,8 +75,8 @@ test('League List: mirrored matchup, one x per part down every day, one line per
     widest = Math.max(widest, r.widest);
     expect(r.bad, date).toEqual([]);
     for (const seq of r.order) expect(['LTSSTL'.replace('SS', 'S@S'), 'LT@TL'], date).toContain(seq);
-    // unplayed rows: "CHA @ WAS", the codes about an "@" apart (desktop/tablet: the "@" slot, 1.3 em, + 2 gaps ≈ 28 px; before
-    // round 7 the two empty score slots added ~70 px); played rows keep the scores between them
+    // unplayed rows: "CHA @ WAS", the codes about an "@" apart (desktop/tablet: the "@" slot, 1.3 em, + 2 gaps ≈ 28 px; two empty
+    // score slots would add ~70 px); played rows keep the scores between them
     for (const g of r.gaps) expect(g.gap, `${date} ${g.id} (${g.kind}): gap between the codes`).toBeLessThanOrEqual((g.kind === 'unplayed' ? 30 : 200) * zoom);
     for (const g of r.gaps) if (g.kind === 'played') expect(g.gap, `${date} ${g.id}: scores between the codes`).toBeGreaterThan(60 * zoom);
     if (date === '2026-12-25') maxGap = Math.max(...r.gaps.map((g) => g.gap));

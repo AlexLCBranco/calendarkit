@@ -1,4 +1,4 @@
-// Round 14 (item 5): the season-series chip ("G2/4": this is the 2nd of 4 regular-season meetings) and its popup — one
+// The season-series chip ("G2/4": this is the 2nd of 4 regular-season meetings) and its popup — one
 // square per meeting in order (played: winner, score, date; to come: muted, date only; this game outlined), the series'
 // state on top ("DET leads 1–0"). A square's click raises `onPick(game)` (calendarkit: that day in the League List, the
 // game highlighted); its "↗" is the game's hoopsjunkie page (the Slate cards' link rule), in a new tab.
@@ -34,7 +34,7 @@ export const seriesLine = (data: CalendarData, game: ScheduleGame) => {
 };
 
 /**
- * One meeting of the season series. Round 22 (item 12, the click rule — game things open the game's page): the whole
+ * One meeting of the season series. The whole
  * square is the game's hoopsjunkie page (a new tab); it was a button that showed that day in the League List, with a
  * small "↗" beside it for the page. Without a URL (undecided teams, no host link) it is plain, not clickable-looking.
  */
@@ -93,7 +93,7 @@ function Popup({ s, current, gameLink }: { s: SeriesGame; current: string; gameL
   );
 }
 
-/** The widget's one series popup: spread `handlers` on the wrapper, render `node` inside it (round 21: on useHoverPopup). */
+/** The widget's one series popup: spread `handlers` on the wrapper, render `node` inside it (on useHoverPopup). */
 export function useSeriesPopup(data: CalendarData | undefined, opts: { gameLink?: GameLink } = {}) {
   return useHoverPopup(
     'data-series-game',

@@ -1,5 +1,5 @@
-// Round 14 (item 4): moneyline odds from ESPN's public scoreboard (site.api.espn.com, no key; unofficial and
-// undocumented — PROJECT.md "### Round 14", item 4). Pure: the server function (api/odds.ts) fetches, this reads.
+// Moneyline odds from ESPN's public scoreboard (site.api.espn.com, no key; unofficial and
+// undocumented — see docs/HISTORY.md). Pure: the server function (api/odds.ts) fetches, this reads.
 // Checked 2026-11-04 on the live endpoints: a game not yet started carries `competitions[0].odds[0].moneyline`
 // (provider DraftKings) with `home` / `away` → `open` / `close` → `odds` as American odds ("-136", "+115"); `close` is the
 // current line. Once a game has started the scoreboard drops `odds`; the game's summary keeps the pre-game line in

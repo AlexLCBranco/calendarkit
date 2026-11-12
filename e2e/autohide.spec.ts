@@ -1,4 +1,4 @@
-// Round 22 (item 9): the one-row top bar (44 px) hides while the person scrolls a list down and comes back on a scroll up,
+// The one-row top bar (44 px) hides while the person scrolls a list down and comes back on a scroll up,
 // at the top, or with the pointer at the top edge. The rows on screen never jump when it goes or comes back (the scroller
 // is moved by the bar's height in the same frame). A jump to a row, a restore or a script's scroll never hides it.
 import { expect, test, type Page } from './fixtures';

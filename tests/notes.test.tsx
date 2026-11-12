@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 9, Part 3: Slate notes — a note per game (NBA gameId) with three slots (pre / live / post) and the slot on show,
+// Slate notes — a note per game (NBA gameId) with three slots (pre / live / post) and the slot on show,
 // in localStorage under NOTES_KEY; saved as typed (debounced) and on every switch; other tabs follow (storage event);
 // export / import (merge: per slot the file's text wins); "Switch all"; "Hide all notes" not remembered; typing re-renders
 // only its own card; the two-column rule. Real browser behaviour (reload, two tabs, copies, timing): e2e/notes.spec.ts.

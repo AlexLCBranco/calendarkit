@@ -1,4 +1,4 @@
-// Round 21 (item 6): page history on a real browser — the browser's back / forward and the in-app ← → walk the pages;
+// Page history on a real browser — the browser's back / forward and the in-app ← → walk the pages;
 // back puts the page back as it was, scroll position included (Slate, Team List's top row); a day step is not a page.
 // Alt+← / → and the mouse's side buttons are the browser window's own back / forward, which headless Chromium doesn't
 // have (tests/history.test.tsx checks the app never takes Alt+arrows for itself).

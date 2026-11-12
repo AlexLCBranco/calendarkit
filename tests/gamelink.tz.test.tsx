@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 5, item 5a: the game link's date is the feed's NBA (Eastern-time) game date (`gameDateEst` → `dateEt`), never a
+// The game link's date is the feed's NBA (Eastern-time) game date (`gameDateEst` → `dateEt`), never a
 // date the app works out from the tip-off time — checked on late games either side of the end of daylight saving time
 // (Sun Nov 1, 2026, 2:00 EDT → 1:00 EST): an ET evening game then tips off on the next UTC day, and in São Paulo on the
 // next local day too. Runs under every zone in vite.config.ts (America/New_York and America/Sao_Paulo); the views use

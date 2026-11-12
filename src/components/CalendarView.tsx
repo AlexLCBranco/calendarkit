@@ -55,9 +55,9 @@ export { TEAM_CELL_MIN_HEIGHT, TEAM_SCALE_FILL, TEAM_SCALE_MAX, TEAM_SCALE_MIN, 
 export { TeamPicker } from './TeamPicker';
 export { COMPACT_WIDTH, fmtRange, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
 
-/** League, Team, or (desktop) Cup: the NBA Cup group standings (round 11), or (desktop) Standings (round 17). */
+/** League, Team, or (desktop) Cup: the NBA Cup group standings, or (desktop) Standings. */
 export type CalendarMode = 'team' | 'league' | 'cup' | 'standings';
-/** List, Calendar, or (League, desktop) Slate: a day of games as cards (round 7). */
+/** List, Calendar, or (League, desktop) Slate: a day of games as cards. */
 export type CalendarLayout = 'list' | 'calendar' | 'slate';
 /** Team → Calendar: a month grid (default) or 1 or 2 week rows. */
 export type TeamSpan = 'month' | 1 | 2;
@@ -70,7 +70,7 @@ export interface CalendarState {
   /** League views: the day at the top of the list; the week view shows this day's week. */
   date: string;
   tvOnly: boolean;
-  /** Team → List: a quiet row for each day without a game. On by default (round 7, 2.2); the app shell never stores it. */
+  /** Team → List: a quiet row for each day without a game. On by default; the app shell never stores it. */
   showRest: boolean;
   /** League → Calendar: 1 or 2 week rows. */
   weeks: WeekCount;
@@ -80,16 +80,16 @@ export interface CalendarState {
 
 export interface CalendarViewProps {
   data: CalendarData;
-  /** Round 14: the Slate's moneyline odds (the app shell passes liveOddsStore()); none: no odds, no request. */
+  /** The Slate's moneyline odds (the app shell passes liveOddsStore()); none: no odds, no request. */
   odds?: SlateOdds;
   size: WidgetSize;
   /**
-   * Initial state; anything missing gets a default (League → List, default day). `teamDate` (round 15, a team link
+   * Initial state; anything missing gets a default (League → List, default day). `teamDate` (a team link
    * opened in a new tab): the Team view opens on this date instead of the next game.
    */
   initial?: Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState> };
   /**
-   * Round 15: the URL of a team's Team view (team links: Ctrl / middle-click → new tab). Given → every team name, logo
+   * The URL of a team's Team view (team links: Ctrl / middle-click → new tab). Given → every team name, logo
    * and tricode is a link (a plain click switches to that Team view here); none → no team links.
    */
   teamHref?: (to: TeamTarget) => string;
@@ -108,7 +108,7 @@ export interface CalendarViewProps {
   /** When the data was generated (ISO): "Data updated …" under the note, orange (--ck-stale) once older than STALE_AFTER_MS. */
   updatedAt?: string;
   /**
-   * Round 21 (item 6): told after every change of the view, as a whole snapshot: "push" for a new page (a destination,
+   * Told after every change of the view, as a whole snapshot: "push" for a new page (a destination,
    * a team, a view, an option, a picked date, Today), "replace" for a day step (‹ ›, ← →, the strip) or the first render.
    * `prev` (with push): the page being left, with its scroll position, for its history entry.
    */
@@ -119,14 +119,14 @@ export interface CalendarViewProps {
   pageHistory?: PageHistory;
 }
 
-/** Round 21 (item 6): everything a page of the widget is — enough to put it back as it was. */
+/** Everything a page of the widget is — enough to put it back as it was. */
 export interface ViewSnapshot {
   state: CalendarState;
   leagueMonth: string;
   teamMonth: string;
   teamWeek: string;
   teamListMonth: string;
-  /** Round 21 (item 3): the Team List's last loaded month. */
+  /** The Team List's last loaded month. */
   teamListTo?: string;
   cup: CupState;
   /** Team List: the row at the top. */
@@ -170,26 +170,26 @@ export const STALE_AFTER_MS = 36 * 3_600_000;
 
 const NO_GAMES: readonly ScheduleGame[] = [];
 const DEFAULT_TEAM = TEAMS[0]!.id;
-/** Round 8: the League List's map, its own chunk (outline + styles), loaded after the list is on screen. */
+/** The League List's map, its own chunk (outline + styles), loaded after the list is on screen. */
 const LeagueMap = lazy(() => import('../map/LeagueMap'));
-/** The Team List's map (after round 8): the selected team's road trip, beside the list on desktop. */
+/** The Team List's map: the selected team's road trip, beside the list on desktop. */
 const TeamMap = lazy(() => import('../map/TeamMap'));
 /** The Team List keeps its 1110 px column; the map comes where LEAGUE_MAP_MIN is left beside it (1920: ~706 px; 1280: none). */
-/** Round 11: the Cup standings, their own chunk, loaded (and worked out) only when the Cup view is opened. */
+/** The Cup standings, their own chunk, loaded (and worked out) only when the Cup view is opened. */
 const CupView = lazy(() => import('./CupView'));
-/** Round 17: the standings view and the header's condensed popup, one chunk, loaded (and computed) on first use. */
+/** The standings view and the header's condensed popup, one chunk, loaded (and computed) on first use. */
 const standingsChunk = () => import('./Standings');
 const StandingsView = lazy(standingsChunk);
 const StandingsPopup = lazy(() => standingsChunk().then((m) => ({ default: m.StandingsPopup })));
-/** Round 21 (item 7): the top bar's destinations; Schedule is League or Team by the scope picker. */
+/** The top bar's destinations; Schedule is League or Team by the scope picker. */
 export type Destination = 'schedule' | 'cup' | 'standings';
-export type CupState = { tab: 'standings' | 'schedule' | 'simulator' | 'history'; /** round 21 (item 9): the History season */ hs?: number; list: 'league' | 'team'; by: 'group' | 'date'; teamId?: number; night?: string };
+export type CupState = { tab: 'standings' | 'schedule' | 'simulator' | 'history'; /** The History season */ hs?: number; list: 'league' | 'team'; by: 'group' | 'date'; teamId?: number; night?: string };
 const CUP_START: CupState = { tab: 'standings', list: 'league', by: 'group' };
 const teamMapFits = (width: number) => width >= TEAM_LIST_MAX_WIDTH + LEAGUE_MAP_GAP + LEAGUE_MAP_MIN;
 
 
 export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
-  // The clock (round 7: moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
+  // The clock (moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
   // `now` (the default day, the next game, games over) is the time the widget opened.
   const clock = useClock(fixedNow, timeZone, localDate);
   const [openedAt] = useState(() => clock.get());
@@ -206,7 +206,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     teamSpan: initial?.teamSpan === 1 || initial?.teamSpan === 2 ? initial.teamSpan : 'month',
   }));
   const [leagueMonth, setLeagueMonth] = useState(() => monthOf(state.date));
-  // round 15: a team link opened in a new tab names the date to open the Team view on
+  // A team link opened in a new tab names the date to open the Team view on
   const initialTeamDate = initial?.teamDate && /^\d{4}-\d{2}-\d{2}$/.test(initial.teamDate) ? initial.teamDate : undefined;
   const [teamMonth, setTeamMonth] = useState(() => monthOf(initialTeamDate ?? teamDefaultDate(data, state.teamId, now) ?? state.date));
   // Team week views: the first shown day (a Sunday)
@@ -214,12 +214,12 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   // Team List: the row a team link asked for (once; the list scrolls it to the top)
   const [teamOpen, setTeamOpen] = useState<TeamListOpen | undefined>(() => (initialTeamDate ? { date: teamListTarget(data, state.teamId, state.tvOnly, state.showRest && !compact, initialTeamDate) } : undefined));
   const [picking, setPicking] = useState(false);
-  // the lists' date picker (round 4)
+  // the lists' date picker
   const [datePick, setDatePick] = useState(false);
   const stateRef = useRef(state);
   stateRef.current = state;
   const tooltip = useTooltip();
-  // Slate notes (round 9): the games' notes, saved in localStorage (notes.ts); "Hide all notes" is a view toggle, never stored
+  // Slate notes: the games' notes, saved in localStorage (notes.ts); "Hide all notes" is a view toggle, never stored
   const [notes] = useState(localNotesStore);
   useEffect(() => notes.listen(), [notes]);
   const [hideNotes, setHideNotes] = useState(false);
@@ -241,7 +241,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   };
   const setLayout = (layout: CalendarLayout) => {
     setPicking(false);
-    // round 21 (item 7): Slate is a league-wide day view, always offered. From a team: All teams on the date being looked
+    // Slate is a league-wide day view, always offered. From a team: All teams on the date being looked
     // at, that team's game highlighted and scrolled into view (or a note when it doesn't play that day).
     if (layout === 'slate' && stateRef.current.mode === 'team') {
       const date = nearestDay(days, lookingAtRef.current());
@@ -254,32 +254,32 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const [slateFocus, setSlateFocus] = useState<{ teamId: number; date: string }>();
   const onSelectDate = useCallback((date: string) => update({ date }), [update]);
   const openDay = (date: string) => update({ date, layout: 'list' });
-  // round 22 (item 12): a square of the season-series popup is its game's hoopsjunkie page (was round 14's jump to that
+  // A square of the season-series popup is its game's hoopsjunkie page (not a jump to that
   // day in the League List, the row highlighted)
   const streakPop = useStreakPopup(data, { gameLink });
   const series = useSeriesPopup(data, { gameLink });
   const team = state.mode === 'team';
-  // League → Slate (round 7): desktop only. A Team view, or a widget too narrow for it, shows the List meanwhile (the
+  // League → Slate: desktop only. A Team view, or a widget too narrow for it, shows the List meanwhile (the
   // state keeps "slate", so League comes back to it).
   const slateFits = !compact && size.width >= SLATE_MIN_WIDTH;
-  // Cup (round 11): desktop only, like the Slate; a narrower widget shows the League views meanwhile (the state keeps "cup").
+  // Cup: desktop only, like the Slate; a narrower widget shows the League views meanwhile (the state keeps "cup").
   const cup = state.mode === 'cup' && slateFits;
-  // Standings (round 17): desktop only too
+  // Standings: desktop only too
   const standings = state.mode === 'standings' && slateFits;
   /** A desktop view that isn't a schedule (Cup, Standings): no layout, period, weeks or TV switches. */
   const other = cup || standings;
-  // round 18: the column set both conference tables show — kept while the page is open, never stored
+  // The column set both conference tables show — kept while the page is open, never stored
   const [stSet, setStSet] = useState<StandingsSet>('main');
   // the condensed popup over any view (desktop)
   const [stPop, setStPop] = useState(false);
   const closeStPop = useCallback(() => setStPop(false), []);
   const slate = !team && !other && state.layout === 'slate' && slateFits;
-  // round 21 (item 7): Schedule (League or Team: the scope picker), Cup or Standings
+  // Schedule (League or Team: the scope picker), Cup or Standings
   const destination: Destination = cup ? 'cup' : standings ? 'standings' : 'schedule';
   const lastScope = useRef<'league' | 'team'>(state.mode === 'team' ? 'team' : 'league');
   if (state.mode === 'league' || state.mode === 'team') lastScope.current = state.mode;
   const goDestination = (d: Destination) => update({ mode: d === 'schedule' ? lastScope.current : d });
-  // Cup (round 12): Standings | Schedule, the schedule's League | Team, its team and night — never remembered: leaving the
+  // Cup: Standings | Schedule, the schedule's League | Team, its team and night — never remembered: leaving the
   // Cup view resets them, so it always opens on Standings (then League; no team until one is picked).
   const [cupView, setCupView] = useState<CupState>(() => (initial?.cup ? { ...CUP_START, ...initial.cup } : CUP_START));
   useEffect(() => {
@@ -288,7 +288,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const cupSchedule = cup && cupView.tab === 'schedule';
   const cupSim = cup && cupView.tab === 'simulator';
   const cupHist = cup && cupView.tab === 'history';
-  // round 21 (item 4): the simulator's picks and mode — kept while the page is open (leaving the Cup keeps them), never stored
+  // The simulator's picks and mode — kept while the page is open (leaving the Cup keeps them), never stored
   const [simPicks, setSimPicks] = useState<SimPicks>(() => new Map());
   const [simMode, setSimMode] = useState<SimMode>('quick');
   const cupTeam = cupSchedule && cupView.list === 'team';
@@ -296,7 +296,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const list = state.layout === 'list' || (state.layout === 'slate' && !slate);
   // today's date from the clock: the view re-renders when the date changes (midnight), not every minute
   const today = useSyncExternalStore(clock.subscribe, () => localDate(clock.get(), timeZone));
-  // Midnight with the tab open (round 6, B3; also on waking from sleep or coming back to the tab — the clock reads the
+  // Midnight with the tab open (also on waking from sleep or coming back to the tab — the clock reads the
   // time then): every view still showing the old today moves to the new one; a view moved to another day stays put.
   const shownToday = useRef(today);
   useEffect(() => {
@@ -339,16 +339,16 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     return (date: string) => ({ enabled: date <= last, label: byDate.get(date) });
   }, [teamPickGames, state.teamId]);
   // whether the next game is at the top (the Today button): a store, so scrolling away doesn't re-render the view and
-  // every row with it (it did once per scroll away before round 4)
+  // every row with it
   const [teamAtNext] = useState(() => createValueStore(true));
   // Team List: the date of the row at the top (written while scrolling; read only by the title and the week strip)
   const [teamTop] = useState(() => createValueStore(''));
-  // Team List (round 9): one calendar month at a time. Opening the list, another team or the TV filter → the month of
+  // Team List: one calendar month at a time. Opening the list, another team or the TV filter → the month of
   // the next game not over (the row the list opens at); the strip, the date picker and Today move it from there.
   const teamListKey = `${state.teamId}|${state.tvOnly}|${team && list}`;
   const [teamListAt, setTeamListAt] = useState<{ key: string; month: string; to?: string }>(() => ({ key: teamListKey, month: teamOpen ? monthOf(teamOpen.date) : teamListMonthOf(data, state.teamId, state.tvOnly, now) }));
   let teamListMonth = teamListAt.month;
-  // round 21 (item 3): the last month loaded (Load earlier / more games); one month unless the buttons added some
+  // The last month loaded (Load earlier / more games); one month unless the buttons added some
   let teamListTo = teamListAt.to ?? teamListMonth;
   if (teamListAt.key !== teamListKey) {
     teamListMonth = teamListMonthOf(data, state.teamId, state.tvOnly, now);
@@ -362,7 +362,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
 
   // Top bar navigation for the view on show.
   const days = useMemo(() => listDays(data, state.tvOnly), [data, state.tvOnly]);
-  // round 22 (item 9): below BAR_SHORT_BELOW px the one-row bar takes the short date ("Fri, Nov 6, 2026") and "TV only"
+  // Below BAR_SHORT_BELOW px the one-row bar takes the short date ("Fri, Nov 6, 2026") and "TV only"
   const barShort = !compact && size.width < BAR_SHORT_BELOW;
   let nav: PeriodNavProps | undefined;
   if (teamWeeks) {
@@ -404,11 +404,11 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
       pick: { open: picking, onToggle: () => setPicking((p) => !p) },
     };
   } else if (!team) nav = { ...monthNav(leagueMonth, seasonMonths(data), setLeagueMonth), pick: compact ? undefined : { open: datePick, onToggle: () => setDatePick((o) => !o) } };
-  // round 21 (item 7): the Team Calendar gets the calendar picker too (every view with a date has one)
+  // The Team Calendar gets the calendar picker too (every view with a date has one)
   if (team && !list && nav && !compact) nav = { ...nav, pick: { open: datePick, onToggle: () => setDatePick((o) => !o) } };
 
   // "Today" (desktop/tablet; phones have no room in the top bar): back to today's games in each view. League:
-  // today (the day strip's today, kept inside the season — the rule the page opens with, round 6); Team Calendar: the
+  // today (the day strip's today, kept inside the season — the rule the page opens with); Team Calendar: the
   // current month; Team List: the next game.
   const def = seasonDay(data, today);
   const asJump = (fn: () => void) => () => ((jump.current = true), fn());
@@ -426,7 +426,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     else nav = { ...nav, onToday: asJump(() => setLeagueMonth(monthOf(def))), todayDisabled: leagueMonth === monthOf(def) };
   }
 
-  // Slate (round 7) and the League List (round 8): the day changes with ← / → — the top bar's arrows, or the arrow keys
+  // Slate and the League List: the day changes with ← / → — the top bar's arrows, or the arrow keys
   // anywhere but in a field, a tab row or an open picker (they keep their own arrow keys). Scrolling never changes the
   // day. One listener for whichever of the two is on show, so the keys never act twice.
   const dayKeys = !other && (slate || (!team && list));
@@ -455,7 +455,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     if (!games.length || !cards.length) return Promise.reject(new Error('no games to copy'));
     // the on-screen card size: same width, so the text wraps the same; rows as tall as the tallest card
     const shown = { width: cards[0]!.getBoundingClientRect().width, height: Math.max(...cards.map((c) => c.getBoundingClientRect().height)) };
-    // round 22 (item 14): the copy draws the info larger inside the same width, so its cards are that much taller
+    // The copy draws the info larger inside the same width, so its cards are that much taller
     const zoom = slateCopyZoom(shown.width, slateCopyCup(data, games), !hideNotes);
     const frame = 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER); // the card's padding and border don't scale
     const page = { width: window.innerWidth, height: window.innerHeight };
@@ -484,7 +484,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   };
 
   // Cup copies: the group cards under their heading, as on screen (the rules and wild-card panels stay out); the Schedule
-  // (round 12): the night on show as the League List copies its day, or the team's Cup games with its header — as on screen
+  // Cup: the night on show as the League List copies its day, or the team's Cup games with its header — as on screen
   // (the Schedule never scrolls, so the node on screen is the whole view)
   const copyCup = (button: HTMLButtonElement) => {
     const node = root.current?.querySelector<HTMLElement>(cupHist ? '[data-testid="cup-history"]' : cupSim ? '[data-testid="cup-sim"]' : cupSchedule ? (cupTeam ? '[data-testid="cup-team"]' : '[data-testid="cup-league"] [data-testid="cup-copy"]') : '[data-testid="cup-grid"]');
@@ -496,7 +496,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   // "Copy view as image": render the view off-screen (CaptureStage), copy it, remove it.
   const [capture, setCapture] = useState<(node: HTMLElement) => void>();
   // The button records the size copied (CSS px) and the pixel ratio used: data-captured="1840x1010@4".
-  // Standings (round 17/18): the heading, both conference tables in the current column set and the legend, as on screen
+  // Standings: the heading, both conference tables in the current column set and the legend, as on screen
   const copyStandings = (button: HTMLButtonElement) => {
     const node = root.current?.querySelector<HTMLElement>('[data-testid="standings-capture"]');
     if (!node) return Promise.reject(new Error('the standings are not on screen yet'));
@@ -515,7 +515,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
           .finally(() => setCapture(undefined));
       }),
     );
-  // League List copies (round 8): the day on show, its rows as on screen (same zoom and column); no week copy any more
+  // League List copies: the day on show, its rows as on screen (same zoom and column); no week copy any more
   const listDay = days.find((d) => d.date === nearestDay(days, state.date));
   const listStyle = leagueListStyle(size.width);
   const leagueListWidth = listStyle ? Math.ceil(LEAGUE_LIST_COLUMN * leagueZoom(size.width)) : Math.min(size.width, LIST_MAX_WIDTH);
@@ -532,13 +532,13 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const viewKey = [state.mode, state.layout, state.teamId, state.tvOnly, state.showRest, state.weeks, state.teamSpan, teamMonth, teamWeek, leagueMonth, weekView ? weekOf(state.date)[0] : '', slate ? state.date : '', compact, cupView.tab, cupView.list, cupView.by, cupView.teamId, cupView.night].join('|');
   useEffect(() => selection.clear(), [viewKey, selection]);
   const root = useRef<HTMLDivElement>(null);
-  // round 8 (Part 3): the game hovered in the League List or on its map; the list's row is lit without re-rendering it
+  // The game hovered in the League List or on its map; the list's row is lit without re-rendering it
   const [mapHover] = useState(() => createValueStore(''));
   useHoverRow(mapHover, root);
   useClearHover(mapHover, `${state.mode}|${state.layout}|${nearestDay(days, state.date)}|${state.tvOnly}|${state.teamId}`);
   const teamMap = team && list && !compact && teamMapFits(size.width);
   const [selCapture, setSelCapture] = useState<{ ids: ReadonlySet<string>; cellWidth?: number; teamScale?: number; weekStyle?: string; onReady: (node: HTMLElement) => void }>();
-  // what a selection image is drawn as: the Cup Schedule's lists like the League / Team List (round 12)
+  // what a selection image is drawn as: the Cup Schedule's lists like the League / Team List
   const selList = cupSchedule || list;
   const selTeam = cup ? cupTeam : team;
   const selTeamId = cupTeam ? cupView.teamId ?? state.teamId : state.teamId;
@@ -565,7 +565,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     );
   };
 
-  // Round 15: team links. The Team mode used last (List or Calendar; this page only — nothing is stored, as for the
+  // Team links. The Team mode used last (List or Calendar; this page only — nothing is stored, as for the
   // other toggles; a page opened on a Team view starts from its mode, else List) and the date being looked at are read
   // when a link is pressed, never rendered into the links (no re-render of the cards when they change).
   const lastTeamLayout = useRef<TeamLayout>(initial?.mode === 'team' && initial.layout === 'calendar' ? 'calendar' : 'list');
@@ -647,7 +647,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     [teamLinks],
   );
 
-  // ---- Round 21 (item 6): page history. Each render's page as a snapshot; after a render that changed it, the host is
+  // ---- Page history. Each render's page as a snapshot; after a render that changed it, the host is
   // told: a new page (push) or the same page moved by a day step (replace). A restore (back / forward) is told nothing.
   const scrollAt = useRef<{ id: string; top: number }>(undefined);
   const jump = useRef(false); // a picked date or Today: a new page although only the date changed
@@ -777,10 +777,10 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         onKeyDownCapture={autoHide.onInput}
       >
         <div className="ck-toolbar ck-bar1" data-testid="top-bar" data-destination={destination} ref={bar}>
-          {/* round 22 (item 9): one row, ~44 px. Left: page history + destinations. Centre: the destination's own control —
+          {/* One row, ~44 px. Left: page history + destinations. Centre: the destination's own control —
               Schedule: ‹ date › · calendar · Today; Cup: its views and switches; Standings: the column sets. Right: Schedule's
               views, scope picker, options and the TV chip, then ⓘ (time zone + data stamp), Quick standings and Copy as icon
-              buttons. Round 21's behaviour is kept (history, scope picker, fixed date block); only the layout changed.
+              buttons.
               It hides while the list is scrolled down and comes back on a scroll up (useAutoHideBar). */}
           {title && <h1 className="ck-title ck-sr">{title}</h1>}
           <div className="ck-bar-left" data-testid="bar-global">
@@ -915,7 +915,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         ) : slate ? (
           <SlateView focusTeam={slateFocusTeam} today={today} data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} width={size.width} notes={notes} odds={odds} hideNotes={hideNotes} onHideNotes={setHideNotes} />
         ) : list && leagueSideBySide(size.width) ? (
-          // round 8: the map beside the list (desktop); it stays put while a busy night scrolls
+          // The map beside the list (desktop); it stays put while a busy night scrolls
           <div className="ck-league-split" {...hoverHandlers(mapHover)}>
             <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />
             <div className="ck-map-slot">
@@ -1013,7 +1013,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
 }
 
 /** Team view opens on the month of the team's next game not over yet (else its last game). */
-/** The league views' day for the local date `today` (round 6, B2: the page always opens on it): today, kept inside the season. */
+/** The league views' day for the local date `today` (the page always opens on it): today, kept inside the season. */
 export function seasonDay(data: CalendarData, today: string): string {
   const first = data.dates[0];
   const last = data.dates.at(-1);
@@ -1056,7 +1056,7 @@ function teamListMonthOf(data: CalendarData, teamId: number, tvOnly: boolean, no
 }
 
 /**
- * Round 15: the Team List row a team link opens at for `date`: that day (a game, or a rest day while rest days show and it
+ * The Team List row a team link opens at for `date`: that day (a game, or a rest day while rest days show and it
  * is inside the team's season), else the team's next game after it, else its last game.
  */
 export function teamListTarget(data: CalendarData, teamId: number, tvOnly: boolean, showRest: boolean, date: string): string {
@@ -1086,7 +1086,7 @@ function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: numbe
   const t = Date.parse(updatedAt);
   if (Number.isNaN(t)) return null;
   const stale = useClockValue((n) => n - t > STALE_AFTER_MS, now);
-  // turns orange when it crosses 36 h: one timeout makes the clock read the time then (it has no minute tick, round 7)
+  // turns orange when it crosses 36 h: one timeout makes the clock read the time then (it has no minute tick)
   useEffect(() => {
     const left = t + STALE_AFTER_MS - Date.now();
     if (stale || left <= 0 || left > 2 ** 31 - 1) return;
@@ -1103,7 +1103,7 @@ function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: numbe
 }
 
 /**
- * Team List's date block (round 21, item 7: the same ‹ date › · calendar · Today as every view): the date of the row at
+ * Team List's date block (the same ‹ date › · calendar · Today as every view): the date of the row at
  * the top ("Sunday, November 15, 2026") from the store, so scrolling re-renders only this; ‹ › go to the previous / next
  * game; Today (the next game) disabled while the list is there.
  */
@@ -1132,7 +1132,7 @@ function TeamListNav({ short = false, store, games, atNext, pick, onDate, onToda
 const fmtShortMonth = (month: string) => dateFormat('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${month}-15T12:00:00Z`));
 
 /**
- * Round 21 (item 6): the page history's ← →, at the far left of the top bar — long arrows in one joined pill, unlike the
+ * The page history's ← →, at the far left of the top bar — long arrows in one joined pill, unlike the
  * date block's round ‹ › (a day); greyed out when there is nothing there; the tooltip names the page.
  */
 function PageArrows({ h: { labels, onBack, onForward } }: { h: PageHistory }) {
@@ -1157,7 +1157,7 @@ export function fmtMonthSpan(from: string, to: string): string {
 }
 
 /**
- * Round 22 (item 9): the top bar hides while a list (League / Team List, Slate) is scrolled down by the person (wheel or
+ * The top bar hides while a list (League / Team List, Slate) is scrolled down by the person (wheel or
  * keys — not a jump to a row, a restore or a script) and comes back on a scroll up, at the top, or with the pointer at
  * the top edge. No React render: a class on the root (`ck-bar-hidden`, the bar out of the layout); the scroller is moved
  * by the bar's height at the same time, so the rows on screen stay exactly where they were (no jump) and the list gains
@@ -1227,7 +1227,7 @@ function useAutoHideBar(root: RefObject<HTMLDivElement | null>, bar: RefObject<H
   };
 }
 
-/** Round 22 (item 9): ⓘ — the time zone, the data stamp (orange once it is 36 h old) and, on the Cup, the stage, in its tooltip. */
+/** Ⓘ — the time zone, the data stamp (orange once it is 36 h old) and, on the Cup, the stage, in its tooltip. */
 function BarInfo({ note, updatedAt, now, timeZone, extra }: { note: string; updatedAt?: string; now: number; timeZone?: string; extra?: string }) {
   const t = updatedAt ? Date.parse(updatedAt) : NaN;
   const stale = useClockValue((n) => !Number.isNaN(t) && n - t > STALE_AFTER_MS, now);
@@ -1254,5 +1254,5 @@ const StandingsIcon = () => (
   </svg>
 );
 
-/** Round 22 (item 9): the width under which the one-row bar uses its short labels (it fits one row down to ~1240 px). */
+/** The width under which the one-row bar uses its short labels (it fits one row down to ~1240 px). */
 export const BAR_SHORT_BELOW = 1560;

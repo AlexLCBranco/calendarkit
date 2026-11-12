@@ -29,6 +29,7 @@ describe('check-version (CI)', () => {
     expect(changesNeedBump(['public/logos/BOS.svg', 'README.md'])).toBe(true);
     expect(changesNeedBump(['index.html'])).toBe(true);
     expect(changesNeedBump(['public/data/schedule.json'])).toBe(false);
+    expect(changesNeedBump(['docs/HISTORY.md', 'PROJECT.md'])).toBe(false);
     expect(changesNeedBump(['tests/x.test.ts', 'e2e/y.spec.ts', 'PROJECT.md', '.github/workflows/ci.yml', 'scripts/z.ts'])).toBe(false);
   });
   it('a bump = a higher MAJOR.MINOR.PATCH', () => {

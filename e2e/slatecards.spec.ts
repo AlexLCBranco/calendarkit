@@ -1,4 +1,4 @@
-// Round 9, Part 2: Slate cards in a real browser against the served snapshot — the streak (through a final game, round 22) after each record
+// Slate cards in a real browser against the served snapshot — the streak (through a final game) after each record
 // (as of that night: a past night's streaks, not today's), national TV games outlined and tinted green (only they, and
 // in copies), and the hoopsjunkie link as a "↗" icon after the time: click / middle / ctrl open the game page in a new
 // tab, no underline, never in a copy; the team names are no link. Desktop widths.
@@ -21,7 +21,7 @@ const snapshot = (page: Page) =>
     const raw = await (await fetch('/calendar/data/schedule.json')).json();
     const games = (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
     games.sort((a, b) => a.gameDateTimeUTC.localeCompare(b.gameDateTimeUTC));
-    // streak per game and team (through it once final, round 22; going in before): regular-season games (002) only, while every earlier one is final
+    // streak per game and team (through it once final; going in before): regular-season games (002) only, while every earlier one is final
     const streak: Record<string, string> = {};
     const state = new Map<number, { known: boolean; last?: 'W' | 'L'; n: number }>();
     for (const g of games) {
@@ -173,13 +173,13 @@ test('the link is a "↗" after the time: tooltip, no underline (brightens), cli
     const g = (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).find((x) => x.gameId === id)!;
     return `https://hoopsjunkie.io/games/${g.gameDateEst.slice(0, 10)}/${g.awayTeam.teamTricode.toLowerCase()}-vs-${g.homeTeam.teamTricode.toLowerCase()}`;
   }, id);
-  // no game link around the names anywhere (round 15: the only anchors there are team links, to the Team view —
+  // no game link around the names anywhere (the only anchors there are team links, to the Team view —
   // e2e/teamlinks.spec.ts); never underlined
   expect(await page.locator('[data-testid="slate"] .ck-slate-teams a:not([data-team-link]), [data-testid="slate"] a:not([data-team-link]):has(.ck-slate-name)').count()).toBe(0);
   const name = card.locator('.ck-slate-name').first();
   await name.hover();
   expect(await name.evaluate((n) => [getComputedStyle(n).cursor, getComputedStyle(n).textDecorationLine])).toEqual(['pointer', 'none']);
-  // one icon per card, in the strip right under the start time (round 14; was beside it), with its tooltip
+  // one icon per card, in the strip right under the start time, with its tooltip
   expect(await cards(page).count()).toBe(await page.locator('[data-testid="slate"] a[data-testid="game-link"]').count());
   const link = card.locator('a[data-testid="game-link"]');
   expect(await link.textContent()).toBe('↗');
@@ -215,7 +215,7 @@ test('the link is a "↗" after the time: tooltip, no underline (brightens), cli
     expect(opened, how).toBe(want);
     expect(page.url()).not.toContain('hoopsjunkie');
   }
-  // never in a copy: no link in the copied cards (round 14: the strip's chips reflow without it, so its old spot holds the
+  // never in a copy: no link in the copied cards (the strip's chips reflow without it, so its old spot holds the
   // series chip; before, the spot was checked to be plain background)
   if (info.project.name !== 'desktop-xl') return;
   await page.setViewportSize({ width: 1920, height: 911 });

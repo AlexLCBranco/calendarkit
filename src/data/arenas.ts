@@ -1,4 +1,4 @@
-// Round 8 (2.5): where the feed's arenas are. One entry per venue the feed names (its arenaName, arenaCity, arenaState —
+// Where the feed's arenas are. One entry per venue the feed names (its arenaName, arenaCity, arenaState —
 // the feed has no coordinates and no country field; abroad, arenaState holds the country code, or nothing). Coordinates:
 // Wikidata's "coordinate location" (P625) of the arena's item, fetched 2026-10-30 (`source`: item @ revision); for the 10
 // arenas whose Wikipedia article carries its own geotag, the two agree exactly. The Cup's Las Vegas arena (T-Mobile

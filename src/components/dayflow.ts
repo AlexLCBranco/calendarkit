@@ -7,17 +7,17 @@ import { tipoff } from '../data/model';
 /**
  * Game line geometry in px. Widths are fixed rather than measured at runtime: the text is the bundled Inter font,
  * so they are the same on every OS. `tri` fits the widest tricode (MEM, 26.95 px at 11 px semibold).
- * Line (round 4, "option B": aligned columns, logos always): logo · gap · AWAY · sgap · score · sep (the "@",
+ * Line (aligned columns, logos always): logo · gap · AWAY · sgap · score · sep (the "@",
  * `atFont` px: 8.69 px wide at 9 px) · score · sgap · HOME · gap · logo · pillGap · TV. Logos on the outside, each
  * tricode against its logo, each score in its own slot against the "@" (empty before the game), so every column — logos,
  * tricodes, scores, "@" — is at one x down a day. `labelGap`: below a time label; `dot`: the old B2B dot (unused
  * here since the fatigue marks). `scoreFont`: the score in its `score` slot (largest 0.1 px step where 3 tabular
  * digits, SCORE3_EM wide, fit: 8.2 px → 15.91 px of 16). `fxRow` / `fxGap` / `fxFont`: 1-week mode's second row under a game
- * whose teams have fatigue (round 5: the compact Fatigue component under each team; its font ≈ 0.72 × `font`).
+ * whose teams have fatigue (the compact Fatigue component under each team; its font ≈ 0.72 × `font`).
  */
 export const MONTH_LINE = { logo: 16, gap: 1, tri: 28, sgap: 2, score: 16, sep: 12, atFont: 9, pillGap: 2, pill: 15, font: 11, labelFont: 10, rowGap: 3, groupGap: 7, labelGap: 2, dot: 5, scoreFont: 8.2, fxRow: 11, fxGap: 1, fxFont: 7.9, labelLine: 1.25 } as const;
 /**
- * 2-week mode's vertical spacing (round 5): the two week rows must fit a 1280 × 900 window without page scroll (the
+ * 2-week mode's vertical spacing: the two week rows must fit a 1280 × 900 window without page scroll (the
  * busiest days, Apr 4, 2027 — 13 games in 10 time groups — and Nov 4 / Nov 2, 2026, overflowed by up to 164 px). Only
  * gaps shrink: line height between games 3 → 2, between time groups 7 → 2, the label's line 12.5 → 10 px (font kept
  * at 10 px) and its gap 2 → 1. Game lines, logos, tricodes and scores keep their size.
@@ -63,7 +63,7 @@ export function monthColumns(width: number): number {
 
 /**
  * Smallest widget width where a full-size game line fits a 7-column day cell (monthCellInner ≥ the line). Below it,
- * League → Calendar shows the count grid. 155 px line (round 4): (width − 24) / 7 − 10 ≥ 155 → 1179 (887 with the 119 px
+ * League → Calendar shows the count grid. 155 px line: (width − 24) / 7 − 10 ≥ 155 → 1179 (887 with the 119 px
  * line); a 1280 px window (1248 px content, cell 164.9 px) still shows the week view.
  */
 export const WEEK_MIN_WIDTH = (() => {

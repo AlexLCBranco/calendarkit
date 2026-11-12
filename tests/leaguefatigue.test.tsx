@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Fatigue on the tricodes in the league views (round 4, item 6): week view and League List. Replaces the week view's
+// Fatigue on the tricodes in the league views: week view and League List. Replaces the week view's
 // B2B dot and the League List's "B2B" badge. Filled = 2nd night of a back-to-back, outline = 1st night, ✈ = metro
 // change between the nights, purple underline = in a 3-in-4 set; a tooltip per team (leg, code, both games, travel,
 // every set, record going in; "rested" otherwise). Legend under the week grid and the League List.
@@ -17,10 +17,10 @@ afterEach(cleanup);
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 const XL = { width: 1840, height: 1000 };
 const LEGEND = '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4';
-/** Views with the Fatigue component: League List (desktop) and the 1-week view. Round 6: the leg dot, the merged chip; no
+/** Views with the Fatigue component: League List (desktop) and the 1-week view. The leg dot, the merged chip; no
  * tricode keys (the tricodes there have no yellow marks). */
 const LEGEND_FX = 'B2B back-to-back, 1st night (again tomorrow) · B2B 2nd night (played yesterday) ·  home  away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next';
-/** Round 22 (item 15): gameId → the 3+ day gaps before / after it, worked out here from the dates. */
+/** GameId → the 3+ day gaps before / after it, worked out here from the dates. */
 function breaks(teamId: number) {
   const games = teamGames(data, teamId);
   const gap = (a: (typeof games)[number], b: (typeof games)[number]) => Math.round((Date.parse(b.dateEt) - Date.parse(a.dateEt)) / 86_400_000);
@@ -32,7 +32,7 @@ function breaks(teamId: number) {
   });
   return out;
 }
-/** gameId → "4in6 · 2nd" for a team, worked out here: sets chained while one starts inside the stretch (round 6). */
+/** gameId → "4in6 · 2nd" for a team, worked out here: sets chained while one starts inside the stretch. */
 function stretches(teamId: number) {
   const games = teamGames(data, teamId);
   const isSet = (i: number) => i + 2 < games.length && (Date.parse(games[i + 2]!.dateEt) - Date.parse(games[i]!.dateEt)) / 86_400_000 <= 3;
@@ -90,7 +90,7 @@ describe('leagueFatigue (model)', () => {
           expect(got.tip).toMatch(/\n[A-Z][a-z]{2} \d{1,2} (vs|@) [A-Z]{3} \((home|away)\) → [A-Z][a-z]{2} \d{1,2} (vs|@) [A-Z]{3} \((home|away)\)/);
           expect(got.tip.includes(`Travels ${p.fromCity} → ${p.toCity}`)).toBe(got.travels);
         }
-        // round 6: the merged stretch, one line ("4in6 · 2nd: 4 games in 6 days (Oct 28 – Nov 2), tonight the 2nd"), and its days
+        // The merged stretch, one line ("4in6 · 2nd: 4 games in 6 days (Oct 28 – Nov 2), tonight the 2nd"), and its days
         const chip = stretches(t.id).get(id);
         expect(!!got.tif, `${t.tricode} ${id} stretch`).toBe(!!chip);
         if (chip) {
@@ -98,7 +98,7 @@ describe('leagueFatigue (model)', () => {
           expect(got.tip).not.toContain('3 games in 4 days — ');
           expect(got.days!.split(' ').filter((d) => d.endsWith(':t'))).toHaveLength(1);
         }
-        // round 22: the breaks, and their tooltip lines
+        // The breaks, and their tooltip lines
         const br = breaks(t.id).get(id);
         expect({ after: got.rest?.after?.days, before: got.rest?.before?.days }, `${t.tricode} ${id} break`).toEqual({ after: br?.after, before: br?.before });
         if (br?.after) expect(got.tip).toContain(`${br.after} days off, last played `);
@@ -173,7 +173,7 @@ describe('Fatigue component (round 5)', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-02' }} />).container;
     const f = leagueFatigue(data);
     const cards = [...el.querySelectorAll<HTMLElement>('[data-testid="league-list"] .ck-card')];
-    expect(cards.length).toBe(data.byDate.get('2026-11-02')!.length); // round 8: that day only (15 games)
+    expect(cards.length).toBe(data.byDate.get('2026-11-02')!.length); // That day only (15 games)
     let shown = 0;
     for (const c of cards) {
       const g = data.games.find((x) => x.gameId === c.dataset.gameId)!;
@@ -190,14 +190,14 @@ describe('Fatigue component (round 5)', () => {
         // badge next to the logo: the away column mirrored, the home column not
         expect(fx.classList.contains('ck-fx-mirror')).toBe(i === 0);
         expect(fx.querySelector('.ck-fx-b2b')?.textContent ?? '').toBe(pair ? 'B2B' : '');
-        // round 6: the leg dot beside the first B (1st night) or the second B (2nd night), whichever column
+        // The leg dot beside the first B (1st night) or the second B (2nd night), whichever column
         const badge = fx.querySelector('.ck-fx-b2b');
         if (pair) expect(badge!.firstChild === badge!.querySelector('.ck-fx-leg') ? 1 : badge!.lastChild === badge!.querySelector('.ck-fx-leg') ? 2 : 0, `${g.gameId} ${i} leg`).toBe(want.nights[0]);
         expect(icons(fx)).toEqual(pair ? [...pair.code].map((c, k) => `${c === 'H' ? 'home' : 'away'}${want.nights[0] === k + 1 ? '!' : ''}`) : []);
         expect(fx.querySelector('.ck-fx-chip')?.textContent ?? '').toBe(stretches(t.teamId).get(g.gameId) ?? '');
         expect(fx.getAttribute('data-tip')).toBe(want.tip);
       });
-      // the tricode marks lose their plane (the component's plane means "away") and, round 6, their yellow fill / outline
+      // the tricode marks lose their plane (the component's plane means "away") and their yellow fill / outline
       expect(c.querySelector('.ck-fm-plane, .ck-fm-n1, .ck-fm-n2')).toBeNull();
     }
     expect(shown).toBeGreaterThan(10);
@@ -258,7 +258,7 @@ describe('League List', () => {
   it('every rendered row: marks on both tricodes, tooltip per team; no "B2B" badge; legend under the list', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-02' }} />).container;
     const ids = [...el.querySelectorAll<HTMLElement>('[data-testid="league-list"] .ck-card')].map((c) => c.dataset.gameId!);
-    expect(ids.length).toBe(data.byDate.get('2026-11-02')!.length); // round 8: that day only
+    expect(ids.length).toBe(data.byDate.get('2026-11-02')!.length); // That day only
     expect(check(el, '.ck-matchup .ck-fm', ids, true)).toBe(2 * ids.length);
     expect(el.querySelector('.ck-b2b')).toBeNull();
     expect(el.querySelector('[data-testid="fatigue-legend"]')?.textContent).toBe(LEGEND_FX);

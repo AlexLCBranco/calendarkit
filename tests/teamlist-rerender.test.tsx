@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// v1.40.0: opening or closing the Team List's date picker no longer re-renders the whole Team List (TeamListView is
+// Opening or closing the Team List's date picker no longer re-renders the whole Team List (TeamListView is
 // memo'd; the picker's open state lives in CalendarView). Before, each open and each close redrew every row of the
 // month (~140 ms / ~90 ms in jsdom, 85 % of a season walk in the tests), which is what pushed the month-walking unit
 // tests past Vitest's 5 s under load. Counted through leagueFatigue, which TeamListView calls on every render.

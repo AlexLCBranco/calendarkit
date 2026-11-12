@@ -1,5 +1,5 @@
-// Round 21 (item 12): "Tonight in the Cup" — on a night with Cup group games, at the top of the Cup page: tonight's Cup
-// games in one compact row, each team with its Cup record, its point differential and its stakes chips (item 11, the
+// "Tonight in the Cup" — on a night with Cup group games, at the top of the Cup page: tonight's Cup
+// games in one compact row, each team with its Cup record, its point differential and its stakes chips (the
 // same chips as the Slate); games link to hoopsjunkie, teams to their schedule. On a night without Cup games: nothing,
 // and no room kept for it.
 

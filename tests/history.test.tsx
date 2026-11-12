@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 6): every page has its own address and history entry. URL ↔ state round-trips for every view; which
+// Every page has its own address and history entry. URL ↔ state round-trips for every view; which
 // changes are new pages (push) and which are day steps (replace); back / forward put the whole page back; the in-app
 // ← → follow the history (greyed out at the ends, tooltips naming the page). Scroll restore on a real layout:
 // e2e/history.spec.ts.

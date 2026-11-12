@@ -1,13 +1,13 @@
-// Schedule fatigue for one team in one game, readable without hovering (round 5): a yellow "B2B" badge, the two
+// Schedule fatigue for one team in one game, readable without hovering: a yellow "B2B" badge, the two
 // nights of the back-to-back as a house (home) or a plane (away) — always in time order, tonight solid, the other night
 // faded — and a 3-in-4 chip. One component for the League List, Team List and week view, in two sizes. A team with none
 // of it gets an empty slot of the same width, so rows stay aligned. The tooltip (shared floating one, [data-tip]) adds
 // details: which leg, the other night's opponent, the 3-in-4 stretch and its days (data-tip-days, a strip).
-// Round 6: a dot in the badge says which leg tonight is — beside the first B on the 1st night (they play again
+// A dot in the badge says which leg tonight is — beside the first B on the 1st night (they play again
 // tomorrow), beside the second B on the 2nd night (they played yesterday); it never flips with the column. The chip is
 // the merged 3-in-4 stretch: "4in6 · 2nd" (compact size: "4in6", see fatigue.css).
 // Few elements on purpose (every list row has two): a grid of at most 5 children, the icons drawn by CSS (fatigue.css).
-// Round 22 (item 15): an abnormal break (3+ days between game dates, rest.ts) — a teal badge with the days ("4d"): filled
+// An abnormal break (3+ days between game dates, rest.ts) — a teal badge with the days ("4d"): filled
 // when this game comes off the break, outlined when the break follows it; its own tooltip gives the exact count and the
 // game on the other side ("4 days off, last played Mon, Nov 4 @ PHI"). It takes no width: it sits in the B2B badge's
 // track when tonight isn't a back-to-back night, else in the 3-in-4 chip's; with both taken, a teal corner tick.
@@ -54,7 +54,7 @@ function label(team: string, f: TeamFatigue): string {
  * the tricode's mark already is one).
  */
 export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = false, shortChip = false }: { f?: TeamFatigue; team: string; size?: 'full' | 'compact'; badge?: 'left' | 'right'; focusable?: boolean; shortChip?: boolean }) {
-  // round 14 (item 3): `shortChip` — full size, but the chip shows the stretch only ("7in11", as compact does) and its
+  // `shortChip` — full size, but the chip shows the stretch only ("7in11", as compact does) and its
   // track is narrower (the Slate's tight cards); tonight's place stays in the tooltip
   const pair = f?.pairs[0];
   const night = f?.nights[0];
@@ -90,7 +90,7 @@ export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = fa
 }
 
 /**
- * Round 22 (item 15): the break badge — "4d", the days between the game dates, in a free track (`slot`). Filled: this game comes off the break;
+ * The break badge — "4d", the days between the game dates, in a free track (`slot`). Filled: this game comes off the break;
  * outlined: the break follows it; a game with a break on both sides shows the one it comes off (filled) and has both
  * lines in its tooltip. Its own data-tip (the floating tooltip takes the nearest one).
  */

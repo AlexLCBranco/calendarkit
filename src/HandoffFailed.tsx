@@ -1,5 +1,5 @@
-// Round 10: shown at the old address when its notes could not be handed to the new one (handoff.ts) — instead of
-// redirecting and leaving them behind. The notes stay where they are; Export saves them as round 9's export file.
+// Shown at the old address when its notes could not be handed to the new one (handoff.ts) — instead of
+// redirecting and leaving them behind. The notes stay where they are; Export saves them as the notes' export file.
 
 import { exportText, OLD_ORIGIN } from './handoff';
 

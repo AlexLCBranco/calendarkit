@@ -16,7 +16,7 @@ export interface TeamFatigue {
   /** The team changes metro between the two nights of one of those pairs. */
   travels: boolean;
   tif?: ThreeInFour;
-  /** Round 22 (item 15): a break of 3+ days before or after this game (rest.ts). */
+  /** A break of 3+ days before or after this game (rest.ts). */
   rest?: RestFlag;
   /** Tooltip: leg and code, both games with dates and opponents, travel, the merged 3-in-4 stretch, record going in. */
   tip: string;
@@ -32,9 +32,9 @@ const md = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso
 const where = (g: B2BPair['first'], teamId: number) => (g.homeTeam.teamId === teamId ? 'home' : 'away');
 
 /**
- * v1.40.1: leagueFatigue is lazy. Up to v1.40.0 it worked out all 30 teams' season, records and ~2 500 tooltips the
+ * leagueFatigue is lazy. Worked out eagerly, it did all 30 teams' season, records and ~2 500 tooltips the
  * first time any league view rendered — on the load path of the week view, whose first render went from ~270 to ~330 ms
- * on the Windows PC at 71de8aa (v1.16.0, round 5's Fatigue component, which made the week view read it). Now a team's
+ * on the Windows PC once the Fatigue component made the week view read it. Now a team's
  * back-to-backs and 3-in-4 sets are worked out when one of its games is first asked for, the season records only when
  * a tooltip is first read, and each tooltip text and day strip on first read. Same values (tests/fatigue-lazy.test.ts).
  */
@@ -69,12 +69,12 @@ function teamFatigue(data: CalendarData, teamId: number, records: () => ReturnTy
         `${md(pair.first.dateEt)} ${sideLabel(pair.first, teamId)} (${where(pair.first, teamId)}) → ${md(pair.second.dateEt)} ${sideLabel(pair.second, teamId)} (${where(pair.second, teamId)})`,
         ...(pair.travels ? [`Travels ${pair.fromCity} → ${pair.toCity}`] : []),
       ]);
-      // round 22 (item 15): the break's lines ("4 days off, last played Mon, Nov 4 @ PHI"); alone, they open the tip
+      // The break's lines ("4 days off, last played Mon, Nov 4 @ PHI"); alone, they open the tip
       const breaks = rest ? restLines(rest, teamId) : [];
       if (!legs.length && !tif && breaks.length) breaks[0] = `${tri} — ${breaks[0]}`;
       else if (!legs.length) lines.push(`${tri} — ${tif ? mergedChip(tif.merged) : 'rested'}`);
       lines.push(...breaks);
-      // round 6: overlapping 3-in-4 sets as one stretch (was a line per set); the tooltip draws its days under the text
+      // Overlapping 3-in-4 sets as one stretch (was a line per set); the tooltip draws its days under the text
       if (tif) lines.push(`${mergedChip(tif.merged)}: ${mergedTip(tif.merged)}`);
       if (rec) lines.push(`${g.status === 'final' ? 'Record after the game' : 'Record going in'}: ${rec.wins}-${rec.losses}`);
       return lines.join('\n');

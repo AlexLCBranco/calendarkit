@@ -1,4 +1,4 @@
-// Round 21 (item 9): builds src/data/cupHistory.json — every finished NBA Cup (2023-24 on), as it happened, from the
+// Builds src/data/cupHistory.json — every finished NBA Cup (2023-24 on), as it happened, from the
 // NBA's own data: the final group standings (stats.nba.com iststandings: ranks, records, differentials, points, wild
 // cards, knockout seeds, each team's group games) and that season's schedule (stats.nba.com scheduleleaguev2: scores,
 // knockout games and their arenas). Past editions never change, so the file is committed and the app never fetches

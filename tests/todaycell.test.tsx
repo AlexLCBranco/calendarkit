@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Today in the Team Calendar (round 7, 2.1): the cell of today (the clock's local date — the day strip's and the Today
+// Today in the Team Calendar: the cell of today (the clock's local date — the day strip's and the Today
 // buttons' today) carries the week view's today highlight in Month, 1 week and 2 weeks; it moves at midnight.
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';

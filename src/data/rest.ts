@@ -1,4 +1,4 @@
-// Round 22 (item 15): abnormal rest. Rest between two of a team's games = the difference of their game dates (the NBA's
+// Abnormal rest. Rest between two of a team's games = the difference of their game dates (the NBA's
 // ET game date, as everywhere in the app; tip-off times don't matter, an early tip-off counts as a full day): a
 // back-to-back is 1, one empty day between is 2, two empty days 3. A gap of REST_FLAG_DAYS (3) or more is flagged on BOTH
 // games — the one before the break ("before": the break comes after it) and the one after it ("after": it comes off the

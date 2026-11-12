@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 9, Part 1: the Team List shows one calendar month. Rows = that month's games (+ rest days); the month title;
+// The Team List shows one calendar month. Rows = that month's games (+ rest days); the month title;
 // the strip's ‹ › and day clicks, the date picker and Today switch months and put the row at the top; numbers, records,
 // streaks and B2B nights still come from the whole season; a B2B split across the month edge keeps its marks but draws
 // no bracket toward the missing row. Real scrolling and the served snapshot: e2e/teammonth.spec.ts.

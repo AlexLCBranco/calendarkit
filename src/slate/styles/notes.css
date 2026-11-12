@@ -1,4 +1,4 @@
-/* Slate notes (round 9, Part 3; round 14: the tight info block, slate.css): the game's info on the left, the note box on the right taking the rest
+/* Slate notes (the tight info block: slate.css): the game's info on the left, the note box on the right taking the rest
    of the card — a dark rounded box with a light outline (Alex's hand-made boards), text inside. */
 .ck-slate-card.ck-with-note {
   display: grid;

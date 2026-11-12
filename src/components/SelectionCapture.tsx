@@ -36,7 +36,7 @@ export interface SelectionCaptureProps {
   weekStyle?: string;
   /** League week view: 1 week (the lines get their Fatigue row, as on screen). */
   weeks?: 1 | 2;
-  /** Cup schedule (round 12): only its rows' Cup tags and night headings, as on screen. */
+  /** Cup schedule: only its rows' Cup tags and night headings, as on screen. */
   cup?: boolean;
 }
 
@@ -60,7 +60,7 @@ export function SelectionCapture(p: SelectionCaptureProps) {
       .map((d) => ({ date: d.date, games: d.games.filter((g) => ids.has(g.gameId)) }))
       .filter((d) => d.games.length);
     return (
-      // the rows as on screen (round 8: the desktop list's zoom and column)
+      // the rows as on screen (the desktop list's zoom and column)
       <section className={`ck-league-list${leagueListStyle(size.width) ? ' ck-league-side' : ''}`} aria-label="Selected games" style={leagueListStyle(size.width)}>
         <div className="ck-llist">
           {days.map((d) => (

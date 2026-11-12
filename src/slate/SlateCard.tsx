@@ -1,8 +1,8 @@
-// The Slate's cards (round 7; round 10: the self-contained part the gauntlet's Slate widget uses, moved here from
+// The Slate's cards (the self-contained part the gauntlet's Slate widget uses, moved here from
 // SlateView.tsx). Inputs: the schedule data, a date, a time zone, a notes store — nothing from calendarkit's app shell,
 // URL or page. Each card: both teams (logo, full name, record and streak going in, Fatigue component), "@" before the
 // home team, the tip-off time or the final score (OT), the hoopsjunkie "↗" icon, the Cup / play-off labels and the
-// national TV names; round 9: beside the facts, a note box per game (NoteBox: pregame / live / postgame), the grid
+// national TV names; Beside the facts, a note box per game (NoteBox: pregame / live / postgame), the grid
 // filling the width it is given, two columns while each note box keeps SLATE_NOTE_MIN. No timers, no requests: the
 // data comes in (loadCalendarData fetches it once per page), only the logos are images.
 
@@ -42,15 +42,15 @@ export interface SlateDayProps {
   date: string;
   /** IANA zone for the tip-off times; default: the browser's. */
   timeZone?: string;
-  /** The games' notes; none: info-only cards (round 7's). */
+  /** The games' notes; none: info-only cards. */
   notes?: SlateNotes;
   /** The width the grid fills (CSS px): with notes, two columns while each note box keeps SLATE_NOTE_MIN, else one;
-   *  without (round 14), as many tight info-only cards as fit. */
+   *  without, as many tight info-only cards as fit. */
   width?: number;
   tvOnly?: boolean;
   /** Each card's "↗" link (e.g. hoopsjunkieLink); none: no icon. */
   gameLink?: GameLink;
-  /** Round 14: moneyline odds (liveOddsStore()); none: no request, the odds column stays empty. */
+  /** Moneyline odds (liveOddsStore()); none: no request, the odds column stays empty. */
   odds?: SlateOdds;
 }
 
@@ -80,7 +80,7 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
   useEffect(() => notes?.listen?.(), [notes]);
   return (
     <>
-      {/* round 14 (item 6): a game-less day of the season is reachable and says so */}
+      {/* A game-less day of the season is reachable and says so */}
       {games.length === 0 && (
         <p className="ck-empty ck-no-games" data-testid="no-games" data-day={date}>
           {tvOnly ? 'No national TV games' : 'No games'} on {dateFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`))}
@@ -95,9 +95,9 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
   );
 }
 
-/** Round 21 (item 1): a night with Cup group games — every card gets the Cup track (layout.ts SLATE_CUP_TRACK). */
+/** A night with Cup group games — every card gets the Cup track (layout.ts SLATE_CUP_TRACK). */
 export const isCupNight = (games: readonly ScheduleGame[]) => games.some((g) => g.isCupGroupGame || isKnockout(g));
-/** Round 21 (item 10): a Cup knockout game (quarterfinal, semifinal, Championship). */
+/** A Cup knockout game (quarterfinal, semifinal, Championship). */
 export const isKnockout = (g: ScheduleGame) => g.isCupKnockout || g.gameType === 'cup-final';
 /** The night's Cup track: none, the squares, or the squares and the IN / OUT column (a Cup team on show is decided). */
 export const cupKind = (games: readonly ScheduleGame[], fates?: Decided, chips?: Map<number, StakeChip[]>): 0 | 1 | 2 | 3 => {
@@ -133,7 +133,7 @@ export const slateCopyCup = (data: CalendarData, games: readonly ScheduleGame[])
 
 export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds }) {
   const cup = slateCopyCup(data, games);
-  // round 22 (item 14): the info drawn larger inside the card (its info column widened to match), the note box narrower
+  // The info drawn larger inside the card (its info column widened to match), the note box narrower
   const zoom = slateCopyZoom(cardWidth, cup, !!notes);
   return (
     <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-gap': `${SLATE_COPY_GAP}px` } as CSSProperties} data-zoom={zoom}>
@@ -145,7 +145,7 @@ export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds 
 }
 
 /** One game as a card. */
-export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, copy = false, cupNight = false, fates, chips }: { data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; copy?: boolean; /** round 21: the night's Cup track (cupKind; true = 1) */ cupNight?: CupTrackKind; /** round 21 (item 2): IN / OUT */ fates?: Decided; /** round 21 (item 11): tonight's stakes chips */ chips?: Map<number, StakeChip[]> }) {
+export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, copy = false, cupNight = false, fates, chips }: { data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; copy?: boolean; /** The night's Cup track (cupKind; true = 1) */ cupNight?: CupTrackKind; /** IN / OUT */ fates?: Decided; /** Tonight's stakes chips */ chips?: Map<number, StakeChip[]> }) {
   const fx = leagueFatigue(data).get(game.gameId);
   const lines = leagueSeasonLines(data).get(game.gameId);
   const result = finalScore(game, game.awayTeam.teamId);
@@ -158,10 +158,10 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
   const url = gameLink?.(game);
   const label = `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}`;
   return (
-    // round 9 (2.2): a national TV game's card is outlined and tinted in the TV badge's green (nothing else uses it)
+    // A national TV game's card is outlined and tinted in the TV badge's green (nothing else uses it)
     <article className={`ck-slate-card${result ? ' ck-slate-final' : ''}${tv.length ? ' ck-slate-tv' : ''}${notes ? ' ck-with-note' : ''}`} data-game-id={game.gameId} aria-label={label}>
       <div className="ck-slate-info">
-        {/* round 14 (item 3): the strip — tip-off time (or "Final" + OT) on top, then the ↗ link, the TV pill and the
+        {/* The strip — tip-off time (or "Final" + OT) on top, then the ↗ link, the TV pill and the
             Cup / play-off tags, wrapping inside the strip; beside the two team rows instead of a line of its own */}
         <div className="ck-slate-strip">
           {result ? (
@@ -174,7 +174,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
             </span>
           )}
           <span className="ck-slate-chips">
-            {/* round 9 (2.3): the game page is this icon, not the team names; a control, so never in a copy */}
+            {/* The game page is this icon, not the team names; a control, so never in a copy */}
             {url && (
               <GameLinkIcon url={url} />
             )}
@@ -204,7 +204,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
 
 /**
  * "[@] [logo] Wizards 3-1 W2 [fatigue] 113": one team; the home team's row starts with the "@" (the away row keeps its
- * room). Record and streak going in (round 9, 2.1): the Team List season line's rule, colours and tooltip.
+ * room). Record and streak going in: the Team List season line's rule, colours and tooltip.
  */
 function TeamRow({ cup, team, gameId, f, line, score, url, odds, provider, home = false }: { url?: string; cup?: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fates?: Decided; chips?: Map<number, StakeChip[]> }; team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
   const t = TEAM_BY_ID.get(team.teamId);
@@ -230,11 +230,11 @@ function TeamRow({ cup, team, gameId, f, line, score, url, odds, provider, home 
       </span>
       {cup && (isKnockout(cup.game) ? <KoTrack data={cup.data} game={cup.game} teamId={team.teamId} home={home} /> : <CupTrack {...cup} teamId={team.teamId} />)}
       <Fatigue f={f} team={teamLabel(team)} shortChip />
-      {/* round 22 (item 12): a final score is the game's page */}
+      {/* A final score is the game's page */}
       <ScoreLink url={score ? url : undefined} className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>
         {score?.n ?? ''}
       </ScoreLink>
-      {/* round 14 (item 4): the moneyline, decimal; its column is reserved, empty until (unless) the odds come */}
+      {/* The moneyline, decimal; its column is reserved, empty until (unless) the odds come */}
       <span className="ck-slate-odds" data-testid="slate-odds" data-tip={odds ? `${teamLabel(team)} moneyline ${fmtOdds(odds)} (decimal${provider ? `, ${provider}` : ''}; the last line before tip-off once the game has started)` : undefined}>
         {odds ? fmtOdds(odds) : ''}
       </span>
@@ -243,7 +243,7 @@ function TeamRow({ cup, team, gameId, f, line, score, url, odds, provider, home 
 }
 
 /**
- * Round 21 (item 1): a Cup group game's team: its 4 group games as mini squares in order (played: W / L and the margin;
+ * A Cup group game's team: its 4 group games as mini squares in order (played: W / L and the margin;
  * to come: the opponent; tonight's ringed), each its game page; then its group record over its differential. A card
  * that isn't a Cup game keeps the track empty (the night's cards stay one size).
  */
@@ -267,7 +267,7 @@ function CupTrack({ data, game, gameLink, teamId, fates, chips }: { data: Calend
   );
 }
 
-/** Round 21 (item 2): "IN" (clinched a knockout spot, green) or "OUT" (can't qualify any more, muted gray); nothing while alive. */
+/** "IN" (clinched a knockout spot, green) or "OUT" (can't qualify any more, muted gray); nothing while alive. */
 function CupFateTag({ fate }: { fate?: 'in' | 'out' }) {
   return (
     <span className="ck-slate-cup-fate" data-testid="cup-fate" data-fate={fate ?? ''}>
@@ -286,7 +286,7 @@ function CupFateTag({ fate }: { fate?: 'in' | 'out' }) {
 }
 
 /**
- * Round 21 (item 11): the team's stakes tonight, in the B2B / 3-in-4 chips' style, two at most (each one's tooltip has
+ * The team's stakes tonight, in the B2B / 3-in-4 chips' style, two at most (each one's tooltip has
  * the details: the result needed, or the differential math); a decided team keeps its IN / OUT tag here instead.
  */
 export function StakeChips({ chips, fate }: { chips?: StakeChip[]; fate?: 'in' | 'out' }) {
@@ -303,13 +303,13 @@ export function StakeChips({ chips, fate }: { chips?: StakeChip[]; fate?: 'in' |
 }
 
 /**
- * Round 21 (item 10): a knockout card's track — the venue, from the feed (knockoutVenue): "HOST" on the host team's row;
+ * A knockout card's track — the venue, from the feed (knockoutVenue): "HOST" on the host team's row;
  * the Championship's "Neutral · Hinkle Fieldhouse, Indianapolis" on the first row (neither team gets HOST); "venue TBD"
  * while the feed hasn't set it.
  */
 function KoTrack({ data, game, teamId, home }: { data: CalendarData; game: ScheduleGame; teamId: number; home: boolean }) {
   const venue = knockoutVenue(game);
-  // round 21 (item 13): the team's rest and (for the road team) travel before the game
+  // The team's rest and (for the road team) travel before the game
   const prep = teamId ? prepFor(data, teamId, game.dateEt, venueArena(game)) : undefined;
   return (
     <span className="ck-slate-cup ck-slate-ko" data-testid="slate-ko">

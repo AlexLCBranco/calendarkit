@@ -1,4 +1,4 @@
-// Compact week strip for the lists (round 4): a fixed Sun–Sat week, no boxes — a small month over the day number, a
+// Compact week strip for the lists: a fixed Sun–Sat week, no boxes — a small month over the day number, a
 // small line under it (the League List's game count, the Team List's opponent), the selected day in a filled pill,
 // today's date in blue, ‹ › on the sides for the previous / next week.
 
@@ -27,7 +27,7 @@ export interface WeekStripProps {
   onNext: () => void;
   prevDisabled: boolean;
   nextDisabled: boolean;
-  /** What ‹ › step by and the days are (Cup schedule, round 12: "night", "Cup nights"); default a week. */
+  /** What ‹ › step by and the days are (Cup schedule: "night", "Cup nights"); default a week. */
   unit?: string;
   label?: string;
 }

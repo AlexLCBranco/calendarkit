@@ -1,4 +1,4 @@
-// Round 9, Part 1: the Team List shows one calendar month, in a real browser against the served snapshot. Rows = that
+// The Team List shows one calendar month, in a real browser against the served snapshot. Rows = that
 // month's games (+ rest days); the month title in the team header; the week strip's ‹ › and day clicks, the date picker
 // and Today switch months and put the row at the top; a B2B split across the month edge keeps its marks but no bracket;
 // the Team map's stops in another month don't switch months; the whole-list copy = the month; month change timing.
@@ -57,7 +57,7 @@ test('every team × every month: the rows are exactly that month’s games (+ re
     const { games, rest } = snap[tri]!;
     for (const m of monthsOf(games.map((g) => g.date))) {
       await showMonth(page, m);
-      // phones have no rest rows (unchanged since round 3)
+      // phones have no rest rows
       const want = [...games.map((g) => g.date), ...(compact ? [] : rest)].filter((d) => d.startsWith(m)).sort();
       expect(await rowDates(page), `${tri} ${m}`).toEqual(want);
       await expect(monthTitle(page, compact)).toHaveText(title(m));
@@ -76,7 +76,7 @@ test('opens on the month of the next game, that game at the top; the top bar sta
   await expect(monthTitle(page, compact)).toHaveText(title(next.date.slice(0, 7)));
   await expect.poll(() => topRow(page)).toBe(next.date);
   expect((await rowDates(page)).every((d) => d.startsWith(next.date.slice(0, 7)))).toBe(true);
-  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // round 21: two rows
+  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // never taller than two rows
   // the title is plain text, inside the window, not cut off
   const t = await monthTitle(page, compact).evaluate((e) => ({ w: e.scrollWidth, cw: e.clientWidth, right: e.getBoundingClientRect().right, vw: innerWidth, tag: e.tagName }));
   expect(t.w).toBeLessThanOrEqual(t.cw + 1);
@@ -151,7 +151,7 @@ test.describe('desktop and tablet: strip, picker, Today', () => {
     await expect(page.getByTestId('team-month')).toHaveText('November 2026');
     for (let i = 0; i < 10; i++) await page.mouse.wheel(0, -2000);
     await page.waitForTimeout(300);
-    // round 21 (item 3): at the very top, "Load earlier games", then the month's first row
+    // At the very top, "Load earlier games", then the month's first row
     await expect(page.getByTestId('load-earlier')).toBeInViewport();
     const first = page.locator(`.ck-team-rows > [data-row-date="${dates[0]}"]`);
     await expect(first).toBeInViewport();

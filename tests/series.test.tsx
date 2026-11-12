@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 14 (item 5): the season series — which meeting a game is ("G2/4") and the series state, counted over
+// The season series — which meeting a game is ("G2/4") and the series state, counted over
 // regular-season games only (Cup group games and Cup quarter / semifinals included, the Cup Championship, play-in and
 // playoffs not: NBA.com "NBA Cup 101"), and where it shows: the chip on Slate cards, League List and Team List rows; the
 // tooltip in the week view and Team Calendar cells; the popup (squares, status, links, jump to the day).
@@ -161,7 +161,7 @@ describe('the popup', () => {
     expect(sq[0]!.querySelector('.ck-series-date')!.textContent).toBe('Nov 1');
     expect(sq[1]!.classList.contains('ck-series-next')).toBe(true);
     expect(sq[1]!.querySelector('.ck-series-win, .ck-series-score')).toBeNull();
-    // round 22 (item 12): the whole square is the game's page (played or to come), no separate "↗", no button
+    // The whole square is the game's page (played or to come), no separate "↗", no button
     for (const [i, s] of sq.entries()) {
       const a = s.querySelector<HTMLAnchorElement>(':scope > a[data-testid="series-link"]')!;
       expect([a.getAttribute('href'), a.target], `square ${i}`).toEqual([gameLinkUrl(d.games[i]!), '_blank']);

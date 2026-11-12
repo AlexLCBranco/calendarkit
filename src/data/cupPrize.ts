@@ -1,4 +1,4 @@
-// Round 21 (item 14): the NBA Cup prize money per player (a full share; two-way players get half), by season, each with
+// The NBA Cup prize money per player (a full share; two-way players get half), by season, each with
 // its source. Never typed from memory: a season whose amounts can't be found from a source is left out (and the bracket
 // shows nothing for it).
 

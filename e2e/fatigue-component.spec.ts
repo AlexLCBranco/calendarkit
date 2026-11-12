@@ -1,4 +1,4 @@
-// The Fatigue component (round 5) in a real browser at 1920 × 911 (Alex's window) and 1280 × 900: League List (both
+// The Fatigue component in a real browser at 1920 × 911 (Alex's window) and 1280 × 900: League List (both
 // teams, mirrored around the matchup), Team List (team + opponent columns), week view (1 week, compact, under the line).
 // Every component — empty or not — has the same width, so badges, icons and chips sit at one x down a list and nothing
 // moves the logos; the night icons are in time order (left = earlier) in every column; a known HA 2nd night shows a
@@ -7,7 +7,7 @@
 import { expect, test, type Page } from './fixtures';
 import { eachTeamMonth } from './teamMonths';
 
-/** columns() over every month of the Team List (round 9: one month at a time): the values seen, merged. */
+/** columns() over every month of the Team List (one month at a time): the values seen, merged. */
 async function teamColumns(page: Page, tri: string, rowSel: string, parts: string[]) {
   const all = await eachTeamMonth(page, tri, () => columns(page, rowSel, parts));
   const out: Record<string, string[]> = {};
@@ -21,7 +21,7 @@ const SIZES = [
   { width: 1280, height: 900 },
 ];
 
-/** Round 8: the desktop League List's zoom (LEAGUE_FONT_* ÷ 14) and its row height (LEAGUE_ROW_HEIGHT 40 × zoom): a one-line row. */
+/** The desktop League List's zoom (LEAGUE_FONT_* ÷ 14) and its row height (LEAGUE_ROW_HEIGHT 40 × zoom): a one-line row. */
 const listZoom = (size: { width: number }) => (size.width >= 1920 ? 1.3 : 1);
 const listLine = (size: { width: number }) => 40 * listZoom(size) + 0.5;
 
@@ -55,7 +55,7 @@ const columns = (page: Page, rowSel: string, parts: string[]) =>
           const b = f.getBoundingClientRect();
           add(`fx${i}.left`, r2(b.left));
           add(`fx${i}.width`, r2(b.width));
-          // grid areas b, n1, n2, c: their left x — for the chip its inner edge (round 6: it hugs the icons; its width varies)
+          // grid areas b, n1, n2, c: their left x — for the chip its inner edge (it hugs the icons; its width varies)
           for (const s of f.children) {
             const area = getComputedStyle(s).gridArea.split(' ')[0];
             const sb = s.getBoundingClientRect();
@@ -92,7 +92,7 @@ for (const size of SIZES) {
         }),
       );
       expect(order.every(Boolean), date).toBe(true);
-      // one line per row (round 8: LEAGUE_ROW_HEIGHT × zoom; before, 35 px — a few rows 36.5 px)
+      // one line per row (LEAGUE_ROW_HEIGHT × zoom; before, 35 px — a few rows 36.5 px)
       expect(out.height!.every((h) => +h <= listLine(size)), `${date} heights ${out.height}`).toBe(true);
     }
     // phones and tablets keep the tricode marks only (checked in unit tests); here: the list has no sideways scroll
@@ -106,7 +106,7 @@ for (const size of SIZES) {
       expect(rows, team).toBeGreaterThan(60);
       expect(bad, team).toEqual([]);
       for (const k of ['fx0.left', 'fx0.width', 'fx1.left', 'fx1.width', 'fx0.b', 'fx1.b', 'fx0.n1', 'fx1.n2', 'fx0.c', 'fx1.c', '.ck-logo-backing#0']) expect(out[k], `${team} ${k}: one value`).toHaveLength(1);
-      // the opponent's logo: one x on played rows and one on unplayed rows (round 7, 2.4: no score slots without a score)
+      // the opponent's logo: one x on played rows and one on unplayed rows (no score slots without a score)
       for (const kind of [':has(.ck-score)', ':not(:has(.ck-score))']) {
         const r = await teamColumns(page, team, `[data-testid="team-list"] .ck-card${kind}`, ['.ck-logo-backing']);
         expect(r.out['.ck-logo-backing#1'], `${team} ${kind} opponent logo: one value`).toHaveLength(1);
@@ -188,7 +188,7 @@ test('a known HA 2nd night (MIA @ CHA, Oct 24, 2026) at 1920 × 911: readable B2
   await page.locator('[data-game-id="0022600104"]').screenshot({ path: 'test-output/round5-shots/e2e-ha-row.png' });
 });
 
-// ---------------------------------------------------------------- round 6
+// ---------------------------------------------------------------- tricode marks, leg dots, pop-up
 
 /** Every B2B badge in the rows: its column (0 = away / the team's own, 1 = home / the opponent), the leg, the dot's side. */
 const legs = (page: Page, rowSel: string) =>
@@ -257,7 +257,7 @@ for (const size of SIZES) {
       expect(await yellow('.ck-fm'), `${search}: yellow on a tricode`).toBe(0);
       await expect(legend).toHaveText(FX);
       expect(await legend.evaluate((l) => l.scrollWidth <= l.clientWidth), 'legend not cut off').toBe(true);
-      // round 8: in the narrower one-day list it takes two lines, none of it hidden (sub-pixel height: +1)
+      // In the narrower one-day list it takes two lines, none of it hidden (sub-pixel height: +1)
       if (search.includes('layout=list')) expect(await legend.evaluate((l) => l.scrollHeight <= l.clientHeight + 1), 'legend lines all shown').toBe(true);
     }
     // the 2-week view has no component: the boxes stay, with their legend
@@ -321,9 +321,9 @@ for (const size of SIZES) {
       return { bad, tri: getComputedStyle(document.querySelector('.ck-mtri-text')!).fontSize, scale: document.querySelector<HTMLElement>('.ck-week-view')!.dataset.scale };
     });
     expect(row.bad).toEqual([]);
-    // game text: 1-week scale 1 at 1280 × 900; at 1920 × 911 1.05 since round 21 (the two-row top bar leaves the week 42 px
-    // less height; round 5 left it at 1.1); round 22 (item 15): 1 — games with only a break now get the fatigue row too,
-    // so the busiest day is taller; then 1.1 at 1920 × 911 again — the one-row bar (item 9) gives the week 34 px back
+    // game text: 1-week scale 1 at 1280 × 900; at 1920 × 911 1.05 with a two-row top bar leaves the week 42 px
+    // less height); 1 — games with only a break now get the fatigue row too,
+    // so the busiest day is taller; then 1.1 at 1920 × 911 again — the one-row bar gives the week 34 px back
     expect(row.scale).toBe(size.width === 1920 ? '1.1' : '1');
     expect(row.tri).toBe(size.width === 1920 ? '12.1px' : '11px');
   });

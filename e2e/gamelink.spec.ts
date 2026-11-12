@@ -1,7 +1,7 @@
 // Game page link in a real browser, desktop widths: a real <a> in every view to the game's hoopsjunkie page; click,
-// middle-click, ctrl-click and Enter open it in a new tab. Team Calendar cells and week lines (round 5): the matchup
+// middle-click, ctrl-click and Enter open it in a new tab. Team Calendar cells and week lines: the matchup
 // itself is the link, looking like text until hovered (pointer + underline), never link-styled in an image. League List
-// and Team List rows, also in the Cup schedule (round 16): the Slate's separate "↗" icon among the tags (muted,
+// and Team List rows, also in the Cup schedule: the Slate's separate "↗" icon among the tags (muted,
 // brightens on hover, never in a copy); the teams are team links only. A drag that starts on a team or matchup link
 // selects games and opens nothing; one on the "↗" starts no box.
 // hoopsjunkie.io is stubbed here: only the URL is checked.
@@ -58,7 +58,7 @@ const wantUrl = (page: Page, id: string) =>
 type Look = { line: string; cursor: string; color: string; parent: string };
 
 /**
- * Round 16: a List row's game link is the Slate's icon — "↗", its tooltip, first among the tags, never in a copy, the
+ * A List row's game link is the Slate's icon — "↗", its tooltip, first among the tags, never in a copy, the
  * Slate's look (muted, no underline; brighter on hover, pointer); no anchor around the matchup, whose teams are team
  * links (to the Team view) only.
  */
@@ -144,7 +144,7 @@ for (const [name, search, hostSel] of [
       await tab.close();
       expect(page.url(), how).not.toContain('hoopsjunkie');
     }
-    // middle- and ctrl-click (round 7, 1.1): a real middle / ctrl click opens a new tab with the game's URL (tabOpenedBy).
+    // middle- and ctrl-click: a real middle / ctrl click opens a new tab with the game's URL (tabOpenedBy).
     // Also checked at the event level: the event the browser acts on (auxclick / click with ctrlKey) reaches the window
     // with nothing cancelling it. The context's stub route comes off first: it holds the background tab's request (that
     // tab isn't the context's, so nothing answers it) and the tab never gets its URL; the resolver rule keeps it offline.
@@ -206,7 +206,7 @@ async function drag(page: Page, context: BrowserContext, from: Locator, to: { x:
 test('a drag that starts on a team link of a List row selects games and opens nothing (a click is not a drag)', async ({ page, context }) => {
   await open(page, context, '?view=team&layout=list&team=LAL');
   // the list opens at the next game (earlier rows are above, under the top bar); start a few rows lower, clear of the
-  // band near the list's top edge where a drag auto-scrolls: from the 4th row's opponent (a team link; round 16: the
+  // band near the list's top edge where a drag auto-scrolls: from the 4th row's opponent (a team link; The
   // matchup is no game link any more) down two rows
   const rows = page.locator('[data-testid="team-list"] .ck-card[data-next], [data-testid="team-list"] .ck-card[data-next] ~ .ck-card');
   const c = (await rows.nth(5).boundingBox())!;
@@ -248,7 +248,7 @@ test('Cup schedule: League and Team rows get the "↗" icon too, no game link ar
         .filter((r) => {
           const links = r.querySelectorAll('a[data-testid="game-link"]');
           const decided = !r.querySelector('.ck-matchup, .ck-cg-match')!.textContent!.includes('TBD');
-          // round 22 (item 12): a final score is its own game link (.ck-score-link, same page); never one around the teams
+          // A final score is its own game link (.ck-score-link, same page); never one around the teams
           const score = r.querySelector<HTMLAnchorElement>('a.ck-score-link');
           const final = r.classList.contains('ck-cg-final');
           return (decided && links.length !== 1) || !!r.querySelector('.ck-mlink:not(.ck-score-link)') || (final && (!score || score.href !== (links[0] as HTMLAnchorElement | undefined)?.href)) || [...links].some((a) => a.textContent !== '↗' || !a.closest('.ck-tags, .ck-cg-link'));

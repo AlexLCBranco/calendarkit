@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 14 (item 6): days without games inside the season are never skipped — League List and Slate show "No games …",
+// Days without games inside the season are never skipped — League List and Slate show "No games …",
 // ← / → (top bar and keys), the day strip and the date picker reach them; the season's edges stop the navigation; the
 // week view shows them as empty days. Nov 3, 2026 is such a day (no NBA game, checked in the feed below).
 

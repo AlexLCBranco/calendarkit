@@ -1,4 +1,4 @@
-// Round 8 (1.5): the desktop League List's size follows the widget's width (Alex: "scale rows by width"), from two
+// The desktop League List's size follows the widget's width (Alex: "scale rows by width"), from two
 // font constants; the map gets the rest of the width.
 import { describe, expect, it } from 'vitest';
 import { LEAGUE_FONT_MAX, LEAGUE_FONT_MIN, LEAGUE_LIST_COLUMN, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, leagueZoom } from '../src/components/widget';

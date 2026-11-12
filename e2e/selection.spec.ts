@@ -70,7 +70,7 @@ const count = (page: Page) => page.getByTestId('selection-count').textContent();
 
 test('team list: box selects the rows it touches; Shift adds; click and Escape clear; rest rows never selected', async ({ page }) => {
   await open(page, '?view=team&layout=list&team=BOS&rest=1');
-  // round 9: the list holds one month and opens at Nov 15 (its second half); from the month's top there's room below
+  // The list holds one month and opens at Nov 15 (its second half); from the month's top there's room below
   await page.getByTestId('team-list').evaluate((e) => (e.scrollTop = 0));
   await page.waitForTimeout(200);
   const rows = '.ck-team-rows > .ck-card';
@@ -115,7 +115,7 @@ test('team list: box selects the rows it touches; Shift adds; click and Escape c
 });
 
 test('team list: dragging to the bottom edge auto-scrolls and selects rows beyond the first screen; wheel mid-drag stays right', async ({ page }) => {
-  // round 9: a month at a time — a short window, so the month is more than a screen, and from the month's top
+  // A month at a time — a short window, so the month is more than a screen, and from the month's top
   await page.setViewportSize({ width: page.viewportSize()!.width, height: 640 });
   await open(page, '?view=team&layout=list&team=LAL');
   const list = page.getByTestId('team-list');

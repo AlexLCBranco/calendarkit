@@ -1,4 +1,4 @@
-// Standings column sets (round 18): West and East are side by side, so both tables show one set of columns at a time,
+// Standings column sets: West and East are side by side, so both tables show one set of columns at a time,
 // switched together. Every set shows seed and team first. Kept out of the Standings chunk: the top bar's toggle needs
 // the labels before that chunk loads.
 

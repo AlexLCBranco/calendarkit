@@ -25,7 +25,7 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
   let widest = { team: 0, opp: 0 };
   for (const tri of TRICODES) {
     await open(page, `?view=team&layout=list&team=${tri}&rest=1`);
-    // round 9: every month of the team's Team List
+    // Every month of the team's Team List
     for (const r of await eachTeamMonth(page, tri, async () => {
     await page.waitForFunction(() => [...document.images].every((i) => i.complete));
     return page.evaluate(() => {
@@ -43,8 +43,8 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
           continue;
         }
         out.self.push(round(box('.ck-self').left));
-        // mirrored matchup (round 4): "[logo] BOS 113 vs 121 CHI [logo]" — logos, "vs"/"@" and the opponent's tricode
-        // (right edge, it sits against its logo) at one x on every played row, and on every unplayed row (round 7, 2.4: no
+        // mirrored matchup: "[logo] BOS 113 vs 121 CHI [logo]" — logos, "vs"/"@" and the opponent's tricode
+        // (right edge, it sits against its logo) at one x on every played row, and on every unplayed row (no
         // score slots there, so the two kinds differ — Alex's trade-off); the slot holds it all
         const kind = c.querySelector('.ck-matchup .ck-score') ? 'played|' : 'unplayed|';
         const logos = [...c.querySelectorAll('.ck-matchup .ck-logo-backing, .ck-matchup .ck-logo-empty')].map((l) => kind + round(l.getBoundingClientRect().left));
@@ -117,7 +117,7 @@ test('fatigue tooltips on hover and focus (round 5: on the Fatigue components): 
   await own.scrollIntoViewIfNeeded();
   await own.hover();
   const text = (await own.getAttribute('data-tip'))!;
-  // the text, then (round 6) the stretch's day strip
+  // the text, then the stretch's day strip
   await expect(tip).toContainText(text.replace(/\n/g, ' ')); // collapses whitespace
   expect(await tip.evaluate((t) => t.firstChild!.textContent)).toBe(text);
   // the leg, both games, the merged 3-in-4 stretch, the record: one per line, the strip under them
@@ -140,7 +140,7 @@ test('fatigue tooltips on hover and focus (round 5: on the Fatigue components): 
   await expect(tip).toHaveCount(0);
   const opp = page.locator('[data-testid="fatigue-opp"] [data-testid="fatigue"][data-night="2"]').first();
   await opp.scrollIntoViewIfNeeded();
-  // the tooltip closes on scroll: let the scroll's event pass first (round 7: with rest rows on by default the row is
+  // the tooltip closes on scroll: let the scroll's event pass first (with rest rows on by default the row is
   // further down, and the late scroll event closed the tooltip opened by the focus — 2 of 3 runs)
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   await opp.focus();

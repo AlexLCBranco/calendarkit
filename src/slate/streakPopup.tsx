@@ -1,4 +1,4 @@
-// Round 21 (item 8): hovering a streak ("W6", "L2") opens a popup of the streak's games, newest first: date, "vs" / "@"
+// Hovering a streak ("W6", "L2") opens a popup of the streak's games, newest first: date, "vs" / "@"
 // + the opponent (logo, tricode: a team link), the result, final score and margin ("W 118–104, +14"), OT when it went
 // there. Each game is its hoopsjunkie page (new tab). Built on the series popup's behaviour (useHoverPopup): it stays
 // open while the pointer is in it, never in a copy, and needs no request — the games come from the schedule loaded.

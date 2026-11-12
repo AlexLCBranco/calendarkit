@@ -1,4 +1,4 @@
-// v1.40.1: the lazy leagueFatigue gives exactly what the eager v1.40.0 one did (tests/fatigue-eager.ts, frozen copy) —
+// The lazy leagueFatigue gives exactly what the eager one did (tests/fatigue-eager.ts, frozen copy) —
 // every game, both teams, every field incl. tooltip text and day strip — whether games are read one by one (the views)
 // or the map is iterated; and a single read works out only that game's two teams.
 
@@ -10,7 +10,7 @@ import { parseSchedule } from '../src/shared/nba-schedule/parse';
 import feed from './fixtures/feed-2026-10-23.json';
 import { data } from './feed';
 
-// round 22 changed the tooltip on purpose — the record line's label on final games (item 13) and the break lines (item 15,
+// the tooltip has changed on purpose since — the record line's label on final games and the break lines (
 // "BOS — 4 days off, …" opening a tip that was "BOS — rested") — so those are put back to the frozen copy's form here
 const oldTip = (tip: string) =>
   tip

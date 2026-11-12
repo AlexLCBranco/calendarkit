@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 14 (item 3): the Slate's tight cards — the strip beside the team rows, fixed row tracks, the short 3-in-4 chip,
+// The Slate's tight cards — the strip beside the team rows, fixed row tracks, the short 3-in-4 chip,
 // and as many info-only columns as fit when the notes are hidden.
 
 import { cleanup, render } from '@testing-library/react';
@@ -44,7 +44,7 @@ describe('cards', () => {
     for (const date of nights.slice(0, 40)) {
       render(<SlateDay data={data} date={date} width={1840} timeZone="UTC" gameLink={(g) => `https://x.test/${g.gameId}`} />);
       const grid = document.querySelector<HTMLElement>('.ck-slate-grid')!;
-      // round 21 (item 1): a Cup night's cards are wider (the Cup track)
+      // A Cup night's cards are wider (the Cup track)
       expect(grid.dataset.cols).toBe(String(slateInfoColumns(1840, (data.byDate.get(date) ?? []).some((g) => g.isCupGroupGame))));
       for (const card of document.querySelectorAll<HTMLElement>('.ck-slate-card')) {
         const g = data.games.find((x) => x.gameId === card.dataset.gameId)!;

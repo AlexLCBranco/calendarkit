@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 4): the Cup simulator — with no picks it is the real standings (the same engine); quick picks never
+// The Cup simulator — with no picks it is the real standings (the same engine); quick picks never
 // guess a margin ("depends on margin", pointing at the games); detailed margins settle it; modes switch without losing
 // picks; reset and per-game undo; picks survive leaving the Cup and coming back; played games are hoopsjunkie links,
 // unplayed ones are picks with a separate link icon; the bracket's QF hosts are seeds 1 and 2.

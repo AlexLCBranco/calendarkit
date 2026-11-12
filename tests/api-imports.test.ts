@@ -1,6 +1,6 @@
 // Vercel runs each api/*.ts as plain Node ESM, file by file (no bundler): a relative import without its extension
 // ("../src/data/odds") throws ERR_MODULE_NOT_FOUND when the function loads, and every request answers 500
-// FUNCTION_INVOCATION_FAILED (v1.33.0's first deploy). Every relative import in api/ and in the files it pulls in must
+// FUNCTION_INVOCATION_FAILED (it happened once). Every relative import in api/ and in the files it pulls in must
 // name its file as ".js" (TypeScript maps it to the .ts source) and that source must exist.
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';

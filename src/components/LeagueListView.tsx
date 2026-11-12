@@ -1,4 +1,4 @@
-// League → List: one game day at a time (round 8), with a week strip; the day changes only by navigation.
+// League → List: one game day at a time, with a week strip; the day changes only by navigation.
 
 import { leagueSeries } from '../data/series';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
@@ -38,7 +38,7 @@ export type ListDay = { date: string; games: ScheduleGame[] };
 
 /** The list's game days (only TV games when filtered; days left without games are dropped). */
 export function listDays(data: CalendarData, tvOnly: boolean): ListDay[] {
-  // round 14 (item 6): every calendar day from the season's first game day to its last, game-less days included (they
+  // Every calendar day from the season's first game day to its last, game-less days included (they
   // show "No games"), so the arrows, keys, strip and picker never skip a day; nothing before opening night or after the
   // last game
   const out: ListDay[] = [];
@@ -58,7 +58,7 @@ export const nearestDay = (days: ListDay[], date: string) => (days.find((d) => d
 export const listTitle = (date: string, compact: boolean) => fmtDate(date, { weekday: compact ? 'short' : 'long', month: compact ? 'short' : 'long', day: 'numeric', year: 'numeric' });
 
 /**
- * The desktop League List's look (round 8): zoom (LEAGUE_FONT_* ÷ 14), row height and column width, as inline style on
+ * The desktop League List's look: zoom (LEAGUE_FONT_* ÷ 14), row height and column width, as inline style on
  * the list and on its copies, so an image has the rows as they are on screen. Tablets and phones: none (centered list,
  * rows as before).
  */
@@ -69,7 +69,7 @@ export function leagueListStyle(width: number): CSSProperties | undefined {
 
 /**
  * The league schedule one game day at a time: the day's heading ("Sun, Nov 15 · 9 games") and its games. Only the
- * top bar's ← / →, the arrow keys, the date picker, Today and the week strip change the day (round 8); scrolling only
+ * top bar's ← / →, the arrow keys, the date picker, Today and the week strip change the day; scrolling only
  * scrolls within the day, on busy nights.
  */
 export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, today: todayProp, timeZone, onOpenGame, gameLink, nav = true }: LeagueListViewProps) {
@@ -97,7 +97,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, to
     const prevWeekDay = before && days.find((d) => d.date >= weekOf(before)[0]!)?.date;
     const nextWeekDay = days.find((d) => d.date > week[6]!)?.date;
     return {
-      // round 14 (item 6): every day of the season can be picked, a game-less one too ("–" under it); days outside it can't
+      // Every day of the season can be picked, a game-less one too ("–" under it); days outside it can't
       days: week.map((d) => ({ date: d, sub: counts.has(d) ? String(counts.get(d) || '–') : '', disabled: !counts.has(d) })),
       // previous / next week: its first day in the season (the strip stays Sun–Sat; it never recenters)
       onPrev: () => prevWeekDay && pickRef.current(prevWeekDay),
@@ -131,7 +131,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, to
   );
 }
 
-/** Round 14 (item 6): a day of the season without games (or without TV games under the filter). */
+/** A day of the season without games (or without TV games under the filter). */
 export function NoGames({ date, today, tvOnly }: { date: string; today: string; tvOnly: boolean }) {
   const what = tvOnly ? 'No national TV games' : 'No games';
   return (
@@ -146,7 +146,7 @@ const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'sho
 
 /** One game day of the league list: heading + its game cards, each with a copy button; the day has one too. */
 // memo: a re-render of the list (the strip, the clock) skips the day while its props are the same.
-// Cup schedule (round 12): its own heading ("Group play · Tue, Nov 10") and a tag per game (cupTag: "West A").
+// Cup schedule: its own heading ("Group play · Tue, Nov 10") and a tag per game (cupTag: "West A").
 export const ListDaySection = memo(function ListDaySection({ day, data, compact, fatigueSlots = false, now, timeZone, onOpenGame, gameLink, heading, cupTag, series = false }: { series?: boolean; day: ListDay; data: CalendarData; compact: boolean; fatigueSlots?: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; gameLink?: GameLink; heading?: string; cupTag?: (g: ScheduleGame) => string | undefined }) {
   const records = compact ? undefined : leagueRecords(data); // once per data set
   const fatigue = leagueFatigue(data); // once per data set

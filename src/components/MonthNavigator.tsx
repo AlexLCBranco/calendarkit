@@ -20,7 +20,7 @@ export interface MonthNavigatorProps {
   /** Own month header (default); off when the host shows the navigation. */
   nav?: boolean;
   /**
-   * What a day shows and whether it can be picked (default: its game count; round 14, item 6: every day of the season
+   * What a day shows and whether it can be picked (default: its game count; Every day of the season
    * can be picked, a game-less one too — only days before opening night or after the last game are disabled). The Team
    * List's picker shows the opponent and lets a day without a game go to the next one.
    */

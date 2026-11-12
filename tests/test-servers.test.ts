@@ -1,4 +1,4 @@
-// v1.40.0: local test servers take a free port and are always stopped; the odds live check runs only in CI's live job.
+// Local test servers take a free port and are always stopped; the odds live check runs only in CI's live job.
 
 import { readFileSync } from 'node:fs';
 import { createServer } from 'node:net';

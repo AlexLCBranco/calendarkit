@@ -1,4 +1,4 @@
-// Today in the Team Calendar (round 7, 2.1), desktop widths: in Month, 1 week and 2 weeks today's cell has the league
+// Today in the Team Calendar, desktop widths: in Month, 1 week and 2 weeks today's cell has the league
 // week view's highlight (accent border + accent day number) and no other cell has it; it moves at local midnight with
 // the page open (the clock's midnight timer) and after the tab comes back. The league week view had it already.
 

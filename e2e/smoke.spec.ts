@@ -38,7 +38,7 @@ test('league view and team view render without console errors', async ({ page },
   const day = page.locator(full ? '[data-testid="day-header"]:not([disabled])' : '.ck-count-cell:not([disabled])').last();
   const date = full ? await day.evaluate((b) => b.closest('[data-date]')!.getAttribute('data-date')) : await day.getAttribute('data-date');
   await day.click();
-  await expect(page.locator('[data-testid="league-list"] [data-day]')).toHaveAttribute('data-day', date!); // round 8: that day only, not in the URL
+  await expect(page.locator('[data-testid="league-list"] [data-day]')).toHaveAttribute('data-day', date!); // That day only, not in the URL
   await expect(page.locator('[data-game-id]').first()).toBeVisible();
 
   // Team view (month grid).
@@ -140,7 +140,7 @@ test('league week view: every game listed with local logos, no broken images, no
       expect(r.font).toBe('11px'); // same game-line size at 1280 and 1920
       expect(r.logo).toBe(16);
     }
-    // round 4's aligned 155 px line: one column of games per day at 1280 and 1920
+    // the aligned 155 px line: one column of games per day at 1280 and 1920
     expect(r.cols).toBe(1);
     expect(r.flow).toHaveLength(1);
     expect(r.flow[0]!.lefts).toHaveLength(1);
@@ -182,10 +182,10 @@ test('deep link opens the team view for a team', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-// Round 14 (v1.33.1): the odds function on the deployed site. v1.33.0's first deploy crashed on load (500
+// The odds function on the deployed site. A deploy once crashed on load (500
 // FUNCTION_INVOCATION_FAILED: an extensionless ESM import) and nothing noticed: `vite preview` answers no odds without
 // running it. Live only (the CI live job): a season day answers 200 with a games map, a bad date 400.
-// v1.40.0: gated on E2E_LIVE=1 (set by CI's live job and `npm run e2e:live`), not on E2E_BASE_URL alone — a local build
+// Gated on E2E_LIVE=1 (set by CI's live job and `npm run e2e:live`), not on E2E_BASE_URL alone — a local build
 // served on its own address (E2E_BASE_URL=http://localhost:…) has no odds function, so the test always failed there.
 test('live: /calendar/api/odds answers (200 for a day, 400 without a date)', async ({ request }, info) => {
   test.skip(process.env.E2E_LIVE !== '1', 'live only: runs only in the CI live job (E2E_LIVE=1); a local build has no odds function (vite preview answers no odds)');

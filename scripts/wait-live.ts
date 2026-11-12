@@ -1,4 +1,4 @@
-// CI (round 10): waits until the live site serves this commit's build — /calendar/version.json at the gauntlet's
+// CI: waits until the live site serves this commit's build — /calendar/version.json at the gauntlet's
 // address naming the commit — so the live e2e that follows tests what was just pushed. ~10 min at most; exits 1 then.
 // Usage: npx tsx scripts/wait-live.ts <commit sha> [site]
 

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 11): the stakes chips — only when tonight can settle something: "Win = clinch", "Loss = out",
+// The stakes chips — only when tonight can settle something: "Win = clinch", "Loss = out",
 // "Win + help" (naming the result needed), the margin that passes a rival ("+11 to pass DAL", the math in the tip),
 // "depends on …" when another game's margin matters, and nothing early in group play.
 import { describe, expect, it } from 'vitest';

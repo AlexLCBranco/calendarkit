@@ -36,7 +36,7 @@ function expectedRest(teamId: number): string[] {
 const rows = () =>
   [...screen.getByTestId('team-list').querySelectorAll('[data-game-id], [data-rest]')].map((e) => (e.hasAttribute('data-rest') ? `rest:${e.getAttribute('data-rest')}` : e.getAttribute('data-game-id')!));
 const restRows = () => rows().filter((r) => r.startsWith('rest:')).map((r) => r.slice(5));
-/** Round 9: the Team List shows a month; these walk every month of the team's season. */
+/** The Team List shows a month; these walk every month of the team's season. */
 const allRows = (teamId: number, tvOnly = false) => acrossMonths(data, teamId, rows, tvOnly);
 const allRest = (teamId: number, tvOnly = false) => acrossMonths(data, teamId, restRows, tvOnly);
 
@@ -62,7 +62,7 @@ describe('Team List rest rows', () => {
     expect(allRest(TEAM.BOS)).toEqual(expectedRest(TEAM.BOS));
   });
 
-  // round 14 (item 2): one test per team (was one for all 5: ~5 s under a busy full suite, past Vitest's 5 s)
+  // One test per team (was one for all 5: ~5 s under a busy full suite, past Vitest's 5 s)
   it.each(TEAMS.map((t) => [TEAM_BY_ID.get(t)!.tricode, t] as const))('on: one row per gap day in date order among the game rows ("Wed 21/10" + "Rest"), %s', (_, teamId) => {
     {
       render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId, showRest: true }} />);
@@ -136,7 +136,7 @@ describe('Team List rest rows', () => {
     const title = screen.getByTestId('team-month').textContent;
     fireEvent.click(screen.getByTestId('copy-view'));
     const stage = await waitFor(() => document.querySelector<HTMLElement>('.ck-capture')!);
-    // round 9: the shown month, every row of it (games and rest days), not only what's on screen
+    // The shown month, every row of it (games and rest days), not only what's on screen
     expect([...stage.querySelectorAll('[data-rest]')].map((e) => e.getAttribute('data-rest'))).toEqual(expectedRest(TEAM.BOS).filter((d) => d.startsWith(month)));
     const want = [...teamGames(data, TEAM.BOS).map((g) => g.dateEt), ...expectedRest(TEAM.BOS)].filter((d) => d.startsWith(month)).length;
     expect(stage.querySelectorAll('.ck-team-rows > [data-row-date]')).toHaveLength(want);

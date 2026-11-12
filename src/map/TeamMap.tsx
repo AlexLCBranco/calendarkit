@@ -1,4 +1,4 @@
-// The Team List's map (after round 8; Alex: "on the team view too, with a more detailed view for the selected team"):
+// The Team List's map (more detail than the League map, for the selected team):
 // one road trip of the selected team at a time — the one under way (or next), or the one of the hovered row — as
 // numbered stops at the feed's arenas, the route home → stops → home, and the trip's numbers under the map. Hovering a
 // row lights its stop; hovering a stop lights its row (MapHover.tsx). Desktop, beside the Team List; never in a copy.
@@ -73,7 +73,7 @@ export default function TeamMap({ data, teamId, now, room, hover }: TeamMapProps
   const hotStop = stops.find((s) => s.games.some((x) => x.game.gameId === hotGame));
   const hotInfo = hotStop && hotStop.games.find((x) => x.game.gameId === hotGame)!;
   const unknown = stops.filter((s) => !placed(s.loc));
-  // round 15: the opponent's tricode is a team link — not in the labels on the map (`link` false: they stay
+  // The opponent's tricode is a team link — not in the labels on the map (`link` false: they stay
   // click-through, or a label would take a nearby pin's hover)
   const opp = (g: (typeof stops)[number]['games'][number]['game'], link = true) => {
     const o = g.awayTeam.teamId === teamId ? g.homeTeam : g.awayTeam;

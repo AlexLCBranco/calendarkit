@@ -9,7 +9,7 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const KIND = { g: 'game', r: 'rest', t: 'tonight' } as const;
 
 /**
- * Round 6: a day strip under the text, from `data-tip-days` ("YYYY-MM-DD:g|r|t" joined by spaces — a game, a rest day,
+ * A day strip under the text, from `data-tip-days` ("YYYY-MM-DD:g|r|t" joined by spaces — a game, a rest day,
  * tonight; scheduleTags mergedDays): one cell per day, filled on game days, empty on rest days, tonight highlighted, the
  * day of the month under each cell and the month under the first cell and the 1st.
  */
@@ -39,7 +39,7 @@ export function useTooltip() {
   const ref = useRef<HTMLDivElement>(null);
   const show = (e: SyntheticEvent) => {
     const el = (e.target as Element).closest?.('[data-tip]');
-    // round 21 (item 8): a streak has its popup instead
+    // A streak has its popup instead
     if (!el || (e.target as Element).closest?.('[data-streak]')) return setTip(undefined);
     const r = el.getBoundingClientRect();
     const text = el.getAttribute('data-tip')!;

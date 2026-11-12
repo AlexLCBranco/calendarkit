@@ -49,7 +49,7 @@ export const MAX_SCROLL_STEP = 28;
 
 /** A press on any of these keeps doing its own job instead of starting a marquee. */
 /** The matchup links (GameCard MatchLink): a press on one is a click or the start of a marquee. */
-// a game link (the matchup) or a team link (round 15: team names and logos, which a marquee could start on before)
+// a game link (the matchup) or a team link (team names and logos, which a marquee could start on before)
 const GAME_LINK = '.ck-mlink, a.ck-tlink';
 const INTERACTIVE = 'button, a, input, label, select, textarea, [role="tab"], [role="option"], [role="listbox"], [data-capture-exclude="true"], .ck-toolbar';
 /** Selectable items: games (list rows, week-view lines, the game in a team calendar cell). Never days or rest rows. */
@@ -113,7 +113,7 @@ export function useMarqueeSelection(store: SelectionStore, box: RefObject<HTMLDi
     const target = event.target;
     if (!boxEl || event.button !== 0 || !event.isPrimary || event.pointerType !== 'mouse') return;
     if (!(target instanceof Element) || !area.contains(target)) return;
-    // a game link (the matchup, round 5) may start a marquee; other controls don't
+    // a game link (the matchup) may start a marquee; other controls don't
     const control = target.closest(INTERACTIVE);
     if (control && !control.matches(GAME_LINK)) return;
     const scroller = target.closest<HTMLElement>(SCROLLER) ?? undefined;

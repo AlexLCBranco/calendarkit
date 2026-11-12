@@ -1,5 +1,5 @@
 // Performance guard (1920 × 1080, own Playwright project "perf" that runs after every other project, so no other
-// test shares the machine; on CI a job of its own since round 8): load → first view rendered, the League List within a busy night and day by day (round 8), the Team List,
+// test shares the machine; on CI a job of its own): load → first view rendered, the League List within a busy night and day by day, the Team List,
 // switching views. Fails when a metric gets meaningfully worse than the baseline in e2e/perf-baseline.json
 // (limit = max(baseline × PERF_RATIO, baseline + the metric's slack); see PROJECT.md "Performance").
 // Prints `[perf] …` lines; PERF_RECORD=1 writes the measured numbers to test-output/perf.json.
@@ -13,14 +13,14 @@ import { buildPerfRef } from '../scripts/perf-ref';
 const NOW = new Date('2026-11-15T15:00:00Z');
 const RUNS = 5;
 /**
- * Round 6 (A2): the scroll checks' main-thread time is held to this earlier build, measured in the same run (built once
+ * The scroll checks' main-thread time is held to this earlier build, measured in the same run (built once
  * by scripts/perf-ref.ts, served with today's snapshot so both builds get the same data). Move it forward on purpose
  * after a change whose extra cost was accepted, never to make a run pass.
  */
 const REFERENCE = { commit: '31c3aed0dadd293c14875e06212661b6f58d2e87', version: '1.17.1' };
 /**
  * Current ÷ reference main-thread time (medians of AB_RUNS interleaved runs) above this fails. Measured on the Windows
- * PC (League List gesture, 2026-10-30): v1.17.1 against itself, three sessions: ×0.985, ×1.089, ×1.023, while that same
+ * PC (League List gesture, 2026-10-30): one build against itself, three sessions: ×0.985, ×1.089, ×1.023, while that same
  * build's median moved 2 434 – 2 733 ms between the sessions (which no number of runs in one build removes); this spec
  * with a scroll-identical current build: ×1.036. Extra work per game card render (memoized: ~300 renders per gesture):
  * 1 ms → ×1.08, 3 ms → ×1.15 (that one fails the frame p95 check instead). So this check catches ≥ ~+25 % main thread.
@@ -29,7 +29,7 @@ const REF_RATIO = 1.25;
 /** Counted runs per build in the interleaved scroll checks (single runs of one build vary by up to ±30 %). */
 const AB_RUNS = 7;
 let refBase = '';
-/** The current build's path on the test site (round 10: under /calendar/; the reference build is at its server's root). */
+/** The current build's path on the test site (under /calendar/; the reference build is at its server's root). */
 const CURRENT = '/calendar';
 let refServer: Server | undefined;
 const PERF_RATIO = 1.5;
@@ -168,7 +168,7 @@ async function meter(page: Page) {
  * Checks the guarded scroll metrics and prints the rest. Frames (`<prefix>-frame-p95`, `-frame-mean`) against the
  * per-OS baselines; they sit at the display rate, so they're steady. Main-thread time (`-main-thread`) — what shows
  * extra work first — against the reference build measured in the same run: current ÷ reference (medians) ≤ REF_RATIO.
- * (Until round 6 it had an absolute baseline too: 1 942 ms → limit 2 913 ms, while unchanged builds measured 2 200–2 900.)
+ * (No absolute baseline: unchanged builds measured anywhere in 2 200–2 900 ms.)
  */
 function checkScroll(prefix: string, [runs, refRuns]: ScrollRun[][], baseName = prefix) {
   const m = (k: keyof ScrollRun, rs = runs!) => median(rs.map((r) => r[k]));
@@ -199,7 +199,7 @@ async function wheel(page: Page, testId: string, yDistance: number) {
 const refPage = (browser: Browser, viewport = { width: 1920, height: 1080 }) => browser.newPage({ viewport, timezoneId: 'America/Sao_Paulo' });
 
 /**
- * Round 8: the League List shows one day; scrolling only moves within a busy night, and the days change by navigation.
+ * The League List shows one day; scrolling only moves within a busy night, and the days change by navigation.
  * The old month-long wheel gesture (Nov 1 → December through the continuous list) can't run on it any more, so the
  * League List is guarded by two A/B checks against the same reference build, each the same user action on both:
  * - `scroll`: the wheel over the season's busiest kind of night (Nov 2, 15 games) in a short window (1920 × 700, so the
@@ -258,19 +258,18 @@ test('League List day by day: 20 × "Next day", frame times and main-thread time
   const runs = await scrollRunsAB('day-nav', [arm('current', page, CURRENT), arm('reference', ref, refBase)]);
   await ref.close();
   checkScroll('day-nav', runs);
-  // 20 days on from Nov 2: Nov 22, 2026 (round 14, item 6: every calendar day of the season, game-less ones too;
-  // until v1.33.0 20 game days, Nov 23)
+  // 20 days on from Nov 2: Nov 22, 2026 (every calendar day of the season, game-less ones too)
   const want = new Date(Date.parse(`${BUSY_NIGHT}T12:00:00Z`) + 20 * 86_400_000).toISOString().slice(0, 10);
   await openBusyNight(page);
   for (let i = 0; i < 20; i++) await page.getByLabel('Next day').click();
   await expect(page.locator('[data-testid="league-list"] [data-day]')).toHaveAttribute('data-day', want);
 });
 
-// (round 7, 2.3: the countdown and its "while the countdown ticks" scroll check are gone with it)
+// (the countdown and its "while the countdown ticks" scroll check are gone with it)
 
 /**
- * Team List (round 4: LAL's whole season, ~82 rows + rest rows, wheeled from the first game to the last and back).
- * Round 9: the Team List shows one month, so that gesture can't run on it any more. Like the League List in round 8, two
+ * Team List (LAL's whole season, ~82 rows + rest rows, wheeled from the first game to the last and back).
+ * The Team List shows one month, so that gesture can't run on it any more. Like the League List, two
  * A/B checks against the same reference, each the same user action on both builds (frames keep the old
  * `team-scroll-frame-*` baselines; main thread ≤ ×REF_RATIO the reference):
  * - `team-scroll`: LAL from the top of its list (current: November's 1st row; reference: the season's first game) in a
@@ -337,7 +336,7 @@ test('switching views: click → next frame', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   await page.goto('/calendar/?view=league&layout=list&team=BOS');
   await expect(page.getByTestId('day-title')).toBeVisible();
-  // League List → League Calendar (week view) → Team Calendar → Team List → League List. Round 21: the League | Team
+  // League List → League Calendar (week view) → Team Calendar → Team List → League List. The League | Team
   // tabs are the scope picker — Team = BOS's option (the list opened before the timer), League = its "×".
   const steps: [string, string, string][] = [
     ['switch-league-calendar', '[role=tablist][aria-label="Layout"] [role=tab]', 'Calendar'],

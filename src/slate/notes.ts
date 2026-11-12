@@ -1,4 +1,4 @@
-// Slate notes (round 9, Part 3): a note per game with three slots — pregame, live, postgame — and the slot on show.
+// Slate notes: a note per game with three slots — pregame, live, postgame — and the slot on show.
 // The note belongs to the GAME (its NBA gameId), not to a card or a view. Kept in localStorage under one key,
 // NOTES_KEY, as { [gameId]: { pre, live, post, shown } } — the gauntlet Slate widget will read the same key (PROJECT.md).
 // Notes are the person's content, not a default, so they are stored (the "no persistence before a settings page" rule
@@ -80,7 +80,7 @@ export function mergeNotes(ours: NotesMap, theirs: NotesMap): NotesMap {
 }
 
 /**
- * Round 10: what a Slate card's note box needs from a notes store — the input the Slate's part takes. calendarkit and the
+ * What a Slate card's note box needs from a notes store — the input the Slate's part takes. calendarkit and the
  * gauntlet pass the default, localNotesStore() (localStorage NOTES_KEY, live between tabs); a host may pass its own.
  */
 export interface SlateNotes {
@@ -212,7 +212,7 @@ export function createNotesStore(storage: Storage | undefined = typeof localStor
       s.add(fn);
       return () => s!.delete(fn);
     },
-    // one set of listeners however many grids listen (round 10: every card / widget of a page shares one store);
+    // one set of listeners however many grids listen (every card / widget of a page shares one store);
     // each undo saves, the last one also stops listening
     listen() {
       if (users++ === 0) {
@@ -238,7 +238,7 @@ let pageStore: NotesStore | undefined;
 let pageUndo: (() => void) | undefined;
 
 /**
- * Round 10: the default notes store — one per page, shared by every card and widget on it (calendarkit's Slate, each
+ * The default notes store — one per page, shared by every card and widget on it (calendarkit's Slate, each
  * gauntlet Slate widget): localStorage NOTES_KEY, live between tabs. It follows other tabs for the page's life (one
  * `storage` listener, attached on first use), so a widget added later never starts from stale notes.
  */

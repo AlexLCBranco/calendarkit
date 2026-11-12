@@ -1,4 +1,4 @@
-// Slate note box (round 9, Part 3): the game's note beside its card — a text field the person types in, three slots
+// Slate note box: the game's note beside its card — a text field the person types in, three slots
 // (PRE / LIVE / POST) switched with [⇄], the slot on show saved with the note. It subscribes to its own game only
 // (useSyncExternalStore on the notes store), so typing re-renders this box and nothing else. The box grows with its text
 // (a hidden copy of the text sizes the grid cell the textarea fills: no inner scrollbar, the font never shrinks).

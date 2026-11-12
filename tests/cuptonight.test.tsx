@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 12): "Tonight in the Cup" — on a night with Cup games, at the top of the Cup page: each game (a
+// "Tonight in the Cup" — on a night with Cup games, at the top of the Cup page: each game (a
 // hoopsjunkie link), both teams (team links) with their Cup record and differential; nothing at all on other nights.
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';

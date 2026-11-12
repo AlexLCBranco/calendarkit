@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 14 (item 4): moneyline odds — ESPN's answers (real responses of 2026-11-04, trimmed: tests/fixtures/espn/) read
+// Moneyline odds — ESPN's answers (real responses of 2026-11-04, trimmed: tests/fixtures/espn/) read
 // into decimal odds per team, the server function, the page's odds store, and the cards.
 
 import { act, cleanup, render } from '@testing-library/react';

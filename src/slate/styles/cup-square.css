@@ -1,5 +1,5 @@
-/* Round 21 (item 5): the one NBA Cup group-game square (src/slate/CupSquare.tsx) — Cup standings, the Slate's Cup rows,
-   the simulator, Cup history. Moved here from cup.css (round 13's slots), so the Slate part has it too. */
+/* The one NBA Cup group-game square (src/slate/CupSquare.tsx) — Cup standings, the Slate's Cup rows,
+   the simulator, Cup history. Lives here, not in cup.css, so the Slate part has it too. */
 .ck-cup-slot {
   height: 30px;
   min-width: 30px;

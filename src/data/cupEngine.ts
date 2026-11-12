@@ -1,6 +1,6 @@
-// Round 21: the ONE NBA Cup rules engine — group standings, tiebreakers, wild cards, knockout seeding and hosts — over
+// The ONE NBA Cup rules engine — group standings, tiebreakers, wild cards, knockout seeding and hosts — over
 // plain results, so the Cup standings (real games), the simulator (real + picked games), the "decided" tags and the
-// stakes chips all use the same rules. Built from the rules the Cup standings implemented since round 11 (cup.ts),
+// stakes chips all use the same rules. Built from the rules the Cup standings implement (cup.ts),
 // checked against NBA.com "Emirates NBA Cup 101" (fetched 2026-11-06, https://www.nba.com/news/nba-cup-101):
 //  - group ties: head-to-head (group games), point differential, points scored, 2025-26 record, random drawing; a rule
 //    that splits a tie only in part sends the teams still level back to rule 1;

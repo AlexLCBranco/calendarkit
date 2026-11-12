@@ -1,4 +1,4 @@
-// Round 21 (item 9): Cup → History — every finished NBA Cup as it happened (src/data/cupHistory.json, built from the
+// Cup → History — every finished NBA Cup as it happened (src/data/cupHistory.json, built from the
 // NBA's own data by scripts/build-cup-history.ts; never recomputed with today's rules). First the summary ("who usually
 // makes the cut": knockout appearances, how far each year, group-play totals; sortable; West | East), then one season's
 // final group tables (the shared CupSquare per game, the WC badge) and its bracket with results, venues (the shared

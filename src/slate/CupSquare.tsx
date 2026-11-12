@@ -1,4 +1,4 @@
-// Round 21 (item 5): one NBA Cup group game from one team's side, as a small square — the ONE square used wherever Cup
+// One NBA Cup group game from one team's side, as a small square — the ONE square used wherever Cup
 // group games appear (Cup standings, the Slate's Cup rows, the simulator, Cup history). "vs" (home) or "@" (away) in
 // smaller muted text before the opponent's tricode, visible without hovering; a played game below it: W / L (and, where
 // asked, the margin: "W +12"), coloured by the result; a game to come: the opponent alone, muted. Tonight's game is

@@ -1,4 +1,4 @@
-// Round 10 (1.1): the old address hands its notes to the new one once, then redirects (handoff.ts). Here both sides run
+// The old address hands its notes to the new one once, then redirects (handoff.ts). Here both sides run
 // with storages of their own (two origins), passing the URLs between them as the browser would.
 
 import { describe, expect, it } from 'vitest';
@@ -117,7 +117,7 @@ describe('hand-off', () => {
     const t = tab(theirs, ours);
     t.visit(`${OLD_ORIGIN}/`);
     expect(JSON.parse(t.neu.local.getItem(NOTES_KEY)!)).toEqual({
-      [A]: { pre: 'old pre', live: 'new live', post: 'new post', shown: 'pre' }, // round 9's import rule: the incoming shown slot wins
+      [A]: { pre: 'old pre', live: 'new live', post: 'new post', shown: 'pre' }, // the import rule: the incoming shown slot wins
       [C]: ours[C],
     });
   });

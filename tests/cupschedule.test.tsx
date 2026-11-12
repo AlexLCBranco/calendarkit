@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Cup → Schedule: the Cup's nights (round 12), the League list By group / By date (round 18: the rounds are gone), the
+// Cup → Schedule: the Cup's nights, the League list By group / By date (the rounds are gone), the
 // Team list (Played / Remaining), back-to-backs from the whole schedule, non-Cup games left out, undecided knockout sides
 // as "TBD", and the Standings | Schedule / League | Team / By group | By date switches (never remembered).
 
@@ -290,7 +290,7 @@ describe('Cup view switches', () => {
     fireEvent.click(tabs('Cup view').getByRole('tab', { name: 'Schedule' }));
     expect(await screen.findByTestId('cup-league')).toBeTruthy();
     expect(tabs('Cup list').getByRole('tab', { name: 'League' }).getAttribute('aria-selected')).toBe('true');
-    // round 18: By group first; the toggle switches; By date is not remembered either
+    // By group first; the toggle switches; By date is not remembered either
     const by = () => screen.getByTestId('cup-league').dataset.by;
     expect(tabs('Cup layout').getByRole('tab', { name: 'By group' }).getAttribute('aria-selected')).toBe('true');
     expect(by()).toBe('group');

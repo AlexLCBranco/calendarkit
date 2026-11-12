@@ -1,4 +1,4 @@
-// Round 8 (Part 2): the League map's data — arena table, locations from the feed's own fields, projection, time zones.
+// The League map's data — arena table, locations from the feed's own fields, projection, time zones.
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';

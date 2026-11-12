@@ -1,4 +1,4 @@
-// Round 21 (item 7): the two-row top bar on a real layout — the date block sits on the same pixels in every Schedule
+// The two-row top bar on a real layout — the date block sits on the same pixels in every Schedule
 // view (the date label is fixed-width, so "November 2026" and "Wednesday, September 30, 2026" take the same room), row 1
 // keeps its pieces in place across Schedule, Cup and Standings, and Slate opened from a team on a day it doesn't play
 // says so. Desktop widths.

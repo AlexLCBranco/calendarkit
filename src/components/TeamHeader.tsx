@@ -5,7 +5,7 @@ import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { fullName } from './widget';
 import { TeamLink } from '../slate/teamLink';
 
-/** Big team logo on its light disc (round 15: a team link when `link`). */
+/** Big team logo on its light disc (a team link when `link`). */
 function BigLogo({ teamId, px, link }: { teamId: number; px: number; link: boolean }) {
   const src = teamLogo(teamId);
   return (
@@ -16,8 +16,8 @@ function BigLogo({ teamId, px, link }: { teamId: number; px: number; link: boole
 }
 
 /**
- * Team views: large logo on its disc + full name; the Team List adds the month it shows (round 9), plain text.
- * `link` (round 15): logo and name link to the Team view — the Cup schedule's team; not the Team view's own header,
+ * Team views: large logo on its disc + full name; the Team List adds the month it shows, plain text.
+ * `link`: logo and name link to the Team view — the Cup schedule's team; not the Team view's own header,
  * which would link to itself.
  */
 export function TeamHeader({ teamId, compact = false, period, link = false }: { teamId: number; compact?: boolean; period?: string; link?: boolean }) {

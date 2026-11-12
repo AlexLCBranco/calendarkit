@@ -17,7 +17,7 @@ export const TEAM_CELL_MIN_HEIGHT = 92;
 export const TEAM_SCALE_MAX = 2;
 /**
  * Smallest scale (desktop/tablet). Below 1 only where even 1 doesn't fit the fullest cell: 1280 × 900 since the 3-in-4
- * chip (a cell with B2B + chip + "Peacock" + "NBC Sports Network" took 3 tag rows of a 115 px 6-week cell). Round 4's
+ * chip (a cell with B2B + chip + "Peacock" + "NBC Sports Network" took 3 tag rows of a 115 px 6-week cell). The
  * "3in4·2nd" chip and "TV" pill don't lift it: a played game's score line with wide tricodes ("MEM 188 vs 186 MEM" +
  * logos, ~170 px) is wider than the 163 px cell, so it takes 2 lines (worst cell 93 px at scale 1, room 72 px).
  */
@@ -27,8 +27,7 @@ export const TEAM_WEEK_SCALE_MAX = 3;
 export const TEAM_SCALE_FILL = 0.9;
 
 /**
- * The fullest cell the season can have, for sizing the team calendar: a national TV game (one "TV" pill in cells since
- * round 4), as a Cup Final, on night 1 of a travelling back-to-back, with the opponent on its 2nd night.
+ * The fullest cell the season can have, for sizing the team calendar: a national TV game (one "TV" pill in cells), as a Cup Final, on night 1 of a travelling back-to-back, with the opponent on its 2nd night.
  */
 function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefined {
   const tvText = (g: ScheduleGame) => nationalTv(g).join(' · ').length;
@@ -37,7 +36,7 @@ function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefin
   // final with 3-digit scores (tabular digits: any 3 are as wide) in triple overtime, so a cell with a score fits too
   const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', statusText: 'Final/3OT', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
   const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
-  // and in the widest 3-in-4 chip of the season: "7in11 · 2nd" (round 7: cells show the merged chip)
+  // and in the widest 3-in-4 chip of the season: "7in11 · 2nd" (cells show the merged chip)
   const tif: ThreeInFour = { position: 3, sets: [], merged: { ids: Array(7).fill(''), dates: Array(7).fill('2026-11-01'), days: 11, position: 2 } };
   return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, tvPill: true, size: 'compact' };
 }
@@ -61,7 +60,7 @@ export interface TeamMonthGridProps {
   weeks?: 1 | 2;
   start?: string;
   /**
-   * Local date of today, highlighted like the league week view's today (round 7, 2.1). CalendarView passes the clock's —
+   * Local date of today, highlighted like the league week view's today. CalendarView passes the clock's —
    * the day strip's and the Today buttons' today — so it moves at midnight, also after sleep or a tab switch.
    */
   today?: string;

@@ -1,6 +1,6 @@
-// League → Slate (round 7): one day of games as cards, like a search engine's "today" grid — built to be copied as an
+// League → Slate: one day of games as cards, like a search engine's "today" grid — built to be copied as an
 // image and pasted onto the gauntlet whiteboard. The day changes only with ← / → (top bar or keyboard, CalendarView); the
-// cards scroll inside the view when they don't fit. Round 10: the cards, their note boxes and the grid are the Slate's
+// cards scroll inside the view when they don't fit. The cards, their note boxes and the grid are the Slate's
 // self-contained part (src/slate/, also used by the gauntlet's Slate widget); this file adds calendarkit's own frame —
 // the scroller and the notes toolbar (Switch all, Hide all notes, Export / Import).
 
@@ -26,15 +26,15 @@ export interface SlateViewProps {
   gameLink?: GameLink;
   /** The widget's width: one or two columns (slateColumns). */
   width?: number;
-  /** The games' notes (round 9); none: info-only cards, no notes toolbar. */
+  /** The games' notes; none: info-only cards, no notes toolbar. */
   notes?: NotesStore;
-  /** Round 14: the moneyline odds store (liveOddsStore()); none: no odds. */
+  /** The moneyline odds store (liveOddsStore()); none: no odds. */
   odds?: SlateOdds;
   /** "Hide all notes": info-only cards (a view toggle, never stored). */
   hideNotes?: boolean;
   onHideNotes?: (hide: boolean) => void;
   /**
-   * Round 21 (item 7): the team the Slate was opened from (Slate picked in a team's view): its game is highlighted and
+   * The team the Slate was opened from (Slate picked in a team's view): its game is highlighted and
    * scrolled into view, or a small note says the team doesn't play that day.
    */
   focusTeam?: number;

@@ -1,4 +1,4 @@
-// Round 21 (item 7): the top bar's scope picker replaces the League | Team tabs. Helpers for tests that switched scope.
+// The top bar's scope picker replaces the League | Team tabs. Helpers for tests that switched scope.
 import { fireEvent, screen, within } from '@testing-library/react';
 
 /** The scope picker's team (undefined = All teams, the league views). */

@@ -1,4 +1,4 @@
-// Round 9, Part 3: the Slate's wide layout and its note boxes in a real browser (desktop widths): from the left edge, 1 or
+// The Slate's wide layout and its note boxes in a real browser (desktop widths): from the left edge, 1 or
 // 2 columns by the note box's width; notes saved in localStorage (`ck:notes:v1`, keyed by gameId) and back after a
 // reload; three slots, the shown one saved, never switched by the clock; Switch all; Hide all (not remembered); two tabs
 // in sync without losing the typing tab's caret; long notes grow the card; export / import; copies with the boxes; and
@@ -41,7 +41,7 @@ test('layout: from the left edge, two columns at 1920 and one at 1280; every not
   expect(r.right).toBeLessThan(1);
   for (const c of r.cs) {
     expect(c.note).toBeGreaterThanOrEqual(300);
-    expect(c.info).toBe(491); // round 14: SLATE_INFO_WIDTH (strip 68 + 6 + the row's fixed tracks; was 444)
+    expect(c.info).toBe(491); // SLATE_INFO_WIDTH (strip 68 + 6 + the row's fixed tracks)
   }
 });
 
@@ -222,7 +222,7 @@ test('copy: each card with its box — the shown slot\'s label and text, no ⇄;
   expect(r.px.insideClear, 'cards: opaque').toBe(0);
   // pixels: text in the written boxes, none in an empty one (dark, opaque); the slot label's corner holds text
   const k = r.stage.cards;
-  // round 22 (item 14): the copy's note boxes are narrower (the info is drawn larger): the text area stops short of the label
+  // The copy's note boxes are narrower (the info is drawn larger): the text area stops short of the label
   const textArea = (i: number) => ({ x: (k[i]!.note!.x + 10) * r.ratio, y: (k[i]!.note!.y + 8) * r.ratio, w: Math.min(200, k[i]!.note!.w - 64) * r.ratio, h: 18 * r.ratio });
   const label = (i: number) => ({ x: (k[i]!.note!.x + k[i]!.note!.w - 50) * r.ratio, y: (k[i]!.note!.y + 4) * r.ratio, w: 28 * r.ratio, h: 12 * r.ratio });
   const [w0, w1, e2, l2] = await readPng(page, r.png, [textArea(0), textArea(1), textArea(2), label(2)], true);

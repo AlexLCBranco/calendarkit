@@ -1,11 +1,11 @@
-// NBA Cup group standings (round 11), worked out from the schedule feed's finished Cup group games — no hand-entered
+// NBA Cup group standings, worked out from the schedule feed's finished Cup group games — no hand-entered
 // results. Pure: no UI, no clock; the Cup view calls it only when it is opened.
 //
 // What the feed gives (checked 2026-10-31 against the live feed): group games have gameSubtype "in-season" and
 // gameSubLabel "West Group A" … "East Group C"; knockout games "in-season-knockout". Final scores only — no period
 // scores. The Cup rules leave overtime out of point differential and points scored. Differential: an OT game was tied
-// at the end of regulation, so it counts 0 (NBA.com "Cup 101"; v1.34.0, Alex's call — until then its final score).
-// Points scored: v1.40.0 — an OT game ("Final/OT", "Final/2OT") counts its regulation points, which the daily snapshot
+// at the end of regulation, so it counts 0 (NBA.com "Cup 101"; the owner's call).
+// Points scored: an OT game ("Final/OT", "Final/2OT") counts its regulation points, which the daily snapshot
 // job takes from the game's boxscore (src/data/regulation.ts); until a game's totals are stored it counts its final score.
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -16,7 +16,7 @@ import type { RegulationTotals } from './regulation';
 export const CUP_GROUP_START = '2026-10-30';
 export const CUP_GROUP_END = '2026-11-27';
 
-/** The feed's group labels, in the view's order: West A/B/C on top, East A/B/C below (round 21: the engine's). */
+/** The feed's group labels, in the view's order: West A/B/C on top, East A/B/C below (the engine's). */
 export { CUP_GROUPS, rank, type CupGroup, type Tiebreak } from './cupEngine';
 import { computeCup, CUP_GROUPS, diffRule, lastSeasonRule, pointsRule, rank, type CupGroup, type EngineResult, type GroupResult, type Tiebreak } from './cupEngine';
 
@@ -69,9 +69,9 @@ export interface CupSlot {
   oppScore?: number;
   /** The full final score, away team first: "HOU 105 @ DEN 112 · Final/OT". */
   final?: string;
-  /** Round 21: the game's real margin from this team's side (an OT game's too; `diff` counts it 0). */
+  /** The game's real margin from this team's side (an OT game's too; `diff` counts it 0). */
   margin?: number;
-  /** Round 21: the game itself (its hoopsjunkie link). */
+  /** The game itself (its hoopsjunkie link). */
   game: ScheduleGame;
 }
 
@@ -167,7 +167,7 @@ export function realResults(counted: readonly ScheduleGame[], regulation: Regula
 
 /**
  * `regulation`: the snapshot's regulation totals (gameId → [away, home]) for rule 3; OT games without one count their
- * final score. Round 21: the rules are the shared engine's (cupEngine.ts); this adds the slots, the OT counts and the
+ * final score. The rules are the shared engine's (cupEngine.ts); this adds the slots, the OT counts and the
  * chasers, and keeps the engine's result (`engine`: seeds and quarterfinals) for the views that need it.
  */
 export function cupStandings(games: readonly ScheduleGame[], regulation: RegulationTotals = {}): CupStandings & { engine: EngineResult } {
@@ -218,7 +218,7 @@ export const CUP_GROUP_TEAMS: Readonly<Record<CupGroup, readonly string[]>> = {
 
 const standingsCache = new WeakMap<object, { standings: ReturnType<typeof cupStandings>; byTeam: Map<number, CupTeamLine> }>();
 
-/** Round 21: the standings of a data set (its games and regulation totals), worked out once; and each team's line. */
+/** The standings of a data set (its games and regulation totals), worked out once; and each team's line. */
 export function cupStandingsOf(data: { games: readonly ScheduleGame[]; regulation?: RegulationTotals }) {
   let out = standingsCache.get(data);
   if (!out) {

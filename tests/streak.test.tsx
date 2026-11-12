@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 8): the streak popup — exactly the streak's games, newest first, for W and L streaks and a 1-game one;
+// The streak popup — exactly the streak's games, newest first, for W and L streaks and a 1-game one;
 // each row: date, vs / @ + the opponent (team link), "W 118–104, +14", OT; each game a new-tab hoopsjunkie link; it
 // opens on hover of a streak and stays while the pointer is in it; never in a copy.
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -33,7 +33,7 @@ describe('streakGames', () => {
     expect(s.every((x) => x.win)).toBe(true);
   });
   it('a losing streak, and 1-game streaks', () => {
-    // round 22: a final game's streak includes it — through Nov 3: L1 (lost at NYK; the OT win before it is another streak)
+    // A final game's streak includes it — through Nov 3: L1 (lost at NYK; the OT win before it is another streak)
     expect(streakGames(data, TEAM.BOS, G[1]!.gameId).map((x) => [x.game.dateEt, x.win])).toEqual([['2026-11-03', false]]);
     // through Nov 1: W1 (its first game, a win → W1); through Nov 4: W1 again (win after a loss)
     expect(streakGames(data, TEAM.BOS, G[0]!.gameId).map((x) => [x.game.dateEt, x.win])).toEqual([['2026-11-01', true]]);

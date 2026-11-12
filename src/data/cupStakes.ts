@@ -1,4 +1,4 @@
-// Round 21 (item 11): the Cup stakes chips — only when tonight's result can settle something for a team (clinch the
+// The Cup stakes chips — only when tonight's result can settle something for a team (clinch the
 // group or the wild card, or end its chances). From the shared engine only, like the IN / OUT tags (cupDecide.ts): every
 // win/loss completion of the conference's remaining games (margins unknown) is run once; a team's chips come from the
 // completions grouped by its own game tonight (and the other games tonight, for "help").

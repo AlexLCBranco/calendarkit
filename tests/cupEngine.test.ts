@@ -1,4 +1,4 @@
-// Round 21: the shared Cup rules engine (src/data/cupEngine.ts) — beyond the group rules tests/cup.test.ts checks through
+// The shared Cup rules engine (src/data/cupEngine.ts) — beyond the group rules tests/cup.test.ts checks through
 // cupStandings: picks without a margin are never guessed (the rule they'd need is named, with the games), knockout seeds
 // (3 group winners by record then the tiebreakers, the wild card 4th), the quarterfinals (1 v 4, 2 v 3, the better
 // record hosting) and the semifinals (the higher seed hosting).

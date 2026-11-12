@@ -1,4 +1,4 @@
-// Round 21 (item 7): the top bar's scope picker and destinations (League | Team tabs are gone).
+// The top bar's scope picker and destinations (League | Team tabs are gone).
 import type { Page } from '@playwright/test';
 
 /** Picks a team ("Miami Heat") or "All teams" in the Schedule's scope picker. */
@@ -17,5 +17,5 @@ export const destination = (page: Page, name: 'Schedule' | 'Cup' | 'Standings') 
 export const scopeTeamId = (page: Page) => page.getByTestId('bar-local').getByTestId('team-picker').getAttribute('data-team-id');
 
 const SHORT: Record<string, string> = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun', January: 'Jan', February: 'Feb', March: 'Mar', April: 'Apr', May: 'May', June: 'Jun', July: 'Jul', August: 'Aug', September: 'Sep', October: 'Oct', November: 'Nov', December: 'Dec' };
-/** Round 22 (item 9): the date title as the bar shows it — "Sunday, November 15, 2026", or under 1560 px "Sun, Nov 15, 2026". */
+/** The date title as the bar shows it — "Sunday, November 15, 2026", or under 1560 px "Sun, Nov 15, 2026". */
 export const titleFor = (page: Page, long: string) => (page.viewportSize()!.width < 1560 ? long.replace(/[A-Z][a-z]+/g, (w) => SHORT[w] ?? w) : long);

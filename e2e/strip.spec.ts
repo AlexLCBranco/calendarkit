@@ -1,4 +1,4 @@
-// Compact week strip (round 4, item 8) in a real browser. League List: strip ≤ 46 px tall (was 61 + 12), fixed week on
+// Compact week strip in a real browser. League List: strip ≤ 46 px tall (was 61 + 12), fixed week on
 // a click, ‹ › weeks. Team List (desktop widths): wheel scrolling moves the title and the strip to the row at the top and
 // changes no row (MutationObserver on the rows), a day click puts its row at the top, ‹ › weeks with a game, the top bar
 // stays one row at 1920.
@@ -37,7 +37,7 @@ test('League List: compact strip, fixed week on a click, ‹ › weeks', async (
   const strip = page.getByTestId('week-strip');
   const h = (await strip.boundingBox())!.height;
   console.log(`[strip] ${info.project.name} League List strip ${h} px`);
-  expect(h).toBeLessThanOrEqual(46 * (info.project.name === 'desktop-xl' ? 1.3 : 1)); // round 8: the desktop list's zoom
+  expect(h).toBeLessThanOrEqual(46 * (info.project.name === 'desktop-xl' ? 1.3 : 1)); // The desktop list's zoom
   const dates = () => strip.getByRole('tab').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.date));
   const week = await dates();
   await strip.locator('[data-date="2026-11-20"]').click();
@@ -54,7 +54,7 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; �
   await open(page, '?view=team&layout=list&team=LAL');
   const list = page.getByTestId('team-list');
   const title = page.getByTestId('team-day-title');
-  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // round 21: two rows
+  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // never taller than two rows
   /** Date of the row whose top is at (or just above) the list's top edge. */
   const topRow = () =>
     list.evaluate((el) => {
@@ -62,7 +62,7 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; �
       const rows = [...el.querySelectorAll<HTMLElement>('[data-row-date]')];
       return (rows.filter((r) => r.getBoundingClientRect().top <= top + 1).at(-1)?.dataset.rowDate ?? rows[0]!.dataset.rowDate)!;
     });
-  // round 22 (item 9): the bar's short date under 1560 px
+  // The bar's short date under 1560 px
   const w = page.viewportSize()!.width < 1560 ? 'short' : 'long';
   const long = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-US', { weekday: w, month: w, day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   await expect(title).toHaveText(long(await topRow()));
@@ -70,7 +70,7 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; �
   await list.evaluate((el) => {
     const w = window as unknown as { __rowMutations: number };
     w.__rowMutations = 0;
-    // every change counts, except the active-day class moving from row to row (item 10: that's its whole job) and the
+    // every change counts, except the active-day class moving from row to row (that's its whole job) and the
     // map's hover class following the pointer as rows pass under it (a class on the row, no re-render)
     const onlyActiveDay = (r: MutationRecord) => {
       if (r.type !== 'attributes' || r.attributeName !== 'class') return false;

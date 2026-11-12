@@ -1,9 +1,9 @@
-/* Fatigue component (Fatigue.tsx, round 5): [B2B][night 1][night 2][3in4] in a grid of fixed tracks, so badges, icons
+/* Fatigue component (Fatigue.tsx): [B2B][night 1][night 2][3in4] in a grid of fixed tracks, so badges, icons
    and chips sit at one x on every row; an empty component keeps the same width. Sizes in em of the component's font:
    full 12 px (lists), compact ≈ 0.72 × the week view's line font (7.9 px at scale 1). `.ck-fx-mirror` swaps the badge
    and chip tracks (badge on the right); the two night tracks never swap — earlier night on the left. Cheap to scroll:
    at most 4 children, the icons are background images (no SVG elements), flat fills, no opacity, shadows or filters. */
-/* round 6: the chip track fits the widest merged stretch in the season, "7in11 · 2nd" (4.6 em of this font with its
+/* The chip track fits the widest merged stretch in the season, "7in11 · 2nd" (4.6 em of this font with its
    padding and border); compact components show the stretch without tonight's place ("7in11"): see .ck-fx-compact */
 .ck-fx {
   display: inline-grid;
@@ -30,7 +30,7 @@
   grid-template-columns: 2.6em 1.15em 1.15em 3em;
   width: 8.35em; /* 2.6 + 1.15 + 1.15 + 3 + 3 × 0.15 */
 }
-/* round 14: full size with the short chip ("7in11", 3 em like compact), the Slate's tight cards: 8.5 em = 102 px */
+/* Full size with the short chip ("7in11", 3 em like compact), the Slate's tight cards: 8.5 em = 102 px */
 .ck-fx-short {
   grid-template-columns: 2.6em 1.15em 1.15em 3em;
   width: 8.5em; /* 2.6 + 1.15 + 1.15 + 3 + 3 × 0.2 */
@@ -54,7 +54,7 @@
   background: var(--ck-b2b);
   border-radius: 3px;
 }
-/* the leg (round 6): a dark dot beside the first B (1st night) or the second B (2nd night), inside the badge's own
+/* the leg: a dark dot beside the first B (1st night) or the second B (2nd night), inside the badge's own
    width ("B2B" is 2.0 em of the 2.6 em badge) */
 .ck-fx-leg {
   flex: none;
@@ -92,7 +92,7 @@
 /* the 3-in-4 chip: the Team List chips' purples (1st/2nd #4c3d75, the 3rd stronger) */
 .ck-fx-chip {
   grid-area: c;
-  justify-self: start; /* against the night icons (round 6: the merged labels differ in width) */
+  justify-self: start; /* against the night icons (the merged labels differ in width) */
   font-size: 0.8em;
   font-weight: 600;
   line-height: 1.5;
@@ -148,7 +148,7 @@
 .ck-fm-legend .ck-fx-chip {
   font-size: 9px;
 }
-/* round 6: the legend's badges, drawn like the component's (with the leg dot) */
+/* The legend's badges, drawn like the component's (with the leg dot) */
 .ck-fx-legend .ck-fx-b2b {
   display: inline-flex;
   height: 13px;
@@ -160,7 +160,7 @@
 .ck-fx-mirror > .ck-fx-chip {
   justify-self: end;
 }
-/* round 22 (item 15): the break badge — teal, unlike the B2B yellow and the 3-in-4 purple, the days in it ("4"). Filled:
+/* The break badge — teal, unlike the B2B yellow and the 3-in-4 purple, the days in it ("4"). Filled:
    the game comes off a break of 3+ days; outlined: the break follows the game. It takes no width of its own: it sits in
    the B2B badge's track when the game isn't a back-to-back night (a teal badge where the yellow one would be), else in
    the 3-in-4 chip's track; with both there, a small teal corner tick marks it (the count is in its tooltip). */

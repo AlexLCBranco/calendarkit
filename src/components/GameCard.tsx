@@ -82,15 +82,15 @@ export interface GameCardProps {
   /** The game page URL, opened in a new tab: by the matchup (teams + scores), or the "↗" with `linkIcon`; no link when it returns undefined. */
   gameLink?: GameLink;
   /**
-   * Round 16 (League List, Team List rows): the game page as the Slate's separate "↗" icon (first among the tags) instead
+   * League List, Team List rows: the game page as the Slate's separate "↗" icon (first among the tags) instead
    * of the matchup; the teams are then team links only.
    */
   linkIcon?: boolean;
-  /** Cup schedule (round 12): the Cup tag's text instead of "NBA Cup · West Group A" ("West A", "Quarterfinal"). */
+  /** Cup schedule: the Cup tag's text instead of "NBA Cup · West Group A" ("West A", "Quarterfinal"). */
   cupTag?: string;
-  /** Round 14 (item 5): the game's season series — the "G2/4" chip first among the tags (League List, Team List). */
+  /** The game's season series — the "G2/4" chip first among the tags (League List, Team List). */
   series?: SeriesGame;
-  /** Round 14 (item 5): views too tight for the chip (Team Calendar cells) — the series as the card's tooltip. */
+  /** Views too tight for the chip (Team Calendar cells) — the series as the card's tooltip. */
   seriesTip?: string;
 }
 
@@ -99,7 +99,7 @@ export type { GameLink } from '../slate/links';
 import type { GameLink } from '../slate/links';
 
 /**
- * The matchup as a real link to the game's page (round 5, replaces round 4's hover "↗"): an `<a>` in a new tab, so
+ * The matchup as a real link to the game's page : an `<a>` in a new tab, so
  * middle- and ctrl-click work and it adds no hover-only element. Looks like text until hovered (pointer, underline);
  * never link-styled in images (`.ck-capturing`). Not draggable, so a press on it can start a marquee selection
  * (selection.ts swallows the click that ends a drag). Without a URL it is a plain `<span>` with the same class.
@@ -115,7 +115,7 @@ export function MatchLink({ game, gameLink, className, children }: { game: Sched
   );
 }
 
-// round 10: the logo, the tip-off time and the season tooltip live with the Slate's part (src/slate/parts.tsx)
+// The logo, the tip-off time and the season tooltip live with the Slate's part (src/slate/parts.tsx)
 export { seasonTip, TeamLogo, TipTime } from '../slate/parts';
 import { ScoreLink } from '../slate/parts';
 
@@ -148,7 +148,7 @@ export function B2BLabel({ night, short = false }: { night: B2BNight; short?: bo
 }
 
 /**
- * The merged 3-in-4 chip "4in6 · 2nd" (round 7, 1.3: the same chip as the Fatigue component; was "3in4·2nd" with a line
+ * The merged 3-in-4 chip "4in6 · 2nd" (the same chip as the Fatigue component; was "3in4·2nd" with a line
  * per set): purple, the 3rd game on stronger. Tooltip: the stretch in words and its day strip.
  */
 export function TifChip({ tif }: { tif: ThreeInFour }) {
@@ -188,8 +188,8 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   // final score from the shown side: the selected team (team views) or the away team (league views)
   const result = scores ? finalScore(game, teamId ?? game.awayTeam.teamId) : undefined;
   // Fixed slots (desktop/tablet League List, desktop Team List with its fatigue columns): every tricode, score and
-  // "@"/"vs" in a fixed-width slot, so the tricodes, logos and "@" sit at one x on every row. Round 7 (2.4, Alex's
-  // trade-off): a row without a score has no score slots — "CHA @ WAS", the tricodes against the "@" — so on a day mixing
+  // "@"/"vs" in a fixed-width slot, so the tricodes, logos and "@" sit at one x on every row. A deliberate
+  // trade-off: a row without a score has no score slots — "CHA @ WAS", the tricodes against the "@" — so on a day mixing
   // played and unplayed games the columns no longer line up between the two kinds (they still do within each).
   // Elsewhere (phones, calendar cells) the parts take their natural width.
   const slots = size === 'regular' && !!logos && (side ? fatigueColumns : true);
@@ -211,7 +211,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   );
   const loss = (first: boolean) => (result && result.win !== first ? ' ck-loss' : '');
 
-  // league records (after the game once final, round 22; else going in), on the outside of each logo (an empty slot when unknown)
+  // league records (after the game once final; else going in), on the outside of each logo (an empty slot when unknown)
   const recOf = (t: ScheduleGame['homeTeam']) => records?.get(t.teamId);
   const recText = (r?: TeamRecord) => (r ? `${r.wins}-${r.losses}` : '');
   const rec = (t: ScheduleGame['homeTeam'], home = false) =>
@@ -224,8 +224,8 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   // the other team, logos on the outside. Each side wraps as one unit in narrow cells.
   const [first, second] = side ? [side.team, side.opponent] : [game.awayTeam, game.homeTeam];
   const fx = !side && fatigueSlots && !!fatigue;
-  // round 7 (1.4): no dot on the opponent's tricode where its Fatigue component is shown (desktop Team List columns), as
-  // round 6 dropped the yellow tricode boxes beside the component; elsewhere it is the only mark of the opponent's 2nd night
+  // No dot on the opponent's tricode where its Fatigue component is shown (desktop Team List columns), as
+  // no yellow tricode boxes beside the component; elsewhere it is the only mark of the opponent's 2nd night
   const oppDot = !fatigueColumns && opponentB2B;
   const matchup =
     side && !teamFirst ? (

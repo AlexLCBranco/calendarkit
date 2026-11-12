@@ -1,4 +1,4 @@
-// Round 15: every team name, logo and tricode is a link to that team's Team view (TeamLink, src/slate/teamLink.tsx),
+// Every team name, logo and tricode is a link to that team's Team view (TeamLink, src/slate/teamLink.tsx),
 // against the built app at 1920 × 1080 (every desktop view and the maps fit there). For each view and popup:
 //   - every team element on show is a team link (none left plain), the Cup standings' game slots are not;
 //   - each link names the right team (its text / label vs the snapshot) and, once pressed, points at that team's Team
@@ -305,7 +305,7 @@ test.describe('team links', () => {
     });
 
   test('hover: pointer and a faint tint, no underline (also inside a game link); nothing under .ck-capturing', async ({ page }) => {
-    // a List row (round 16: no game link around it) and a week line (inside the matchup game link)
+    // a List row (no game link around it) and a week line (inside the matchup game link)
     for (const [search, sel, inGame] of [
       ['?view=league&layout=list&date=2026-11-16', '[data-testid="league-list"] .ck-teams .ck-team', false],
       ['?view=league&layout=calendar&date=2026-11-16', '.ck-mline.ck-mlink .ck-mtri', true],

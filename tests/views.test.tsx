@@ -10,7 +10,7 @@ import { dataOf, game, TEAM } from './synthetic';
 afterEach(cleanup);
 
 const WIDE = { width: 1000, height: 800 };
-const WEEK = { width: 1248, height: 800 }; // the week view needs ≥ 1179 px since round 4 (1280 px window)
+const WEEK = { width: 1248, height: 800 }; // the week view needs ≥ 1179 px (1280 px window)
 const PHONE = { width: 360, height: 800 };
 const NOW = Date.parse('2026-10-23T15:00:00Z');
 const day = (date: string) => document.querySelector<HTMLElement>(`[data-day="${date}"]`)!;

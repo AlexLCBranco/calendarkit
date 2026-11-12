@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 21 (item 1): the Slate's Cup track — on a night with Cup group games every card gets it (Cup games: the team's
+// The Slate's Cup track — on a night with Cup group games every card gets it (Cup games: the team's
 // 4 group games as squares, tonight's ringed, W/L + margin, the group record over the differential; other games: the
 // track empty); other nights nothing; the layout maths (2 columns at 1920 with the note boxes ≥ SLATE_NOTE_MIN_CUP).
 import { cleanup, render } from '@testing-library/react';

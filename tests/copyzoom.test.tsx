@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Round 22 (item 14): a copied slate draws the game's info larger inside the same card width (the note box gives the
+// A copied slate draws the game's info larger inside the same card width (the note box gives the
 // room, down to SLATE_COPY_NOTE_MIN), at most ×1.35; info-only cards (notes hidden) stay ×1.
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';

@@ -53,7 +53,7 @@ export function suspendForCapture(node: HTMLElement): () => void {
 export const keepInCapture = (node: Node) => !(node instanceof HTMLElement && node.dataset.captureExclude === 'true');
 
 /**
- * Computed properties a copy never needs (round 6). html-to-image writes every computed property (~480 in Chrome) into
+ * Computed properties a copy never needs. html-to-image writes every computed property (~480 in Chrome) into
  * each clone's inline style, and the browser then parses all of it again to draw the SVG — that is most of a copy's
  * time (full Team List: ~5 s, 85 % of it drawing a 19 MB SVG). Left out: the logical duplicates of physical properties
  * (the widget is horizontal, left to right, so `inline-size` = `width`, `margin-inline-start` = `margin-left`, …) and
@@ -74,7 +74,7 @@ export const captureStyleProperties = () => (captureStyle ??= [...getComputedSty
  * the content only, not its interactive chrome. Throws on failure; callers own the user-facing state.
  */
 export async function renderToCanvas(node: HTMLElement, options: RenderOptions): Promise<HTMLCanvasElement> {
-  // Round 8: a node inside a zoomed ancestor (the desktop League List) is copied as big as it is on screen: the clone
+  // A node inside a zoomed ancestor (the desktop League List) is copied as big as it is on screen: the clone
   // gets the node's whole zoom (`currentCSSZoom`: its own × its ancestors'), and the image that many times its layout
   // size (clientWidth etc. don't include the zoom). An explicit `zoom` option keeps its old meaning.
   const zoom = options.zoom ?? onScreenZoom(node);
@@ -122,7 +122,7 @@ export const onScreenZoom = (node: HTMLElement) => (node as HTMLElement & { curr
 /**
  * Loads the copy's SVG as an image. html-to-image's own loader waits on `img.decode()` and has no handler for its
  * rejection, so when Chrome rejects the decode of a very large SVG (seen on CI: a full Team List, ~13 MB) the copy
- * never finished and the button stayed idle forever (round 6). Here a rejected decode is only a missed head start: the
+ * never finished and the button stayed idle forever. Here a rejected decode is only a missed head start: the
  * image has loaded, and drawImage decodes it. A load error rejects (the button shows "!").
  */
 export function loadImage(url: string, ImageCtor: new () => HTMLImageElement = Image): Promise<HTMLImageElement> {

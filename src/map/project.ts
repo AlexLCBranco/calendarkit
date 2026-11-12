@@ -1,4 +1,4 @@
-// Round 8 (2.2): longitude/latitude → map units, the same projection the base map was drawn with (d3-geo's geoAlbers as
+// Longitude/latitude → map units, the same projection the base map was drawn with (d3-geo's geoAlbers as
 // fitted by scripts/make-basemap.ts), without bundling d3: its raw conic equal-area formulas, rotated and offset like
 // d3 does. tests/map.test.ts checks it against d3-geo for every arena.
 

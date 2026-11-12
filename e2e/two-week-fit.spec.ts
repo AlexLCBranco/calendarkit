@@ -1,4 +1,4 @@
-// Two-week view fit (round 5, item 4): at Alex's window (1920 × 911) and the narrow case (1280 × 900) the whole two-week
+// Two-week view fit: at Alex's window (1920 × 911) and the narrow case (1280 × 900) the whole two-week
 // view — both week rows and the legend under them — fits the window: no page scroll on any two-week stretch of the
 // season, nothing outside its day cell, and game text at its normal size (tricodes 11 px, 16 px lines and logos). The
 // busiest stretches (weeks of Mar 28 / Apr 4, 2027: Apr 4 has 13 games in 10 time groups) used to scroll the page by
@@ -45,7 +45,7 @@ for (const size of [
         const tri = document.querySelector('.ck-mtri-text')!;
         const line = document.querySelector('.ck-mline')!.getBoundingClientRect();
         const legend = document.querySelector('[data-testid="fatigue-legend"]')!.getBoundingClientRect();
-        // round 6 (A5): each tricode's small plane (the team changes city between back-to-back nights) against the time
+        // Each tricode's small plane (the team changes city between back-to-back nights) against the time
         // labels' text (its ink box, not the label's full-width block)
         const ink = (e: Element) => {
           const rg = document.createRange();
@@ -61,7 +61,7 @@ for (const size of [
           const li = pl.closest<HTMLElement>('[data-game-id]')!;
           const id = li.dataset.gameId;
           for (const { text, r } of labels) if (hit(p, r)) overlaps.push(`${id} under "${text}"`);
-          // round 7 (1.5): nor over the line above (home planes over their tricode's corner: 102 places) or a logo's
+          // Nor over the line above (home planes over their tricode's corner: 102 places) or a logo's
           // disc (the home logo: 276), on either team's side
           const above = li.previousElementSibling;
           if (above?.matches('li') && hit(p, above.getBoundingClientRect())) overlaps.push(`${id} over the line above`);

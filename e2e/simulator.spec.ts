@@ -1,4 +1,4 @@
-// Round 21 (item 4): the simulator on a real layout — one screen with no page scroll at 1920 × 950 and 1600 × 1000,
+// The simulator on a real layout — one screen with no page scroll at 1920 × 950 and 1600 × 1000,
 // nothing cut off, also with every remaining game picked (quick: the "depends on margin" tags are on show); picks are
 // instant (no request per click).
 
