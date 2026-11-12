@@ -71,7 +71,10 @@ for (const span of [1, 2] as const) {
         expect(r.outside, name).toBe(0);
         expect(r.scroll, `${name}: page scroll`).toBeLessThanOrEqual(0);
         expect(r.sideways, name).toBeLessThanOrEqual(0);
-        for (const gap of r.bars) expect(gap, `${name}: B2B bar at the bottom edge`).toBeGreaterThanOrEqual(0), expect(gap, name).toBeLessThanOrEqual(6);
+        for (const gap of r.bars) {
+          expect(gap, `${name}: B2B bar at the bottom edge`).toBeGreaterThanOrEqual(0);
+          expect(gap, name).toBeLessThanOrEqual(6);
+        }
         scales.add(r.scale);
         games += r.withGame.length;
         if (await next.isDisabled()) break;

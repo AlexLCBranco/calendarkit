@@ -33,7 +33,7 @@ export interface VerifyOptions {
 /** True once the live file's meta.time equals `expected`; false after `tries` attempts. */
 export async function verifyDeploy({ expected, url = LIVE_URL, tries = TRIES, intervalMs = INTERVAL_MS, fetchImpl = fetch, sleep = (ms) => new Promise((r) => setTimeout(r, ms)), log = console.log, onSlow, hookAfter = HOOK_AFTER }: VerifyOptions): Promise<boolean> {
   for (let i = 1; i <= tries; i++) {
-    let live = '';
+    let live: string;
     try {
       const res = await fetchImpl(`${url}?verify=${Date.now()}-${i}`, { headers: { 'cache-control': 'no-cache' } });
       live = res.ok ? String(((await res.json()) as { meta?: { time?: unknown } }).meta?.time ?? '(no meta.time)') : `HTTP ${res.status}`;

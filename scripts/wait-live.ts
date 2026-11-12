@@ -8,7 +8,7 @@ const [sha, site = 'https://gauntlet-home.vercel.app'] = process.argv.slice(2);
 if (!sha) throw new Error('usage: wait-live.ts <commit sha> [site]');
 const want = sha.slice(0, 7);
 for (let i = 1; i <= 40; i++) {
-  let live = '';
+  let live: string;
   try {
     const res = await fetch(`${site}/calendar/version.json?wait=${Date.now()}`, { headers: { 'cache-control': 'no-cache' } });
     live = res.ok ? String(((await res.json()) as { commit?: string }).commit) : `HTTP ${res.status}`;

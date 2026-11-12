@@ -55,6 +55,17 @@ describe('"Data updated" stamp', () => {
     render(<CalendarView data={data} size={{ width: 360, height: 700 }} now={T + H} timeZone="UTC" note="tz" updatedAt={UPDATED} />);
     expect(screen.queryByTestId('data-updated')).toBeNull();
   });
+
+  it('a feed time that turns unreadable (or readable) between renders: the stamp goes (or comes), the rest stays', () => {
+    const props = { data, size: DESKTOP, now: T + H, timeZone: 'UTC', note: 'tz' };
+    const r = render(<CalendarView {...props} updatedAt={UPDATED} />);
+    expect(stamp()).toBeTruthy();
+    r.rerender(<CalendarView {...props} updatedAt="not a date" />);
+    expect(screen.queryByTestId('data-updated')).toBeNull();
+    expect(screen.getByTestId('tz-note')).toBeTruthy();
+    r.rerender(<CalendarView {...props} updatedAt={UPDATED} />);
+    expect(stamp().textContent).toBe('Data updated Oct 23, 11:29');
+  });
 });
 
 describe('loader', () => {

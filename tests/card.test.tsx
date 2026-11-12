@@ -79,6 +79,15 @@ describe('GameCard', () => {
     expect(screen.queryByTestId('tv-badge')).toBeNull();
   });
 
+  it('more than two networks (a Christmas game lists five): two names and "+3" in the row, all five in the tooltip', () => {
+    const g = game({ date: '2026-12-25', utc: '2026-12-25T17:00:00Z', natl: ['ABC', 'ESPN', 'ESPN2', 'Disney+', 'Disney Channel'] });
+    render(<GameCard game={g} now={NOW} timeZone="UTC" />);
+    const tv = screen.getByTestId('tv-badge');
+    expect(tv.textContent).toBe('ABC · ESPN +3');
+    expect(tv.getAttribute('data-tip')).toBe('US national TV: ABC · ESPN · ESPN2 · Disney+ · Disney Channel');
+    expect(tv.getAttribute('aria-label')).toBe('US national TV: ABC, ESPN, ESPN2, Disney+, Disney Channel');
+  });
+
   it('league fatigue marks per team, on its tricode (round 4: replaces the "B2B" badge)', () => {
     const tip = 'NYK — 2/2 · AH (2nd night of a back-to-back)';
     const fatigue = new Map([[TEAM.NYK, { nights: [2 as const], pairs: [], travels: false, tip }]]);

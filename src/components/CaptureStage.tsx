@@ -28,6 +28,7 @@ export function CaptureStage({ onReady, width, minHeight, className, children }:
       await Promise.all([...node.querySelectorAll('img')].map((img) => img.decode().catch(() => undefined)));
       onReady(node);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one capture per mount: the stage is mounted for a single copy
   }, []);
   return createPortal(
     <div className="ck-capture-stage" aria-hidden="true">

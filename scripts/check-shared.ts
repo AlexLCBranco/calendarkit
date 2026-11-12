@@ -79,7 +79,9 @@ function theirsFromDisk(dir: string): { files: Map<string, string>; where: strin
   let rev = '';
   try {
     rev = ` (${run('git', ['-C', dir, 'rev-parse', '--short', 'HEAD']).trim()}, working tree)`;
-  } catch {}
+  } catch {
+    // not a git checkout: no revision to show
+  }
   return { files, where: `${folder}${rev} — local copy, may be behind GitHub` };
 }
 

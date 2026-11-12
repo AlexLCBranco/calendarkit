@@ -54,6 +54,7 @@ export function useClock(fixed: number | undefined, timeZone: string | undefined
       document.removeEventListener('visibilitychange', wake);
       window.removeEventListener('pageshow', wake);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- localDate is a pure helper; a new function identity must not restart the clock
   }, [fixed, store, timeZone]);
   return store;
 }

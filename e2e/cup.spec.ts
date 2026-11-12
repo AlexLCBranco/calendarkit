@@ -34,8 +34,13 @@ const snapshotTable = (page: Page) =>
         const d = /^Final\/\d*OT$/i.test(g.gameStatusText.trim()) ? 0 : m;
         h.diff += d;
         a.diff -= d;
-        if (m > 0) (h.w++, a.l++);
-        else (a.w++, h.l++);
+        if (m > 0) {
+          h.w++;
+          a.l++;
+        } else {
+          a.w++;
+          h.l++;
+        }
       }
     return { teams: t, through };
   }, APP);

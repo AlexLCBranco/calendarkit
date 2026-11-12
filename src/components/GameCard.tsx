@@ -172,7 +172,13 @@ export function TifChip({ tif }: { tif: ThreeInFour }) {
 }
 
 /** Yellow dot over a tricode: that team is on the 2nd night of a back-to-back. */
-export const B2BDot = ({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
+/**
+ * Network names a list row's TV tag spells out; more → "+N", every name in its tooltip. Two names is the widest the rows
+ * were laid out for ("Peacock · NBC Sports Network"); a Christmas game can list five, which wrapped its row.
+ */
+export const TV_NAMES_MAX = 2;
+
+export const B2BDot =({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
 export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip }: GameCardProps) {
   const iconUrl = linkIcon ? gameLinkProp?.(game) : undefined;
@@ -326,13 +332,22 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
           </span>
         )}
         {tv.length > 0 && !tvPill && (
-          <span className="ck-tag ck-tv" title="US national TV" data-testid="tv-badge">
-            {tv.map((n, i) => (
+          <span
+            className="ck-tag ck-tv"
+            title={tv.length > TV_NAMES_MAX ? undefined : 'US national TV'}
+            data-tip={tv.length > TV_NAMES_MAX ? `US national TV: ${tv.join(' · ')}` : undefined}
+            aria-label={tv.length > TV_NAMES_MAX ? `US national TV: ${tv.join(', ')}` : undefined}
+            role={tv.length > TV_NAMES_MAX ? 'img' : undefined}
+            tabIndex={tv.length > TV_NAMES_MAX ? 0 : undefined}
+            data-testid="tv-badge"
+          >
+            {tv.slice(0, TV_NAMES_MAX).map((n, i) => (
               <Fragment key={n}>
                 {i > 0 && <span className="ck-tv-sep"> · </span>}
                 <span className="ck-tv-name">{n}</span>
               </Fragment>
             ))}
+            {tv.length > TV_NAMES_MAX && <span className="ck-tv-more"> +{tv.length - TV_NAMES_MAX}</span>}
           </span>
         )}
       </span>

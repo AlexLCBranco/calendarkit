@@ -82,7 +82,7 @@ const rowsWithoutLogosDiffer = (page: Page) =>
     st.remove();
     // rows with national TV names may take a second line for them on phones anyway (e.g. ORL @ BOS "Peacock · NBC
     // Sports Network", 47.5 px); since the league "B2B" badge left such a row can
-    // fit one line without logos, so those rows are left out here (no row grew: heights diffed, PROJECT.md)
+    // fit one line without logos, so those rows are left out here (no row grew: heights diffed, docs/HISTORY.md)
     return cards.filter((c, i) => withLogos[i] !== without[i] && !c.querySelector('.ck-tv-name')).map((c) => c.textContent);
   });
 const prevDay = (d: string) => new Date(Date.parse(`${d}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
@@ -146,11 +146,20 @@ test('old ?view= links open the matching view', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-/** The day's games straight from the served snapshot (independent of the app's code), in feed order. */
+/**
+ * The day's games straight from the served snapshot (independent of the app's code), in the list's order: tip-off
+ * (TBD last), then gameId. Not the feed's own order: the NBA moves tip-offs without reordering the feed.
+ */
 const feedDay = (page: Page, date: string) =>
   page.evaluate(async (date) => {
     const raw = await (await fetch('/calendar/data/schedule.json')).json();
-    return (raw.leagueSchedule.gameDates as { games: { gameId: string; gameDateEst: string }[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId) && g.gameDateEst.startsWith(date)).map((g) => g.gameId);
+    type G = { gameId: string; gameDateEst: string; gameDateTimeUTC: string; gameStatus: number; gameStatusText: string };
+    const tip = (g: G) => (g.gameStatus === 1 && /^tbd$/i.test(g.gameStatusText.trim()) ? Infinity : Date.parse(g.gameDateTimeUTC));
+    return (raw.leagueSchedule.gameDates as { games: G[] }[])
+      .flatMap((d) => d.games)
+      .filter((g) => /^00[2456]/.test(g.gameId) && g.gameDateEst.startsWith(date))
+      .sort((a, b) => tip(a) - tip(b) || a.gameId.localeCompare(b.gameId))
+      .map((g) => g.gameId);
   }, date);
 /** What the League List shows: its day sections and the game ids in them. */
 const shownList = (page: Page) =>
@@ -312,7 +321,7 @@ test('team list: every game in order, opens at the next game, earlier games abov
   // line. Desktop/tablet: rows without tags are single-line (the season line "G12 5-6" fits at the right). Phone:
   // the selected team's logo leaves no room on that line, so tags and the season line take a second line (every
   // row is two lines; three when B2B + long TV names fill line 2), and a played game's row leaves out its tip-off
-  // time (measured; see PROJECT.md).
+  // time (measured; see docs/HISTORY.md).
   const phone = info.project.name === 'phone';
   const lines = (await eachTeamMonth(page, 'LAL', () => list.evaluate((el) =>
     [...el.querySelectorAll('article')].map((a) => {

@@ -22,23 +22,28 @@ export const TEAM_SCALE_MAX = 2;
  * logos, ~170 px) is wider than the 163 px cell, so it takes 2 lines (worst cell 93 px at scale 1, room 72 px).
  */
 export const TEAM_SCALE_MIN = 0.8;
-/** Week views (1 or 2 week rows): bigger cells, so a larger cap; the probe still decides (see PROJECT.md). */
+/** Week views (1 or 2 week rows): bigger cells, so a larger cap; the probe still decides (see docs/HISTORY.md). */
 export const TEAM_WEEK_SCALE_MAX = 3;
 export const TEAM_SCALE_FILL = 0.9;
+/** The widest tricode at the app's font (dayflow.ts's `tri` is sized to it). */
+const WIDEST_TRICODE = 'MEM';
 
 /**
  * The fullest cell the season can have, for sizing the team calendar: a national TV game (one "TV" pill in cells), as a Cup Final, on night 1 of a travelling back-to-back, with the opponent on its 2nd night.
  */
-function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefined {
+export function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefined {
   const tvText = (g: ScheduleGame) => nationalTv(g).join(' · ').length;
   const g = data.games.reduce<ScheduleGame | undefined>((best, x) => (x.homeTeam.teamId && (!best || tvText(x) > tvText(best)) ? x : best), undefined);
   if (!g) return undefined;
+  // both sides the widest tricode (MEM, dayflow.ts), never the TV game's own teams: those change with the schedule, and
+  // narrower ones made the probe smaller than real cells (a Christmas game with five networks became the probe: NYK / SAS)
+  const widest = data.games.flatMap((x) => [x.homeTeam, x.awayTeam]).find((t) => t.teamTricode === WIDEST_TRICODE) ?? g.homeTeam;
   // final with 3-digit scores (tabular digits: any 3 are as wide) in triple overtime, so a cell with a score fits too
-  const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', statusText: 'Final/3OT', homeTeam: { ...g.homeTeam, score: 188 }, awayTeam: { ...g.awayTeam, score: 186 } };
-  const pair = { teamId: g.homeTeam.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
+  const game: ScheduleGame = { ...g, gameId: 'ck-probe', gameType: 'cup-final', status: 'final', statusText: 'Final/3OT', homeTeam: { ...widest, score: 188 }, awayTeam: { ...widest, score: 186 } };
+  const pair = { teamId: widest.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
   // and in the widest 3-in-4 chip of the season: "7in11 · 2nd" (cells show the merged chip)
   const tif: ThreeInFour = { position: 3, sets: [], merged: { ids: Array(7).fill(''), dates: Array(7).fill('2026-11-01'), days: 11, position: 2 } };
-  return { game, teamId: g.homeTeam.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, tvPill: true, size: 'compact' };
+  return { game, teamId: widest.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, tvPill: true, size: 'compact' };
 }
 
 export interface TeamMonthGridProps {
@@ -96,6 +101,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
       }
     }
     return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- visible is rebuilt each render from tvOnly, which is listed
   }, [cells, b2b, tvOnly]);
 
   const cardProps = (g: ScheduleGame) => ({
@@ -118,6 +124,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
   const key = `${size.width}x${size.height}${weekView ? `w${weekRows}` : ''}`;
   const measuring = !compact && !!probe && scale.key !== key;
   const grid = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- after every render on purpose: the measuring guard ends it once the scale matches
   useLayoutEffect(() => {
     const g = grid.current;
     const cell = g?.querySelector<HTMLElement>('.ck-day-cell');

@@ -1084,15 +1084,17 @@ function teamDefaultDate(data: CalendarData, teamId: number, now: number): strin
 /** "Data updated Oct 23, 08:29" in the viewer's zone; orange with a tooltip once the data is older than 36 h. */
 function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: number; timeZone?: string }) {
   const t = Date.parse(updatedAt);
-  if (Number.isNaN(t)) return null;
-  const stale = useClockValue((n) => n - t > STALE_AFTER_MS, now);
+  const valid = !Number.isNaN(t);
+  // hooks before the early return (rules of hooks)
+  const stale = useClockValue((n) => valid && n - t > STALE_AFTER_MS, now);
   // turns orange when it crosses 36 h: one timeout makes the clock read the time then (it has no minute tick)
   useEffect(() => {
     const left = t + STALE_AFTER_MS - Date.now();
-    if (stale || left <= 0 || left > 2 ** 31 - 1) return;
+    if (!valid || stale || left <= 0 || left > 2 ** 31 - 1) return;
     const id = setTimeout(() => window.dispatchEvent(new Event(CLOCK_TICK_EVENT)), left + 50);
     return () => clearTimeout(id);
-  }, [t, stale]);
+  }, [t, valid, stale]);
+  if (!valid) return null;
   const when = dateFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
   const tip = stale ? 'Data is more than 36 hours old: the daily update may have failed.' : undefined;
   return (
@@ -1192,7 +1194,7 @@ function useAutoHideBar(root: RefObject<HTMLDivElement | null>, bar: RefObject<H
   );
   // a new page, or the view can't scroll: the bar is back
   useLayoutEffect(() => {
-    s.current.hidden && set(false);
+    if (s.current.hidden) set(false);
   }, [page, enabled, set]);
   // the pointer at the window's top edge (above the widget too) brings it back
   useEffect(() => {

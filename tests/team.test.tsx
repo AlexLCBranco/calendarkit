@@ -26,7 +26,7 @@ const team = (teamId: number, layout: 'list' | 'calendar', size = WIDE, onStateC
   render(<CalendarView data={data} size={size} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout, teamId }} onStateChange={onStateChange} />);
 const imgs = (el: Element) => [...el.querySelectorAll('img')].map((i) => i.getAttribute('src'));
 
-/** Metro of an arena city, written out here independently of src/data/metro.ts (see PROJECT.md). */
+/** Metro of an arena city, written out here independently of src/data/metro.ts (see docs/HISTORY.md). */
 const metro = (c: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' } as Record<string, string>)[c] ?? c;
 
 /** Back-to-back pairs worked out here, independently of the app: consecutive calendar days of the team's games. */

@@ -15,6 +15,7 @@ export function WeekPicker({ data, start, weeks, tvOnly, size, today, onPick, on
     const outside = (e: Event) => !ref.current?.contains(e.target as Node) && !(e.target as Element).closest?.('[data-testid="period-title"]') && onClose();
     document.addEventListener('mousedown', outside);
     return () => document.removeEventListener('mousedown', outside);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- set up once per opening (WeekPicker also focuses then); onClose only closes it
   }, []);
   return (
     <div ref={ref} className="ck-popup" role="dialog" aria-label="Jump to a week" data-testid="week-picker" onKeyDown={(e) => e.key === 'Escape' && (e.stopPropagation(), onClose())}>

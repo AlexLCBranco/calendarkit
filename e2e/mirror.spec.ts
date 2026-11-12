@@ -47,7 +47,10 @@ test('League List: mirrored matchup, one x per part down every day, one line per
           col(kind + 'logo2').push(round(logos[1]!.left));
           // records (after the game once final): slots outside the logos, desktop/tablet only
           const recs = [...m.querySelectorAll('.ck-rec')].map((r) => r.getBoundingClientRect());
-          if (recs.length === 2) col(kind + 'rec1').push(round(recs[0]!.right)), col(kind + 'rec2').push(round(recs[1]!.left));
+          if (recs.length === 2) {
+            col(kind + 'rec1').push(round(recs[0]!.right));
+            col(kind + 'rec2').push(round(recs[1]!.left));
+          }
           else if (recs.length || !phone) out.bad.push(`${c.dataset.gameId}: ${recs.length} record slots`);
           // order: logo, away, (score), @, (score), home, logo
           const seq = [...m.querySelectorAll('.ck-logo-backing, .ck-logo-empty, .ck-team, .ck-score, .ck-vsat')].map((e) => (e.classList.contains('ck-team') ? 'T' : e.classList.contains('ck-score') ? 'S' : e.classList.contains('ck-vsat') ? '@' : 'L')).join('');

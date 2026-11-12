@@ -24,6 +24,7 @@ jobs:
       - run: npm ci
       - run: npm run check-version
         if: github.event_name == 'push'
+      - run: npm run lint
       - run: npm test
       - run: npm run build
 

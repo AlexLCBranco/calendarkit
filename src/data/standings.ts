@@ -352,7 +352,10 @@ function recordAmong(ctx: Ctx, t: TeamStanding, ids: Iterable<number>): Rec {
   for (const id of ids) {
     if (id === t.teamId) continue;
     const x = m.get(id);
-    if (x) (r.w += x.w), (r.l += x.l);
+    if (x) {
+      r.w += x.w;
+      r.l += x.l;
+    }
   }
   return r;
 }

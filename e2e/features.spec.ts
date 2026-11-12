@@ -34,7 +34,7 @@ async function feed(page: Page): Promise<RawGame[]> {
     return (raw.leagueSchedule.gameDates as { games: RawGame[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
   });
 }
-/** Metro of an arena city, written out here independently of src/data/metro.ts (see PROJECT.md). */
+/** Metro of an arena city, written out here independently of src/data/metro.ts (see docs/HISTORY.md). */
 const metro = (c: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' } as Record<string, string>)[c] ?? c;
 const dateOf = (g: RawGame) => g.gameDateEst.slice(0, 10);
 const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
@@ -291,7 +291,10 @@ test('team calendar: content scaled to the cell, nothing clipped in any cell —
       const name = `${tri} ${r.month}`;
       expect(r.clipped, name).toEqual([]);
       expect(r.scroll, name).toBeLessThanOrEqual(0);
-      for (const gap of r.bars) expect(gap, `${name}: B2B bar at the bottom edge of its cells`).toBeGreaterThanOrEqual(0), expect(gap, name).toBeLessThanOrEqual(6);
+      for (const gap of r.bars) {
+        expect(gap, `${name}: B2B bar at the bottom edge of its cells`).toBeGreaterThanOrEqual(0);
+        expect(gap, name).toBeLessThanOrEqual(6);
+      }
       if (p === 'desktop-xl') {
         expect(r.scale, name).toBeGreaterThanOrEqual(1.2); // the short chip + TV pill: 1.2
         if (r.logo) expect(r.logo, name).toBeCloseTo(16 * r.scale, 1);

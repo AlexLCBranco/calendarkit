@@ -54,7 +54,9 @@ describe('wiring', () => {
     expect(data).toHaveLength(2);
     for (const h of data) {
       const cc = h.headers.find((x) => x.key === 'Cache-Control')!.value;
-      const n = (k: string) => Number(new RegExp(`${k}=(\d+)`).exec(cc)?.[1] ?? 0);
+      // (`\\d` in a template string: a plain `\d` is just "d", and the check then read 0 + 0 and always passed)
+      const n = (k: string) => Number(new RegExp(`${k}=(\\d+)`).exec(cc)?.[1] ?? NaN);
+      expect(n('max-age'), cc).toBeGreaterThan(0);
       expect(n('max-age') + n('stale-while-revalidate')).toBeLessThanOrEqual(600);
     }
   });

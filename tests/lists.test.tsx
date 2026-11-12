@@ -264,7 +264,7 @@ describe('team list', () => {
         expect(!!row.querySelector('.ck-b2b-n2'), name).toBe(isBackToBack(data, teamId, g.dateEt));
         expect(!!row.querySelector('.ck-b2b-n1'), name).toBe(teamGames(data, teamId).some((x) => x.dateEt === addDays(g.dateEt, 1)));
         const tv = nationalTv(g);
-        expect(row.querySelector('[data-testid="tv-badge"]')?.textContent ?? '', name).toBe(tv.join(' · '));
+        expect(row.querySelector('[data-testid="tv-badge"]')?.textContent ?? '', name).toBe(tv.slice(0, 2).join(' · ') + (tv.length > 2 ? ` +${tv.length - 2}` : ''));
         expect([...row.querySelectorAll('.ck-cup, .ck-cup-final, .ck-play-in, .ck-playoffs')].map((t) => t.textContent), name).toEqual(markers(g).map((m) => m.long));
       }
       });

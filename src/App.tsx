@@ -120,12 +120,12 @@ export function usePageHistory(handle: RefObject<CalendarHandle | null>) {
     const e: unknown = window.history.state;
     posRef.current = isEntry(e) ? { i: e.i, max: e.max, trail: e.trail } : { i: 0, max: 0, trail: [] };
   }
-  const setPos = (p: { i: number; max: number; trail: string[] }) => {
+  const setPos = useCallback((p: { i: number; max: number; trail: string[] }) => {
     const back = p.i > 0 ? p.trail[p.i - 1] ?? 'the previous page' : undefined;
     const forward = p.i < p.max ? p.trail[p.i + 1] ?? 'the next page' : undefined;
     const was = arrows.get();
     if (was.back !== back || was.forward !== forward) arrows.set({ back, forward });
-  };
+  }, [arrows]);
   const onNavigate = useCallback((snap: ViewSnapshot, how: 'push' | 'replace', prev?: ViewSnapshot) => {
     const cur = posRef.current;
     let next: typeof cur;
@@ -144,7 +144,7 @@ export function usePageHistory(handle: RefObject<CalendarHandle | null>) {
     }
     posRef.current = next;
     setPos(next);
-  }, [arrows]);
+  }, [setPos]);
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
       const st: unknown = e.state;
@@ -161,7 +161,7 @@ export function usePageHistory(handle: RefObject<CalendarHandle | null>) {
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [handle, arrows]);
+  }, [handle, setPos]);
   const [pageHistory] = useState<PageHistory>(() => ({ labels: arrows, onBack: () => window.history.back(), onForward: () => window.history.forward() }));
   return { onNavigate, pageHistory };
 }
@@ -198,7 +198,8 @@ function useContentSize(ref: RefObject<HTMLElement | null>, widgetRef: RefObject
       window.removeEventListener('resize', measure);
       ro?.disconnect();
     };
-  }, []);
+    // once: the refs are stable; fallback only reads the window
+  }, [ref, widgetRef]);
   return size;
 }
 

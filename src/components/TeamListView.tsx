@@ -94,7 +94,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
-  const allRows = useMemo(() => (showRest && !only ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, data, teamId]);
+  const allRows = useMemo(() => (showRest && !only ? withRest(games, teamRestDays(data, teamId)) : games), [games, showRest, only, data, teamId]);
   const last = monthTo ?? month;
   const inRange = (m: string) => !month || (m >= month && m <= last!);
   const rows = useMemo(() => (month ? allRows.filter((r) => monthOf(rowDateOf(r)) >= month && monthOf(rowDateOf(r)) <= last!) : allRows), [allRows, month, last]);
@@ -194,7 +194,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
   if (handle) handle.current = { toNext, toDate };
   // While scrolling, the title and strip follow at most every FOLLOW_MS, and once more when the list stops: every change
   // costs the page a main-thread frame during an otherwise compositor-only scroll (following every row doubled the
-  // gesture's main-thread time; PROJECT.md). Reads happen in a frame callback, after layout.
+  // gesture's main-thread time; docs/HISTORY.md). Reads happen in a frame callback, after layout.
   const timer = useRef<{ last: number; trailing?: ReturnType<typeof setTimeout>; frame: number }>({ last: 0, frame: 0 });
   const follow = () => {
     const t = timer.current;
@@ -244,6 +244,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
       const row = tops.current.find((r) => r.date >= date) ?? tops.current.at(-1);
       scrollTo(row?.top ?? 0);
     } else scrollTo(nextTop() ?? 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the list changes, not on every render (`now` ticks); the helpers read refs
   }, [rows, openAt]);
   // rows change size after the first layout (the font arriving, another width): measure again whenever the list does;
   // and when the scroller does (the week strip mounts above it after the first render, so the room after the
@@ -258,6 +259,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     ro.observe(list);
     ro.observe(scroller.current!);
     return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one observer for the list's life; measure and track read refs
   }, []);
 
   // The active day's row (the strip's selected day): a class on that row only and the overlay band over it, moved when
@@ -276,6 +278,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     };
     apply();
     return topStore.subscribe(apply);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- highlight is a stable handle (useActiveHighlight); rows re-place the band
   }, [topStore, rows]);
 
   // the strip's days: what each date holds (game: opponent; rest day: a row only with "Show rest days")
@@ -400,7 +403,7 @@ function withRest(games: ScheduleGame[], rest: string[]): (ScheduleGame | string
  * row dimmed and disabled; ‹ › = the previous / next week with a game. It reads only the week's Sunday from the store,
  * so it re-renders when the week changes; within a week only the old and new selected day do (WeekStrip
  * selectedStore). Before that, re-rendering the whole strip on every row change doubled the Team List scroll's
- * main-thread time (PROJECT.md).
+ * main-thread time (docs/HISTORY.md).
  */
 const TeamStrip = memo(function TeamStrip({ store, byDate, gameDates, today, onPick }: { store: ValueStore<string>; byDate: Map<string, string>; gameDates: string[]; today?: string; onPick: (date: string) => void }) {
   const sunday = useSyncExternalStore(store.subscribe, () => (store.get() ? weekOf(store.get())[0]! : ''));

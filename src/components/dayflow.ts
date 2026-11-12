@@ -144,11 +144,11 @@ export const flowHeight = (flow: TimeGroup[][]) => Math.max(0, ...flow.map((c) =
 /**
  * Line width (scale 1) if a final game kept both logos and added each score after its tricode at the tricode's size
  * (11 px): the option checked for 1-week mode. It only allows 1.2 at 1920 × 1080 (< 1.3), so 1-week mode puts the
- * score in the logo slot like 2-week mode instead (PROJECT.md "Scores in the week view").
+ * score in the logo slot like 2-week mode instead (docs/HISTORY.md, "Week view, 1 week").
  */
 export const LINE_WITH_SCORES = MONTH_LINE_WIDTH + 2 * (MONTH_LINE.gap + SCORE3_EM * MONTH_LINE.font);
 
-/** Largest game-line scale in 1-week mode (about 1.5×, see PROJECT.md). */
+/** Largest game-line scale in 1-week mode (about 1.5×, see docs/HISTORY.md). */
 export const WEEK_SCALE_MAX = 1.5;
 /** Share of a day cell's inner width, and of its height below the day header, that the scaled content may use. */
 export const WEEK_SCALE_FILL = 0.8;

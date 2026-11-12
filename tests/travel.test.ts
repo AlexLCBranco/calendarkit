@@ -30,7 +30,10 @@ describe('travelLines', () => {
         return `${l.team}:${l.night} ${from.arenaName}|${from.arenaCity} -> ${to.arenaName}|${to.arenaCity}`;
       });
       expect(got.sort(), `${g.gameId} ${g.awayTeam.teamTricode}@${g.homeTeam.teamTricode} ${g.dateEt}`).toEqual(want.sort());
-      for (const l of travelLines(data, g)) l.night === 2 ? n2++ : n1++;
+      for (const l of travelLines(data, g)) {
+        if (l.night === 2) n2++;
+        else n1++;
+      }
     }
     expect(n2).toBe(n1); // every pair has two ends
     expect(n2).toBeGreaterThan(400);

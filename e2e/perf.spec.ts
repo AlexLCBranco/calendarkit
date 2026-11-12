@@ -1,7 +1,7 @@
 // Performance guard (1920 × 1080, own Playwright project "perf" that runs after every other project, so no other
 // test shares the machine; on CI a job of its own): load → first view rendered, the League List within a busy night and day by day, the Team List,
 // switching views. Fails when a metric gets meaningfully worse than the baseline in e2e/perf-baseline.json
-// (limit = max(baseline × PERF_RATIO, baseline + the metric's slack); see PROJECT.md "Performance").
+// (limit = max(baseline × PERF_RATIO, baseline + the metric's slack); see docs/HISTORY.md "Performance").
 // Prints `[perf] …` lines; PERF_RECORD=1 writes the measured numbers to test-output/perf.json.
 
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
@@ -413,6 +413,8 @@ test.afterAll(() => {
   let prev: Record<string, number> = {};
   try {
     prev = JSON.parse(readFileSync('test-output/perf.json', 'utf8'));
-  } catch {}
+  } catch {
+    // no earlier run to merge with
+  }
   writeFileSync('test-output/perf.json', JSON.stringify({ ...prev, ...measured }, null, 2));
 });

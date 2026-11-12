@@ -48,7 +48,9 @@ const up = async () => {
   for (let i = 0; i < 100; i++) {
     try {
       if ((await fetch(`http://localhost:${PORT}/calendar/`)).ok) return;
-    } catch {}
+    } catch {
+      // not listening yet
+    }
     await new Promise((r) => setTimeout(r, 200));
   }
   throw new Error('preview server did not start');

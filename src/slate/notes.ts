@@ -1,6 +1,6 @@
 // Slate notes: a note per game with three slots — pregame, live, postgame — and the slot on show.
 // The note belongs to the GAME (its NBA gameId), not to a card or a view. Kept in localStorage under one key,
-// NOTES_KEY, as { [gameId]: { pre, live, post, shown } } — the gauntlet Slate widget will read the same key (PROJECT.md).
+// NOTES_KEY, as { [gameId]: { pre, live, post, shown } } — the gauntlet Slate widget will read the same key (docs/slate-in-gauntlet.md).
 // Notes are the person's content, not a default, so they are stored (the "no persistence before a settings page" rule
 // is about defaults). Saved as typed (debounced) and on every slot switch; other open tabs follow through the `storage`
 // event (last edit wins); a card subscribes to its own game only, so typing re-renders that card alone.

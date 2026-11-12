@@ -28,7 +28,7 @@ export function TeamLogo({ team, link = true }: { team: ScheduleGame['homeTeam']
 
 /**
  * Tip-off time, the same on every day, today included (a countdown "in 2h 35m" on today's games
- * was dropped for now, on purpose — PROJECT.md).
+ * was dropped for now, on purpose — docs/HISTORY.md).
  */
 export function TipTime({ tip }: { tip: Tipoff }) {
   return (
