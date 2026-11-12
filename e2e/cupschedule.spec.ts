@@ -480,6 +480,13 @@ test.describe('Cup schedule fits the window', () => {
           expect(r.scroll, `by ${by}: page scrolls vertically`).toBeLessThanOrEqual(r.win);
           expect(r.out, `by ${by}`).toEqual([]);
           expect(r.heights, `by ${by}: every row one line`).toHaveLength(1);
+          // nothing wider than the window, and every night's heading (the Final's neutral-venue badge too) inside its card
+          const wide = await page.evaluate(() => ({
+            side: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            heads: [...document.querySelectorAll('[data-testid="cup-league"] .ck-cg-head')].filter((h) => [...h.querySelectorAll('*')].concat(h).some((e) => e.getBoundingClientRect().right > h.closest('.ck-cg-panel, section')!.getBoundingClientRect().right + 0.5)).map((h) => h.textContent),
+          }));
+          expect(wide.side, `by ${by}: sideways scroll`).toBeLessThanOrEqual(0);
+          expect(wide.heads, `by ${by}: headings sticking out of their card`).toEqual([]);
           expect([r.font, r.zoom], 'rows at the League List’s size').toEqual([ref.font, ref.zoom]);
         }
       }

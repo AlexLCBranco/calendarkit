@@ -35,9 +35,11 @@ describe('where it shows', () => {
     render(<SlateDay data={data} date={qf.dateEt} timeZone="UTC" />);
     expect(screen.getAllByTestId('venue-tbd').length).toBeGreaterThan(0);
   });
-  it('the Cup schedule by date: the final\'s row has the neutral badge', () => {
+  it('the Cup schedule by date: the final\'s heading has the neutral badge, the arena (the city in its tooltip, so it fits its card)', () => {
     render(<CupSchedule data={data} list="league" by="date" size={{ width: 1920, height: 1000 }} now={Date.parse('2026-11-06T12:00:00Z')} today="2026-11-06" timeZone="UTC" />);
     const night = document.querySelector(`[data-testid="cup-night"][data-night="${final.dateEt}"]`)!;
-    expect(night.querySelector('.ck-cg-head [data-testid="venue-neutral"]')!.textContent).toBe('Neutral · Hinkle Fieldhouse, Indianapolis');
+    const badge = night.querySelector('.ck-cg-head [data-testid="venue-neutral"]')!;
+    expect(badge.textContent).toBe('Neutral · Hinkle Fieldhouse');
+    expect(badge.getAttribute('title')).toBe('Neutral court: neither team is at home (Hinkle Fieldhouse, Indianapolis)');
   });
 });

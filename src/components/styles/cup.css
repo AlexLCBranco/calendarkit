@@ -390,6 +390,13 @@
 .ck-cg-night.ck-cg-picked {
   box-shadow: -4px 0 0 -1px var(--ck-accent);
 }
+/* a heading with the venue badge may wrap under the night's name rather than run out of its card */
+.ck-cg-night > .ck-cg-head:has(.ck-venue-neutral) {
+  white-space: normal;
+}
+.ck-cg-night > .ck-cg-head .ck-venue-neutral {
+  white-space: nowrap;
+}
 .ck-cg-night.ck-cg-picked > .ck-cg-head {
   color: var(--ck-accent);
 }
