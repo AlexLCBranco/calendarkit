@@ -19,6 +19,8 @@ import { LeagueWeekView } from './LeagueWeekView';
 import { hoverHandlers, useClearHover, useHoverRow } from './MapHover';
 import { MonthNavigator } from './MonthNavigator';
 import { monthNav, PeriodNav, type PeriodNavProps } from './PeriodNav';
+import { OptionsIcon } from './Menu';
+import { PopoverButton } from './Popover';
 import { Segmented } from './Segmented';
 import { SelectionBar } from './SelectionBar';
 import type { SelectionKind } from './SelectionCapture';
@@ -79,7 +81,7 @@ export interface ScheduleProps extends DestinationProps {
 }
 
 export function ScheduleDestination(p: ScheduleProps) {
-  const { active, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, barEnd, selection, jump, odds, openTeam } = p;
+  const { active, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, selection, jump, odds, openTeam } = p;
   const { team, slate, list, teamMap } = scheduleShape(state, size);
   const snap0 = p.initialSnap;
   const [leagueMonth, setLeagueMonth] = useState(() => snap0?.leagueMonth ?? monthOf(state.date));
@@ -417,7 +419,10 @@ export function ScheduleDestination(p: ScheduleProps) {
   const teamListProps = { data, teamId: state.teamId, tvOnly: state.tvOnly, showRest: state.showRest && !compact, size, now, timeZone, onOpenGame, gameLink, handle: teamList, openAt: teamOpen, onAtNext: teamAtNext.set, topStore: teamTop, today, month: teamListMonth, monthTo: teamListTo, onLoadMonths: compact ? undefined : loadTeamMonths, onMonthChange: setTeamListMonth };
   const leagueList = <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />;
 
-  const center = (
+  // The bar, in this order: sub-views (List · Calendar · Slate, the scope picker); date controls (the date block,
+  // then the week view's weeks or the Team Calendar's span); the options in the Options popover
+  const date = (
+    <>
     <div className="ck-period-wrap ck-date-block" data-testid="date-block">
       {team && list && !compact ? (
         <TeamListNav short={barShort} store={teamTop} games={teamPickGames} atNext={teamAtNext} pick={{ open: datePick, onToggle: () => setDatePick((o) => !o) }} onDate={(d) => teamList.current?.toDate(d)} onToday={() => (jump(), teamList.current?.toNext())} />
@@ -461,12 +466,6 @@ export function ScheduleDestination(p: ScheduleProps) {
         />
       )}
     </div>
-  );
-
-  const right = (
-    <>
-      <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(!slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />
-      <TeamPicker allTeams teamId={team ? state.teamId : undefined} onChange={team ? pickTeam : (id) => openTeam(id, state.layout === 'calendar' && !slate ? 'calendar' : 'list')} onClear={toAllTeams} compact={compact} />
       {weekView && <Segmented label="Weeks" className=" ck-tabs-small" value={String(state.weeks) as '1' | '2'} options={barShort ? [['1', '1w', '1 week'], ['2', '2w', '2 weeks']] : [['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
       {team && !list && !compact && (
         <Segmented
@@ -477,16 +476,27 @@ export function ScheduleDestination(p: ScheduleProps) {
           onChange={(v) => setTeamSpan(v === 'month' ? 'month' : v === '2' ? 2 : 1)}
         />
       )}
+    </>
+  );
+
+  const sub = (
+    <>
+      <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(!slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />
+      <TeamPicker allTeams teamId={team ? state.teamId : undefined} onChange={team ? pickTeam : (id) => openTeam(id, state.layout === 'calendar' && !slate ? 'calendar' : 'list')} onClear={toAllTeams} compact={compact} />
+    </>
+  );
+  const options = (
+    <PopoverButton label="Options" testId="options-button" buttonClass={state.tvOnly ? ' ck-opt-on' : ''} title={state.tvOnly ? 'Options — TV games only is on' : 'Options'} icon={<OptionsIcon />}>
+      <span className="ck-pop-head">Options</span>
+      <label className="ck-check" title="Only games on US national TV">
+        <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> TV games only
+      </label>
       {team && list && !compact && (
-        <label className={`ck-check ck-chip-check${state.showRest ? ' ck-chip-on' : ''}`} title="Show the days without a game between the rows">
-          <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Rest days
+        <label className="ck-check" title="Show the days without a game between the rows">
+          <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Rest days (Team List)
         </label>
       )}
-      <label className={`ck-check ck-chip-check${state.tvOnly ? ' ck-chip-on' : ''}`} title="Only games on US national TV">
-        <input type="checkbox" aria-label="TV games only" checked={state.tvOnly} onChange={(e) => update({ tvOnly: e.target.checked })} /> {compact || barShort ? 'TV only' : 'TV games only'}
-      </label>
-      {barEnd()}
-    </>
+    </PopoverButton>
   );
 
   let body: ReactNode;
@@ -528,7 +538,7 @@ export function ScheduleDestination(p: ScheduleProps) {
   else body = <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />;
 
   return (
-    <DestinationFrame slots={slots} center={center} right={right}>
+    <DestinationFrame slots={slots} sub={sub} date={date} options={options}>
       {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? teamListPeriod : undefined} />}
       {body}
       {selKind && <SelectionBar store={selection} copy={copySelection} />}

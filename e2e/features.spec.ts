@@ -4,6 +4,7 @@
 // e2e/screenshots/<project>-f-<view>.png.
 
 import { expect, test, type Page } from './fixtures';
+import { setOption } from './nav';
 import { eachTeamMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
@@ -612,7 +613,7 @@ test('TV games only: per day never more games than without the filter, and every
     });
   const before = await perDay();
   expect(Object.keys(before).length).toBe(weekView(p) ? 14 : 1);
-  await page.getByLabel('TV games only').check();
+  await setOption(page, 'TV games only', true);
   await expect(page).toHaveURL(/tv=1/);
   const after = await perDay();
   let shown = 0;

@@ -269,10 +269,7 @@
   cursor: default;
 }
 
-/* One row, ~44 px (was two rows, 78 px): left — page history + destinations; centre — the
-   destination's control (Schedule: the date block); right — views, scope picker, options, TV chip, ⓘ, Quick standings and
-   Copy as icon buttons. Controls 32 px tall (were 36). A row too narrow for all of it wraps its right part under (the
-   window's width decides; at 1920 one row). Hidden while a list is scrolled down: .ck-bar-hidden (useAutoHideBar). */
+/* One row, ~44 px, controls 32 px tall; what goes where: menu.css. */
 .ck-toolbar.ck-bar1 {
   flex-direction: row;
   flex-wrap: wrap;
@@ -291,23 +288,6 @@
 }
 .ck-bar-local {
   display: contents;
-}
-.ck-bar-center {
-  flex: 1 1 auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.ck-bar1 .ck-bar-right {
-  margin-left: auto;
-  flex: none;
-  flex-wrap: nowrap;
-  gap: 8px;
-}
-.ck-root-fill.ck-bar-hidden > .ck-toolbar {
-  display: none;
 }
 /* 32 px controls */
 .ck-bar1 .ck-tabs,
@@ -408,9 +388,10 @@
 .ck-bar-short .ck-bar1 {
   column-gap: 8px;
 }
-.ck-bar-short .ck-bar1 .ck-bar-right,
 .ck-bar-short .ck-bar1 .ck-bar-left,
-.ck-bar-short .ck-bar1 .ck-bar-center {
+.ck-bar-short .ck-bar1 .ck-bar-sub,
+.ck-bar-short .ck-bar1 .ck-bar-date,
+.ck-bar-short .ck-bar1 > .ck-bar-end {
   gap: 6px;
 }
 .ck-bar-short .ck-bar1 .ck-tab {
@@ -425,30 +406,9 @@
 .ck-bar-short .ck-bar1 .ck-chip-check {
   padding: 0 8px 0 6px;
 }
-/* Schedule: the right group has one width in every view (its widest, the Team Calendar's), so the date block in the
-   centre and List · Calendar · Slate never move between views; ⓘ, Quick standings and Copy keep the
-   right end */
-.ck-root:not(.ck-compact) .ck-bar1[data-destination='schedule'] .ck-bar-right {
-  width: 760px;
-  box-sizing: border-box;
-}
-.ck-root.ck-bar-short:not(.ck-compact) .ck-bar1[data-destination='schedule'] .ck-bar-right {
-  width: 572px;
-}
 .ck-bar-end {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: inherit;
-}
-/* tablets and phones (not a target, but never a sideways scroll): the right group takes its own width and wraps */
-.ck-root.ck-bar-wrap .ck-bar1 .ck-bar-right,
-.ck-root.ck-bar-wrap .ck-bar1[data-destination='schedule'] .ck-bar-right {
-  width: auto;
-  flex-wrap: wrap;
-  flex: 1 1 auto;
-  justify-content: flex-start;
-}
-.ck-root.ck-bar-wrap .ck-bar-center {
-  justify-content: flex-start;
 }

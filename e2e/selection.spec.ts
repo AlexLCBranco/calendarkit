@@ -4,7 +4,7 @@
 // selects rows beyond the first screen; the bar's Copy and Ctrl+C put a PNG on the clipboard.
 
 import { expect, test, type Page } from './fixtures';
-import { clearScope } from './nav';
+import { clearScope, setOption } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -205,8 +205,8 @@ test('changing view, team, period, span or a toggle clears the selection', async
     () => page.getByRole('button', { name: 'Next month' }).click(),
     () => page.getByRole('tab', { name: '2 weeks' }).click(),
     () => page.getByRole('button', { name: 'Previous 2 weeks' }).click(),
-    () => page.getByLabel('TV games only').check(),
-    () => page.getByLabel('TV games only').uncheck(),
+    () => setOption(page, 'TV games only', true),
+    () => setOption(page, 'TV games only', false),
   ]) {
     await select(cell);
     await act();

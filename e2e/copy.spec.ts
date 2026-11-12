@@ -6,6 +6,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from './fixtures';
+import { setOption } from './nav';
 import { showMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
@@ -223,7 +224,7 @@ test('whole view: team calendar and the whole Team List month', async ({ page },
   // The Team List shows a month; the copy is that month — all its rows, not only those on screen. A short
   // window, so the month doesn't fit on screen.
   await page.setViewportSize({ width: 1920, height: 600 });
-  await page.getByLabel('Show rest days').uncheck(); // on by default: first the games only
+  await setOption(page, 'Show rest days', false); // on by default: first the games only
   const shown = await page.locator('.ck-team-rows > .ck-card').count();
   const visible = await page.getByTestId('team-list').evaluate((l) => l.clientHeight);
   expect(await page.getByTestId('team-list').evaluate((l) => l.querySelector('.ck-team-rows')!.getBoundingClientRect().height)).toBeGreaterThan(visible);
@@ -240,7 +241,7 @@ test('whole view: team calendar and the whole Team List month', async ({ page },
   expect(r.height / view.target.ratio, 'taller than the list on screen').toBeGreaterThan(visible);
 
   // "Show rest days": the rest rows are in the image too, every one of them drawn
-  await page.getByLabel('Show rest days').check();
+  await setOption(page, 'Show rest days', true);
   const rest = await page.locator('.ck-team-rows > .ck-rest-row').count();
   expect(rest).toBeGreaterThan(5);
   const withRest = await copyView(page);

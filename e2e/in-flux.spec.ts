@@ -5,7 +5,7 @@
 
 import { expect, test, type Page } from './fixtures';
 import { APP } from './app';
-import { destination } from './nav';
+import { destination, setOption } from './nav';
 
 test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
 
@@ -32,24 +32,53 @@ const feedDay = (page: Page, date: string) =>
   }, date);
 const shownIds = (page: Page) => page.getByTestId('league-list').locator('[data-game-id]').evaluateAll((els) => els.map((e) => e.getAttribute('data-game-id')!).sort());
 
-test('smoke: top bar — every destination opens from it, the day controls show the right games, no console errors', async ({ page }) => {
+// Both menus while Alex tries them (Menu.tsx; the one not picked gets deleted): the same smoke for each
+for (const menu of ['packed', 'rail'] as const)
+  test(`smoke: top bar, ${menu} menu — every destination opens from it, the day controls show the right games, no console errors`, async ({ page }) => {
+    const errors = collectErrors(page);
+    await page.addInitScript((m) => localStorage.setItem('ck:menu:v1', m), menu);
+    await page.clock.setFixedTime(NOW);
+    await page.goto(`${APP}?view=league&layout=list&date=${DAY}`);
+    await expect(page.getByTestId('top-bar')).toHaveAttribute('data-menu', menu);
+    await expect(page.getByTestId('rail')).toHaveCount(menu === 'rail' ? 1 : 0);
+    await expect(page.getByTestId('day-title')).toContainText('2, 2026');
+    expect(await shownIds(page)).toEqual(await feedDay(page, DAY));
+    // the day controls: next day, then back
+    await page.getByLabel('Next day').click();
+    await expect.poll(() => shownIds(page)).toEqual(await feedDay(page, '2026-11-03'));
+    await page.getByLabel('Previous day').click();
+    await expect.poll(() => shownIds(page)).toEqual(await feedDay(page, DAY));
+    // the options: TV games only from the Options popover
+    await setOption(page, 'TV games only', true);
+    await expect(page).toHaveURL(/tv=1/);
+    await setOption(page, 'TV games only', false);
+    // every destination
+    await destination(page, 'Cup').click();
+    await expect(page.getByTestId('cup')).toBeVisible();
+    await destination(page, 'Standings').click();
+    await expect(page.getByTestId('standings-table').first()).toBeVisible();
+    await destination(page, 'Schedule').click();
+    await expect.poll(() => shownIds(page)).toEqual(await feedDay(page, DAY));
+    // page history from wherever the menu has it
+    await page.getByTestId('page-back').click();
+    await expect(page.getByTestId('standings-table').first()).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+test('smoke: the menu switch in ⓘ — Rail and Packed bar, remembered across a new visit', async ({ page }) => {
   const errors = collectErrors(page);
   await page.clock.setFixedTime(NOW);
   await page.goto(`${APP}?view=league&layout=list&date=${DAY}`);
-  await expect(page.getByTestId('day-title')).toContainText('2, 2026');
-  expect(await shownIds(page)).toEqual(await feedDay(page, DAY));
-  // the day controls: next day, then back
-  await page.getByLabel('Next day').click();
-  await expect.poll(() => shownIds(page)).toEqual(await feedDay(page, '2026-11-03'));
-  await page.getByLabel('Previous day').click();
-  await expect.poll(() => shownIds(page)).toEqual(await feedDay(page, DAY));
-  // every destination
-  await destination(page, 'Cup').click();
-  await expect(page.getByTestId('cup')).toBeVisible();
-  await destination(page, 'Standings').click();
-  await expect(page.getByTestId('standings-table').first()).toBeVisible();
-  await destination(page, 'Schedule').click();
-  await expect.poll(() => shownIds(page)).toEqual(await feedDay(page, DAY));
+  await expect(page.getByTestId('top-bar')).toHaveAttribute('data-menu', 'packed');
+  await page.getByTestId('bar-info').click();
+  await page.getByRole('tablist', { name: 'Menu layout' }).getByRole('tab', { name: 'Rail' }).click();
+  await expect(page.getByTestId('rail')).toBeVisible();
+  await page.goto(`${APP}?view=standings`);
+  await expect(page.getByTestId('rail')).toBeVisible();
+  await page.getByTestId('bar-info').click();
+  await page.getByRole('tablist', { name: 'Menu layout' }).getByRole('tab', { name: 'Packed bar' }).click();
+  await expect(page.getByTestId('rail')).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem('ck:menu:v1'))).toBe('packed');
   expect(errors).toEqual([]);
 });
 

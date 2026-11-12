@@ -1,0 +1,187 @@
+/* The menu (Menu.tsx): the top bar packed to the left in a fixed order — [← → destinations] (packed bar only), the
+   destination's sub-views, its date controls — and the icon buttons at the right end; or, with the rail, ← → and the
+   destinations in a strip down the left edge. Never hidden on scroll. */
+.ck-toolbar.ck-bar1 {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  column-gap: 14px;
+}
+.ck-bar-sub,
+.ck-bar-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.ck-bar-sub:empty,
+.ck-bar-date:empty {
+  display: none;
+}
+.ck-bar1 > .ck-bar-end {
+  margin-left: auto;
+  flex: none;
+  gap: 8px;
+}
+/* tablets and phones (parked): the bar wraps rather than scroll sideways */
+.ck-root.ck-bar-wrap .ck-toolbar.ck-bar1 {
+  flex-wrap: wrap;
+}
+.ck-root.ck-bar-wrap .ck-bar-sub,
+.ck-root.ck-bar-wrap .ck-bar-date {
+  flex-wrap: wrap;
+}
+
+/* The rail: in the widget's left padding, full height, a thin line on its right */
+.ck-root.ck-has-rail {
+  position: relative;
+  box-sizing: border-box;
+}
+.ck-rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  padding: 6px 12px 0 0;
+  border-right: 1px solid var(--ck-border);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+.ck-rail .ck-hist {
+  height: 32px;
+  margin: 0;
+  align-self: stretch;
+}
+.ck-rail .ck-hist-btn {
+  flex: 1;
+  width: auto;
+  font-size: 16px;
+}
+.ck-rail-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ck-rail-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 9px 2px 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ck-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ck-rail-tab:hover:not(.ck-rail-tab-on) {
+  color: var(--ck-text);
+  background: var(--ck-surface);
+}
+.ck-rail-tab-on {
+  color: var(--ck-accent);
+  background: var(--ck-surface-2, var(--ck-surface));
+  border-color: var(--ck-border);
+}
+
+/* Icon buttons with a popover (Options, ⓘ) */
+.ck-pop-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.ck-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 220px;
+  padding: 10px 12px;
+  background: var(--ck-bg);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  white-space: normal;
+}
+.ck-pop[hidden] {
+  display: none;
+}
+.ck-pop-head {
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ck-pop .ck-check {
+  font-size: 13px;
+}
+.ck-pop .ck-check input {
+  margin: 0;
+}
+.ck-pop .ck-check-off {
+  color: var(--ck-muted);
+  cursor: default;
+}
+/* Options on: a dot on its icon, so a filter that is on is never hidden away */
+.ck-opt-on {
+  position: relative;
+  color: var(--ck-accent);
+  border-color: var(--ck-accent);
+}
+.ck-opt-on::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ck-accent);
+}
+/* ⓘ: the round "i" inside the 32 px icon button, in the button's colour (muted; orange once the data is 36 h old) */
+.ck-info-button .ck-info {
+  pointer-events: none;
+  color: inherit;
+  border-color: currentColor;
+  cursor: inherit;
+}
+.ck-info-button.ck-info-stale {
+  color: var(--ck-stale);
+  border-color: var(--ck-stale);
+}
+.ck-info-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ck-info-lines .ck-info-stale-line {
+  color: var(--ck-stale);
+}
+.ck-info-pop {
+  width: 360px;
+}
+.ck-menu-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ck-border);
+}
+.ck-menu-switch .ck-tabs {
+  height: 28px;
+  align-self: flex-start;
+}
+.ck-menu-switch .ck-tab {
+  padding: 0 10px;
+  font-size: 12px;
+}

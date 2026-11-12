@@ -1,7 +1,7 @@
 // The contract between the shell (CalendarView) and its destinations (Schedule, Cup, Standings), and the parts they
 // share. Every destination stays mounted while the page is open, so its state lasts as long as the page did when it all
-// lived in one component; only the active one renders. Its top-bar controls go into the bar's slots through portals,
-// so the bar's DOM is the same as when the shell rendered them itself.
+// lived in one component; only the active one renders. Its top-bar controls go into the bar's slots through portals:
+// its sub-views, its date controls, its options (one popover) and its lines in the ⓘ popover.
 
 import { useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
@@ -16,10 +16,13 @@ import { SelectionCapture, type SelectionKind } from './SelectionCapture';
 import { TeamHeader } from './TeamHeader';
 import { LEAGUE_LIST_COLUMN, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 
-/** The top bar's two slots a destination fills: the centre and the right (before the shell's end of the bar). */
+/** The top bar's slots a destination fills, always in this order: sub-views, date controls; the options popover's
+ * button with its popover (the Schedule's only) and the ⓘ popover's own lines. */
 export interface BarSlots {
-  center: HTMLElement;
-  right: HTMLElement;
+  sub: HTMLElement;
+  date: HTMLElement;
+  options: HTMLElement;
+  info: HTMLElement;
 }
 
 export interface DestinationProps {
@@ -43,8 +46,6 @@ export interface DestinationProps {
   note?: string;
   /** Undefined until the bar is in the page (the first commit). */
   slots?: BarSlots;
-  /** The shell's end of the bar (ⓘ, Quick standings, Copy), last in the right slot; `extra` joins the ⓘ's tooltip. */
-  barEnd: (extra?: string) => ReactNode;
   selection: SelectionStore;
   /** Page history: the next change is a new page although only the date changed (a picked date, Today). */
   jump: () => void;
@@ -65,12 +66,14 @@ export interface DestinationApi {
 }
 
 /** The bar controls into the bar's slots, the rest in place; nothing until the bar is there. */
-export function DestinationFrame({ slots, center, right, children }: { slots?: BarSlots; center: ReactNode; right: ReactNode; children: ReactNode }) {
+export function DestinationFrame({ slots, sub, date, options, info, children }: { slots?: BarSlots; sub: ReactNode; date?: ReactNode; options?: ReactNode; info?: ReactNode; children: ReactNode }) {
   if (!slots) return null;
   return (
     <>
-      {createPortal(center, slots.center)}
-      {createPortal(right, slots.right)}
+      {createPortal(sub, slots.sub)}
+      {date && createPortal(date, slots.date)}
+      {options && createPortal(options, slots.options)}
+      {info && createPortal(info, slots.info)}
       {children}
     </>
   );

@@ -27,7 +27,7 @@ export interface CupApi extends DestinationApi {
 }
 
 export function CupDestination(p: DestinationProps & { initial?: Partial<CupState>; api: RefObject<CupApi | undefined> }) {
-  const { active, data, size, now, today, timeZone, compact, state, root, onOpenGame, gameLink, slots, barEnd, selection, initial } = p;
+  const { active, data, size, now, today, timeZone, compact, state, root, onOpenGame, gameLink, slots, selection, initial } = p;
   // Standings | Schedule, the schedule's League | Team, its team and night — never remembered: leaving the Cup resets
   // them, so it always opens on Groups (then League; no team until one is picked).
   const [cupView, setCupView] = useState<CupState>(() => (initial ? { ...CUP_START, ...initial } : CUP_START));
@@ -80,7 +80,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
   return (
     <DestinationFrame
       slots={slots}
-      center={
+      sub={
         <>
           <Segmented label="Cup view" value={cupView.tab} options={[['standings', 'Groups'], ['schedule', 'Schedule'], ['simulator', 'Simulator'], ['history', 'History']]} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />
           {cupSchedule && <Segmented label="Cup list" value={cupView.list} options={[['league', 'League'], ['team', 'Team']]} onChange={(list) => setCupView((v) => ({ ...v, list }))} />}
@@ -88,13 +88,10 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
           {cupTeam && <TeamPicker teamId={cupView.teamId} onChange={(teamId) => setCupView((v) => ({ ...v, teamId }))} />}
         </>
       }
-      right={
-        <>
-          <span className="ck-sr" data-testid="cup-stage">
-            {stage}
-          </span>
-          {barEnd(stage)}
-        </>
+      info={
+        <span className="ck-info-cup">
+          NBA Cup: <span data-testid="cup-stage">{stage}</span>
+        </span>
       }
     >
       <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>

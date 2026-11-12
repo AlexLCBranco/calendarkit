@@ -1,11 +1,12 @@
-// The shell's own parts of the one-row top bar: the page history's ← →, the ⓘ with the time zone and data stamp, the
-// Quick standings icon, and the auto-hide behaviour. The destinations' controls are not here: each destination
-// renders its own into the bar's slots (destination.tsx).
+// The shell's own parts of the top bar: the page history's ← →, the ⓘ with the time zone and data stamp, the Quick
+// standings icon. The destinations' controls are not here: each destination renders its own into the bar's slots
+// (destination.tsx); the menu's two variants are in Menu.tsx.
 
-import { useCallback, useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { dateFormat } from '../data/model';
 import { STALE_AFTER_MS, type PageHistory } from './calendarState';
 import { CLOCK_TICK_EVENT, useClockValue } from './clock';
+import { PopoverButton } from './Popover';
 import { useValue } from './valueStore';
 
 /** "Data updated Oct 23, 08:29" in the viewer's zone; orange with a tooltip once the data is older than 36 h. */
@@ -49,22 +50,44 @@ export function PageArrows({ h: { labels, onBack, onForward } }: { h: PageHistor
   );
 }
 
-/** Ⓘ — the time zone, the data stamp (orange once it is 36 h old) and, on the Cup, the stage, in its tooltip. */
-export function BarInfo({ note, updatedAt, now, timeZone, extra }: { note: string; updatedAt?: string; now: number; timeZone?: string; extra?: string }) {
+/**
+ * ⓘ — a button with a popover: the time zone, the data stamp (orange once it is 36 h old), then what the destination
+ * adds (the Cup's stage, the League List's legend) and the temporary menu switch. Its plain title has the first two.
+ */
+export function BarInfo({ note, updatedAt, now, timeZone, children }: { note: string; updatedAt?: string; now: number; timeZone?: string; children?: ReactNode }) {
   const t = updatedAt ? Date.parse(updatedAt) : NaN;
   const stale = useClockValue((n) => !Number.isNaN(t) && n - t > STALE_AFTER_MS, now);
   const when = Number.isNaN(t) ? undefined : dateFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
-  const tip = [note, when && `Data updated ${when}${stale ? ' — more than 36 hours old: the daily update may have failed' : ''}`, extra].filter(Boolean).join('\n');
+  const staleText = ' — more than 36 hours old: the daily update may have failed';
+  const tip = [note, when && `Data updated ${when}${stale ? staleText : ''}`].filter(Boolean).join('\n');
   return (
-    <span className={`ck-info${stale ? ' ck-info-stale' : ''}`} data-testid="bar-info" data-tip={tip} aria-label={tip} role="img" tabIndex={0}>
-      i
-      <span className="ck-sr">
-        <span className="ck-note" data-testid="tz-note">
-          {note}
-        </span>
-        {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
-      </span>
-    </span>
+    <PopoverButton
+      label="About this page"
+      testId="bar-info"
+      buttonClass={` ck-info-button${stale ? ' ck-info-stale' : ''}`}
+      title={tip}
+      className=" ck-info-wrap"
+      popClass=" ck-info-pop"
+      icon={
+        <>
+          <span className="ck-info" aria-hidden="true">
+            i
+          </span>
+          <span className="ck-sr">
+            <span className="ck-note" data-testid="tz-note">
+              {note}
+            </span>
+            {updatedAt && <DataStamp updatedAt={updatedAt} now={now} timeZone={timeZone} />}
+          </span>
+        </>
+      }
+    >
+      <div className="ck-info-lines">
+        <span>{note}</span>
+        {when && <span className={stale ? 'ck-info-stale-line' : undefined}>Data updated {when}{stale ? staleText : ''}</span>}
+      </div>
+      {children}
+    </PopoverButton>
   );
 }
 
@@ -75,74 +98,3 @@ export const StandingsIcon = () => (
     <path fill="currentColor" d="M5.2 6.5h1.2V15H5.2z" opacity=".55" />
   </svg>
 );
-
-/**
- * The top bar hides while a list (League / Team List, Slate) is scrolled down by the person (wheel or
- * keys — not a jump to a row, a restore or a script) and comes back on a scroll up, at the top, or with the pointer at
- * the top edge. No React render: a class on the root (`ck-bar-hidden`, the bar out of the layout); the scroller is moved
- * by the bar's height at the same time, so the rows on screen stay exactly where they were (no jump) and the list gains
- * the bar's height. Off in other views (nothing scrolls) and on phones.
- */
-export function useAutoHideBar(root: RefObject<HTMLDivElement | null>, bar: RefObject<HTMLDivElement | null>, enabled: boolean, page: string) {
-  const s = useRef({ input: -Infinity, last: new WeakMap<HTMLElement, number>(), run: 0, skip: null as HTMLElement | null, hidden: false, scroller: null as HTMLElement | null });
-  const set = useCallback(
-    (hide: boolean, el?: HTMLElement) => {
-      const r = root.current;
-      const b = bar.current;
-      const st = s.current;
-      if (!r || !b || st.hidden === hide) return;
-      // the bar's height with its margin, measured while it is shown (before hiding it, after showing it)
-      const height = () => b.getBoundingClientRect().height + parseFloat(getComputedStyle(b).marginBottom || '0');
-      const sc = el ?? st.scroller;
-      const was = hide ? height() : 0;
-      st.hidden = hide;
-      r.classList.toggle('ck-bar-hidden', hide);
-      const h = hide ? was : height();
-      // keep the rows in place: the scroller moved up (or down) by the bar's height
-      if (sc && sc.isConnected) {
-        const before = sc.scrollTop;
-        sc.scrollTop = Math.max(0, before + (hide ? -h : h));
-        st.skip = sc;
-        st.last.set(sc, sc.scrollTop);
-      }
-      st.scroller = sc ?? null;
-      st.run = 0;
-    },
-    [root, bar],
-  );
-  // a new page, or the view can't scroll: the bar is back
-  useLayoutEffect(() => {
-    if (s.current.hidden) set(false);
-  }, [page, enabled, set]);
-  // the pointer at the window's top edge (above the widget too) brings it back
-  useEffect(() => {
-    if (!enabled) return;
-    const move = (e: PointerEvent) => {
-      const r = root.current;
-      if (s.current.hidden && r && e.clientY - Math.max(0, r.getBoundingClientRect().top) < 12) set(false);
-    };
-    window.addEventListener('pointermove', move, { passive: true });
-    return () => window.removeEventListener('pointermove', move);
-  }, [enabled, root, set]);
-  return {
-    onInput: (e: { type: string; key?: string }) => {
-      if (e.type !== 'keydown' || /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key ?? '')) s.current.input = performance.now();
-    },
-    onScroll: (el: HTMLElement) => {
-      const st = s.current;
-      if (!enabled || !(el instanceof HTMLElement) || el.closest('.ck-popover, [role="dialog"], [role="listbox"], .ck-capture-stage')) return;
-      const top = el.scrollTop;
-      const prev = st.last.get(el) ?? 0; // a scroller not seen yet started at its top
-      st.last.set(el, top);
-      if (st.skip === el) return void (st.skip = null);
-      if (top <= 2) return set(false, el);
-      // only the person's own scrolling (a wheel or a key in the last 400 ms) hides or shows it
-      if (performance.now() - st.input > 400) return;
-      const d = top - prev;
-      st.run = Math.sign(d) === Math.sign(st.run) ? st.run + d : d;
-      // (not at the very end: no room left there to keep the rows in place)
-      if (st.run > 24 && top > 60 && el.scrollHeight - el.clientHeight - top > 120) set(true, el);
-      else if (st.run < -24) set(false, el);
-    },
-  };
-}

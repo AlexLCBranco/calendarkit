@@ -5,7 +5,7 @@
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange, onNavigate).
 
-import { lazy, Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { localDate, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import type { SlateOdds } from '../slate/odds';
@@ -25,7 +25,8 @@ import { createSelectionStore, useMarqueeSelection } from './selection';
 import { SelectionStyle } from './SelectionBar';
 import { SLATE_MIN_WIDTH } from './SlateView';
 import { StandingsDestination } from './StandingsDestination';
-import { BarInfo, PageArrows, StandingsIcon, useAutoHideBar } from './TopBar';
+import { MenuSwitch, Rail, RAIL_WIDTH, useMenuVariant } from './Menu';
+import { BarInfo, PageArrows, StandingsIcon } from './TopBar';
 import { isCompact, type WidgetSize } from './widget';
 import './calendar.css';
 
@@ -87,12 +88,16 @@ const DEFAULT_TEAM = TEAMS[0]!.id;
 /** The condensed standings popup, in the Standings destination's chunk, loaded on first use. */
 const StandingsPopup = lazy(() => import('./Standings').then((m) => ({ default: m.StandingsPopup })));
 
-export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
+export function CalendarView({ data, odds, size: outerSize, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
   // The clock (moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
   // `now` (the default day, the next game, games over) is the time the widget opened.
   const clock = useClock(fixedNow, timeZone, localDate);
   const [openedAt] = useState(() => clock.get());
   const now = fixedNow ?? openedAt;
+  // The menu variant on show (Menu.tsx); the rail (desktop only) takes its width from the views'
+  const [menu, setMenu] = useMenuVariant();
+  const rail = menu === 'rail' && !isCompact(outerSize);
+  const size = useMemo(() => (rail ? { width: outerSize.width - RAIL_WIDTH, height: outerSize.height } : outerSize), [rail, outerSize]);
   const compact = isCompact(size);
   const [state, setState] = useState<CalendarState>(() => ({
     mode: initial?.mode ?? 'league',
@@ -130,6 +135,7 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const lastScope = useRef<'league' | 'team'>(state.mode === 'team' ? 'team' : 'league');
   if (state.mode === 'league' || state.mode === 'team') lastScope.current = state.mode;
   const goDestination = (d: Destination) => update({ mode: d === 'schedule' ? lastScope.current : d });
+  const destinations: [Destination, string][] = [['schedule', 'Schedule'], ...(slateFits ? ([['cup', 'Cup'], ['standings', 'Standings']] as [Destination, string][]) : [])];
   // the condensed standings popup over any view (desktop)
   const [stPop, setStPop] = useState(false);
   const closeStPop = useCallback(() => setStPop(false), []);
@@ -139,9 +145,14 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
   const barShort = !compact && size.width < BAR_SHORT_BELOW;
   const root = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
-  // The bar's centre and right slots, filled by the active destination (through portals) once they are in the page
+  // The bar's slots, filled by the active destination (through portals) once they are in the page. They stay the same
+  // elements for the page's life (the ⓘ slot sits in its popover, which stays in the page closed); only a change of
+  // note swaps the ⓘ's.
   const [slots, setSlots] = useState<BarSlots>();
-  const barLocal = useCallback((el: HTMLDivElement | null) => setSlots(el ? { center: el.firstElementChild as HTMLElement, right: el.lastElementChild as HTMLElement } : undefined), []);
+  useLayoutEffect(() => {
+    const q = (sel: string) => bar.current!.querySelector<HTMLElement>(sel)!;
+    setSlots({ sub: q('.ck-bar-sub'), date: q('.ck-bar-date'), options: q('.ck-bar-options'), info: q('.ck-info-slot') });
+  }, [note]);
 
   // What each destination tells the shell (its date on show, page label, copy, selection kind, page-history parts)
   const scheduleApi = useRef<ScheduleApi>(undefined);
@@ -293,29 +304,14 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
     return () => void (handle.current = null);
   }, [handle]);
 
-  // (e2e/fixtures.ts turns it off for the specs of other features: window.__ckNoAutoHide)
   const fill = list || slate;
-  const autoHide = useAutoHideBar(root, bar, !compact && fill && !(globalThis as { __ckNoAutoHide?: boolean }).__ckNoAutoHide, `${destination}|${state.mode}|${state.layout}|${state.teamId}`);
   const onScrollCapture = (e: { target: EventTarget }) => {
     const el = e.target as HTMLElement;
     const id = el.dataset?.testid;
     if (id && el.hasAttribute('data-select-scroller')) scrollAt.current = { id, top: el.scrollTop };
-    autoHide.onScroll(el);
   };
 
-  // The end of the bar, the same in every destination: ⓘ (time zone + data stamp), Quick standings, Copy as image
-  const barEnd = (extra?: string) => (
-    <span className="ck-bar-end">
-      {note && <BarInfo note={note} updatedAt={compact ? undefined : updatedAt} now={now} timeZone={timeZone} extra={extra} />}
-      {slateFits && (
-        <button type="button" className="ck-button ck-icon-button ck-st-button" aria-label="Quick standings" title="Quick standings" aria-expanded={stPop} aria-haspopup="dialog" data-testid="standings-button" onClick={() => setStPop((o) => !o)}>
-          <StandingsIcon />
-        </button>
-      )}
-      <CopyButton label="Copy as image" copy={(button) => apiOf().copy(button)} testId="copy-view" />
-    </span>
-  );
-  const shared: DestinationProps = { active: false, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, barEnd, selection, jump: markJump, rendered };
+  const shared: DestinationProps = { active: false, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, selection, jump: markJump, rendered };
 
   return (
     <TeamLinkContext.Provider value={teamHref ? teamLinks : undefined}>
@@ -324,33 +320,50 @@ export function CalendarView({ data, odds, size, initial, now: fixedNow, timeZon
         ref={root}
         onPointerDownCapture={teamHref ? teamPress : undefined}
         onClickCapture={teamHref ? teamClick : undefined}
-        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${barShort ? ' ck-bar-short' : ''}${compact || size.width < 1200 ? ' ck-bar-wrap' : ''}${teamMap ? ' ck-team-side' : ''}${fill ? ' ck-root-fill' : ' ck-root-grow'}`}
+        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${barShort ? ' ck-bar-short' : ''}${compact || size.width < 1200 ? ' ck-bar-wrap' : ''}${teamMap ? ' ck-team-side' : ''}${fill ? ' ck-root-fill' : ' ck-root-grow'}${rail ? ' ck-has-rail' : ''}`}
         onPointerDown={(e) => {
           if (apiOf().selKind) onMarquee(e);
         }}
-        style={{ maxWidth: size.width, height: fill ? size.height : undefined, minHeight: fill || compact ? undefined : size.height }}
+        style={{ maxWidth: outerSize.width, height: fill ? size.height : undefined, minHeight: fill || compact ? undefined : size.height, paddingLeft: rail ? RAIL_WIDTH : undefined }}
         onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e), streakPop.handlers.onMouseOver(e))}
         onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e), streakPop.handlers.onFocus(e))}
         onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave(), streakPop.handlers.onMouseLeave())}
         onBlur={tooltip.handlers.onBlur}
         onScrollCapture={onScrollCapture}
-        onWheelCapture={autoHide.onInput}
-        onKeyDownCapture={autoHide.onInput}
       >
-        <div className="ck-toolbar ck-bar1" data-testid="top-bar" data-destination={destination} ref={bar}>
-          {/* One row, ~44 px. Left: page history + destinations. Centre: the destination's own control. Right: the
-              destination's switches, then the shell's end (ⓘ, Quick standings, Copy). It hides while a list is
-              scrolled down and comes back on a scroll up (useAutoHideBar). */}
+        <div className="ck-toolbar ck-bar1" data-testid="top-bar" data-destination={destination} data-menu={rail ? 'rail' : 'packed'} ref={bar}>
+          {/* One row, packed to the left in a fixed order (menu.css): page history and the destinations (packed bar
+              only; the rail has them), the destination's sub-views, its date controls; at the right end the icon buttons
+              — the destination's Options, ⓘ, Quick standings, Copy. Never hidden. */}
           {title && <h1 className="ck-title ck-sr">{title}</h1>}
-          <div className="ck-bar-left" data-testid="bar-global">
-            {pageHistory && <PageArrows h={pageHistory} />}
-            <Segmented label="Destination" className=" ck-tabs-dest" value={destination} options={[['schedule', 'Schedule'], ...(slateFits ? ([['cup', 'Cup'], ['standings', 'Standings']] as [Destination, string][]) : [])]} onChange={goDestination} />
+          {!rail && (
+            <div className="ck-bar-left" data-testid="bar-global">
+              {pageHistory && <PageArrows h={pageHistory} />}
+              <Segmented label="Destination" className=" ck-tabs-dest" value={destination} options={destinations} onChange={goDestination} />
+            </div>
+          )}
+          <div className="ck-bar-local" data-testid="bar-local" data-destination={destination}>
+            <div className="ck-bar-sub" />
+            <div className="ck-bar-date" />
           </div>
-          <div className="ck-bar-local" data-testid="bar-local" data-destination={destination} ref={barLocal}>
-            <div className="ck-bar-center" />
-            <div className="ck-bar-right" />
-          </div>
+          <span className="ck-bar-end">
+            <span className="ck-bar-options" />
+            {note && (
+              <BarInfo note={note} updatedAt={compact ? undefined : updatedAt} now={now} timeZone={timeZone}>
+                <div className="ck-info-slot" />
+                {!compact && <MenuSwitch value={menu} onChange={setMenu} />}
+              </BarInfo>
+            )}
+            {!note && <div className="ck-info-slot" hidden />}
+            {slateFits && (
+              <button type="button" className="ck-button ck-icon-button ck-st-button" aria-label="Quick standings" title="Quick standings" aria-expanded={stPop} aria-haspopup="dialog" data-testid="standings-button" onClick={() => setStPop((o) => !o)}>
+                <StandingsIcon />
+              </button>
+            )}
+            <CopyButton label="Copy as image" copy={(button) => apiOf().copy(button)} testId="copy-view" />
+          </span>
         </div>
+        {rail && <Rail value={destination} options={destinations} onChange={goDestination} pageHistory={pageHistory} />}
         {/* every destination stays mounted, so its state lasts as long as the page; only the active one renders */}
         <ScheduleDestination {...shared} active={destination === 'schedule'} odds={odds} teamDate={initial?.teamDate} initialSnap={initial?.snap} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
         <CupDestination {...shared} active={cup} initial={initial?.cup} api={cupApi} />

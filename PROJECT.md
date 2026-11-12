@@ -34,9 +34,15 @@ measurement; open it only when a question needs the backstory.
 - **Part 3 (phases 5–8) is still to come.**
 
 ## What the app is
-- **Destinations** (one-row 44 px top bar; hides while a list is scrolled down): **Schedule** (League or Team by the
-  scope picker; views List · Calendar · Slate), **Cup** (Groups · Schedule · Simulator · History), **Standings**
-  (West | East side by side, four column sets). Page history ← → with real browser history entries.
+- **Destinations**: **Schedule** (League or Team by the scope picker; views List · Calendar · Slate), **Cup** (Groups ·
+  Schedule · Simulator · History), **Standings** (West | East side by side, four column sets). Page history ← → with
+  real browser history entries.
+- **Menu (trial, two variants)** — switched in the ⓘ popover ("Menu (trial)"), kept in localStorage `ck:menu:v1`
+  (absent = packed). **Packed bar**: one 44 px row packed left — ← →, destinations, the destination's sub-views, its
+  date controls. **Rail**: ← → and the destinations (icon + label) in an 84 px strip on the left; the bar holds the
+  destination's controls only. Both: icon buttons at the right end (Options — Schedule only: TV games only, Rest days
+  in the Team List —, ⓘ, Quick standings, Copy); a destination's controls always in the same place and order; the bar
+  never hides. Alex picks one after a few days; the other gets deleted (`Menu.tsx`, `menu.css`, the switch).
 - **League List**: one game day at a time, week strip, map of the night's games beside it (desktop).
   **League Calendar**: week view, 1 or 2 weeks. **Slate**: a day of games as cards with a note box per game.
   **Team List**: one calendar month, records / streaks / scores, rest rows, the team's road-trip map.
@@ -56,12 +62,14 @@ measurement; open it only when a question needs the backstory.
 - `src/App.tsx` — app shell, URL state (`?view=&layout=&team=&weeks=&span=&tv=&cup=…`; `date=` is written but never
   read on load), page history, the reload keeping its page (`reloadedState`).
 - `src/components/` — one file per view/component. `CalendarView.tsx` is the shell: the shared `CalendarState`, the
-  top bar's frame (← →, destination switch, ⓘ / Quick standings / Copy), page history, team links, sizing, overlays;
-  it re-exports the widgets (hosts and tests import from it). One component per destination, each owning its state and
-  filling the bar's centre / right slots through portals: `ScheduleDestination.tsx` (League + Team),
+  top bar's frame (← →, destination switch or rail, ⓘ / Quick standings / Copy), page history, team links, sizing,
+  overlays; it re-exports the widgets (hosts and tests import from it). One component per destination, each owning its
+  state and filling the bar's slots (sub-views, date controls, Options, ⓘ lines) through portals:
+  `ScheduleDestination.tsx` (League + Team),
   `CupDestination.tsx`, `StandingsDestination.tsx`. All three stay mounted (their state lasts as long as the page);
   only the active one renders. `destination.tsx` = the shell ↔ destination contract and the shared selection copy;
-  `calendarState.ts` = state / page types and pure helpers; `TopBar.tsx` = the shell's bar parts and auto-hide.
+  `calendarState.ts` = state / page types and pure helpers; `TopBar.tsx` = the shell's bar parts (← →, ⓘ);
+  `Menu.tsx` = the two menu variants, the rail and the switch; `Popover.tsx` = the bar's icon-button popovers.
   Styles: `calendar.css` is an ordered list of `@import`s of `styles/*.css`.
 - `src/data/` — pure derivations (`model.ts`, `cup*.ts`, `fatigue.ts`, `rest.ts`, `streak.ts`, `standings.ts`,
   `odds.ts`, `regulation.ts`), loading (`load.ts`).

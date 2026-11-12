@@ -2,6 +2,7 @@
 // rest rows about half a game row tall, nothing clipped, no sideways scroll, opens / Today at the next game.
 
 import { expect, test, type Page } from './fixtures';
+import { setOption } from './nav';
 import { eachTeamMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
@@ -89,7 +90,7 @@ test('show rest days: on by default, order and dates vs snapshot, half-height ro
   await page.getByRole('button', { name: 'Today' }).click();
   await expect.poll(() => nextOffset(page).then(Math.abs)).toBeLessThan(1.5);
   // off: lasts until a reload, and nothing is stored (URL, localStorage, sessionStorage, cookies, IndexedDB)
-  await page.getByLabel('Show rest days').uncheck();
+  await setOption(page, 'Show rest days', false);
   await expect(page.locator('.ck-rest-row')).toHaveCount(0);
   await expect(page).not.toHaveURL(/rest=/);
   const stored = await page.evaluate(async () => ({ local: localStorage.length, session: sessionStorage.length, cookie: document.cookie, idb: (await indexedDB.databases()).length }));

@@ -3,7 +3,7 @@
 
 import { expect, test, type Page } from './fixtures';
 import { isRotationkitConfigured } from '../src/config';
-import { pickScope } from './nav';
+import { pickScope, setOption } from './nav';
 
 function collectErrors(page: Page) {
   const errors: string[] = [];
@@ -26,9 +26,9 @@ test('league view and team view render without console errors', async ({ page },
   await expect(page.locator('[data-game-id]').first()).toBeVisible();
   await shot(page, 'league-day', info.project.name);
 
-  await page.getByLabel('TV games only').check();
+  await setOption(page, 'TV games only', true);
   await expect(page.locator('[data-game-id]:not(:has([data-testid="tv-badge"]))')).toHaveCount(0);
-  await page.getByLabel('TV games only').uncheck();
+  await setOption(page, 'TV games only', false);
 
   // League → Calendar (week view on desktop, count grid on tablet/phone) → click a day → list at that day.
   await page.getByRole('tab', { name: 'Calendar' }).click();

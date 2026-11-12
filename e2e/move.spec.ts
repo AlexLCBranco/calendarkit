@@ -113,7 +113,7 @@ test('the old address, no notes there: straight on to the new one, path under /c
   expect(nav).toHaveLength(2);
   // an old address already under /calendar/ keeps its path
   await page.goto(`${OLD}/calendar/?view=league`);
-  await page.waitForURL(at(`${NEW}/calendar/?view=league`));
+  await page.waitForURL((u) => at(`${NEW}/calendar/?view=league`)(u) || at(`${NEW}/calendar/?view=league&layout=list`)(u));
 });
 
 test('notes on the old address are handed over once: same notes (every slot, the one on show) at /calendar, shown in the Slate', async ({ page, context }) => {
@@ -161,7 +161,9 @@ test('notes already at the new address survive the hand-off (round 9 import rule
   await page.goto(`${NEW}/calendar/`);
   await expect.poll(() => notesAt(page)).toHaveProperty(C);
   await page.goto(`${OLD}/`);
-  await page.waitForURL(at(`${NEW}/calendar/`));
+  // at the new address — bare, or already with the address the app writes for its first page (it can write it in the
+  // same tick the hand-off's marker goes, so the bare one isn't always seen)
+  await page.waitForURL((u) => at(`${NEW}/calendar/`)(u) || at(`${NEW}/calendar/?view=league&layout=list`)(u));
   await expect.poll(() => notesAt(page)).toEqual({
     [A]: { pre: 'old pre A', live: 'new live A', post: 'new post A', shown: 'pre' },
     [C]: { pre: 'only at the new address', live: '', post: '', shown: 'pre' },

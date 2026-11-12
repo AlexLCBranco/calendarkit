@@ -33,10 +33,17 @@ describe('top bar, global controls', () => {
     expect([st.textContent, st.getAttribute('title'), st.getAttribute('aria-label')]).toEqual(['', 'Quick standings', 'Quick standings']);
     const copy = screen.getByTestId('copy-view');
     expect([copy.textContent, copy.getAttribute('title'), copy.getAttribute('aria-label')]).toEqual(['', 'Copy as image', 'Copy as image']);
-    // no standalone text in the bar: the time zone and the data stamp are in ⓘ's tooltip (and its screen-reader text)
+    // no standalone text in the bar: the time zone and the data stamp are in ⓘ's title, its popover (and its
+    // screen-reader text)
     const info = screen.getByTestId('bar-info');
-    expect(info.getAttribute('data-tip')).toBe('Times in UTC\nData updated Nov 15, 11:00');
+    expect(info.getAttribute('title')).toBe('Times in UTC\nData updated Nov 15, 11:00');
     expect(info.contains(screen.getByTestId('tz-note')) && info.contains(screen.getByTestId('data-updated'))).toBe(true);
+    expect(screen.getByTestId('bar-info-pop').hidden).toBe(true);
+    fireEvent.click(info);
+    expect(screen.getByTestId('bar-info-pop').hidden).toBe(false);
+    expect(screen.getByTestId('bar-info-pop').textContent).toMatch(/^Times in UTCData updated Nov 15, 11:00.*Menu \(trial\)RailPacked bar$/);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByTestId('bar-info-pop').hidden).toBe(true);
     // "Standings" is a destination only (the popup button says "Quick standings")
     expect(screen.getAllByText('Standings')).toHaveLength(1);
     goTo('Cup');
@@ -47,6 +54,48 @@ describe('top bar, global controls', () => {
     goTo('Schedule');
     pickScope('Boston Celtics');
     expect(globals()).toEqual([1, 1, 1, 1]);
+  });
+
+  it('the menu switch in ⓘ: Rail puts ← → and the destinations in a rail, remembered; Packed bar brings them back', () => {
+    open();
+    expect(screen.queryByTestId('rail')).toBeNull();
+    expect(screen.getByTestId('top-bar').getAttribute('data-menu')).toBe('packed');
+    fireEvent.click(within(screen.getByRole('tablist', { name: 'Menu layout', hidden: true })).getByRole('tab', { name: 'Rail', hidden: true }));
+    const rail = screen.getByTestId('rail');
+    expect(within(rail).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Schedule', 'Cup', 'Standings']);
+    expect(screen.queryByTestId('bar-global')).toBeNull(); // no second set of destinations in the bar
+    expect(localStorage.getItem('ck:menu:v1')).toBe('rail');
+    // the rail's destinations work
+    fireEvent.click(within(rail).getByRole('tab', { name: 'Standings' }));
+    expect(screen.getByRole('tablist', { name: 'Standings columns' })).toBeTruthy();
+    cleanup();
+    // a new page opens with the rail (remembered), and Packed bar goes back
+    open();
+    expect(screen.getByTestId('rail')).toBeTruthy();
+    fireEvent.click(within(screen.getByRole('tablist', { name: 'Menu layout', hidden: true })).getByRole('tab', { name: 'Packed bar', hidden: true }));
+    expect(screen.queryByTestId('rail')).toBeNull();
+    expect(screen.getByTestId('bar-global')).toBeTruthy();
+    expect(localStorage.getItem('ck:menu:v1')).toBe('packed');
+  });
+
+  it('Options: one popover with TV games only (and Rest days in the Team List); the button shows a filter that is on; Schedule only', async () => {
+    open();
+    const button = () => screen.getByTestId('options-button');
+    const pop = () => within(screen.getByTestId('options-button-pop'));
+    expect(button().classList.contains('ck-opt-on')).toBe(false);
+    fireEvent.click(button());
+    expect(pop().queryByLabelText('Show rest days')).toBeNull();
+    fireEvent.click(pop().getByLabelText('TV games only'));
+    expect(button().classList.contains('ck-opt-on')).toBe(true);
+    expect(button().getAttribute('title')).toBe(null); // open: no title over the popover
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(button().getAttribute('title')).toBe('Options — TV games only is on');
+    fireEvent.click(tabs('Layout').getByRole('tab', { name: 'List' }));
+    pickScope('Boston Celtics');
+    expect((pop().getByLabelText('Show rest days') as HTMLInputElement).checked).toBe(true);
+    goTo('Cup');
+    await screen.findByTestId('cup');
+    expect(screen.queryByTestId('options-button')).toBeNull();
   });
 
   it('League and Team are one destination: Schedule comes back to the scope used last', () => {
