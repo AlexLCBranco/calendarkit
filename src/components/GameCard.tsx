@@ -36,6 +36,11 @@ export interface GameCardProps {
    * component's plane means "away").
    */
   fatigueSlots?: boolean;
+  /**
+   * Fixed slots: keep empty score slots on a game without a score, so its tricodes, "@" and records stand where a
+   * played row's do (League List: on a day that has any final score).
+   */
+  scoreSlots?: boolean;
   /** Team List with `fatigueColumns`: both teams' fatigue (leagueFatigue) for the two Fatigue columns. */
   teamFatigue?: ReadonlyMap<number, TeamFatigue>;
   /** Team view: the selected team's back-to-back nights on this game ("1/2 · HA", "2/2 · HA"). */
@@ -180,7 +185,7 @@ export const TV_NAMES_MAX = 2;
 
 export const B2BDot =({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip }: GameCardProps) {
   const iconUrl = linkIcon ? gameLinkProp?.(game) : undefined;
   // the matchup is the game link only without the icon (calendar cells; week lines use MatchLink themselves)
   const gameLink = linkIcon ? undefined : gameLinkProp;
@@ -206,7 +211,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         {n}
       </ScoreLink>
     ) : (
-      slots && !!result && <span className="ck-score-slot" aria-hidden="true" />
+      slots && (!!result || scoreSlots) && <span className="ck-score-slot" aria-hidden="true" />
     );
   const ot = result && overtime(game);
   const otMark = ot && (
@@ -248,21 +253,23 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         </MatchLink>
       </span>
     ) : (
-      <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}${slots && !result ? ' ck-noscore' : ''}`}>
-        {!side && rec(first)}
+      <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}${slots && !result && !scoreSlots ? ' ck-noscore' : ''}${fx ? ' ck-fx-cols' : ''}`}>
+        {/* League List with the Fatigue components: [tags] [record] matchup [record] [tags] — the tags in fixed-width
+            columns on the outside, the records against the logos, so names, "@" and records line up down the list */}
         {fx && <Fatigue f={fatigue!.get(first.teamId)} team={teamLabel(first)} badge="right" />}
+        {!side && rec(first)}
         {(records || fx) && ' '}
         <MatchLink game={game} gameLink={gameLink} className="ck-teams">
           <span className="ck-side">
             {logos && <TeamLogo team={first} />}
             <TeamLink teamId={first.teamId} className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} component={fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</TeamLink>
-            {result && ' '}
+            {(result || scoreSlots) && ' '}
             {score(result?.score, !!result?.win)}
           </span>{' '}
           <span className="ck-side">
             <span className="ck-vsat">{side ? (side.home ? 'vs' : '@') : '@'}</span>{' '}
             {score(result?.oppScore, !!result && !result.win)}
-            {result && ' '}
+            {(result || scoreSlots) && ' '}
             <TeamLink teamId={second.teamId} className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
               {fatigue ? <FatigueMark f={fatigue.get(second.teamId)} component={fx}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
               {side && oppDot && <B2BDot tip={oppDot} />}
@@ -271,8 +278,8 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
           </span>
         </MatchLink>
         {(records || fx) && ' '}
-        {fx && <Fatigue f={fatigue!.get(second.teamId)} team={teamLabel(second)} />}
         {!side && rec(second, true)}
+        {fx && <Fatigue f={fatigue!.get(second.teamId)} team={teamLabel(second)} />}
         {otMark}
       </span>
     );

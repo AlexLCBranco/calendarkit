@@ -169,7 +169,8 @@ describe('Fatigue component (round 5)', () => {
   const icons = (fx: Element) => [...fx.querySelectorAll('.ck-fx-icon')].map((i) => `${i.getAttribute('data-kind')}${i.classList.contains('ck-fx-tonight') ? '!' : ''}`);
   const row = (el: Element, id: string) => el.querySelector(`[data-testid="league-list"] .ck-card[data-game-id="${id}"]`)!;
 
-  it('League List (desktop): [rec] [away fatigue] [teams] [home fatigue] [rec] on every row, each team its own', () => {
+  // the League List is in flux (PROJECT.md, Test tiers): which tags each team has, not where they sit
+  it('League List (desktop): both teams’ Fatigue components and records on every row, each team its own', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-02' }} />).container;
     const f = leagueFatigue(data);
     const cards = [...el.querySelectorAll<HTMLElement>('[data-testid="league-list"] .ck-card')];
@@ -178,7 +179,7 @@ describe('Fatigue component (round 5)', () => {
     for (const c of cards) {
       const g = data.games.find((x) => x.gameId === c.dataset.gameId)!;
       const m = c.querySelector('.ck-matchup')!;
-      expect([...m.children].map((x) => x.className.split(' ')[0]), g.gameId).toEqual(['ck-rec', 'ck-fx', 'ck-teams', 'ck-fx', 'ck-rec', ...(m.querySelector('.ck-ot') ? ['ck-ot'] : [])]);
+      expect([...m.children].map((x) => x.className.split(' ')[0]).sort(), g.gameId).toEqual(['ck-fx', 'ck-fx', 'ck-rec', 'ck-rec', 'ck-teams', ...(m.querySelector('.ck-ot') ? ['ck-ot'] : [])].sort());
       const fxs = [...m.querySelectorAll(':scope > .ck-fx')];
       [g.awayTeam, g.homeTeam].forEach((t, i) => {
         const fx = fxs[i]!;

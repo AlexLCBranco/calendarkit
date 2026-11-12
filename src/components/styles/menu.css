@@ -168,7 +168,7 @@
   color: var(--ck-stale);
 }
 .ck-info-pop {
-  width: 360px;
+  width: 420px;
 }
 .ck-menu-switch {
   display: flex;
@@ -184,4 +184,21 @@
 .ck-menu-switch .ck-tab {
   padding: 0 10px;
   font-size: 12px;
+}
+/* The League List's legend in the ⓘ popover: wraps in the popover's width, its keys as under the list */
+.ck-info-key {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ck-border);
+}
+.ck-info-key .ck-fm-legend {
+  height: auto;
+  margin: 0;
+  white-space: normal;
+  overflow: visible;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ck-text);
 }

@@ -103,5 +103,9 @@ test('smoke: League List — the fixed day\'s games with teams, scores and recor
     expect(r.scores).toBe(2);
     expect(r.recs.every((x) => /^\d+-\d+$/.test(x ?? ''))).toBe(true);
   }
+  // the legend: in the ⓘ popover, not under the list
+  await expect(page.getByTestId('league-list').locator('xpath=..').getByTestId('fatigue-legend')).toHaveCount(0);
+  await page.getByTestId('bar-info').click();
+  await expect(page.getByTestId('bar-info-pop').getByTestId('fatigue-legend')).toContainText('back-to-back, 1st night');
   expect(errors).toEqual([]);
 });

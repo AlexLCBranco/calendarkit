@@ -14,7 +14,8 @@ import { capturePixelRatio, copyAsImage, copyElement, COPY_PIXEL_RATIO } from '.
 import { DatePicker } from './DatePicker';
 import { WEEK_MIN_WIDTH } from './dayflow';
 import { DestinationFrame, leagueListWidth, SelectionCopyStage, useSelectionCopy, type DestinationApi, type DestinationProps } from './destination';
-import { leagueListStyle, LeagueListView, ListDaySection, listDays, listTitle, nearestDay } from './LeagueListView';
+import { FatigueLegend } from './FatigueMark';
+import { FATIGUE_SLOTS_MIN_WIDTH, leagueListStyle, LeagueListView, ListDaySection, listDays, listTitle, nearestDay } from './LeagueListView';
 import { LeagueWeekView } from './LeagueWeekView';
 import { hoverHandlers, useClearHover, useHoverRow } from './MapHover';
 import { MonthNavigator } from './MonthNavigator';
@@ -417,7 +418,7 @@ export function ScheduleDestination(p: ScheduleProps) {
 
   if (!active) return null;
   const teamListProps = { data, teamId: state.teamId, tvOnly: state.tvOnly, showRest: state.showRest && !compact, size, now, timeZone, onOpenGame, gameLink, handle: teamList, openAt: teamOpen, onAtNext: teamAtNext.set, topStore: teamTop, today, month: teamListMonth, monthTo: teamListTo, onLoadMonths: compact ? undefined : loadTeamMonths, onMonthChange: setTeamListMonth };
-  const leagueList = <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} />;
+  const leagueList = <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} legend={false} />;
 
   // The bar, in this order: sub-views (List · Calendar · Slate, the scope picker); date controls (the date block,
   // then the week view's weeks or the Team Calendar's span); the options in the Options popover
@@ -499,6 +500,14 @@ export function ScheduleDestination(p: ScheduleProps) {
     </PopoverButton>
   );
 
+  // The League List's legend: in the ⓘ popover, not under the list
+  const leagueKey = !team && list && (
+    <div className="ck-info-key">
+      <span className="ck-pop-head">League List key</span>
+      <FatigueLegend component={size.width >= FATIGUE_SLOTS_MIN_WIDTH} />
+    </div>
+  );
+
   let body: ReactNode;
   if (team) {
     body = teamMap ? (
@@ -538,7 +547,7 @@ export function ScheduleDestination(p: ScheduleProps) {
   else body = <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />;
 
   return (
-    <DestinationFrame slots={slots} sub={sub} date={date} options={options}>
+    <DestinationFrame slots={slots} sub={sub} date={date} options={options} info={leagueKey}>
       {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? teamListPeriod : undefined} />}
       {body}
       {selKind && <SelectionBar store={selection} copy={copySelection} />}

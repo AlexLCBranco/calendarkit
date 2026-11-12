@@ -4,7 +4,7 @@ import { leagueSeries } from '../data/series';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
-import { addDays, hasNationalTv, leagueRecords, localDate, weekOf, type CalendarData, type TeamRecord } from '../data/model';
+import { addDays, finalScore, hasNationalTv, leagueRecords, localDate, weekOf, type CalendarData, type TeamRecord } from '../data/model';
 import { CopyButton } from './CopyButton';
 import { GameCard, type GameLink } from './GameCard';
 import { PeriodNav } from './PeriodNav';
@@ -29,6 +29,8 @@ export interface LeagueListViewProps {
   gameLink?: GameLink;
   /** Own day title and arrows (default); off when the host shows the navigation (CalendarView's top bar). */
   nav?: boolean;
+  /** The fatigue legend under the list (default); off when the host shows it elsewhere (CalendarView: in ⓘ). */
+  legend?: boolean;
 }
 
 /** League List rows get both teams' Fatigue components where the whole LIST_MAX_WIDTH column fits (desktop). */
@@ -72,7 +74,7 @@ export function leagueListStyle(width: number): CSSProperties | undefined {
  * top bar's ← / →, the arrow keys, the date picker, Today and the week strip change the day; scrolling only
  * scrolls within the day, on busy nights.
  */
-export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, today: todayProp, timeZone, onOpenGame, gameLink, nav = true }: LeagueListViewProps) {
+export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, today: todayProp, timeZone, onOpenGame, gameLink, nav = true, legend = true }: LeagueListViewProps) {
   const compact = isCompact(size);
   const days = useMemo(() => listDays(data, tvOnly), [data, tvOnly]);
   const counts = useMemo(() => new Map(days.map((d) => [d.date, d.games.length])), [days]);
@@ -126,7 +128,7 @@ export function LeagueListView({ data, date, onSelectDate, tvOnly, size, now, to
         {(!day || !day.games.length) && <NoGames date={shown} today={today} tvOnly={tvOnly} />}
         {day && day.games.length > 0 && <ListDaySection key={day.date} day={day} data={data} compact={compact} fatigueSlots={size.width >= FATIGUE_SLOTS_MIN_WIDTH} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} series />}
       </div>
-      <FatigueLegend component={size.width >= FATIGUE_SLOTS_MIN_WIDTH} />
+      {legend && <FatigueLegend component={size.width >= FATIGUE_SLOTS_MIN_WIDTH} />}
     </section>
   );
 }
@@ -151,6 +153,9 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
   const records = compact ? undefined : leagueRecords(data); // once per data set
   const fatigue = leagueFatigue(data); // once per data set
   const head = heading ?? dayHeading(day.date, day.games.length);
+  // A day with any final score keeps the score slots on its other rows too, so every row's names, "@" and records
+  // stand in the same columns (a day with none stays tight around the "@")
+  const scoreSlots = !compact && day.games.some((g) => !!finalScore(g, g.awayTeam.teamId));
   return (
     <section className="ck-lday" data-day={day.date} aria-label={head}>
       <h3 className="ck-lday-head" data-text={head}>
@@ -159,7 +164,7 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} gameLink={gameLink} linkIcon cupTag={cupTag?.(g)} series={series ? leagueSeries(data).get(g.gameId) : undefined} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} scoreSlots={scoreSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} gameLink={gameLink} linkIcon cupTag={cupTag?.(g)} series={series ? leagueSeries(data).get(g.gameId) : undefined} copyable />
         ))}
       </div>
     </section>

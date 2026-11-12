@@ -31,7 +31,17 @@ measurement; open it only when a question needs the backstory.
     dropped field. e2e reads team names from the raw fixture (`e2e/feedTeams.ts`).
 - **Part 2 of 3 done** (phase 4, v1.58.4): `CalendarView.tsx` split with no behaviour change into a thin shell and one
   component per destination (file layout under "Where things live").
-- **Part 3 (phases 5–8) is still to come.**
+- **Part 3 of 3 done** (phases 5–8) — the maintenance round is finished:
+  - Phase 5 (tests and docs only, no version): test tiers, settled vs in flux (see Test tiers); the top bar and the
+    League List rows are in flux; their layout-pinning tests were deleted or relaxed, `e2e/in-flux.spec.ts` smokes them.
+  - v1.59.0 — phase 6: a reload keeps the page (day / month / week / Team List row) from `history.state`; a fresh visit
+    opens on today.
+  - v1.60.0 — phase 7: two menu variants (rail / packed bar) behind the "Menu (trial)" switch in ⓘ; Options popover
+    (TV games only, Rest days); ⓘ is a popover; the bar never hides.
+  - v1.61.0 — phase 8: League List rows — tags in fixed columns on the outside, records against the logos, score slots
+    per day; the legend moved into ⓘ.
+- **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
+  `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 
 ## What the app is
 - **Destinations**: **Schedule** (League or Team by the scope picker; views List · Calendar · Slate), **Cup** (Groups ·
@@ -43,7 +53,9 @@ measurement; open it only when a question needs the backstory.
   destination's controls only. Both: icon buttons at the right end (Options — Schedule only: TV games only, Rest days
   in the Team List —, ⓘ, Quick standings, Copy); a destination's controls always in the same place and order; the bar
   never hides. Alex picks one after a few days; the other gets deleted (`Menu.tsx`, `menu.css`, the switch).
-- **League List**: one game day at a time, week strip, map of the night's games beside it (desktop).
+- **League List**: one game day at a time, week strip, map of the night's games beside it (desktop). Rows: time,
+  [away tags] [record] logo AWAY (score) @ (score) HOME logo [record] [home tags] — the tags (Fatigue components) in
+  fixed-width columns on the outside, so names, "@" and records line up down the list; its legend is in the ⓘ popover.
   **League Calendar**: week view, 1 or 2 weeks. **Slate**: a day of games as cards with a note box per game.
   **Team List**: one calendar month, records / streaks / scores, rest rows, the team's road-trip map.
   **Team Calendar**: month grid or 1–2 week spans.
@@ -134,13 +146,15 @@ measurement; open it only when a question needs the backstory.
 **Behaviour**
 - A fresh visit (new tab, typed address, bookmark) opens on today; a URL's `date=` is never read back. A reload of
   the same tab keeps its page (day, month / week, Team List row, scroll) from the tab's history entry (`history.state`,
-  written on every change and a moment after scrolling stops); "Show rest days" still resets. Midnight with the tab open moves
-  today along.
+  written on every change and a moment after scrolling stops); "Show rest days" still resets. Midnight with the tab
+  open moves today along.
 - Defaults are never stored (rest days on, Hide all notes off, TV filter) until a settings page exists. Slate notes are
   stored (content): localStorage `ck:notes:v1`, per game, three slots (pre / live / post), the slot switched only by the
   person — format and rules in docs/slate-in-gauntlet.md.
 - Countdown to tip-off dropped on purpose (no minute tick; the clock moves at midnight and on waking).
-- Unplayed rows have no score slots, so they don't line up with played ones (deliberate trade-off).
+- League List score slots per day: a day with any final score keeps empty score slots on its unplayed rows too (every
+  row in the same columns); a day with none stays tight around the "@" ("CHA @ WAS"). Elsewhere (Team List) unplayed
+  rows still have no score slots.
 - List rows (League / Team List, Cup schedule) open the game from the "↗" icon; calendar cells and week lines keep the
   matchup as the link.
 - Compact week-view chip shows the stretch only ("7in11"): two full chips don't fit a 1280 × 900 day cell.

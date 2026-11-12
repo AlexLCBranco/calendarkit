@@ -72,7 +72,8 @@ describe('leagueRecords (model)', () => {
 });
 
 describe('League List rows', () => {
-  it('desktop and tablet: "3-1 [logo] BOS … DET [logo] 2-2" — away record first, home record after the home logo; aria-label', () => {
+  // the League List is in flux (PROJECT.md, Test tiers): the records' values and order (away, home), not their place
+  it('desktop and tablet: both records, away then home; aria-label', () => {
     const want = expected(data.games);
     for (const size of [XL, TABLET]) {
       for (const date of ['2026-10-21', '2026-10-22', '2026-10-24']) {
@@ -82,9 +83,6 @@ describe('League List rows', () => {
           const m = c.querySelector('.ck-matchup')!;
           const recs = [...m.querySelectorAll('.ck-rec')];
           expect(recs.map((x) => x.textContent), `${size.width} ${g.gameId}`).toEqual([want.get(g.gameId)!.get(g.awayTeam.teamId) ?? '', want.get(g.gameId)!.get(g.homeTeam.teamId) ?? '']);
-          // outside the logos (and outside the Fatigue components on desktop): first and last part of the matchup
-          const parts = [...m.children].map((x) => x.className.split(' ')[0]).filter((x) => x !== 'ck-ot');
-          expect(parts, `${size.width} ${g.gameId}`).toEqual(size === XL ? ['ck-rec', 'ck-fx', 'ck-teams', 'ck-fx', 'ck-rec'] : ['ck-rec', 'ck-teams', 'ck-rec']);
           const a = want.get(g.gameId)!.get(g.awayTeam.teamId);
           const h = want.get(g.gameId)!.get(g.homeTeam.teamId);
           if (a && h) expect(c.getAttribute('aria-label')).toContain(`records ${g.status === 'final' ? 'after the game' : 'going in'} ${g.awayTeam.teamTricode} ${a}, ${g.homeTeam.teamTricode} ${h}`);
