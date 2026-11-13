@@ -50,4 +50,14 @@ describe('SlateCopy', () => {
     expect(bare.querySelector<HTMLElement>('.ck-slate-copy')!.dataset.zoom).toBe('1');
     expect(bare.querySelector<HTMLElement>('.ck-slate-copy')!.style.getPropertyValue('--ck-copy-zoom')).toBe('');
   });
+  it('a game link: each card gets its ↗ (the gauntlet widget); without one, none (calendarkit\'s images)', () => {
+    const link = (g: { gameId: string }) => `https://example.test/${g.gameId}`;
+    const { container } = render(<SlateCopy data={data} games={games} cols={2} cardWidth={944} timeZone="UTC" gameLink={link} />);
+    const icons = [...container.querySelectorAll<HTMLAnchorElement>('[data-testid="game-link"]')];
+    expect(icons.map((a) => a.getAttribute('href'))).toEqual(games.map((g) => `https://example.test/${g.gameId}`));
+    expect(icons.every((a) => a.target === '_blank')).toBe(true);
+    cleanup();
+    const { container: bare } = render(<SlateCopy data={data} games={games} cols={2} cardWidth={944} timeZone="UTC" />);
+    expect(bare.querySelectorAll('[data-testid="game-link"]')).toHaveLength(0);
+  });
 });

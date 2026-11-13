@@ -8,6 +8,7 @@
 // or a context menu reads it).
 
 import { createContext, useContext, type HTMLAttributes, type ReactNode } from 'react';
+import { TEAM_BY_ID } from '../data/teams';
 
 export interface TeamLinks {
   /** The Team view URL for a team (its Calendar, on the date shown as of now). */
@@ -46,4 +47,13 @@ export function TeamLink({ teamId, className, children, ...rest }: TeamLinkProps
       {children}
     </a>
   );
+}
+
+/**
+ * A team's Team Calendar on `date`, for a host outside calendarkit (the gauntlet's Slate widget, which opens it in a new
+ * tab): calendarkit's own team-link address (App.tsx teamLinkUrl) with the default options, under `base` (calendarkit's root).
+ */
+export function teamCalendarUrl(teamId: number, date: string, base = '/calendar/'): string {
+  const p = new URLSearchParams({ view: 'team', layout: 'calendar', team: TEAM_BY_ID.get(teamId)?.tricode ?? '', on: date });
+  return `${base}?${p}`;
 }

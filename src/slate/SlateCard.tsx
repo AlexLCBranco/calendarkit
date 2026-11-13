@@ -131,14 +131,14 @@ const slateVars = (cols: number, cup: CupTrackKind = false) => ({ ...varsOf(cup)
 /** The Cup track kind of a copied night (as SlateCopy draws it). */
 export const slateCopyCup = (data: CalendarData, games: readonly ScheduleGame[]) => cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt));
 
-export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds }) {
+export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds, gameLink }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds; /** A host showing the copy layout live (the gauntlet's Slate widget): each card's "↗" and score links; none in images. */ gameLink?: GameLink }) {
   const cup = slateCopyCup(data, games);
   // The info drawn larger inside the card (its info column widened to match), the note box narrower
   const zoom = slateCopyZoom(cardWidth, cup, !!notes);
   return (
     <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-gap': `${SLATE_COPY_GAP}px` } as CSSProperties} data-zoom={zoom}>
       {games.map((g) => (
-        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy />
+        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy />
       ))}
     </div>
   );
