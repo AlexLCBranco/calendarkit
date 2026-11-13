@@ -85,6 +85,8 @@ export interface CalendarViewProps {
 }
 
 const DEFAULT_TEAM = TEAMS[0]!.id;
+/** The Team mode a team link opens (names, logos, tricodes anywhere: game cards, standings, the Cup, popups). */
+export const TEAM_LINK_LAYOUT: TeamLayout = 'calendar';
 /** The condensed standings popup, in the Standings destination's chunk, loaded on first use. */
 const StandingsPopup = lazy(() => import('./Standings').then((m) => ({ default: m.StandingsPopup })));
 
@@ -125,7 +127,7 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
     },
     [onStateChange],
   );
-  const { team, slate, list, teamMap } = scheduleShape(state, size);
+  const { slate, list, teamMap } = scheduleShape(state, size);
   // The Cup and Standings: desktop only, like the Slate; a narrower widget shows the League views meanwhile (the state
   // keeps "cup" or "standings").
   const slateFits = !compact && size.width >= SLATE_MIN_WIDTH;
@@ -173,20 +175,17 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
   const viewKey = [state.mode, state.layout, state.teamId, state.tvOnly, state.showRest, state.weeks, state.teamSpan, compact].join('|');
   useEffect(() => selection.clear(), [viewKey, selection]);
 
-  // Team links. The Team mode used last (List or Calendar; this page only — nothing is stored, as for the
-  // other toggles; a page opened on a Team view starts from its mode, else List) and the date being looked at are read
-  // when a link is pressed, never rendered into the links (no re-render of the cards when they change).
-  const lastTeamLayout = useRef<TeamLayout>(initial?.mode === 'team' && initial.layout === 'calendar' ? 'calendar' : 'list');
-  if (team) lastTeamLayout.current = list ? 'list' : 'calendar';
+  // Team links open the team's Calendar (List is one click away in its bar). The date being looked at is read when a
+  // link is pressed, never rendered into the links (no re-render of the cards when it changes).
   const teamHrefRef = useRef(teamHref);
   teamHrefRef.current = teamHref;
   const [teamLinks] = useState<TeamLinks>(() => ({
-    href: (teamId) => teamHrefRef.current?.({ teamId, layout: lastTeamLayout.current, date: lookingAt(), state: stateRef.current }) ?? '',
+    href: (teamId) => teamHrefRef.current?.({ teamId, layout: TEAM_LINK_LAYOUT, date: lookingAt(), state: stateRef.current }) ?? '',
   }));
-  /** A team link's plain click: that team's Team view here, in the last-used mode, on the date being looked at. */
+  /** A team link's plain click (or the scope picker's team, in its own mode): that team's Team view here, on the date being looked at. */
   const openTeam = (teamId: number, view?: TeamLayout) => {
     const date = lookingAt();
-    const layout = view ?? lastTeamLayout.current;
+    const layout = view ?? TEAM_LINK_LAYOUT;
     const s = stateRef.current;
     // League's Slate stays League's layout (Team shows its List meanwhile), so League comes back to the Slate
     update({ mode: 'team', teamId, layout: layout === 'list' && s.layout === 'slate' ? 'slate' : layout });

@@ -10,6 +10,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { setNotes } from './nav';
 
 const OLD = 'https://calendarkit-brown.vercel.app';
 const NEW = 'https://gauntlet-home.vercel.app';
@@ -133,6 +134,7 @@ test('notes on the old address are handed over once: same notes (every slot, the
     `${NEW}/calendar/?view=league&layout=slate`,
   ]);
   expect(await notesAt(page)).toEqual(NOTES);
+  await setNotes(page, true); // the Slate opens with notes hidden
   await expect(page.locator(`[data-game-id="${A}"] [data-testid="note-slot"]`)).toHaveText('LIVE');
   await expect(page.locator(`[data-game-id="${A}"] textarea`)).toHaveValue('Live note A');
   await expect(page.locator(`[data-game-id="${B}"] textarea`)).toHaveValue('Post only B');
@@ -213,6 +215,8 @@ test('a gauntlet page (same origin) reads the schedule from /calendar/data/ and 
   await page.clock.setFixedTime(NOW);
   await page.addInitScript(() => ((window as unknown as { __ckOpenDate?: string }).__ckOpenDate = '2026-11-02'));
   await page.goto(`${NEW}/calendar/?view=league&layout=slate`);
+  await expect(page.getByTestId('slate')).toBeVisible();
+  await setNotes(page, true);
   await page.locator(`[data-game-id="${A}"] textarea`).fill('typed in calendarkit');
   await page.locator(`[data-game-id="${A}"] textarea`).blur();
   const board = await context.newPage();

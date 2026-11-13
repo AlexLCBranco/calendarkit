@@ -138,3 +138,42 @@
   font-weight: 600;
   color: var(--ck-muted);
 }
+
+/* The calendar views' side arrows (ScheduleDestination SideArrows): tall, narrow, in the page margin beside the grid
+   (16 px at a 1280 px window), so they cover no day cell. With the rail, the left one sits on the rail's right edge. */
+.ck-root {
+  position: relative;
+}
+.ck-side-arrow {
+  position: absolute;
+  top: calc(50% - 36px);
+  z-index: 2;
+  width: 15px;
+  height: 72px;
+  padding: 0;
+  border: 1px solid var(--ck-border);
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ck-side-prev {
+  left: -16px;
+  border-radius: 6px 0 0 6px;
+}
+.ck-side-next {
+  right: -16px;
+  border-radius: 0 6px 6px 0;
+}
+.ck-has-rail > .ck-side-prev {
+  left: 68px; /* RAIL_WIDTH − 16 */
+}
+.ck-side-arrow:hover:not(:disabled) {
+  color: var(--ck-text);
+  border-color: var(--ck-accent);
+}
+.ck-side-arrow:disabled {
+  opacity: 0.3;
+  cursor: default;
+}

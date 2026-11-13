@@ -14,7 +14,15 @@ import { data } from './feed';
 const NOW = Date.parse('2026-11-15T15:00:00Z');
 const XL = { width: 1840, height: 1000 };
 const stored = () => JSON.parse(localStorage.getItem(NOTES_KEY) ?? '{}');
-const open = (now = NOW, initial = {}) => render(<CalendarView data={data} size={XL} now={now} timeZone="UTC" initial={{ mode: 'league', layout: 'slate', date: '2026-11-15', ...initial }} />);
+/** The Slate as it loads: notes hidden ("Hide all notes" is on at every load). */
+const openHidden = (now = NOW, initial = {}) => render(<CalendarView data={data} size={XL} now={now} timeZone="UTC" initial={{ mode: 'league', layout: 'slate', date: '2026-11-15', ...initial }} />);
+/** The Slate with its notes shown ("Show notes" pressed). */
+const showNotes = () => fireEvent.click(screen.getByTestId('notes-hide'));
+const open = (now = NOW, initial = {}) => {
+  const r = openHidden(now, initial);
+  showNotes();
+  return r;
+};
 const cards = () => [...document.querySelectorAll<HTMLElement>('[data-testid="slate"] .ck-slate-card')];
 const box = (i: number) => within(cards()[i]!);
 const type = (i: number, text: string) => fireEvent.change(box(i).getByTestId('note-text'), { target: { value: text } });
@@ -174,7 +182,12 @@ describe('Slate cards with notes', () => {
     expect(document.querySelectorAll('[data-testid="note"]')).toHaveLength(0);
     expect(screen.getByTestId('notes-hide').getAttribute('aria-pressed')).toBe('true');
     cleanup();
-    open();
+    // a reload: hidden again (the toggle is never stored), the notes themselves untouched
+    openHidden();
+    expect(screen.getByTestId('notes-hide').getAttribute('aria-pressed')).toBe('true');
+    expect(document.querySelectorAll('[data-testid="note"]')).toHaveLength(0);
+    for (const c of cards()) expect(stored()[c.dataset.gameId!].shown).toBe('live');
+    showNotes();
     expect(document.querySelectorAll('[data-testid="note"]').length).toBe(cards().length);
     expect(slot(0)).toBe('LIVE');
     // nothing but the notes is stored
@@ -224,6 +237,21 @@ describe('Slate cards with notes', () => {
   });
 });
 
+describe('Hide all notes at load', () => {
+  it('the Slate opens with its notes hidden, every load, stored notes untouched', () => {
+    const id = '0022600001';
+    const kept = { [id]: { pre: 'scouting', live: '', post: '', shown: 'pre' } };
+    localStorage.setItem(NOTES_KEY, JSON.stringify(kept));
+    openHidden();
+    expect(screen.getByTestId('notes-hide').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('notes-hide').textContent).toBe('Show notes');
+    expect(document.querySelectorAll('[data-testid="note"]')).toHaveLength(0);
+    expect(cards().length).toBeGreaterThan(0);
+    expect(JSON.parse(localStorage.getItem(NOTES_KEY)!)).toEqual(kept);
+    expect(Object.keys(localStorage)).toEqual([NOTES_KEY]);
+  });
+});
+
 describe('columns', () => {
   it('two columns while the note box keeps 300 px, else one (1280 → 1, 1920 → 2)', () => {
     expect(slateColumns(1840)).toBe(2);
@@ -234,6 +262,7 @@ describe('columns', () => {
     expect(document.querySelector('.ck-slate-grid')!.getAttribute('data-cols')).toBe('2');
     cleanup();
     render(<CalendarView data={data} size={{ width: 1233, height: 900 }} now={NOW} timeZone="UTC" initial={{ mode: 'league', layout: 'slate' }} />);
+    showNotes();
     expect(document.querySelector('.ck-slate-grid')!.getAttribute('data-cols')).toBe('1');
   });
 });

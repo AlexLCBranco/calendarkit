@@ -6,6 +6,7 @@
 
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
+import { setNotes } from './nav';
 import { copySlate, readPng } from './slatecopy';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
@@ -20,6 +21,7 @@ async function openSlate(page: Page, date = '2026-11-15', now = NOW) {
   await page.goto(`/calendar/?view=league&layout=slate&date=${date}`);
   await expect(page.getByTestId('slate')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
+  await setNotes(page, true);
 }
 const cards = (page: Page) => page.locator('[data-testid="slate"] .ck-slate-card');
 const card = (page: Page, i: number) => cards(page).nth(i);
@@ -52,6 +54,8 @@ test('type → reload → back, by gameId (also on the same game reached by anot
   await page.keyboard.type('Injury report: questionable');
   await saved(page, id, { pre: 'Injury report: questionable', shown: 'pre' });
   await page.reload();
+  await expect(page.getByTestId('slate')).toBeVisible();
+  await setNotes(page, true);
   await expect(cards(page).first()).toBeVisible();
   await expect(page.locator(`.ck-slate-card[data-game-id="${id}"] [data-testid="note-text"]`)).toHaveValue('Injury report: questionable');
   await page.getByLabel('Next day').click();
@@ -85,6 +89,8 @@ test('three slots: all texts kept through switching; the slot left on show comes
   expect(seen).toEqual(['PRE:pre text', 'LIVE:live text', 'POST:post text', 'PRE:pre text', 'LIVE:live text', 'POST:post text']);
   await saved(page, id, { pre: 'pre text', live: 'live text', post: 'post text', shown: 'post' });
   await page.reload();
+  await expect(page.getByTestId('slate')).toBeVisible();
+  await setNotes(page, true);
   await expect(card(page, 0).getByTestId('note-slot')).toHaveText('POST');
   await expect(card(page, 0).getByTestId('note-text')).toHaveValue('post text');
   // the clock past tip-off and past "over": still POST (nothing switches by itself)
@@ -103,11 +109,19 @@ test('three slots: all texts kept through switching; the slot left on show comes
   const n = await cards(page).count();
   await expect(page.locator('[data-testid="note-slot"]', { hasText: 'LIVE' })).toHaveCount(n);
   await page.reload();
+  // a reload: notes hidden again (on at every load, never stored); the slots kept
+  await expect(page.getByTestId('slate')).toBeVisible();
+  await expect(page.getByTestId('notes-hide')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByTestId('note')).toHaveCount(0);
+  await setNotes(page, true);
   await expect(page.locator('[data-testid="note-slot"]', { hasText: 'LIVE' })).toHaveCount(n);
-  // Hide all notes: info only; a reload brings them back (a view toggle, not stored)
+  // Hide all notes: info only; a reload hides them again
   await page.getByTestId('notes-hide').click();
   await expect(page.getByTestId('note')).toHaveCount(0);
   await page.reload();
+  await expect(page.getByTestId('slate')).toBeVisible();
+  await expect(page.getByTestId('note')).toHaveCount(0);
+  await setNotes(page, true);
   await expect(page.getByTestId('note')).toHaveCount(n);
   expect(await page.evaluate(() => Object.keys(localStorage))).toEqual([KEY]);
 });
@@ -118,6 +132,7 @@ test('two tabs: typing and switching in one shows up in the other; the typing ta
   await other.clock.setFixedTime(NOW);
   await other.goto('/calendar/?view=league&layout=slate&date=2026-11-15');
   await expect(other.getByTestId('slate')).toBeVisible();
+  await setNotes(other, true);
   const id = (await card(page, 0).getAttribute('data-game-id'))!;
   const box = page.locator(`.ck-slate-card[data-game-id="${id}"] [data-testid="note-text"]`);
   const there = other.locator(`.ck-slate-card[data-game-id="${id}"] [data-testid="note-text"]`);
@@ -181,6 +196,8 @@ test('export → clear → import: the same notes and slots; merge rule; a malfo
   // clear, import → identical
   await page.evaluate((k) => localStorage.removeItem(k), KEY);
   await page.reload();
+  await expect(page.getByTestId('slate')).toBeVisible();
+  await setNotes(page, true);
   await expect(card(page, 0).getByTestId('note-text')).toHaveValue('');
   await page.getByTestId('notes-file').setInputFiles(path);
   await expect(page.getByTestId('notes-message')).toHaveText('Imported notes for 2 games.');

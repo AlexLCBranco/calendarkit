@@ -6,6 +6,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import type { Server } from 'node:http';
 import { expect, test, type Browser, type Page } from '@playwright/test';
+import { setNotes } from './nav';
 import { APP } from './app';
 import { serveRef } from './refbuild';
 import { copySlate } from './slatecopy';
@@ -81,10 +82,9 @@ async function open(browser: Browser, base: string, date: string, variant: Varia
   // the version corner differs between the builds by design; nothing else is hidden
   await page.addStyleTag({ content: '[data-testid="site-version"] { visibility: hidden !important; }' });
   await page.mouse.move(0, 0);
-  if (variant === 'hidden') {
-    await page.getByTestId('notes-hide').click();
-    await page.mouse.move(0, 0);
-  }
+  // both builds set the same way (the reference opens with notes shown, this build hidden)
+  await setNotes(page, variant !== 'hidden');
+  await page.mouse.move(0, 0);
   return page;
 }
 

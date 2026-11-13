@@ -6,7 +6,7 @@ import { mkdirSync } from 'node:fs';
 import { test as plain } from '@playwright/test';
 import { expect, test, type Page } from './fixtures';
 import { copySlate } from './slatecopy';
-import { titleFor } from './nav';
+import { titleFor, setNotes } from './nav';
 import { FEED_TEAMS } from './feedTeams';
 
 const NOW = new Date('2026-11-15T15:00:00Z'); // 12:00 in São Paulo (the projects' zone): Nov 15 is today
@@ -36,6 +36,7 @@ async function openSlate(page: Page, date?: string) {
   await page.goto(`/calendar/?view=league&layout=slate${date ? `&date=${date}` : ''}`);
   await expect(page.getByTestId('slate')).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
+  await setNotes(page, true);
 }
 
 const title = (page: Page) => page.getByTestId('day-title').textContent();

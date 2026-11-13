@@ -28,3 +28,13 @@ export async function setOption(page: Page, label: 'TV games only' | 'Show rest 
   else await box.uncheck();
   await page.keyboard.press('Escape');
 }
+
+/**
+ * The Slate's notes shown or hidden, whatever the build opens with ("Hide all notes" is on at every load since v1.62.0;
+ * the reference builds open with notes shown).
+ */
+export async function setNotes(page: Page, shown: boolean) {
+  const btn = page.getByTestId('notes-hide');
+  if (((await btn.getAttribute('aria-pressed')) === 'true') === shown) await btn.click();
+  await btn.page().waitForFunction((want) => document.querySelector('[data-testid="notes-hide"]')?.getAttribute('aria-pressed') === String(!want), shown);
+}

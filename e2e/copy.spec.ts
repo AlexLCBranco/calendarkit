@@ -425,6 +425,8 @@ async function selectRange(page: Page, sel: string, from: number, to: number) {
     const drawn = (e: HTMLElement) => {
       const c = e.cloneNode(true) as HTMLElement;
       c.querySelectorAll('[data-capture-exclude="true"]').forEach((x) => x.remove());
+      // a road trip / homestand label belongs to the run, not the game: selection images leave it out
+      c.querySelectorAll('[data-testid="run-label"]').forEach((x) => x.remove());
       return c.textContent!;
     };
     return [...document.querySelectorAll<HTMLElement>('.ck-select-area [data-game-id]')]

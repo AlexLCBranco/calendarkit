@@ -79,10 +79,10 @@ export interface PageHistory {
   onForward: () => void;
 }
 
-/** Team List or Team Calendar: the Team mode a team link opens (the one used last). */
+/** Team List or Team Calendar (a team link opens the Calendar: CalendarView TEAM_LINK_LAYOUT). */
 export type TeamLayout = 'list' | 'calendar';
 
-/** Where a team link goes: the team, in the Team mode used last, on the date being looked at; `state` for the rest of the URL. */
+/** Where a team link goes: the team, in a Team mode, on the date being looked at; `state` for the rest of the URL. */
 export interface TeamTarget {
   teamId: number;
   layout: TeamLayout;

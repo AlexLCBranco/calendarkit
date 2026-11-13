@@ -96,10 +96,11 @@ export function ScheduleDestination(p: ScheduleProps) {
   const [picking, setPicking] = useState(false);
   // the lists' date picker
   const [datePick, setDatePick] = useState(false);
-  // Slate notes: the games' notes, saved in localStorage (notes.ts); "Hide all notes" is a view toggle, never stored
+  // Slate notes: the games' notes, saved in localStorage (notes.ts); "Hide all notes" is a view toggle, on at every
+  // load and never stored (as "Show rest days"); the stored notes are untouched by it
   const [notes] = useState(localNotesStore);
   useEffect(() => notes.listen(), [notes]);
-  const [hideNotes, setHideNotes] = useState(false);
+  const [hideNotes, setHideNotes] = useState(true);
   const [slateFocus, setSlateFocus] = useState<{ teamId: number; date: string }>();
 
   const pickTeam = (teamId: number) => {
@@ -417,7 +418,7 @@ export function ScheduleDestination(p: ScheduleProps) {
   };
 
   if (!active) return null;
-  const teamListProps = { data, teamId: state.teamId, tvOnly: state.tvOnly, showRest: state.showRest && !compact, size, now, timeZone, onOpenGame, gameLink, handle: teamList, openAt: teamOpen, onAtNext: teamAtNext.set, topStore: teamTop, today, month: teamListMonth, monthTo: teamListTo, onLoadMonths: compact ? undefined : loadTeamMonths, onMonthChange: setTeamListMonth };
+  const teamListProps = { data, teamId: state.teamId, tvOnly: state.tvOnly, showRest: state.showRest && !compact, size, now, timeZone, onOpenGame, gameLink, handle: teamList, openAt: teamOpen, onAtNext: teamAtNext.set, topStore: teamTop, today, month: teamListMonth, monthTo: teamListTo, onLoadMonths: compact ? undefined : loadTeamMonths, onMonthChange: setTeamListMonth, runs: !compact };
   const leagueList = <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} legend={false} />;
 
   // The bar, in this order: sub-views (List · Calendar · Slate, the scope picker); date controls (the date block,
@@ -524,7 +525,7 @@ export function ScheduleDestination(p: ScheduleProps) {
     ) : list ? (
       <TeamListView {...teamListProps} />
     ) : (
-      <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
+      <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} runs={!compact} />
     );
   } else if (slate) {
     body = <SlateView focusTeam={slateFocusTeam} today={today} data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} width={size.width} notes={notes} odds={odds} hideNotes={hideNotes} onHideNotes={setHideNotes} />;
@@ -550,6 +551,7 @@ export function ScheduleDestination(p: ScheduleProps) {
     <DestinationFrame slots={slots} sub={sub} date={date} options={options} info={leagueKey}>
       {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? teamListPeriod : undefined} />}
       {body}
+      {!list && !slate && !compact && nav && <SideArrows nav={nav} />}
       {selKind && <SelectionBar store={selection} copy={copySelection} />}
       {slateCapture && (
         <CaptureStage key={slateCapture.cols} onReady={slateCapture.onReady} width={slateImageSize(slateCapture.games.length, slateCapture.cols, slateCapture.card).width} className=" ck-slate-capture">
@@ -568,9 +570,9 @@ export function ScheduleDestination(p: ScheduleProps) {
           {team && <TeamHeader teamId={state.teamId} compact={compact} period={list ? teamListPeriod : undefined} />}
           {team ? (
             list ? (
-              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} month={teamListMonth} monthTo={teamListTo} />
+              <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} month={teamListMonth} monthTo={teamListTo} runs={!compact} />
             ) : (
-              <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} />
+              <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} runs={!compact} />
             )
           ) : list ? (
             <section className={`ck-league-list${listStyle ? ' ck-league-side' : ''}`} aria-label="League schedule" style={listStyle}>
@@ -599,6 +601,24 @@ function NextFrame({ children }: { children: ReactNode }) {
     return () => cancelAnimationFrame(id);
   }, []);
   return on ? <>{children}</> : null;
+}
+
+/**
+ * The calendar views' second pair of arrows, at the grid's left and right sides (in the page margin beside it): the same
+ * step as the bar's ‹ › (1 week, 2 weeks or a month). Never in an image (the copies render the view without them).
+ */
+function SideArrows({ nav }: { nav: PeriodNavProps }) {
+  const step = nav.unit === 'week' || nav.unit === 'month' ? `one ${nav.unit}` : nav.unit;
+  return (
+    <>
+      <button type="button" className="ck-side-arrow ck-side-prev" data-testid="side-prev" data-capture-exclude="true" aria-label={`Back ${step}`} title={`Back ${step}`} disabled={nav.prevDisabled} onClick={nav.onPrev}>
+        ‹
+      </button>
+      <button type="button" className="ck-side-arrow ck-side-next" data-testid="side-next" data-capture-exclude="true" aria-label={`Forward ${step}`} title={`Forward ${step}`} disabled={nav.nextDisabled} onClick={nav.onNext}>
+        ›
+      </button>
+    </>
+  );
 }
 
 /** Team Calendar: the month with `today`, kept inside the season's months. */

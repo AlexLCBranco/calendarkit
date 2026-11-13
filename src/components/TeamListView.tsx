@@ -6,7 +6,8 @@ import { addMonths, hasNationalTv, isOver, monthOf, opponentSecondNight, sideLab
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import { TEAM_BY_ID } from '../data/teams';
-import { GameCard, type GameLink } from './GameCard';
+import { GameCard, type GameLink, type RunMark } from './GameCard';
+import { runLabel, runOn, runTip, runTipDays, teamRuns, type Run } from '../data/runs';
 import { useActiveHighlight } from './ActiveHighlight';
 import { ACTIVE_DAY } from './copyAsImage';
 import type { ValueStore } from './valueStore';
@@ -60,6 +61,8 @@ export interface TeamListViewProps {
   markNext?: boolean;
   /** Cup schedule: the Cup tag's text per game ("Group play · West A"). */
   cupTag?: (g: ScheduleGame) => string | undefined;
+  /** Road trips and homestands as a band down the rows, labelled on each run's first shown game (Team views). */
+  runs?: boolean;
 }
 
 /** A row asked for by a team link (put at the top once, on the render that brings it). */
@@ -90,7 +93,7 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * memo — the date picker's open state lives in CalendarView, and each open / close redrew the whole month
  * (tests/teamlist-rerender.test.tsx).
  */
-export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, monthTo, onLoadMonths, onMonthChange, markNext = true, cupTag, series = true }: TeamListViewProps) {
+export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, monthTo, onLoadMonths, onMonthChange, markNext = true, cupTag, series = true, runs = false }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
@@ -289,6 +292,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     return m;
   }, [allRows, teamId]);
   const gameDates = useMemo(() => games.map((g) => g.dateEt), [games]);
+  const runMarks = useMemo(() => (runs && !only ? rowRunMarks(rows, teamRuns(data, teamId).runs) : undefined), [runs, only, rows, data, teamId]);
 
   return (
     <section className="ck-team-list" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} games`} style={{ maxHeight: size.height }}>
@@ -313,7 +317,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
               </div>
             ),
             typeof g === 'string' ? (
-              <div key={g} className="ck-rest-row" data-rest={g} data-row-date={g} aria-label={`${rowDate(g)}, rest day`}>
+              <div key={g} className="ck-rest-row" data-rest={g} data-row-date={g} data-run={runMarks?.get(g)?.kind} data-run-pos={runMarks?.get(g)?.pos} aria-label={`${rowDate(g)}, rest day`}>
                 <span className="ck-date">{rowDate(g)}</span>
                 <span className="ck-rest">Rest</span>
               </div>
@@ -352,6 +356,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
                 season={season.get(g.gameId)}
                 copyable
                 rowDate={g.dateEt}
+                run={runMarks?.get(g.gameId)}
               />
             ),
           ])}
@@ -386,6 +391,30 @@ const scrollPos = (el: HTMLElement, row: HTMLElement) => {
 };
 
 const rowDateOf = (r: ScheduleGame | string) => (typeof r === 'string' ? r : r.dateEt);
+
+/**
+ * Each shown row's part of a road trip / homestand band (key: gameId, or the date of a rest row), so the stripe runs
+ * unbroken from the run's first shown row to its last; the label goes on each run's first shown game.
+ */
+export function rowRunMarks(rows: readonly (ScheduleGame | string)[], runs: readonly Run[]): Map<string, RunMark> {
+  const out = new Map<string, RunMark>();
+  const runAt = rows.map((r) => runOn(runs, rowDateOf(r)));
+  const labelled = new Set<Run>();
+  rows.forEach((r, i) => {
+    const run = runAt[i];
+    if (!run) return;
+    const joinedUp = runAt[i - 1] === run;
+    const joinedDown = runAt[i + 1] === run;
+    const mark: RunMark = { kind: run.kind, pos: joinedUp && joinedDown ? 'mid' : joinedUp ? 'last' : joinedDown ? 'first' : 'only' };
+    if (typeof r !== 'string' && !labelled.has(run)) {
+      labelled.add(run);
+      const index = run.games.findIndex((g) => g.gameId === r.gameId);
+      if (index >= 0) mark.label = { text: runLabel(run), tip: runTip(run, index), days: runTipDays(run, index) };
+    }
+    out.set(typeof r === 'string' ? r : r.gameId, mark);
+  });
+  return out;
+}
 
 /** Games and rest days (dates) merged in date order. */
 function withRest(games: ScheduleGame[], rest: string[]): (ScheduleGame | string)[] {

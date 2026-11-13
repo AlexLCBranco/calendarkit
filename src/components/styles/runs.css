@@ -1,0 +1,110 @@
+/* Road trips and homestands (data/runs.ts): one band per run, always on, quiet enough that the games stay readable.
+   Road = rose, homestand = periwinkle; the label names it too. Neither touches the B2B yellow (bars, brackets) or the
+   rest teal. */
+[data-run='road'] {
+  --ck-run: var(--ck-road);
+  --ck-run-tint: rgb(239 127 150 / 0.07);
+}
+[data-run='home'] {
+  --ck-run: var(--ck-home);
+  --ck-run-tint: rgb(143 157 255 / 0.07);
+}
+.ck-run-label {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  line-height: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: var(--ck-run);
+  background: var(--ck-bg);
+  border: 1px solid var(--ck-run);
+  pointer-events: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Team List: a stripe on the rows' left edge, joined across the 6 px gaps (and the rest rows), the label on the
+   first row's top border like a legend. The B2B bracket sits further out, in the list's left padding. */
+.ck-team-rows .ck-card[data-run],
+.ck-team-rows .ck-rest-row[data-run] {
+  position: relative;
+  background-image: linear-gradient(var(--ck-run-tint), var(--ck-run-tint));
+}
+.ck-team-rows .ck-card[data-run]::after,
+.ck-team-rows .ck-rest-row[data-run]::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  width: 3px;
+  top: -1px;
+  bottom: -1px;
+  background: var(--ck-run);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.ck-team-rows .ck-rest-row[data-run]::after {
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+.ck-team-rows [data-run-pos='first']::after,
+.ck-team-rows [data-run-pos='only']::after {
+  border-top-left-radius: 8px;
+}
+.ck-team-rows [data-run-pos='last']::after,
+.ck-team-rows [data-run-pos='only']::after {
+  border-bottom-left-radius: 8px;
+}
+/* the joins: up into the gap above (6 px) */
+.ck-team-rows .ck-card[data-run-pos='mid']::after,
+.ck-team-rows .ck-card[data-run-pos='last']::after {
+  top: -8px;
+}
+.ck-team-rows .ck-rest-row[data-run-pos='mid']::after,
+.ck-team-rows .ck-rest-row[data-run-pos='last']::after {
+  top: -6px;
+}
+.ck-team-rows .ck-card > .ck-run-label {
+  position: absolute;
+  top: -7px;
+  left: 14px;
+  z-index: 1;
+}
+
+/* Team Calendar: a tint over the run's days in each week row (gaps included) with a line along the top; the label on
+   the day-number line, after the number. Square ends where the run goes on in another row or month. */
+.ck-run-band {
+  position: relative;
+  z-index: 1;
+  align-self: stretch;
+  margin: 0 2px;
+  border-top: 2px solid var(--ck-run);
+  border-radius: 8px 8px 0 0;
+  background: var(--ck-run-tint);
+  pointer-events: none;
+  min-width: 0;
+  padding: 2px 6px 0 26px;
+}
+.ck-run-band.ck-run-open {
+  margin-left: 0;
+  border-top-left-radius: 0;
+}
+.ck-run-band.ck-run-close {
+  margin-right: 0;
+  border-top-right-radius: 0;
+}
+.ck-run-band.ck-run-wide-num {
+  padding-left: 44px;
+}
+.ck-run-band > .ck-run-label {
+  vertical-align: top;
+}
+.ck-compact .ck-run-band {
+  padding-left: 16px;
+}

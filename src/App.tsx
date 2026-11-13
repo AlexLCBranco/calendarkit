@@ -13,6 +13,7 @@ import { loadCalendarData } from './data/load';
 import type { CalendarData } from './data/model';
 import { TEAMS, TEAM_BY_ID } from './data/teams';
 import { rotationkitUrl } from './rotationkit';
+import { pageTitle } from './pageTitle';
 
 /** Shell's handling of GameCard's "open game" action: the rotationkit deep link in a new tab. */
 export function openGameInRotationkit(gameId: string, open: (url: string) => void = (url) => window.open(url, '_blank', 'noopener')) {
@@ -49,7 +50,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
 }
 
 /**
- * A team link's URL — that team's Team view in the last-used Team mode, the other toggles as now, and
+ * A team link's URL — that team's Team view in the mode the link opens (the Calendar), the other toggles as now, and
  * `on=` the date being looked at. `on` is read once at load (the Team view opens there) and dropped from the address
  * then (a reload keeps its page from the tab's history entry instead).
  */
@@ -121,7 +122,8 @@ export function reloadedState(entry: unknown): (Partial<CalendarState> & { cup?:
 
 /**
  * The widget's pages as real history entries, so the browser's back / forward (buttons, Alt+← →, the
- * mouse's side buttons) and the in-app ← → walk them; back / forward puts the whole page back (handle.restore).
+ * mouse's side buttons) and the in-app ← → walk them; back / forward puts the whole page back (handle.restore). The
+ * tab's title follows every page and day step (pageTitle.ts).
  */
 export function usePageHistory(handle: RefObject<CalendarHandle | null>) {
   // the position lives outside React state: only the ← → buttons read it (a state here re-rendered the whole widget
@@ -156,6 +158,7 @@ export function usePageHistory(handle: RefObject<CalendarHandle | null>) {
     }
     posRef.current = next;
     setPos(next);
+    document.title = pageTitle(snap);
   }, [setPos]);
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
@@ -170,6 +173,7 @@ export function usePageHistory(handle: RefObject<CalendarHandle | null>) {
       posRef.current = next;
       setPos(next);
       handle.current?.restore(st.snap);
+      document.title = pageTitle(st.snap);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);

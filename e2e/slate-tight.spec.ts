@@ -5,6 +5,7 @@
 // the season. Notes shown: two columns, the note box taking the rest of the card.
 
 import { expect, test, type Page } from './fixtures';
+import { setNotes } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [
@@ -30,7 +31,7 @@ async function openSlate(page: Page, date: string, hide: boolean) {
   await page.goto(`?view=league&layout=slate&date=${date}`);
   await expect(page.locator('[data-testid="slate"] .ck-slate-card').first()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
-  if (hide) await page.getByTestId('notes-hide').click();
+  await setNotes(page, !hide);
 }
 
 /** Every card's geometry and its rows' parts, read in one go. */

@@ -15,6 +15,16 @@ import { Fatigue } from './Fatigue';
 import type { TeamFatigue } from '../data/fatigue';
 import './calendar.css';
 import { streakAttr } from '../slate/streakPopup';
+import type { RunKind } from '../data/runs';
+
+/** A road trip / homestand band's label ("Road trip · 5 games"); its tooltip names the game it stands at, the dates and the cities. */
+export function RunLabel({ kind, text, tip, days }: { kind: RunKind; text: string; tip: string; days: string }) {
+  return (
+    <span className="ck-run-label" data-run={kind} data-tip={tip} data-tip-days={days} data-testid="run-label" tabIndex={0} aria-label={tip.replace(/\n/g, ', ')}>
+      {text}
+    </span>
+  );
+}
 
 /** The selected team's side of a back-to-back, as shown on one of its two nights. */
 export interface B2BNight {
@@ -97,6 +107,15 @@ export interface GameCardProps {
   series?: SeriesGame;
   /** Views too tight for the chip (Team Calendar cells) — the series as the card's tooltip. */
   seriesTip?: string;
+  /** Team List: the row's part of a road trip / homestand band (RunMark), and the band's label on its first row. */
+  run?: RunMark;
+}
+
+/** A Team List row's place in a road trip or homestand: the band's stripe joins the rows; `label` on the run's first shown row. */
+export interface RunMark {
+  kind: RunKind;
+  pos: 'first' | 'mid' | 'last' | 'only';
+  label?: { text: string; tip: string; days: string };
 }
 
 /** The host's game-page URL for a game (hoopsjunkie, config.ts gameLinkUrl), or undefined (no link: undecided teams). */
@@ -185,7 +204,7 @@ export const TV_NAMES_MAX = 2;
 
 export const B2BDot =({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip, run }: GameCardProps) {
   const iconUrl = linkIcon ? gameLinkProp?.(game) : undefined;
   // the matchup is the game link only without the icon (calendar cells; week lines use MatchLink themselves)
   const gameLink = linkIcon ? undefined : gameLinkProp;
@@ -303,10 +322,13 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
       data-next={next || undefined}
       data-b2b={bracket}
       data-tip={seriesTip}
+      data-run={run?.kind}
+      data-run-pos={run?.pos}
       aria-label={dateLabel ? `${dateLabel}, ${label}` : label}
     >
       {/* first, so the season block stays the last part; positioned in the corner */}
       {copyable && <CopyButton hover label="Copy game as image" of=".ck-card" testId="copy-game" />}
+      {run?.label && <RunLabel kind={run.kind} {...run.label} />}
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
       <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
         <TipTime tip={tip} />

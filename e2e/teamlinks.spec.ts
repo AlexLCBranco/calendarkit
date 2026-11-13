@@ -132,7 +132,7 @@ async function expectTeamView(page: Page, t: Team, layout: 'list' | 'calendar', 
 /** The links matching `kind` (the link itself, or links inside it). */
 const linksOf = (page: Page, kind: string) => page.locator(`${LINK}:is(${kind}), :is(${kind}) ${LINK}`).filter({ visible: true });
 
-/** layout: the Team mode the links open (the page's own Team mode when it opened on one, else List). */
+/** layout: the Team mode the links open (always the Calendar; kept per view for the week-span title). */
 const VIEWS: { name: string; search: string; scope: string; layout?: 'calendar'; title?: string; date: string | ((d: string) => boolean); kinds: string[]; prepare?: (p: Page) => Promise<unknown> }[] = [
   { name: 'League List + map', search: '?view=league&layout=list&date=2026-11-16', scope: '[data-testid="league-list"]', date: '2026-11-16', kinds: ['[data-testid="league-list"] .ck-team', '[data-testid="league-list"] .ck-logo-backing'] },
   { name: 'Slate', search: '?view=league&layout=slate&date=2026-11-16', scope: '[data-testid="slate"]', date: '2026-11-16', kinds: ['[data-testid="slate"] .ck-slate-name', '[data-testid="slate"] .ck-logo-backing'] },
@@ -186,7 +186,7 @@ test.describe('team links', () => {
     test(`${v.name}: every team element is a link to its Team view on the shown date; each kind clicks through`, async ({ page }) => {
       await open(page, v.search);
       await v.prepare?.(page);
-      const layout = v.layout ?? 'list';
+      const layout = v.layout ?? 'calendar';
       const n = await checkLinks(page, v.scope, { layout, date: v.date });
       expect(n, 'links checked').toBeGreaterThan(5);
       // a real click on each kind of link: that Team view, in that mode, at the date
@@ -219,12 +219,12 @@ test.describe('team links', () => {
     await expect(pop).toBeVisible();
     const links = pop.locator('.ck-series-title a[data-team-link]');
     await expect(links).toHaveCount(2);
-    expect(await checkLinks(page, '[data-testid="series-popup"]', { layout: 'list', date: '2026-11-16' })).toBe(2);
+    expect(await checkLinks(page, '[data-testid="series-popup"]', { layout: 'calendar', date: '2026-11-16' })).toBe(2);
     const teams = await snapshotTeams(page);
     const t = teams[Number(await links.nth(1).getAttribute('data-team-link'))]!;
     await links.nth(1).hover();
     await links.nth(1).click();
-    await expectTeamView(page, t, 'list', '2026-11-16');
+    await expectTeamView(page, t, 'calendar', '2026-11-16');
   });
 
   test('the map labels stay plain, click-through text (a link there would take a nearby pin\x27s hover)', async ({ page }) => {
@@ -255,28 +255,27 @@ test.describe('team links', () => {
     await expect(destination(page, 'Cup')).toHaveAttribute('aria-selected', 'true');
   });
 
-  test('the last-used Team mode is respected (Calendar, then List; Slate kept for League)', async ({ page }) => {
-    await open(page, '?view=team&layout=calendar&team=LAL');
-    await clearScope(page);
-    await page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: 'Slate' }).click();
-    await page.waitForSelector('[data-testid="slate"] a[data-team-link]');
+  test('a team link always opens the Calendar: from the Team List, after List was used, from the Slate', async ({ page }) => {
+    await open(page, '?view=team&layout=list&team=LAL');
+    await page.waitForSelector('[data-testid="team-list"] a[data-team-link]');
     const teams = await snapshotTeams(page);
-    let a = page.locator('[data-testid="slate"] .ck-slate-name').first();
+    let a = page.locator('[data-testid="team-list"] .ck-team.ck-opp').first();
     let t = teams[Number(await a.getAttribute('data-team-link'))]!;
     await a.dispatchEvent('pointerdown', { button: 2 });
     expect(new URL((await a.getAttribute('href'))!, 'https://x').searchParams.get('layout')).toBe('calendar');
     await a.click();
-    await expectTeamView(page, t, 'calendar', TODAY);
-    // List now, then back to League: Slate is still League's layout, and a team link opens the List
+    await expect(page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: 'Calendar' })).toHaveAttribute('aria-selected', 'true');
+    expect(new URL(page.url()).searchParams.get('team')).toBe(t.tri);
+    // List by hand still works
     await page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: 'List' }).click();
+    await expect(page.getByTestId('team-list')).toBeVisible();
+    // from the Slate: the Calendar too
     await clearScope(page);
     await page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: 'Slate' }).click();
     a = page.locator('[data-testid="slate"] .ck-slate-name').nth(1);
     t = teams[Number(await a.getAttribute('data-team-link'))]!;
     await a.click();
-    await expectTeamView(page, t, 'list', TODAY);
-    await clearScope(page);
-    await expect(page.getByTestId('slate')).toBeVisible();
+    await expectTeamView(page, t, 'calendar', TODAY);
   });
 
   for (const how of ['ctrl', 'middle'] as const)
@@ -290,9 +289,9 @@ test.describe('team links', () => {
       await tab.clock.setFixedTime(NOW);
       await tab.waitForLoadState();
       const u = new URL(req.url()); // as opened (the app drops on= from the address once read)
-      expect(Object.fromEntries(u.searchParams)).toMatchObject({ view: 'team', team: t.tri, layout: 'list', on: '2026-11-16' });
-      await tab.waitForSelector('[data-testid="team-list"] [data-row-date]');
-      await expectTeamView(tab, t, 'list', '2026-11-16');
+      expect(Object.fromEntries(u.searchParams)).toMatchObject({ view: 'team', team: t.tri, layout: 'calendar', on: '2026-11-16' });
+      await tab.waitForSelector('.ck-team-grid [data-date]');
+      await expectTeamView(tab, t, 'calendar', '2026-11-16');
       expect(tab.url(), 'on= is dropped once read: a reload opens on today').not.toContain('on=');
       await tab.close();
       expect(page.url()).toBe(before);

@@ -10,7 +10,7 @@
 import { createContext, useContext, type HTMLAttributes, type ReactNode } from 'react';
 
 export interface TeamLinks {
-  /** The Team view URL for a team (the shown date and the last-used Team mode, as of now). */
+  /** The Team view URL for a team (its Calendar, on the date shown as of now). */
   href: (teamId: number) => string;
 }
 

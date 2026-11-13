@@ -5,6 +5,7 @@
 
 import { writeFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
+import { setNotes } from './nav';
 import { APP } from './app';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
@@ -72,6 +73,7 @@ async function openSlate(page: Page, date: string) {
   await page.clock.setFixedTime(NOW);
   await page.goto(`${APP}?view=league&layout=slate&date=${date}`);
   await expect(page.locator('[data-testid="slate"] .ck-slate-card').first()).toBeVisible();
+  await setNotes(page, true);
   await page.evaluate(() => document.fonts.ready);
   await page.evaluate(() => Promise.all([...document.images].map((i) => i.decode().catch(() => {}))));
   await page.waitForTimeout(500); // the logos' SVGs are redrawn sharper a moment after they first show

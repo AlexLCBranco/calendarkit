@@ -40,6 +40,9 @@ measurement; open it only when a question needs the backstory.
     (TV games only, Rest days); ⓘ is a popover; the bar never hides.
   - v1.61.0 — phase 8: League List rows — tags in fixed columns on the outside, records against the logos, score slots
     per day; the legend moved into ⓘ.
+- **v1.62.0** (2026-11-13): road trips / homestands in the Team views (`src/data/runs.ts`, `styles/runs.css`), side
+  arrows beside the calendars, the tab title follows the page (`src/pageTitle.ts`), the Slate opens with notes hidden,
+  team links open the Team Calendar.
 - **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
   `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 
@@ -63,8 +66,15 @@ measurement; open it only when a question needs the backstory.
   playoff tags, final scores, back-to-backs and 3-in-4 (Fatigue component), abnormal rest (≥ 3 days) badge,
   season-series chip and popup, streak popup, moneyline odds on the Slate.
 - **Click rule**: game things (matchup, score, Cup square, series square, ↗) open the game's hoopsjunkie page in a new
-  tab; team names / logos / tricodes open that team's Team view here. Nothing with a pointer cursor is dead
+  tab; team names / logos / tricodes open that team's **Team Calendar** here (`TEAM_LINK_LAYOUT`; the scope picker
+  keeps the current layout). Nothing with a pointer cursor is dead
   (`e2e/click-audit.spec.ts`).
+- **Road trips / homestands** (Team List and Team Calendar): `RUN_MIN_GAMES` (3) or more away / home games in a row
+  over the whole season; a neutral site or a break of `RUN_BREAK_DAYS` (6) ends one. A band with an always-on label
+  ("Road trip · 5 games", rose / "Homestand · 4 games", periwinkle); its tooltip: game k of N, dates, cities. In the
+  copies; not in selection images.
+- **Calendar side arrows**: League and Team Calendar, in the page margin beside the grid, the bar's ‹ › step; never in a
+  copy. **Tab title**: "BOS schedule · Nov 2026 — calendarkit", set on every navigation and back / forward.
 - **Copy as image** on every view (html-to-image, `src/components/copyAsImage.ts`).
 - **Data**: `public/data/schedule.json`, a daily snapshot of the NBA's schedule feed (cdn.nba.com blocks browsers by
   CORS and headless clients by bot detection, so the site never fetches the feed itself). Schedule first: no live
@@ -148,7 +158,7 @@ measurement; open it only when a question needs the backstory.
   the same tab keeps its page (day, month / week, Team List row, scroll) from the tab's history entry (`history.state`,
   written on every change and a moment after scrolling stops); "Show rest days" still resets. Midnight with the tab
   open moves today along.
-- Defaults are never stored (rest days on, Hide all notes off, TV filter) until a settings page exists. Slate notes are
+- Defaults are never stored (rest days on, Hide all notes **on** — the Slate opens with notes hidden —, TV filter) until a settings page exists. Slate notes are
   stored (content): localStorage `ck:notes:v1`, per game, three slots (pre / live / post), the slot switched only by the
   person — format and rules in docs/slate-in-gauntlet.md.
 - Countdown to tip-off dropped on purpose (no minute tick; the clock moves at midnight and on waking).
