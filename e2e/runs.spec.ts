@@ -97,6 +97,16 @@ test('side arrows step the shown range; the tab title follows; a team link opens
   const next = await page.getByTestId('side-next').boundingBox();
   expect(prev!.x + prev!.width).toBeLessThanOrEqual(grid!.x + 1);
   expect(next!.x).toBeGreaterThanOrEqual(grid!.x + grid!.width - 1);
+  // they blend in: no box (transparent, no border), a big chevron filling the page margin
+  const look = await page.getByTestId('side-next').evaluate((b) => {
+    const cs = getComputedStyle(b);
+    const svg = b.querySelector('svg')!.getBoundingClientRect();
+    return { bg: cs.backgroundColor, border: cs.borderTopWidth, chevron: svg.height, width: b.getBoundingClientRect().width };
+  });
+  expect(look.bg).toBe('rgba(0, 0, 0, 0)');
+  expect(look.border).toBe('0px');
+  expect(look.chevron).toBeGreaterThanOrEqual(40);
+  expect(look.width).toBeGreaterThan(20); // 1920 window: ~30 px of margin used
   // back: the title goes back with the page
   await page.goBack();
   await expect(page).toHaveTitle(/^BOS schedule · Dec/);

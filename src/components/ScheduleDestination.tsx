@@ -1,6 +1,6 @@
 // The Schedule destination: League (List · Calendar · Slate) or Team (List · Calendar) by the scope picker.
 
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { addDays, addMonths, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAM_BY_ID } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -608,14 +608,28 @@ function NextFrame({ children }: { children: ReactNode }) {
  * step as the bar's ‹ › (1 week, 2 weeks or a month). Never in an image (the copies render the view without them).
  */
 function SideArrows({ nav }: { nav: PeriodNavProps }) {
+  const prev = useRef<HTMLButtonElement>(null);
+  // as wide as the page margin beside the grid (the smaller side), so they never cover a cell
+  useLayoutEffect(() => {
+    const root = prev.current?.closest<HTMLElement>('.ck-root');
+    if (!root) return;
+    const fit = () => {
+      const r = root.getBoundingClientRect();
+      const room = root.classList.contains('ck-has-rail') ? 16 : Math.min(r.left, document.documentElement.clientWidth - r.right);
+      root.style.setProperty('--ck-side-w', `${Math.max(14, Math.min(40, Math.floor(room) - 2))}px`);
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
   const step = nav.unit === 'week' || nav.unit === 'month' ? `one ${nav.unit}` : nav.unit;
   return (
     <>
-      <button type="button" className="ck-side-arrow ck-side-prev" data-testid="side-prev" data-capture-exclude="true" aria-label={`Back ${step}`} title={`Back ${step}`} disabled={nav.prevDisabled} onClick={nav.onPrev}>
-        ‹
+      <button type="button" ref={prev} className="ck-side-arrow ck-side-prev" data-testid="side-prev" data-capture-exclude="true" aria-label={`Back ${step}`} title={`Back ${step}`} disabled={nav.prevDisabled} onClick={nav.onPrev}>
+        <svg viewBox="0 0 16 48" aria-hidden="true"><path d="M12 6 3 24l9 18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
       <button type="button" className="ck-side-arrow ck-side-next" data-testid="side-next" data-capture-exclude="true" aria-label={`Forward ${step}`} title={`Forward ${step}`} disabled={nav.nextDisabled} onClick={nav.onNext}>
-        ›
+        <svg viewBox="0 0 16 48" aria-hidden="true"><path d="M4 6l9 18-9 18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
     </>
   );

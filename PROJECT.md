@@ -74,7 +74,7 @@ measurement; open it only when a question needs the backstory.
   periwinkle: home) and an always-on label on **every game** of the run with its place ("Road trip · 3/5"); its
   tooltip: game k of N, dates, cities. In the
   copies; not in selection images.
-- **Calendar side arrows**: League and Team Calendar, in the page margin beside the grid, the bar's ‹ › step; never in a
+- **Calendar side arrows**: League and Team Calendar, large borderless chevrons sized to the page margin beside the grid, the bar's ‹ › step; never in a
   copy. **Tab title**: "BOS schedule · Nov 2026 — calendarkit", set on every navigation and back / forward.
 - **Copy as image** on every view (html-to-image, `src/components/copyAsImage.ts`).
 - **Data**: `public/data/schedule.json`, a daily snapshot of the NBA's schedule feed (cdn.nba.com blocks browsers by

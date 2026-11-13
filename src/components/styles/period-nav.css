@@ -139,41 +139,53 @@
   color: var(--ck-muted);
 }
 
-/* The calendar views' side arrows (ScheduleDestination SideArrows): tall, narrow, in the page margin beside the grid
-   (16 px at a 1280 px window), so they cover no day cell. With the rail, the left one sits on the rail's right edge. */
+/* The calendar views' side arrows (ScheduleDestination SideArrows): a large chevron on the page background, no box,
+   in the page margin beside the grid (SideArrows sizes them to it: 16 px at a 1280 px window, ~30 at 1920), so they cover no day cell. A tall
+   target; the chevron brightens on hover. With the rail, the left one sits on the rail's right edge. */
 .ck-root {
   position: relative;
 }
 .ck-side-arrow {
   position: absolute;
-  top: calc(50% - 36px);
+  top: calc(50% - 90px);
   z-index: 2;
-  width: 15px;
-  height: 72px;
+  width: var(--ck-side-w, 16px);
+  height: 180px;
   padding: 0;
-  border: 1px solid var(--ck-border);
-  background: var(--ck-surface);
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
   color: var(--ck-muted);
-  font-size: 18px;
-  line-height: 1;
+  opacity: 0.75;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.12s, opacity 0.12s, background-color 0.12s;
+}
+.ck-side-arrow svg {
+  display: block;
+  width: clamp(12px, calc(var(--ck-side-w, 16px) * 0.55), 20px);
+  height: clamp(40px, calc(var(--ck-side-w, 16px) * 1.7), 60px);
 }
 .ck-side-prev {
-  left: -16px;
-  border-radius: 6px 0 0 6px;
+  left: calc(-1 * var(--ck-side-w, 16px));
 }
 .ck-side-next {
-  right: -16px;
-  border-radius: 0 6px 6px 0;
+  right: calc(-1 * var(--ck-side-w, 16px));
 }
 .ck-has-rail > .ck-side-prev {
   left: 68px; /* RAIL_WIDTH − 16 */
+  width: 16px;
 }
-.ck-side-arrow:hover:not(:disabled) {
+.ck-side-arrow:hover:not(:disabled),
+.ck-side-arrow:focus-visible {
   color: var(--ck-text);
-  border-color: var(--ck-accent);
+  opacity: 1;
+  background: rgb(255 255 255 / 0.04);
+  outline: none;
 }
 .ck-side-arrow:disabled {
-  opacity: 0.3;
+  opacity: 0.2;
   cursor: default;
 }
