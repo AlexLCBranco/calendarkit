@@ -61,7 +61,7 @@ export interface TeamListViewProps {
   markNext?: boolean;
   /** Cup schedule: the Cup tag's text per game ("Group play · West A"). */
   cupTag?: (g: ScheduleGame) => string | undefined;
-  /** Road trips and homestands as a band down the rows, labelled on each run's first shown game (Team views). */
+  /** Road trips and homestands as a band down the rows, a label on each of their games (Team views). */
   runs?: boolean;
 }
 
@@ -394,22 +394,20 @@ const rowDateOf = (r: ScheduleGame | string) => (typeof r === 'string' ? r : r.d
 
 /**
  * Each shown row's part of a road trip / homestand band (key: gameId, or the date of a rest row), so the stripe runs
- * unbroken from the run's first shown row to its last; the label goes on each run's first shown game.
+ * unbroken from the run's first shown row to its last; every game row gets its label (its place in the run).
  */
 export function rowRunMarks(rows: readonly (ScheduleGame | string)[], runs: readonly Run[]): Map<string, RunMark> {
   const out = new Map<string, RunMark>();
   const runAt = rows.map((r) => runOn(runs, rowDateOf(r)));
-  const labelled = new Set<Run>();
   rows.forEach((r, i) => {
     const run = runAt[i];
     if (!run) return;
     const joinedUp = runAt[i - 1] === run;
     const joinedDown = runAt[i + 1] === run;
     const mark: RunMark = { kind: run.kind, pos: joinedUp && joinedDown ? 'mid' : joinedUp ? 'last' : joinedDown ? 'first' : 'only' };
-    if (typeof r !== 'string' && !labelled.has(run)) {
-      labelled.add(run);
+    if (typeof r !== 'string') {
       const index = run.games.findIndex((g) => g.gameId === r.gameId);
-      if (index >= 0) mark.label = { text: runLabel(run), tip: runTip(run, index), days: runTipDays(run, index) };
+      if (index >= 0) mark.label = { text: runLabel(run, index), tip: runTip(run, index), days: runTipDays(run, index) };
     }
     out.set(typeof r === 'string' ? r : r.gameId, mark);
   });

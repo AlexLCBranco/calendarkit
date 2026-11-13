@@ -70,7 +70,7 @@ export interface TeamMonthGridProps {
    * the day strip's and the Today buttons' today — so it moves at midnight, also after sleep or a tab switch.
    */
   today?: string;
-  /** Road trips and homestands as a band across their days, labelled on each week row (Team views). */
+  /** Road trips and homestands as a band across their days, a label on each of their games (Team views). */
   runs?: boolean;
 }
 
@@ -108,6 +108,16 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
   }, [cells, b2b, tvOnly]);
 
   const runBands = useMemo(() => (runs ? runSegments(cells, teamRuns(data, teamId).runs) : []), [runs, cells, data, teamId]);
+  // every shown game of a run carries its own label (its place in the run)
+  const runTags = useMemo(() => {
+    if (!runs) return [];
+    const { byGame } = teamRuns(data, teamId);
+    return cells.flatMap((d, i) => {
+      const g = d ? byDate.get(d) : undefined;
+      const at = g && byGame.get(g.gameId);
+      return at ? [{ i, ...at }] : [];
+    });
+  }, [runs, cells, byDate, data, teamId]);
 
   const cardProps = (g: ScheduleGame) => ({
     game: g,
@@ -204,8 +214,11 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
             data-run={b.run.kind}
             data-run-from={b.run.from}
             style={{ gridRow: Math.floor(b.i / 7) + 2, gridColumn: `${(b.i % 7) + 1} / span ${b.span}` }}
-          >
-            <RunLabel kind={b.run.kind} text={runLabel(b.run)} tip={runTip(b.run, b.index)} days={runTipDays(b.run, b.index)} />
+          />
+        ))}
+        {runTags.map((t) => (
+          <div key={`tag${t.i}`} className={`ck-run-tag${weekView && cells[t.i]!.endsWith('-01') ? ' ck-run-wide-num' : ''}`} data-run={t.run.kind} style={place(t.i)}>
+            <RunLabel kind={t.run.kind} text={runLabel(t.run, t.index)} tip={runTip(t.run, t.index)} days={runTipDays(t.run, t.index)} />
           </div>
         ))}
       </div>

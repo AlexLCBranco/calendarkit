@@ -1,5 +1,5 @@
 /* Road trips and homestands (data/runs.ts): one band per run, always on, quiet enough that the games stay readable.
-   Road = rose, homestand = periwinkle; the label names it too. Neither touches the B2B yellow (bars, brackets) or the
+   Road = rose, homestand = periwinkle; every game of a run has a label naming it and its place ("Road trip · 3/5"). Neither touches the B2B yellow (bars, brackets) or the
    rest teal. */
 [data-run='road'] {
   --ck-run: var(--ck-road);
@@ -29,8 +29,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Team List: a stripe on the rows' left edge, joined across the 6 px gaps (and the rest rows), the label on the
-   first row's top border like a legend. The B2B bracket sits further out, in the list's left padding. */
+/* Team List: a stripe on the rows' left edge, joined across the 6 px gaps (and the rest rows), each game row's label on
+   its top border like a legend. The B2B bracket sits further out, in the list's left padding. */
 .ck-team-rows .ck-card[data-run],
 .ck-team-rows .ck-rest-row[data-run] {
   position: relative;
@@ -77,8 +77,8 @@
   z-index: 1;
 }
 
-/* Team Calendar: a tint over the run's days in each week row (gaps included) with a line along the top; the label on
-   the day-number line, after the number. Square ends where the run goes on in another row or month. */
+/* Team Calendar: a tint over the run's days in each week row (gaps included) with a line along the top; each game
+   cell's label on the day-number line, after the number. Square ends where the run goes on in another row or month. */
 .ck-run-band {
   position: relative;
   z-index: 1;
@@ -89,7 +89,6 @@
   background: var(--ck-run-tint);
   pointer-events: none;
   min-width: 0;
-  padding: 2px 6px 0 26px;
 }
 .ck-run-band.ck-run-open {
   margin-left: 0;
@@ -99,12 +98,19 @@
   margin-right: 0;
   border-top-right-radius: 0;
 }
-.ck-run-band.ck-run-wide-num {
+.ck-run-tag {
+  position: relative;
+  z-index: 2;
+  align-self: start;
+  justify-self: stretch;
+  min-width: 0;
+  display: flex;
+  padding: 4px 6px 0 26px;
+  pointer-events: none;
+}
+.ck-run-tag.ck-run-wide-num {
   padding-left: 44px;
 }
-.ck-run-band > .ck-run-label {
-  vertical-align: top;
-}
-.ck-compact .ck-run-band {
+.ck-compact .ck-run-tag {
   padding-left: 16px;
 }

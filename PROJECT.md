@@ -70,8 +70,9 @@ measurement; open it only when a question needs the backstory.
   keeps the current layout). Nothing with a pointer cursor is dead
   (`e2e/click-audit.spec.ts`).
 - **Road trips / homestands** (Team List and Team Calendar): `RUN_MIN_GAMES` (3) or more away / home games in a row
-  over the whole season; a neutral site or a break of `RUN_BREAK_DAYS` (6) ends one. A band with an always-on label
-  ("Road trip · 5 games", rose / "Homestand · 4 games", periwinkle); its tooltip: game k of N, dates, cities. In the
+  over the whole season; a neutral site or a break of `RUN_BREAK_DAYS` (6) ends one. A band (rose: road,
+  periwinkle: home) and an always-on label on **every game** of the run with its place ("Road trip · 3/5"); its
+  tooltip: game k of N, dates, cities. In the
   copies; not in selection images.
 - **Calendar side arrows**: League and Team Calendar, in the page margin beside the grid, the bar's ‹ › step; never in a
   copy. **Tab title**: "BOS schedule · Nov 2026 — calendarkit", set on every navigation and back / forward.

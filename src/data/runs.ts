@@ -76,8 +76,8 @@ export function runOn(runs: readonly Run[], date: string): Run | undefined {
 /** "Road trip" / "Homestand". */
 export const runName = (kind: RunKind) => (kind === 'road' ? 'Road trip' : 'Homestand');
 
-/** The label on the band: "Road trip · 5 games". */
-export const runLabel = (run: Run) => `${runName(run.kind)} · ${run.games.length} games`;
+/** The label on each game of a run, its place in it: "Road trip · 3/5". */
+export const runLabel = (run: Run, index: number) => `${runName(run.kind)} · ${index + 1}/${run.games.length}`;
 
 const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

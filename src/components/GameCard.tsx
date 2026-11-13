@@ -17,7 +17,7 @@ import './calendar.css';
 import { streakAttr } from '../slate/streakPopup';
 import type { RunKind } from '../data/runs';
 
-/** A road trip / homestand band's label ("Road trip · 5 games"); its tooltip names the game it stands at, the dates and the cities. */
+/** A road trip / homestand game's label ("Road trip · 3/5"); its tooltip names that game's place, the dates and the cities. */
 export function RunLabel({ kind, text, tip, days }: { kind: RunKind; text: string; tip: string; days: string }) {
   return (
     <span className="ck-run-label" data-run={kind} data-tip={tip} data-tip-days={days} data-testid="run-label" tabIndex={0} aria-label={tip.replace(/\n/g, ', ')}>
@@ -107,11 +107,11 @@ export interface GameCardProps {
   series?: SeriesGame;
   /** Views too tight for the chip (Team Calendar cells) — the series as the card's tooltip. */
   seriesTip?: string;
-  /** Team List: the row's part of a road trip / homestand band (RunMark), and the band's label on its first row. */
+  /** Team List: the row's part of a road trip / homestand band (RunMark), with the game's label. */
   run?: RunMark;
 }
 
-/** A Team List row's place in a road trip or homestand: the band's stripe joins the rows; `label` on the run's first shown row. */
+/** A Team List row's place in a road trip or homestand: the band's stripe joins the rows; `label` on each game row. */
 export interface RunMark {
   kind: RunKind;
   pos: 'first' | 'mid' | 'last' | 'only';

@@ -35,9 +35,11 @@ test('Team Calendar: road trips and homestands as labelled bands, with their too
   await open(page, '?view=team&layout=calendar&team=BOS');
   const bands = page.locator('.ck-run-band');
   await expect(bands.first()).toBeVisible();
-  // the run's label is always there, no hover needed
-  const label = bands.first().getByTestId('run-label');
-  await expect(label).toHaveText(/^(Road trip|Homestand) · \d+ games$/);
+  // every game of a run carries its label (its place in the run), no hover needed: one per run game cell
+  const tagged = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.ck-run-tag')].map((t) => t.textContent));
+  expect(tagged.length).toBeGreaterThan(2);
+  for (const t of tagged) expect(t).toMatch(/^(Road trip|Homestand) · \d+\/\d+$/);
+  const label = page.locator('.ck-run-tag').first().getByTestId('run-label');
   // road and home bands are different colours, neither the B2B yellow
   const colors = await page.evaluate(() => {
     const c = (k: string) => getComputedStyle(document.querySelector('.ck-root')!).getPropertyValue(k).trim();
@@ -56,20 +58,23 @@ test('Team Calendar: road trips and homestands as labelled bands, with their too
   await expect(page.getByTestId('side-prev')).toBeVisible();
 });
 
-test('Team List: the band runs down the rows with its label on the first game; in the copy', async ({ page }) => {
+test('Team List: the band runs down the rows, every game of the run labelled with its place; in the copy', async ({ page }) => {
   await open(page, '?view=team&layout=list&team=BOS');
   const first = page.locator('.ck-team-rows [data-run-pos="first"]').first();
   await expect(first).toBeVisible();
-  await expect(first.getByTestId('run-label')).toHaveText(/^(Road trip|Homestand) · \d+ games$/);
-  // every row between the first and the last of the run carries the band (rest rows too)
-  const kinds = await page.evaluate(() => {
-    const rows = [...document.querySelectorAll<HTMLElement>('.ck-team-rows > [data-row-date]')];
-    const i = rows.findIndex((r) => r.dataset.runPos === 'first');
-    const j = rows.findIndex((r, k) => k >= i && (r.dataset.runPos === 'last' || r.dataset.runPos === 'only'));
-    return rows.slice(i, j + 1).map((r) => r.dataset.run);
+  // every row between the first and the last of the run carries the band (rest rows too); each game row its own k/N
+  const rows = await page.evaluate(() => {
+    const all = [...document.querySelectorAll<HTMLElement>('.ck-team-rows > [data-row-date]')];
+    const i = all.findIndex((r) => r.dataset.runPos === 'first');
+    const j = all.findIndex((r, k) => k >= i && (r.dataset.runPos === 'last' || r.dataset.runPos === 'only'));
+    return all.slice(i, j + 1).map((r) => ({ run: r.dataset.run, rest: r.hasAttribute('data-rest'), label: r.querySelector('[data-testid="run-label"]')?.textContent ?? null }));
   });
-  expect(new Set(kinds).size).toBe(1);
-  expect(kinds[0]).toMatch(/^(road|home)$/);
+  expect(new Set(rows.map((r) => r.run)).size).toBe(1);
+  expect(rows[0]!.run).toMatch(/^(road|home)$/);
+  const labels = rows.filter((r) => !r.rest).map((r) => r.label);
+  expect(labels.length).toBeGreaterThanOrEqual(3);
+  labels.forEach((l, n) => expect(l).toMatch(new RegExp(`^(Road trip|Homestand) · ${n + 1}/\\d+$`)));
+  expect(rows.filter((r) => r.rest).every((r) => r.label === null)).toBe(true);
   const held = (await copyHolds(page))!;
   expect(held.labels.length).toBeGreaterThan(0);
 });
