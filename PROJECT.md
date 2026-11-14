@@ -43,6 +43,10 @@ measurement; open it only when a question needs the backstory.
 - **v1.62.0** (2026-11-13): road trips / homestands in the Team views (`src/data/runs.ts`, `styles/runs.css`), side
   arrows beside the calendars, the tab title follows the page (`src/pageTitle.ts`), the Slate opens with notes hidden,
   team links open the Team Calendar.
+- **v1.65.0** (2026-11-13): Team Calendar has no lines between cells (B2B bars and road-trip bands removed; the cells'
+  labels say it); the Team List has no day strip (or active-row highlight); rest of exactly 2 days gets a quiet teal
+  badge, 3+ keeps the strong one; the scope picker is the bar's most prominent control (full name from 1440 px, tricode
+  below); Quick standings popup movable / resizable, remembered in `ck:stpop:v1`, "↺" resets (`floatBox.ts`).
 - **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
   `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 
@@ -50,6 +54,12 @@ measurement; open it only when a question needs the backstory.
 - **Destinations**: **Schedule** (League or Team by the scope picker; views List · Calendar · Slate), **Cup** (Groups ·
   Schedule · Simulator · History), **Standings** (West | East side by side, four column sets). Page history ← → with
   real browser history entries.
+- **Scope picker** (team / All teams): the bar's most prominent control — 36 px tall in the 44 px row, 16 px bold,
+  24 px logo, accent outline and tint; the full team name in a 316 px picker from 1440 px, the tricode in 176 px below
+  (Team Calendar at 1280 has ~20 px to spare).
+- **Quick standings popup**: drag the header to move, the edges / corners to resize (min 360 × 200), kept in the
+  window; place and size in localStorage `ck:stpop:v1`; "↺" resets. It never starts a selection marquee
+  (`data-no-marquee`).
 - **Menu (trial, two variants)** — switched in the ⓘ popover ("Menu (trial)"), kept in localStorage `ck:menu:v1`
   (absent = packed). **Packed bar**: one 44 px row packed left — ← →, destinations, the destination's sub-views, its
   date controls. **Rail**: ← → and the destinations (icon + label) in an 84 px strip on the left; the bar holds the
@@ -60,18 +70,18 @@ measurement; open it only when a question needs the backstory.
   [away tags] [record] logo AWAY (score) @ (score) HOME logo [record] [home tags] — the tags (Fatigue components) in
   fixed-width columns on the outside, so names, "@" and records line up down the list; its legend is in the ⓘ popover.
   **League Calendar**: week view, 1 or 2 weeks. **Slate**: a day of games as cards with a note box per game.
-  **Team List**: one calendar month, records / streaks / scores, rest rows, the team's road-trip map.
-  **Team Calendar**: month grid or 1–2 week spans.
+  **Team List**: one calendar month, records / streaks / scores, rest rows, the team's road-trip map; no day strip
+  (date picker, ‹ › game, Today, load more). **Team Calendar**: month grid or 1–2 week spans; no lines between cells.
 - Game info everywhere: local tip-off ((+1) past local midnight, TBD), national TV (NBA TV excluded), Cup / play-in /
-  playoff tags, final scores, back-to-backs and 3-in-4 (Fatigue component), abnormal rest (≥ 3 days) badge,
+  playoff tags, final scores, back-to-backs and 3-in-4 (Fatigue component), rest badge (2 days quiet, ≥ 3 days strong),
   season-series chip and popup, streak popup, moneyline odds on the Slate.
 - **Click rule**: game things (matchup, score, Cup square, series square, ↗) open the game's hoopsjunkie page in a new
   tab; team names / logos / tricodes open that team's **Team Calendar** here (`TEAM_LINK_LAYOUT`; the scope picker
   keeps the current layout). Nothing with a pointer cursor is dead
   (`e2e/click-audit.spec.ts`).
 - **Road trips / homestands** (Team List and Team Calendar): `RUN_MIN_GAMES` (3) or more away / home games in a row
-  over the whole season; a neutral site or a break of `RUN_BREAK_DAYS` (6) ends one. A band (rose: road,
-  periwinkle: home) and an always-on label on **every game** of the run with its place ("Road trip · 3/5"); its
+  over the whole season; a neutral site or a break of `RUN_BREAK_DAYS` (6) ends one. Team List: a band down the rows
+  (rose: road, periwinkle: home); both views: an always-on label on **every game** of the run with its place ("Road trip · 3/5"); its
   tooltip: game k of N, dates, cities. In the
   copies; not in selection images.
 - **Calendar side arrows**: League and Team Calendar, large borderless chevrons sized to the page margin beside the grid, the bar's ‹ › step; never in a
@@ -142,7 +152,8 @@ measurement; open it only when a question needs the backstory.
 - Game date is always the feed's ET date (`dateEt`); local time only formats tip-off. "Over" = tip-off + 3 h (TBD:
   12:00 UTC the next day). Default league day = earliest date with a game not over (after the season: the last).
 - Back-to-back = also played the previous *calendar* day. Travel only when the arena metros differ (LA and NY shared).
-- Rest = difference of ET game dates; ≥ 3 (`REST_FLAG_DAYS`) flags both games around the break. The rest badge takes
+- Rest = difference of ET game dates (B2B 1, one empty day 2); ≥ 2 (`REST_MARK_DAYS`) flags both games around the
+  break, 2 days in a quiet badge, ≥ 3 (`REST_FLAG_DAYS`) in the strong one; a game shows its bigger tier. The rest badge takes
   no width (sits in the B2B or 3-in-4 track, else a corner tick): a fifth track broke the desktop fits.
 - Records and streaks: a final game's line is *after* it, a game to come *going in*. Regular season only (Cup group and
   knockout count; the Cup Final doesn't).

@@ -1,5 +1,5 @@
 // Back-to-back in yellow across the whole app: league tricode marks, Team List
-// labels (1/2 outline, 2/2 fill) + bracket, Team Calendar bars + arrows, opponent dot and "2/2" label. The stale data
+// labels (1/2 outline, 2/2 fill) + bracket, Team Calendar labels (no bars between cells), opponent dot and "2/2" label. The stale data
 // stamp has its own variable and stays orange. Computed colours in a real browser (desktop-xl).
 
 import { expect, test } from './fixtures';
@@ -34,15 +34,9 @@ test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   expect(await css('.ck-card[data-b2b]', 'border-left-color', '::before')).toBe(YELLOW);
   // No opponent dot beside its component on desktop; the Team Calendar cells keep it
   expect(await page.locator('.ck-team-rows .ck-matchup .ck-b2b-mark').count()).toBe(0);
-  // Team Calendar: bars and the arrows of week-break halves
+  // Team Calendar: the opponent dot; the nights are labelled on their cells, with no bar between the cells
   await page.goto('/calendar/?view=team&layout=calendar&team=ORL');
-  expect(await css('.ck-b2b-bar', 'background-color')).toBe(YELLOW);
   expect(await css('.ck-day-cell .ck-opp .ck-b2b-mark', 'background-color')).toBe(YELLOW);
-  for (const month of ['November 2026', 'December 2026', 'January 2027', 'February 2027', 'March 2027']) {
-    if ((await page.locator('.ck-b2b-bar-start').count()) || (await page.locator('.ck-b2b-bar-end').count())) break;
-    await page.getByLabel('Next month').click();
-    void month;
-  }
-  const half = (await page.locator('.ck-b2b-bar-start').count()) ? ['.ck-b2b-bar-start', 'border-left-color', '::after'] : ['.ck-b2b-bar-end', 'border-right-color', '::before'];
-  expect(await css(half[0]!, half[1]!, half[2])).toBe(YELLOW);
+  await expect(page.locator('.ck-day-cell[data-b2b] .ck-b2b-label').first()).toBeVisible();
+  expect(await page.locator('.ck-b2b-bar, [data-b2b-bar]').count()).toBe(0);
 });

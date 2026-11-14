@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 // The Team List shows one calendar month. Rows = that month's games (+ rest days); the month title;
-// the strip's ‹ › and day clicks, the date picker and Today switch months and put the row at the top; numbers, records,
+// the date picker and Today switch months and put the row at the top; numbers, records,
 // streaks and B2B nights still come from the whole season; a B2B split across the month edge keeps its marks but draws
 // no bracket toward the missing row. Real scrolling and the served snapshot: e2e/teammonth.spec.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { CalendarView, TeamListView } from '../src/components/CalendarView';
-import { addDays, hasNationalTv, isOver, monthOf, teamGames, teamRestDays, weekOf } from '../src/data/model';
+import { addDays, hasNationalTv, isOver, monthOf, teamGames, teamRestDays } from '../src/data/model';
 import { TEAMS } from '../src/data/teams';
 import { data } from './feed';
 import { TEAM } from './synthetic';
@@ -25,7 +25,6 @@ const PHONE = { width: 390, height: 800 };
 const LAL = TEAM.LAL;
 const list = () => screen.getByTestId('team-list');
 const rowDates = () => [...list().querySelectorAll<HTMLElement>('.ck-team-rows > [data-row-date]')].map((r) => r.dataset.rowDate!);
-const strip = () => within(screen.getByTestId('week-strip'));
 
 /** Rows 40 px apart (jsdom has no layout), so "the row at the top" = scrollTop / 40. */
 function fakeLayout() {
@@ -36,11 +35,6 @@ function fakeLayout() {
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(() => 800);
 }
 const topRow = () => rowDates()[Math.round(list().scrollTop / 40)];
-const scrollTo = async (y: number) => {
-  list().scrollTop = y;
-  fireEvent.scroll(list());
-  await act(() => new Promise((r) => requestAnimationFrame(r)));
-};
 
 /** The rows a month should hold: the team's games (TV filter) and, with rest days on, its rest days in that month. */
 function expectedRows(teamId: number, month: string, rest: boolean, tvOnly = false): string[] {
@@ -88,60 +82,14 @@ describe('one month at a time', () => {
   });
 });
 
-describe('strip, date picker and Today across the month edge', () => {
-  it('‹ › walk every week with a game through the whole season: the month follows, the week’s first row at the top; disabled at the ends', () => {
-    fakeLayout();
-    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
-    const games = teamGames(data, LAL);
-    // back to the first game: the previous-week arrow until disabled
-    let guard = 0;
-    while (!(screen.getByLabelText('Previous week') as HTMLButtonElement).disabled && guard++ < 60) fireEvent.click(screen.getByLabelText('Previous week'));
-    expect(shownMonth()).toBe(monthOf(games[0]!.dateEt));
-    const months = new Set<string>([shownMonth()]);
-    let crossed = 0;
-    for (guard = 0; !(screen.getByLabelText('Next week') as HTMLButtonElement).disabled && guard < 60; guard++) {
-      const before = shownMonth();
-      const week = strip().getAllByRole('tab').map((d) => d.dataset.date!);
-      fireEvent.click(screen.getByLabelText('Next week'));
-      // the first game after the shown week
-      const want = games.find((g) => g.dateEt > week[6]!)!;
-      expect(topRow(), `after ${week[0]}`).toBe(want.dateEt);
-      expect(shownMonth()).toBe(monthOf(want.dateEt));
-      expect(screen.getByTestId('team-month').textContent).toBe(new Date(`${want.dateEt}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' }));
-      expect(rowDates()).toEqual(expectedRows(LAL, shownMonth(), false));
-      if (shownMonth() !== before) crossed++;
-      months.add(shownMonth());
-    }
-    expect(guard).toBeLessThan(60);
-    expect(shownMonth()).toBe(monthOf(games.at(-1)!.dateEt)); // next disabled only at the last week with a game
-    expect(crossed).toBe(teamMonths(data, LAL).length - 1);
-    expect([...months]).toEqual(teamMonths(data, LAL));
-    // and back across one edge with ‹: the previous week with a game, its first game at the top
-    const week = strip().getAllByRole('tab').map((d) => d.dataset.date!);
-    const before = games.filter((g) => g.dateEt < week[0]!).at(-1)!;
-    fireEvent.click(screen.getByLabelText('Previous week'));
-    expect(topRow()).toBe(games.find((g) => g.dateEt >= weekOf(before.dateEt)[0]!)!.dateEt);
-  });
-
-  it('a strip day in the other month switches to it, that row at the top', async () => {
-    fakeLayout();
+describe('date picker and Today across the month edge', () => {
+  it('no day strip (no week tabs, no week ‹ ›): the month moves by the date picker, Today and "Load more"', () => {
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: true }} />);
-    // the last row of November: its week runs into December
-    const nov = rowDates();
-    expect(shownMonth()).toBe('2026-11');
-    await scrollTo((nov.length - 1) * 40);
-    expect(strip().getAllByRole('tab').map((d) => d.dataset.date)).toEqual(weekOf(nov.at(-1)!));
-    const dec = strip().getAllByRole('tab').find((d) => d.dataset.date!.startsWith('2026-12') && !(d as HTMLButtonElement).disabled)!;
-    expect(dec).toBeTruthy();
-    fireEvent.click(dec);
-    expect(shownMonth()).toBe('2026-12');
-    expect(topRow()).toBe(dec.dataset.date);
-    expect(rowDates()).toEqual(expectedRows(LAL, '2026-12', true));
-    // and back: a November day of the same week
-    const back = strip().getAllByRole('tab').find((d) => d.dataset.date!.startsWith('2026-11') && !(d as HTMLButtonElement).disabled)!;
-    fireEvent.click(back);
-    expect(shownMonth()).toBe('2026-11');
-    expect(topRow()).toBe(back.dataset.date);
+    expect(screen.queryByTestId('week-strip')).toBeNull();
+    expect(screen.queryByLabelText('Previous week')).toBeNull();
+    expect(screen.queryByLabelText('Next week')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Pick a date' })).toBeTruthy();
+    expect(screen.getByTestId('today')).toBeTruthy();
   });
 
   it('the date picker: a day in another month → that month, the row (or the next one) at the top; Today → back', () => {

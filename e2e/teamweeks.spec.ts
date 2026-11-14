@@ -54,11 +54,8 @@ for (const span of [1, 2] as const) {
               const b = c.getBoundingClientRect();
               return a.right > b.right + 0.5 || a.bottom > b.bottom + 0.5;
             }).length,
-            bars: [...g.querySelectorAll<HTMLElement>('[data-b2b-bar]')].map((bar) => {
-              const r = bar.getBoundingClientRect();
-              const cell = cells.map((c) => c.getBoundingClientRect()).find((c) => c.top <= r.top && c.bottom >= r.bottom);
-              return cell ? cell.bottom - r.bottom : -1;
-            }),
+            // no lines between the cells (B2B bars, road-trip bands): the labels on the cells say it
+            connectors: g.querySelectorAll('[data-b2b-bar], .ck-b2b-bar, .ck-run-band').length,
             scroll: document.documentElement.scrollHeight - document.documentElement.clientHeight,
             sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth,
           };
@@ -71,10 +68,7 @@ for (const span of [1, 2] as const) {
         expect(r.outside, name).toBe(0);
         expect(r.scroll, `${name}: page scroll`).toBeLessThanOrEqual(0);
         expect(r.sideways, name).toBeLessThanOrEqual(0);
-        for (const gap of r.bars) {
-          expect(gap, `${name}: B2B bar at the bottom edge`).toBeGreaterThanOrEqual(0);
-          expect(gap, name).toBeLessThanOrEqual(6);
-        }
+        expect(r.connectors, name).toBe(0);
         scales.add(r.scale);
         games += r.withGame.length;
         if (await next.isDisabled()) break;

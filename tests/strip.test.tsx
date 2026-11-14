@@ -1,13 +1,12 @@
 // @vitest-environment jsdom
-// Compact week strip in both lists: a fixed Sun–Sat week, month over day number, the League List's
-// game count (TV filter respected) or the Team List's opponent under each date, selected day filled, today blue, ‹ ›
-// for the previous / next week with games. Team List: the strip and the date title follow the row at the top through a
-// store — scrolling re-renders no row.
+// League List week strip: a fixed Sun–Sat week, month over day number, the game count (TV filter respected) under
+// each date, selected day filled, today blue, ‹ › for the previous / next week with games. Team List: no strip (its rows
+// show their dates); the date title follows the row at the top through a store — scrolling re-renders no row.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { CalendarView } from '../src/components/CalendarView';
-import { hasNationalTv, monthOf, teamGames, teamRestDays, weekOf } from '../src/data/model';
+import { hasNationalTv, monthOf, teamGames, weekOf } from '../src/data/model';
 import { TEAM_BY_ID } from '../src/data/teams';
 import { data } from './feed';
 
@@ -77,53 +76,23 @@ const scrollTo = async (y: number) => {
   await act(() => new Promise((r) => requestAnimationFrame(r)));
 };
 
-describe('Team List strip and title', () => {
-  it('desktop: title and strip on the row at the top; opponents under game days; other days disabled', async () => {
+describe('Team List title (no strip)', () => {
+  it('desktop: no day strip; the title follows the row at the top', async () => {
     fakeLayout();
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
+    expect(screen.queryByTestId('week-strip')).toBeNull();
     const all = teamGames(data, LAL);
     // opens at the next game not over (Nov 15 15:00 UTC), in its month (the list holds that month's rows)
     const next = all.find((g) => Date.parse(g.startTimeUtc!) + 3 * 3_600_000 > NOW)!;
     const games = all.filter((g) => monthOf(g.dateEt) === monthOf(next.dateEt));
     expect(screen.getByTestId('team-day-title').textContent).toMatch(new RegExp(`${Number(next.dateEt.slice(8))}, 2026$`));
-    // scroll to the 10th row: title + strip follow
     await scrollTo(10 * 40);
-    const g = games[10]!;
-    expect(screen.getByTestId('team-day-title').textContent).toContain(` ${Number(g.dateEt.slice(8))}, `);
-    expect(days().map((d) => d.dataset.date)).toEqual(weekOf(g.dateEt));
-    for (const d of days()) {
-      const game = all.find((x) => x.dateEt === d.dataset.date);
-      const opp = game && (game.homeTeam.teamId === LAL ? `vs ${game.awayTeam.teamTricode}` : `@ ${game.homeTeam.teamTricode}`);
-      expect(sub(d), d.dataset.date).toBe(opp ?? '–');
-      expect((d as HTMLButtonElement).disabled, d.dataset.date).toBe(!game);
-    }
-  });
-
-  it('a day click scrolls its row to the top; ‹ › go to the previous / next week with a game', async () => {
-    fakeLayout();
-    render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: false }} />);
-    const games = teamGames(data, LAL);
-    // the row's place in its month's list
-    const at = (date: string) => games.filter((g) => monthOf(g.dateEt) === monthOf(date)).findIndex((g) => g.dateEt === date);
-    await scrollTo(5 * 40);
-    const target = days().find((d) => !(d as HTMLButtonElement).disabled && d.getAttribute('aria-selected') !== 'true')!;
-    fireEvent.click(target);
-    expect(screen.getByTestId('team-list').scrollTop).toBe(at(target.dataset.date!) * 40);
-    fireEvent.click(screen.getByLabelText('Next week'));
-    const nextGame = games.find((g) => g.dateEt > weekOf(target.dataset.date!)[6]!)!;
-    expect(screen.getByTestId('team-list').scrollTop).toBe(at(nextGame.dateEt) * 40);
-    expect(days().map((d) => d.dataset.date)).toEqual(weekOf(nextGame.dateEt));
-  });
-
-  it('"Show rest days": rest days in the strip are enabled and scroll to their rest row', () => {
-    fakeLayout();
+    expect(screen.getByTestId('team-day-title').textContent).toContain(` ${Number(games[10]!.dateEt.slice(8))}, `);
+    expect(screen.queryByTestId('week-strip')).toBeNull();
+    // and with "Show rest days"
+    cleanup();
     render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: LAL, showRest: true }} />);
-    const rest = teamRestDays(data, LAL);
-    const visible = days().filter((d) => rest.includes(d.dataset.date!));
-    expect(visible.length).toBeGreaterThan(0);
-    for (const d of visible) expect((d as HTMLButtonElement).disabled).toBe(false);
-    fireEvent.click(visible[0]!);
-    expect(screen.getByTestId('team-day-title').textContent).toContain(` ${Number(visible[0]!.dataset.date!.slice(8))}, `);
+    expect(screen.queryByTestId('week-strip')).toBeNull();
   });
 
   it('scrolling re-renders no row: a scroll that changes the top row formats no tip-off time', async () => {

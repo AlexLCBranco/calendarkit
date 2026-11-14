@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
 // Road trips and homestands (data/runs.ts): runs of RUN_MIN_GAMES+ away or home games, counted over the whole schedule;
-// a neutral site or the All-Star break ends one. The views' pieces: the Team List's row marks, the Team Calendar's bands.
+// a neutral site or the All-Star break ends one. The views' pieces: the Team List's row marks, the Team Calendar's labels.
 import { describe, expect, it } from 'vitest';
 import { RUN_BREAK_DAYS, RUN_MIN_GAMES, runLabel, runTip, runTipDays, teamRuns } from '../src/data/runs';
-import { runSegments } from '../src/components/TeamMonthGrid';
 import { rowRunMarks } from '../src/components/TeamListView';
-import { addDays, monthCells, teamGames } from '../src/data/model';
+import { addDays, teamGames } from '../src/data/model';
 import { TEAMS } from '../src/data/teams';
 import { dataOf, game, TEAM } from './synthetic';
 import { cleanup, render } from '@testing-library/react';
@@ -38,14 +37,11 @@ describe('teamRuns', () => {
     expect(run!.games).toHaveLength(5);
     expect([run!.from, run!.to]).toEqual(['2026-11-28', '2026-12-06']);
     expect(run!.games.map((_, i) => runLabel(run!, i))).toEqual(['Road trip · 1/5', 'Road trip · 2/5', 'Road trip · 3/5', 'Road trip · 4/5', 'Road trip · 5/5']);
-    // December's calendar (Dec 1 is a Tuesday): the band starts square (the trip began in November) and labels the
-    // 3rd game; the Sunday row takes the rest
-    const dec = runSegments(monthCells('2026-12'), teamRuns(d, BOS).runs);
-    expect(dec.map((x) => ({ open: x.open, close: x.close, index: x.index, span: x.span }))).toEqual([
-      { open: true, close: true, index: 2, span: 5 },
-      { open: true, close: false, index: 4, span: 1 },
-    ]);
-    expect(runTip(run!, dec[0]!.index).split('\n')[0]).toBe('Road trip · game 3 of 5');
+    // December's calendar: its first game is the trip's 3rd
+    expect(runTip(run!, 2).split('\n')[0]).toBe('Road trip · game 3 of 5');
+    render(createElement(TeamMonthGrid, { data: d, teamId: BOS, month: '2026-12', onMonthChange: () => {}, size: { width: 1600, height: 900 }, now: 0, timeZone: 'UTC', runs: true }));
+    expect([...document.querySelectorAll('.ck-run-tag')].map((t) => t.textContent)).toEqual(['Road trip · 3/5', 'Road trip · 4/5', 'Road trip · 5/5']);
+    cleanup();
   });
 
   it('a neutral-site game breaks a run (and is in none)', () => {
@@ -107,17 +103,6 @@ describe('the views’ pieces', () => {
     expect(marks.get('2026-11-04')!.label).toBeUndefined(); // rest rows: band only
     expect(marks.has('2026-11-07')).toBe(false);
   });
-
-  it('Team Calendar: one band per week row, rest days inside, square where it goes on', () => {
-    // Fri Nov 6 → Tue Nov 10: crosses the Saturday/Sunday row break
-    const d = dataOf([away('2026-11-06'), away('2026-11-07'), away('2026-11-10')]);
-    const segs = runSegments(monthCells('2026-11'), teamRuns(d, BOS).runs);
-    const cells = monthCells('2026-11');
-    expect(segs.map((s) => [cells[s.i], s.span, s.open, s.close, s.index])).toEqual([
-      ['2026-11-06', 2, false, true, 0],
-      ['2026-11-08', 3, true, false, 2],
-    ]);
-  });
 });
 
 describe('Team Calendar labels', () => {
@@ -127,8 +112,8 @@ describe('Team Calendar labels', () => {
     const tags = [...document.querySelectorAll<HTMLElement>('.ck-run-tag')];
     expect(tags.map((t) => t.textContent)).toEqual(['Road trip · 1/4', 'Road trip · 2/4', 'Road trip · 3/4', 'Road trip · 4/4']);
     expect(tags.map((t) => t.querySelector<HTMLElement>('[data-tip]')!.dataset.tip!.split('\n')[0])).toEqual([1, 2, 3, 4].map((k) => `Road trip · game ${k} of 4`));
-    // one band per week row: Nov 3–7 sits in one row
-    expect(document.querySelectorAll('.ck-run-band')).toHaveLength(1);
+    // the labels only: no band joining the run's days
+    expect(document.querySelectorAll('.ck-run-band')).toHaveLength(0);
     cleanup();
   });
 });

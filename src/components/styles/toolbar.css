@@ -192,10 +192,12 @@
   font-weight: 600;
 }
 
-/* the Schedule's scope picker: fixed width ("All teams" or "BOS" + ×), so the date block after it never moves */
+/* the Schedule's scope picker: fixed width ("All teams" or a team + ×), so the date block after it never moves. The
+   bar's most prominent control (what is open, at a glance): taller than the bar's 32 px controls (still inside its
+   44 px row), larger bold text and logo, an accent outline and tint. */
 .ck-picker-scope {
   display: inline-flex;
-  width: 150px;
+  width: 316px;
   flex: none;
   gap: 4px;
 }
@@ -204,6 +206,47 @@
   min-width: 0;
   height: 36px;
   box-sizing: border-box;
+  --ck-logo: 24px;
+  gap: 8px;
+  padding: 0 10px 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: rgb(78 161 255 / 0.16);
+  border: 2px solid var(--ck-accent);
+}
+.ck-picker-scope .ck-picker-button:hover,
+.ck-picker-scope .ck-picker-button[aria-expanded='true'] {
+  background: rgb(78 161 255 / 0.26);
+}
+.ck-picker-scope .ck-picker-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+.ck-picker-scope .ck-caret {
+  color: var(--ck-accent);
+}
+/* the full name from 1440 px; below, the tricode in a narrower picker (Team Calendar's bar at 1280 has ~70 px to spare) */
+.ck-picker-tri {
+  display: none;
+}
+@media (max-width: 1439px) {
+  .ck-picker-scope {
+    width: 176px;
+  }
+  .ck-picker-full {
+    display: none;
+  }
+  .ck-picker-tri {
+    display: inline;
+  }
+}
+.ck-picker-scope .ck-picker-clear {
+  height: 36px;
 }
 .ck-picker-clear {
   flex: none;
@@ -296,8 +339,6 @@
 .ck-bar1 .ck-arrow,
 .ck-bar1 .ck-today,
 .ck-bar1 .ck-date-pick,
-.ck-bar1 .ck-picker-scope .ck-picker-button,
-.ck-bar1 .ck-picker-clear,
 .ck-bar1 .ck-copy {
   height: 32px;
 }
@@ -384,7 +425,7 @@
 .ck-bar-short .ck-bar1 .ck-nav-title {
   width: 10.5em; /* "Wed, Sep 30, 2026" */
 }
-/* narrow desktops (< 1560 px): tighter tabs and gaps, a narrower scope picker, so every view keeps one row at 1280 */
+/* narrow desktops (< 1560 px): tighter tabs and gaps, so every view keeps one row at 1280 */
 .ck-bar-short .ck-bar1 {
   column-gap: 8px;
 }
@@ -399,9 +440,6 @@
 }
 .ck-bar-short .ck-bar1 .ck-tabs-small .ck-tab {
   padding: 0 6px;
-}
-.ck-bar-short .ck-bar1 .ck-picker-scope {
-  width: 128px;
 }
 .ck-bar-short .ck-bar1 .ck-chip-check {
   padding: 0 8px 0 6px;

@@ -83,51 +83,24 @@ test('opens on the month of the next game, that game at the top; the top bar sta
   expect(t.right).toBeLessThanOrEqual(t.vw);
 });
 
-test.describe('desktop and tablet: strip, picker, Today', () => {
-  test.beforeEach(({}, info) => test.skip(info.project.name === 'phone', 'phones have no strip, picker or Today (their ‹ › is checked above)'));
+test.describe('desktop and tablet: picker, Today (no day strip)', () => {
+  test.beforeEach(({}, info) => test.skip(info.project.name === 'phone', 'phones have no picker or Today (their ‹ › is checked above)'));
 
-  test('strip ‹ › across every month edge of the season: right month, the week’s first game at the top; disabled at the ends', async ({ page }) => {
-    test.setTimeout(120_000);
-    await open(page, 'LAL', '');
-    const snap = await snapshot(page);
-    const games = snap.LAL!.games.map((g) => g.date);
-    // back to the first game
-    const prev = page.getByLabel('Previous week');
-    for (let i = 0; i < 40 && !(await prev.isDisabled()); i++) await prev.click();
-    await expect(prev).toBeDisabled();
-    await expect.poll(() => topRow(page)).toBe(games[0]);
-    const next = page.getByLabel('Next week');
-    let edges = 0;
-    for (let i = 0; i < 40 && !(await next.isDisabled()); i++) {
-      const week = await page.getByTestId('week-strip').getByRole('tab').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.date!));
-      const before = (await page.getByTestId('team-month').textContent())!;
-      await next.click();
-      const want = games.find((d) => d > week[6]!)!;
-      await expect(page.getByTestId('team-month')).toHaveText(title(want.slice(0, 7)));
-      await expect.poll(() => topRow(page), `after the week of ${week[0]}`).toBe(want);
-      if ((await page.getByTestId('team-month').textContent()) !== before) edges++;
-    }
-    await expect(next).toBeDisabled();
-    expect(edges).toBe(monthsOf(games).length - 1);
-    await expect(page.getByTestId('team-month')).toHaveText(title(games.at(-1)!.slice(0, 7)));
+  test('no day strip above the list: no week tabs, no week ‹ ›', async ({ page }) => {
+    await open(page, 'LAL');
+    await expect(page.getByTestId('team-list')).toBeVisible();
+    await expect(page.getByTestId('week-strip')).toHaveCount(0);
+    await expect(page.getByLabel('Previous week')).toHaveCount(0);
+    await expect(page.getByLabel('Next week')).toHaveCount(0);
   });
 
-  test('a strip day in the other month, and the date picker: that month, the row at the top; Today → back', async ({ page }) => {
+  test('the date picker: another month, the row at the top; Today → back', async ({ page }) => {
     await open(page, 'LAL');
     const snap = await snapshot(page);
-    const list = page.getByTestId('team-list');
-    // scroll to the bottom of November: the last week runs into December
-    await list.evaluate((l) => (l.scrollTop = l.scrollHeight));
-    await expect(page.getByTestId('week-strip').getByRole('tab').last()).toHaveAttribute('data-date', /^2026-12/);
-    const dec = page.getByTestId('week-strip').locator('[role="tab"][data-date^="2026-12"]:not([disabled])').first();
-    const day = (await dec.getAttribute('data-date'))!;
-    await dec.click();
-    await expect(page.getByTestId('team-month')).toHaveText('December 2026');
-    await expect.poll(() => topRow(page)).toBe(day);
     // the picker: a day in March → March, the row at the top
     await page.getByRole('button', { name: 'Pick a date' }).click();
     const popup = page.getByRole('dialog', { name: 'Pick a date' });
-    for (let i = 0; i < 3; i++) await popup.getByRole('button', { name: 'Next month' }).click();
+    for (let i = 0; i < 4; i++) await popup.getByRole('button', { name: 'Next month' }).click();
     await expect(popup.getByTestId('period-title')).toHaveText('March 2027');
     await popup.locator('[data-date="2027-03-10"]').click();
     const row = [...snap.LAL!.games.map((g) => g.date), ...snap.LAL!.rest].sort().find((d) => d >= '2027-03-10')!;
@@ -160,13 +133,13 @@ test.describe('desktop and tablet: strip, picker, Today', () => {
 
   test('month change: click → next frame (printed), guarded', async ({ page }, info) => {
     await open(page, 'LAL');
-    // across the Nov → Dec edge and back, with the strip's ‹ ›
+    // across the Nov → Dec edge and back, with the bar's ‹ › (previous / next game): November's last row at the top
     await page.getByTestId('team-list').evaluate((l) => (l.scrollTop = l.scrollHeight));
     await page.waitForTimeout(300);
     const times: number[] = [];
     for (let i = 0; i < 10; i++) {
       const before = await page.getByTestId('team-month').textContent();
-      const label = before === 'November 2026' ? 'Next week' : 'Previous week';
+      const label = before === 'November 2026' ? 'Next game' : 'Previous game';
       times.push(
         await page.evaluate(
           (label) =>
@@ -180,7 +153,6 @@ test.describe('desktop and tablet: strip, picker, Today', () => {
         ),
       );
       await expect(page.getByTestId('team-month')).not.toHaveText(before!);
-      if (before === 'December 2026') await page.getByTestId('team-list').evaluate((l) => (l.scrollTop = l.scrollHeight));
       await page.waitForTimeout(100);
     }
     const sorted = [...times].sort((a, b) => a - b);

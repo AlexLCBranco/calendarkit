@@ -161,12 +161,13 @@ describe('Schedule controls', () => {
     expect(within(block()).getByTestId('period-title').textContent).toBe('Dec 20 – 26, 2026');
   });
 
-  it('the scope picker: "All teams" or a tricode with × ; picking a team keeps the view; × and "All teams" go back to the league', () => {
+  it('the scope picker: "All teams" or the team (full name, tricode on narrow windows) with × ; picking a team keeps the view; × and "All teams" go back to the league', () => {
     open({ layout: 'calendar' });
     expect(screen.getByTestId('team-picker').textContent).toMatch(/^All teams/);
     expect(screen.queryByTestId('scope-clear')).toBeNull();
     pickScope('Boston Celtics');
-    expect(screen.getByTestId('team-picker').textContent).toMatch(/^BOS/);
+    expect(screen.getByTestId('team-picker').querySelector('.ck-picker-full')!.textContent).toBe('Boston Celtics');
+    expect(screen.getByTestId('team-picker').querySelector('.ck-picker-tri')!.textContent).toBe('BOS');
     expect(selected('Layout', 'Calendar')).toBe(true);
     expect(screen.getByTestId('team-header')).toBeTruthy();
     pickScope('All teams');

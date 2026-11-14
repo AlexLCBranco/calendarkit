@@ -27,25 +27,19 @@ export interface RenderOptions {
 export const capturePixelRatio = (width: number, height: number, preferred: number) => Math.min(preferred, MAX_CANVAS_SIDE / Math.max(width, height, 1));
 
 /** Elements tagged `data-capture-exclude="true"` (copy buttons) are left out of the image. */
-/** The lists' active-day highlight (a class on the day section / the row); never part of an image. */
-export const ACTIVE_DAY = 'ck-active-day';
-
 /**
- * Lifts the active-day highlight from `node` and everything in it, with transitions off so the copy reads the plain
- * look at once, and marks it `ck-capturing` (no link styling in images); returns the undo (the highlight is back, still without a fade, then transitions on again).
+ * Turns transitions off in `node` and everything in it, so the copy reads the plain look at once, and marks it
+ * `ck-capturing` (no link styling in images); returns the undo (transitions on again).
  */
 export function suspendForCapture(node: HTMLElement): () => void {
-  const els = [node, ...node.querySelectorAll<HTMLElement>(`.${ACTIVE_DAY}`)].filter((e) => e.classList.contains(ACTIVE_DAY));
   const all = [node, ...node.querySelectorAll<HTMLElement>('*')];
   const transitions = all.map((e) => e.style.transition);
   all.forEach((e) => (e.style.transition = 'none'));
-  els.forEach((e) => e.classList.remove(ACTIVE_DAY));
   // images never show link styling (CSS under .ck-capturing)
   node.classList.add('ck-capturing');
   return () => {
     node.classList.remove('ck-capturing');
-    els.forEach((e) => e.classList.add(ACTIVE_DAY));
-    void node.offsetWidth; // apply without a fade before the transitions come back
+    void node.offsetWidth; // apply before the transitions come back
     all.forEach((e, i) => (e.style.transition = transitions[i]!));
   };
 }

@@ -19,7 +19,7 @@ const ALL_TEAMS = { id: ALL, tricode: '', city: 'All', name: 'teams' } as Team;
  */
 /**
  * `allTeams` — the Schedule's scope picker: no team = "All teams" (the league views), a team = its
- * tricode with a "×" beside the button that goes back to All teams (`onClear`); the list starts with an "All teams"
+ * full name (tricode below 1440 px) with a "×" beside the button that goes back to All teams (`onClear`); the list starts with an "All teams"
  * option. Fixed width, so the date block after it never moves.
  */
 export function TeamPicker({ teamId, onChange, compact = false, allTeams = false, onClear }: { teamId?: number; onChange: (teamId: number) => void; compact?: boolean; allTeams?: boolean; onClear?: () => void }) {
@@ -116,7 +116,20 @@ export function TeamPicker({ teamId, onChange, compact = false, allTeams = false
         }}
       >
         {team && <TeamLogo team={{ teamId } as ScheduleGame['homeTeam']} link={false} />}
-        <span className="ck-picker-name" title={allTeams && team ? fullName(team) : undefined}>{!team ? (allTeams ? 'All teams' : 'Pick a team') : compact || allTeams ? team.tricode : fullName(team)}</span>
+        {allTeams && team && !compact ? (
+          // the scope picker: the full name, the tricode on narrower windows (CSS picks one); read out once, as the name
+          <span className="ck-picker-name" title={fullName(team)}>
+            <span className="ck-sr">{fullName(team)}</span>
+            <span className="ck-picker-full" aria-hidden="true">
+              {fullName(team)}
+            </span>
+            <span className="ck-picker-tri" aria-hidden="true">
+              {team.tricode}
+            </span>
+          </span>
+        ) : (
+          <span className="ck-picker-name">{!team ? (allTeams ? 'All teams' : 'Pick a team') : compact ? team.tricode : fullName(team)}</span>
+        )}
         <span className="ck-caret" aria-hidden="true">
           ▾
         </span>

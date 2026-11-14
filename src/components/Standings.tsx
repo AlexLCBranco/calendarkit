@@ -4,13 +4,14 @@
 // markers, and each tied seed’s tiebreakers on hover. Plus the condensed popup the top bar’s "Standings" button opens
 // over any view. Desktop only; its own chunk, loaded (and computed) only when the view or the popup is opened.
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { CalendarData } from '../data/model';
 import { dateFormat } from '../data/model';
 import { CLINCH_TEXT, fmtPct, fmtRec, leagueStandings, PLAY_IN_SEEDS, PLAYOFF_SEEDS, tieText, type Rec, type SeededTeam } from '../data/standings';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { TeamLink } from '../slate/teamLink';
 import { CopyButton } from './CopyButton';
+import { EDGES, useFloatBox } from './floatBox';
 import { COLUMN_SETS, type StandingsSet } from './standingsSets';
 import './styles/standings.css';
 import { streakAttr } from '../slate/streakPopup';
@@ -224,10 +225,19 @@ function Legend() {
   );
 }
 
-/** The condensed popup: both conferences side by side — seed, team, W-L, GB, last 10, streak, and the lines. */
+/** Where the popup's place and size are remembered (shared origin with the whiteboard, hence the prefix). */
+export const ST_POP_KEY = 'ck:stpop:v1';
+/** The popup's smallest size (px): the header's tools and a few rows of one table. */
+export const ST_POP_MIN = { w: 360, h: 200 };
+
+/**
+ * The condensed popup: both conferences side by side — seed, team, W-L, GB, last 10, streak, and the lines. Moved by
+ * its header, resized from its edges and corners (the tables wrap or scroll inside), kept in the window; its place and
+ * size are remembered, "↺" puts the default back.
+ */
 export function StandingsPopup({ data, onClose }: { data: CalendarData; onClose: () => void }) {
   const s = leagueStandings(data);
-  const ref = useRef<HTMLDivElement>(null);
+  const { ref, box, style, dragProps, edgeProps, reset } = useFloatBox(ST_POP_KEY, ST_POP_MIN);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     const outside = (e: PointerEvent) => {
@@ -238,20 +248,32 @@ export function StandingsPopup({ data, onClose }: { data: CalendarData; onClose:
     window.addEventListener('keydown', esc);
     document.addEventListener('pointerdown', outside, true);
     return () => (window.removeEventListener('keydown', esc), document.removeEventListener('pointerdown', outside, true));
-  }, [onClose]);
+  }, [onClose, ref]);
   return (
     <div
       ref={ref}
-      className="ck-st-pop"
+      className={`ck-st-pop${box ? ' ck-st-pop-placed' : ''}`}
       role="dialog"
       aria-label="Standings"
       data-testid="standings-popup"
+      // its own drags move and resize it: never a selection marquee
+      data-no-marquee
+      style={style}
     >
+      {EDGES.map((e) => (
+        <div key={e} className={`ck-float-grip ck-float-${e}`} data-grip={e} aria-hidden="true" {...edgeProps(e)} />
+      ))}
+      <div className="ck-st-pop-scroll" data-testid="standings-popup-scroll">
       <div className="ck-st-pop-body" data-testid="standings-popup-body">
-        <header className="ck-st-pop-head">
+        <header className="ck-st-pop-head" data-testid="standings-popup-head" title="Drag to move" {...dragProps}>
           <h2 className="ck-st-title">Standings</h2>
           <span className="ck-st-through">{s.through ? `Through ${fmtThrough(s.through)}` : 'No games played yet'}</span>
           <span className="ck-st-pop-tools" data-capture-exclude="true">
+            {box && (
+              <button type="button" className="ck-st-pop-close ck-st-pop-reset" aria-label="Reset position and size" title="Reset position and size" onClick={reset} data-testid="standings-popup-reset">
+                ↺
+              </button>
+            )}
             <CopyButton label="Copy standings as image" of=".ck-st-pop-body" testId="standings-popup-copy" />
             <button type="button" className="ck-st-pop-close" aria-label="Close" onClick={onClose} data-testid="standings-popup-close">
               ×
@@ -292,6 +314,7 @@ export function StandingsPopup({ data, onClose }: { data: CalendarData; onClose:
             </table>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );

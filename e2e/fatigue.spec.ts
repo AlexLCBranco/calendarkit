@@ -70,7 +70,9 @@ test('fatigue columns: all 30 teams, fixed x, left-aligned, one line, nothing cl
         }
         // one line: every part's middle on the same line, tags on one line; nothing outside the row or the widget
         const parts = [...c.children].filter((k) => getComputedStyle(k).position !== 'absolute' && k.getBoundingClientRect().width > 0).map((k) => k.getBoundingClientRect());
-        if (new Set(parts.map((p) => Math.round(p.top + p.height / 2))).size > 1) out.bad.push(`${name}: wraps`);
+        // (a spread, not rounded values: sub-pixel middles 0.01 px apart round apart at .5; a wrap moves a part a whole line)
+        const mids = parts.map((p) => p.top + p.height / 2);
+        if (Math.max(...mids) - Math.min(...mids) > 2) out.bad.push(`${name}: wraps`);
         if (new Set([...c.querySelectorAll('.ck-tags > *')].map((k) => Math.round(k.getBoundingClientRect().top))).size > 1) out.bad.push(`${name}: tags wrap`);
         const cb = c.getBoundingClientRect();
         if (c.scrollWidth > c.clientWidth || cb.right > root.right + 0.5 || parts.some((p) => p.right > cb.right + 0.5)) out.bad.push(`${name}: clipped`);

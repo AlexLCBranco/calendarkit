@@ -62,63 +62,6 @@
 .ck-team-grid {
   position: relative;
 }
-.ck-team-grid .ck-day-cell {
-  padding-bottom: 10px; /* room for the bar */
-}
-.ck-b2b-bar {
-  align-self: end;
-  position: relative;
-  z-index: 1;
-  height: 3px;
-  margin: 0 12px 4px;
-  background: var(--ck-b2b);
-  border-radius: 2px;
-  pointer-events: none;
-}
-.ck-b2b-bar-start {
-  margin-right: 0;
-  border-radius: 2px 0 0 2px;
-}
-.ck-b2b-bar-end {
-  margin-left: 0;
-  border-radius: 0 2px 2px 0;
-}
-/* week break / other month: the half ends in an arrow toward the other night */
-.ck-b2b-bar-start::after,
-.ck-b2b-bar-end::before {
-  content: '';
-  position: absolute;
-  top: -3px;
-  border: 4.5px solid transparent;
-}
-.ck-b2b-bar-start::after {
-  right: -6px;
-  border-left: 6px solid var(--ck-b2b);
-  border-right-width: 0;
-}
-.ck-b2b-bar-end::before {
-  left: -6px;
-  border-right: 6px solid var(--ck-b2b);
-  border-left-width: 0;
-}
-.ck-b2b-bar-start {
-  margin-right: 6px;
-}
-.ck-b2b-bar-end {
-  margin-left: 6px;
-}
-.ck-compact .ck-b2b-bar {
-  margin: 0 4px 3px;
-}
-.ck-compact .ck-team-grid .ck-day-cell {
-  padding-bottom: 8px;
-}
-.ck-compact .ck-b2b-bar-start {
-  margin-right: 6px;
-}
-.ck-compact .ck-b2b-bar-end {
-  margin-left: 6px;
-}
 /* team list: bracket on the left edge of both rows, joined across the 6 px row gap */
 .ck-team-rows {
   padding-left: 10px;

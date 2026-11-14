@@ -70,13 +70,14 @@ function expected(teamId: number, g: ScheduleGame) {
   const icons = prev ? [[home(prev), false], [home(g), true]] : next ? [[home(g), true], [home(next), false]] : [];
   const [pos] = tifOf(teamId).get(g.gameId) ?? [0, 0];
   const st = stretchOf(teamId).get(g.gameId);
-  // The break chip — days to the team's previous / next game by date, 3+ flagged (filled: after)
+  // The break chip — days to the team's previous / next game by date, 2+ flagged (filled: after), the gap after shown
+  // instead when only it is 3+
   const all = gamesOf(teamId).map((x) => x.dateEt).sort();
   const i = all.indexOf(g.dateEt);
   const gap = (a?: string, b?: string) => (a && b ? Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000) : 0);
   const gin = gap(all[i - 1], g.dateEt);
   const gout = gap(g.dateEt, all[i + 1]);
-  const rest = gin >= 3 ? `after ${gin}d` : gout >= 3 ? `before ${gout}d` : '';
+  const rest = gin >= 2 && (gin >= 3 || gout < 3) ? `after ${gin}d` : gout >= 2 ? `before ${gout}d` : '';
   return { night: prev ? '2' : next ? '1' : null, icons, pos, chip: st ? `${st[0]}in${st[1]} · ${ord(st[2])}` : '', place: st?.[2] ?? 0, rest };
 }
 

@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { CalendarView, TeamMonthGrid, TeamListView } from '../src/components/CalendarView';
-import { addDays, isBackToBack, monthOf, teamGames, weekday, type CalendarData } from '../src/data/model';
+import { addDays, isBackToBack, monthOf, teamGames, type CalendarData } from '../src/data/model';
 import type { ScheduleGame } from '../src/shared/nba-schedule/parse';
 import { TEAM_BY_ID, TEAMS } from '../src/data/teams';
 import { data } from './feed';
@@ -63,15 +63,15 @@ describe('team header', () => {
 });
 
 describe('team picker', () => {
-  it('scope picker (round 21): the team logo and tricode (full name as tooltip), a × back to All teams; the list starts with "All teams", then all 30 teams with logos, grouped by conference · division', () => {
+  it('scope picker: the team logo and its full name (the tricode on narrow windows; full name as tooltip), a × back to All teams; the list starts with "All teams", then all 30 teams with logos, grouped by conference · division', () => {
     team(TEAM.BOS, 'list');
     const btn = screen.getByTestId('team-picker');
-    expect(btn.textContent).toMatch(/^BOS/);
+    expect([btn.querySelector('.ck-picker-full')!.textContent, btn.querySelector('.ck-picker-tri')!.textContent]).toEqual(['Boston Celtics', 'BOS']);
     expect(btn.querySelector('[title="Boston Celtics"]')).toBeTruthy();
     expect(screen.getByTestId('scope-clear').getAttribute('aria-label')).toBe('All teams');
     expect(imgs(btn)).toEqual(['/calendar/logos/BOS.svg']);
     expect(btn.getAttribute('aria-haspopup')).toBe('listbox');
-    expect(screen.getByRole('button', { name: /^Team BOS/ })).toBe(btn);
+    expect(screen.getByRole('button', { name: /^Team Boston Celtics/ })).toBe(btn);
     fireEvent.click(btn);
     const list = screen.getByRole('listbox', { name: 'Teams' });
     const groups = within(list).getAllByRole('group');
@@ -231,7 +231,10 @@ describe('selected team first, both logos', () => {
     const el = render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" />);
     const g = data.byDate.get('2026-10-23')![0]!;
     // (the Fatigue components' "B2B" / "4in6 · 2nd" left out, rounds 5–6)
-    expect(el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-matchup`)!.textContent!.replace(/B2B|\d+in\d+( · \d+(st|nd|rd|th))?/g, '').replace(/\s+/g, ' ').trim()).toMatch(new RegExp(`^(\\d+-\\d+ )?${g.awayTeam.teamTricode} @ ${g.homeTeam.teamTricode}( \\d+-\\d+)?$`));
+    // the text without the rest badges ("2d"), which sit right against the records
+    const matchup = el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-matchup`)!.cloneNode(true) as Element;
+    matchup.querySelectorAll('.ck-fx-rest').forEach((r) => r.remove());
+    expect(matchup.textContent!.replace(/B2B|\d+in\d+( · \d+(st|nd|rd|th))?/g, '').replace(/\s+/g, ' ').trim()).toMatch(new RegExp(`^(\\d+-\\d+ )?${g.awayTeam.teamTricode} @ ${g.homeTeam.teamTricode}( \\d+-\\d+)?$`));
   });
 });
 
@@ -304,43 +307,35 @@ describe('back-to-back pairs (team views)', () => {
     expect(tipOf(same)).not.toMatch(/travels/);
   });
 
-  it('calendar: same labels on both cells; one bar across both cells when side by side, halves with arrows across a week break', () => {
+  it('calendar: same labels on both cells, and no line between the cells (the labels say it)', () => {
     const pairs = expectedPairs(data, ORL).filter((p) => monthOf(p.a.dateEt) === '2026-11' && monthOf(p.b.dateEt) === '2026-11');
     expect(pairs.length).toBeGreaterThanOrEqual(3);
-    const el = render(<TeamMonthGrid data={data} teamId={ORL} month="2026-11" onMonthChange={() => {}} size={WIDE} now={NOW} timeZone="UTC" />);
-    const bars = [...el.container.querySelectorAll<HTMLElement>('[data-b2b-bar]')];
-    let breaks = 0;
+    const el = render(<TeamMonthGrid data={data} teamId={ORL} month="2026-11" onMonthChange={() => {}} size={WIDE} now={NOW} timeZone="UTC" runs />);
     for (const p of pairs) {
       for (const [g, n] of [[p.a, 1], [p.b, 2]] as const) {
         const cell = el.container.querySelector(`[data-date="${g.dateEt}"]`)!;
         expect(label(cell)).toEqual([{ text: `${n}/2 · ${p.code}`, night: String(n), plane: p.travels }]);
       }
-      const mine = bars.filter((b) => b.getAttribute('data-pair') === `${p.a.dateEt}/${p.b.dateEt}`);
-      if (weekday(p.a.dateEt) === 6) {
-        breaks++;
-        expect(mine.map((b) => b.getAttribute('data-b2b-bar'))).toEqual(['start', 'end']);
-        expect(mine[0]!.style.gridColumn).toBe('7 / span 1');
-        expect(mine[1]!.style.gridColumn).toBe('1 / span 1');
-        expect(Number(mine[1]!.style.gridRow)).toBe(Number(mine[0]!.style.gridRow) + 1);
-      } else {
-        expect(mine.map((b) => b.getAttribute('data-b2b-bar'))).toEqual(['full']);
-        expect(mine[0]!.style.gridColumn).toBe(`${weekday(p.a.dateEt) + 1} / span 2`);
-      }
     }
-    expect(breaks).toBeGreaterThan(0); // ORL Nov 2026 has a Sat → Sun back-to-back
-    expect(bars).toHaveLength(pairs.reduce((n, p) => n + (weekday(p.a.dateEt) === 6 ? 2 : 1), 0));
+    // no connectors: neither B2B bars nor road-trip / homestand bands
+    expect(el.container.querySelectorAll('[data-b2b-bar], .ck-b2b-bar, .ck-run-band')).toHaveLength(0);
+    // the grid holds only its headers, its cells and the run labels
+    const kids = [...el.container.querySelector('.ck-team-grid')!.children];
+    expect(kids.every((k) => k.matches('.ck-grid-head, .ck-cell, .ck-run-tag'))).toBe(true);
   });
 
-  it('a pair across months: the half in this month ends in an arrow toward the other month', () => {
+  it('a pair across months: both halves keep their labels, with no line toward the other month', () => {
     const d = dataOf([
       game({ date: '2026-11-30', utc: '2026-12-01T00:00:00Z', home: TEAM.BOS, away: TEAM.NYK }),
       game({ date: '2026-12-01', utc: '2026-12-02T00:00:00Z', home: TEAM.MIA, away: TEAM.BOS }),
     ]);
     const nov = render(<TeamMonthGrid data={d} teamId={TEAM.BOS} month="2026-11" onMonthChange={() => {}} size={WIDE} now={NOW} timeZone="UTC" />);
-    expect([...nov.container.querySelectorAll('[data-b2b-bar]')].map((b) => b.getAttribute('data-b2b-bar'))).toEqual(['start']);
+    expect(label(nov.container.querySelector('[data-date="2026-11-30"]')!).map((l) => l.night)).toEqual(['1']);
+    expect(nov.container.querySelectorAll('[data-b2b-bar], .ck-b2b-bar')).toHaveLength(0);
     cleanup();
     const dec = render(<TeamMonthGrid data={d} teamId={TEAM.BOS} month="2026-12" onMonthChange={() => {}} size={WIDE} now={NOW} timeZone="UTC" />);
-    expect([...dec.container.querySelectorAll('[data-b2b-bar]')].map((b) => b.getAttribute('data-b2b-bar'))).toEqual(['end']);
+    expect(label(dec.container.querySelector('[data-date="2026-12-01"]')!).map((l) => l.night)).toEqual(['2']);
+    expect(dec.container.querySelectorAll('[data-b2b-bar], .ck-b2b-bar')).toHaveLength(0);
   });
 
   it('synthetic: all four codes, plane only when the arena city changes', () => {

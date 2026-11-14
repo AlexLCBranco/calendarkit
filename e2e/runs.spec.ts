@@ -12,7 +12,7 @@ async function open(page: Page, search: string) {
   await expect(page.getByRole('tablist', { name: 'Layout' })).toBeVisible();
 }
 
-/** Copies the whole view and returns what the off-screen copy held: bands, labels and side arrows. */
+/** Copies the whole view and returns what the off-screen copy held: bands (there must be none), labels and side arrows. */
 async function copyHolds(page: Page) {
   await page.evaluate(() => {
     const w = window as unknown as { __ckCopy?: unknown };
@@ -31,16 +31,16 @@ async function copyHolds(page: Page) {
   return page.evaluate(() => (window as unknown as { __ckCopy?: { bands: number; labels: string[]; arrows: number } }).__ckCopy);
 }
 
-test('Team Calendar: road trips and homestands as labelled bands, with their tooltip, in the copy; side arrows not in it', async ({ page }) => {
+test('Team Calendar: road trips and homestands as labels on their games (no band joining the days), with their tooltip, in the copy; side arrows not in it', async ({ page }) => {
   await open(page, '?view=team&layout=calendar&team=BOS');
-  const bands = page.locator('.ck-run-band');
-  await expect(bands.first()).toBeVisible();
+  await expect(page.locator('.ck-run-tag').first()).toBeVisible();
+  expect(await page.locator('.ck-run-band').count()).toBe(0);
   // every game of a run carries its label (its place in the run), no hover needed: one per run game cell
   const tagged = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.ck-run-tag')].map((t) => t.textContent));
   expect(tagged.length).toBeGreaterThan(2);
   for (const t of tagged) expect(t).toMatch(/^(Road trip|Homestand) · \d+\/\d+$/);
   const label = page.locator('.ck-run-tag').first().getByTestId('run-label');
-  // road and home bands are different colours, neither the B2B yellow
+  // road and home labels are different colours, neither the B2B yellow
   const colors = await page.evaluate(() => {
     const c = (k: string) => getComputedStyle(document.querySelector('.ck-root')!).getPropertyValue(k).trim();
     return { road: c('--ck-road'), home: c('--ck-home'), b2b: c('--ck-b2b'), rest: c('--ck-rest') };
@@ -50,9 +50,9 @@ test('Team Calendar: road trips and homestands as labelled bands, with their too
   await label.hover();
   await expect(page.getByTestId('tooltip')).toContainText(/(Road trip|Homestand) · game \d+ of \d+/);
   await expect(page.getByTestId('tip-days')).toBeVisible();
-  // the copy has the bands and labels, not the side arrows
+  // the copy has the labels (and no bands), not the side arrows
   const held = (await copyHolds(page))!;
-  expect(held.bands).toBe(await bands.count());
+  expect(held.bands).toBe(0);
   expect(held.labels.length).toBeGreaterThan(0);
   expect(held.arrows).toBe(0);
   await expect(page.getByTestId('side-prev')).toBeVisible();

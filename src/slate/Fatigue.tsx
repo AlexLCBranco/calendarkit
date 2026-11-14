@@ -7,14 +7,15 @@
 // tomorrow), beside the second B on the 2nd night (they played yesterday); it never flips with the column. The chip is
 // the merged 3-in-4 stretch: "4in6 · 2nd" (compact size: "4in6", see fatigue.css).
 // Few elements on purpose (every list row has two): a grid of at most 5 children, the icons drawn by CSS (fatigue.css).
-// An abnormal break (3+ days between game dates, rest.ts) — a teal badge with the days ("4d"): filled
-// when this game comes off the break, outlined when the break follows it; its own tooltip gives the exact count and the
-// game on the other side ("4 days off, last played Mon, Nov 4 @ PHI"). It takes no width: it sits in the B2B badge's
+// A break (2+ days between game dates, rest.ts) — a teal badge with the days ("4d"): filled
+// when this game comes off the break, outlined when the break follows it; 2 days in a much quieter teal, so 3+ (abnormal
+// rest) still stands out; its own tooltip gives the exact count and the game on the other side ("4 days off, last
+// played Mon, Nov 4 @ PHI"). It takes no width: it sits in the B2B badge's
 // track when tonight isn't a back-to-back night, else in the 3-in-4 chip's; with both taken, a teal corner tick.
 
 import type { TeamFatigue } from '../data/fatigue';
 import { mergedChip, mergedLabel, ordinal } from '../data/scheduleTags';
-import { restLines, type RestFlag } from '../data/rest';
+import { restLines, restTier, shownGap, type RestFlag } from '../data/rest';
 
 /** House (home) or plane (away) for one night; solid on tonight's game, faded on the other. Drawn in CSS. */
 export const NightIcon = ({ home, tonight }: { home: boolean; tonight: boolean }) => (
@@ -91,14 +92,16 @@ export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = fa
 
 /**
  * The break badge — "4d", the days between the game dates, in a free track (`slot`). Filled: this game comes off the break;
- * outlined: the break follows it; a game with a break on both sides shows the one it comes off (filled) and has both
- * lines in its tooltip. Its own data-tip (the floating tooltip takes the nearest one).
+ * outlined: the break follows it; a game with a break on both sides shows the one it comes off (filled) — unless only
+ * the one after it is 3+ days, which then shows — and has both lines in its tooltip. 2 days: the quiet tier
+ * (`data-tier="short"`). Its own data-tip (the floating tooltip takes the nearest one).
  */
 export function RestChip({ rest, slot }: { rest: RestFlag; slot: 'b' | 'c' | 'tick' }) {
-  const side = rest.after ? 'after' : 'before';
-  const days = (rest.after ?? rest.before)!.days;
+  const { side, gap } = shownGap(rest);
+  const days = gap.days;
+  const tier = restTier(days);
   return (
-    <span className={`ck-fx-rest ck-fx-rest-${side} ck-fx-rest-${slot}`} data-break={side} data-break-both={rest.after && rest.before ? '' : undefined} data-days={days} data-tip={restLines(rest).join('\n')}>
+    <span className={`ck-fx-rest ck-fx-rest-${side} ck-fx-rest-${slot}${tier === 'short' ? ' ck-fx-rest-short' : ''}`} data-break={side} data-tier={tier} data-break-both={rest.after && rest.before ? '' : undefined} data-days={days} data-tip={restLines(rest).join('\n')}>
       {days}d
     </span>
   );

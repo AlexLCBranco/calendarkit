@@ -423,7 +423,7 @@ export function ScheduleDestination(p: ScheduleProps) {
   };
 
   if (!active) return null;
-  const teamListProps = { data, teamId: state.teamId, tvOnly: state.tvOnly, showRest: state.showRest && !compact, size, now, timeZone, onOpenGame, gameLink, handle: teamList, openAt: teamOpen, onAtNext: teamAtNext.set, topStore: teamTop, today, month: teamListMonth, monthTo: teamListTo, onLoadMonths: compact ? undefined : loadTeamMonths, onMonthChange: setTeamListMonth, runs: !compact };
+  const teamListProps = { data, teamId: state.teamId, tvOnly: state.tvOnly, showRest: state.showRest && !compact, size, now, timeZone, onOpenGame, gameLink, handle: teamList, openAt: teamOpen, onAtNext: teamAtNext.set, topStore: teamTop, month: teamListMonth, monthTo: teamListTo, onLoadMonths: compact ? undefined : loadTeamMonths, onMonthChange: setTeamListMonth, runs: !compact };
   const leagueList = <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} legend={false} />;
 
   // The bar, in this order: sub-views (List · Calendar · Slate, the scope picker); date controls (the date block,

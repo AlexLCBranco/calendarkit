@@ -154,7 +154,7 @@ describe('cells and bars', () => {
     }
   });
 
-  it('B2B bars: full bar inside a week row, Sat → Sun halves on consecutive rows (2 weeks), edge halves', () => {
+  it('B2B nights across a week break (2 weeks) and at the window edges: each night labelled on its cell, no line between cells', () => {
     const games = teamGames(data, TEAM.BOS);
     const dates = new Set(games.map((g) => g.dateEt));
     const pairs = games.filter((g) => dates.has(add(g.dateEt, 1))).map((g) => g.dateEt); // night 1 dates
@@ -175,27 +175,19 @@ describe('cells and bars', () => {
       fireEvent.click(spanTab('2 weeks'));
     }
     expect(shownDates()[0]).toBe(start);
-    const bars = () => [...document.querySelectorAll<HTMLElement>('[data-b2b-bar]')].map((b) => ({ kind: b.dataset.b2bBar, pair: b.dataset.pair, row: b.style.gridRow, col: b.style.gridColumn }));
-    const mine = bars().filter((b) => b.pair === `${satSun}/${add(satSun, 1)}`);
-    expect(mine).toEqual([
-      { kind: 'start', pair: `${satSun}/${add(satSun, 1)}`, row: '2', col: '7 / span 1' },
-      { kind: 'end', pair: `${satSun}/${add(satSun, 1)}`, row: '3', col: '1 / span 1' },
-    ]);
-    // every pair fully inside the window: one full bar per pair inside a row, halves across the week break
-    const shown = new Set(shownDates());
-    for (const d of pairs.filter((x) => shown.has(x) && shown.has(add(x, 1)))) {
-      const b = bars().filter((x) => x.pair === `${d}/${add(d, 1)}`);
-      const sat = new Date(`${d}T00:00:00Z`).getUTCDay() === 6;
-      expect(b.map((x) => x.kind), d).toEqual(sat ? ['start', 'end'] : ['full']);
-    }
-    // 1 week starting on the Sunday: that pair's Sunday night is the first cell → an "end" half (arrow to the hidden Saturday)
+    const nights = (d: string) => document.querySelector<HTMLElement>(`[data-date="${d}"]`)?.dataset.b2b;
+    const connectors = () => document.querySelectorAll('[data-b2b-bar], .ck-b2b-bar, .ck-run-band').length;
+    expect([nights(satSun), nights(add(satSun, 1))]).toEqual([expect.stringContaining('1'), expect.stringContaining('2')]);
+    expect(connectors()).toBe(0);
+    // 1 week starting on the Sunday (its Saturday hidden), and the week before (its Sunday hidden)
     fireEvent.click(spanTab('1 week'));
     fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
     expect(shownDates()[0]).toBe(add(satSun, 1));
-    expect(bars().filter((b) => b.pair === `${satSun}/${add(satSun, 1)}`)).toEqual([{ kind: 'end', pair: `${satSun}/${add(satSun, 1)}`, row: '2', col: '1 / span 1' }]);
-    // and the week before: its Saturday is the last cell → a "start" half
+    expect(nights(add(satSun, 1))).toEqual(expect.stringContaining('2'));
+    expect(connectors()).toBe(0);
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }));
-    expect(bars().filter((b) => b.pair === `${satSun}/${add(satSun, 1)}`)).toEqual([{ kind: 'start', pair: `${satSun}/${add(satSun, 1)}`, row: '2', col: '7 / span 1' }]);
+    expect(nights(satSun)).toEqual(expect.stringContaining('1'));
+    expect(connectors()).toBe(0);
   });
 
   it('TV filter: only national TV games in the cells; rest of the week empty', () => {

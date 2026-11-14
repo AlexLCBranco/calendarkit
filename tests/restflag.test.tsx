@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // Abnormal rest. Rest = the difference of two game dates (ET game dates; tip-off times don't count):
-// B2B = 1, one empty day = 2, two empty days = 3. Gaps of 3+ flag BOTH games (before / after the break). Shown as a teal
+// B2B = 1, one empty day = 2, two empty days = 3. Gaps of 2+ flag BOTH games (before / after the break); 3+ is the
+// strong mark, exactly 2 the quiet one. Shown as a teal
 // "4d" badge in the Fatigue component (no width of its own: in a free track) (filled: off the break; outlined: the break follows), its tooltip the exact count.
 
 import { cleanup, render } from '@testing-library/react';
@@ -8,7 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Fatigue } from '../src/components/Fatigue';
 import { hasFatigue, leagueFatigue } from '../src/data/fatigue';
 import { daysBetween, teamGames } from '../src/data/model';
-import { REST_FLAG_DAYS, restDays, restLines, teamRestFlags } from '../src/data/rest';
+import { REST_FLAG_DAYS, REST_MARK_DAYS, restDays, restLines, restTier, shownGap, teamRestFlags } from '../src/data/rest';
 import { TEAMS } from '../src/data/teams';
 import { data } from './feed';
 import { dataOf, game } from './synthetic';
@@ -44,17 +45,42 @@ describe('rest counting (game dates)', () => {
     expect(restLines(flags.get(phi.gameId)!)).toEqual(['4 days off next, plays again Sun, Nov 8 vs LAL']);
   });
 
-  it('2 days is not flagged, 3 is (the threshold); a game between two breaks has both sides', () => {
-    expect(REST_FLAG_DAYS).toBe(3);
-    const a = g('2026-11-01', DET, PHI);
-    const b = g('2026-11-03', DET, LAL); // 2 days: no flag
-    const c = g('2026-11-06', DET, NYK); // 3 days: flagged
-    const d = g('2026-11-10', DET, MIA); // 4 days: flagged
-    const flags = teamRestFlags(dataOf([a, b, c, d]), DET);
-    expect(flags.has(a.gameId)).toBe(false);
-    expect(flags.get(b.gameId)).toEqual({ teamId: DET, before: { days: 3, other: c } });
+  it('B2B (1) is not flagged, exactly 2 is (the quiet tier), exactly 3 is (the strong tier); a game between two breaks has both sides', () => {
+    expect([REST_MARK_DAYS, REST_FLAG_DAYS]).toEqual([2, 3]);
+    expect([restTier(2), restTier(3), restTier(4)]).toEqual(['short', 'long', 'long']);
+    const z = g('2026-10-31', DET, MIA);
+    const a = g('2026-11-01', DET, PHI); // 1 day after z: a back-to-back, no rest flag
+    const b = g('2026-11-03', DET, LAL); // 2 days: flagged (short)
+    const c = g('2026-11-06', DET, NYK); // 3 days: flagged (long)
+    const d = g('2026-11-10', DET, MIA); // 4 days: flagged (long)
+    const flags = teamRestFlags(dataOf([z, a, b, c, d]), DET);
+    expect(flags.has(z.gameId)).toBe(false);
+    expect(flags.get(a.gameId)).toEqual({ teamId: DET, before: { days: 2, other: b } });
+    expect(flags.get(b.gameId)).toEqual({ teamId: DET, after: { days: 2, other: a }, before: { days: 3, other: c } });
     expect(flags.get(c.gameId)).toEqual({ teamId: DET, after: { days: 3, other: b }, before: { days: 4, other: d } });
     expect(flags.get(d.gameId)).toEqual({ teamId: DET, after: { days: 4, other: c } });
+    expect(restLines(flags.get(a.gameId)!)).toEqual(['2 days off next, plays again Tue, Nov 3 vs LAL']);
+    // one badge per game: the gap it comes off, unless only the gap after it is 3+
+    expect(shownGap(flags.get(a.gameId)!)).toMatchObject({ side: 'before', gap: { days: 2 } });
+    expect(shownGap(flags.get(b.gameId)!)).toMatchObject({ side: 'before', gap: { days: 3 } });
+    expect(shownGap(flags.get(c.gameId)!)).toMatchObject({ side: 'after', gap: { days: 3 } });
+    expect(shownGap(flags.get(d.gameId)!)).toMatchObject({ side: 'after', gap: { days: 4 } });
+  });
+
+  it('the 2-day badge is the quiet tier, the 3+ one the strong tier (data-tier, class), the tooltip the exact count', () => {
+    const a = g('2026-11-01', DET, PHI);
+    const b = g('2026-11-03', DET, LAL); // 2 days
+    const c = g('2026-11-06', NYK, DET); // 3 days
+    const fat = leagueFatigue(dataOf([a, b, c]));
+    const chip = (x: typeof a) => {
+      cleanup();
+      const { container } = render(<Fatigue f={fat.get(x.gameId)!.get(DET)} team="DET" />);
+      const el = container.querySelector<HTMLElement>('.ck-fx-rest')!;
+      return { text: el.textContent, tier: el.dataset.tier, short: el.classList.contains('ck-fx-rest-short'), side: el.dataset.break, tip: el.dataset.tip };
+    };
+    expect(chip(a)).toEqual({ text: '2d', tier: 'short', short: true, side: 'before', tip: '2 days off next, plays again Tue, Nov 3 vs LAL' });
+    expect(chip(b)).toEqual({ text: '3d', tier: 'long', short: false, side: 'before', tip: '2 days off, last played Sun, Nov 1 vs PHI\n3 days off next, plays again Fri, Nov 6 @ NYK' });
+    expect(chip(c)).toEqual({ text: '3d', tier: 'long', short: false, side: 'after', tip: '3 days off, last played Tue, Nov 3 vs LAL' });
   });
 
   it('games around midnight count by game date, not tip-off: a 10:30 pm ET tip (03:30 UTC next day) and a 1 pm tip', () => {
@@ -69,7 +95,7 @@ describe('rest counting (game dates)', () => {
     expect(restDays(late, g('2026-11-05', DET, LAL, '2026-11-05T18:00:00Z'))).toBe(1);
   });
 
-  it('real feed, every team: each flag = an independent count of the dates; both games of every 3+ gap flagged', () => {
+  it('real feed, every team: each flag = an independent count of the dates; both games of every 2+ gap flagged', () => {
     let n = 0;
     for (const t of TEAMS) {
       const games = teamGames(data, t.id);
@@ -80,8 +106,8 @@ describe('rest counting (game dates)', () => {
         const gapIn = prev ? daysBetween(prev.dateEt, games[i]!.dateEt) : 0;
         const gapOut = next ? daysBetween(games[i]!.dateEt, next.dateEt) : 0;
         const f = flags.get(games[i]!.gameId);
-        expect(f?.after?.days, `${t.tricode} ${games[i]!.dateEt} in`).toBe(gapIn >= 3 ? gapIn : undefined);
-        expect(f?.before?.days, `${t.tricode} ${games[i]!.dateEt} out`).toBe(gapOut >= 3 ? gapOut : undefined);
+        expect(f?.after?.days, `${t.tricode} ${games[i]!.dateEt} in`).toBe(gapIn >= 2 ? gapIn : undefined);
+        expect(f?.before?.days, `${t.tricode} ${games[i]!.dateEt} out`).toBe(gapOut >= 2 ? gapOut : undefined);
         if (f) n++;
       }
     }

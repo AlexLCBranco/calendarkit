@@ -1,5 +1,5 @@
-/* Road trips and homestands (data/runs.ts): one band per run, always on, quiet enough that the games stay readable.
-   Road = rose, homestand = periwinkle; every game of a run has a label naming it and its place ("Road trip · 3/5"). Neither touches the B2B yellow (bars, brackets) or the
+/* Road trips and homestands (data/runs.ts): in the Team List a band per run, always on, quiet enough that the games stay readable.
+   Road = rose, homestand = periwinkle; every game of a run has a label naming it and its place ("Road trip · 3/5"). Neither touches the B2B yellow (brackets) or the
    rest teal. */
 [data-run='road'] {
   --ck-run: var(--ck-road);
@@ -77,27 +77,7 @@
   z-index: 1;
 }
 
-/* Team Calendar: a tint over the run's days in each week row (gaps included) with a line along the top; each game
-   cell's label on the day-number line, after the number. Square ends where the run goes on in another row or month. */
-.ck-run-band {
-  position: relative;
-  z-index: 1;
-  align-self: stretch;
-  margin: 0 2px;
-  border-top: 2px solid var(--ck-run);
-  border-radius: 8px 8px 0 0;
-  background: var(--ck-run-tint);
-  pointer-events: none;
-  min-width: 0;
-}
-.ck-run-band.ck-run-open {
-  margin-left: 0;
-  border-top-left-radius: 0;
-}
-.ck-run-band.ck-run-close {
-  margin-right: 0;
-  border-top-right-radius: 0;
-}
+/* Team Calendar: each game cell's label on the day-number line, after the number. */
 .ck-run-tag {
   position: relative;
   z-index: 2;

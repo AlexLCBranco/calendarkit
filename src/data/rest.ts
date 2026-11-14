@@ -1,18 +1,33 @@
-// Abnormal rest. Rest between two of a team's games = the difference of their game dates (the NBA's
+// Rest between games. Rest between two of a team's games = the difference of their game dates (the NBA's
 // ET game date, as everywhere in the app; tip-off times don't matter, an early tip-off counts as a full day): a
-// back-to-back is 1, one empty day between is 2, two empty days 3. A gap of REST_FLAG_DAYS (3) or more is flagged on BOTH
-// games — the one before the break ("before": the break comes after it) and the one after it ("after": it comes off the
-// break). Example: DET plays PHI on Nov 4, next LAL on Nov 8 = 4 days → both games flagged. Pure, from all the team's
-// shown games (never a filter: a TV filter would invent breaks).
+// back-to-back is 1, one empty day between is 2, two empty days 3. A gap of REST_MARK_DAYS (2) or more is flagged on
+// BOTH games — the one before the break ("before": the break comes after it) and the one after it ("after": it comes off
+// the break). REST_FLAG_DAYS (3) or more is abnormal rest, marked strongly; exactly 2 is ordinary rest, marked quietly
+// (so every game shows its rest: B2B, 2 days or 3+). Example: DET plays PHI on Nov 4, next LAL on Nov 8 = 4 days →
+// both games flagged. Pure, from all the team's shown games (never a filter: a TV filter would invent breaks).
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { daysBetween, sideLabel, teamGames, type CalendarData } from './model';
 
-/** The smallest gap (in days between game dates) that is flagged. */
+/** The smallest gap (in days between game dates) that is abnormal rest (the strong mark). */
 export const REST_FLAG_DAYS = 3;
+/** The smallest gap that is marked at all (the quiet mark below REST_FLAG_DAYS); a back-to-back (1) has its own. */
+export const REST_MARK_DAYS = 2;
+
+/** A gap's mark: 'long' (3+ days, abnormal) or 'short' (2 days). */
+export const restTier = (days: number): 'long' | 'short' => (days >= REST_FLAG_DAYS ? 'long' : 'short');
+
+/**
+ * The side a game's one badge shows: the gap it comes off ("after"), unless the gap after it is abnormal and that one
+ * isn't — a 3+ break always shows over a 2-day one.
+ */
+export function shownGap(f: RestFlag): { side: 'after' | 'before'; gap: RestGap } {
+  if (f.after && (!f.before || restTier(f.after.days) === 'long' || restTier(f.before.days) === 'short')) return { side: 'after', gap: f.after };
+  return { side: 'before', gap: (f.before ?? f.after)! };
+}
 
 export interface RestGap {
-  /** Days between the two game dates (≥ REST_FLAG_DAYS). */
+  /** Days between the two game dates (≥ REST_MARK_DAYS). */
   days: number;
   /** The game on the other side of the break: the previous game for "after", the next one for "before". */
   other: ScheduleGame;
@@ -38,7 +53,7 @@ export function teamRestFlags(data: CalendarData, teamId: number): Map<string, R
     const prev = games[i - 1]!;
     const g = games[i]!;
     const days = restDays(prev, g);
-    if (days < REST_FLAG_DAYS) continue;
+    if (days < REST_MARK_DAYS) continue;
     out.set(prev.gameId, { ...out.get(prev.gameId), teamId, before: { days, other: g } });
     out.set(g.gameId, { ...out.get(g.gameId), teamId, after: { days, other: prev } });
   }

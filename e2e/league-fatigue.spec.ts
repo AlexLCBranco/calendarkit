@@ -80,11 +80,12 @@ for (const [name, search] of [
     await page.mouse.move(2, 2);
     const plain = page.locator(`${scope}.ck-fm:not(.ck-fm-n1):not(.ck-fm-n2):not(.ck-fm-tif)`).first();
     await plain.focus();
-    await expect(tip).toHaveText(/^[A-Z]{3} — rested( Record (going in|after the game): \d+-\d+)?$/);
+    // no back-to-back or 3-in-4: its rest (2+ days off on a side)
+    await expect(tip).toHaveText(/^[A-Z]{3} — (rested|\d+ days off)/);
     // legend: visible, inside the window, under the grid / list
     const legend = page.getByTestId('fatigue-legend');
     // The view with the Fatigue component (1 week) explains it; 2 weeks keeps the tricode legend
-    await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next$/);
+    await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next · 2d 2 days \(quieter\)$/);
     const lb = (await legend.boundingBox())!;
     expect(lb.y + lb.height).toBeLessThanOrEqual(page.viewportSize()!.height);
     const above = (await page.locator('.ck-week-grid').boundingBox())!;

@@ -1,4 +1,4 @@
-// Team → Calendar: one team's month (or 1 or 2 weeks), a game per day cell, back-to-back bars; content scaled to the cell.
+// Team → Calendar: one team's month (or 1 or 2 weeks), a game per day cell; content scaled to the cell.
 
 import { seriesLine } from '../slate/series';
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
@@ -8,7 +8,7 @@ import { teamThreeInFour, type ThreeInFour } from '../data/scheduleTags';
 import { TEAM_BY_ID } from '../data/teams';
 import { CopyButton } from './CopyButton';
 import { GameCard, RunLabel, type GameLink } from './GameCard';
-import { runLabel, runTip, runTipDays, teamRuns, type Run } from '../data/runs';
+import { runLabel, runTip, runTipDays, teamRuns } from '../data/runs';
 import { monthNav, PeriodNav } from './PeriodNav';
 import { fmtDate, isCompact, useTeamB2B, WEEKDAYS, type WidgetSize } from './widget';
 
@@ -70,11 +70,9 @@ export interface TeamMonthGridProps {
    * the day strip's and the Today buttons' today — so it moves at midnight, also after sleep or a tab switch.
    */
   today?: string;
-  /** Road trips and homestands as a band across their days, a label on each of their games (Team views). */
+  /** Road trips and homestands: a label on each of their games (Team views). */
   runs?: boolean;
 }
-
-type Bar = { kind: 'full' | 'start' | 'end'; i: number; pair: B2BPair };
 
 export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, timeZone, onOpenGame, gameLink, tvOnly = false, nav = true, weeks: weekRows, start, today, runs = false }: TeamMonthGridProps) {
   const compact = isCompact(size);
@@ -86,28 +84,8 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
   const weekView = !!weekRows && !!start;
   const cells = useMemo(() => (weekView ? Array.from({ length: 7 * weekRows }, (_, i) => addDays(start, i)) : monthCells(month)), [weekView, weekRows, start, month]);
   const weeks = cells.length / 7;
-  const visible = (g: ScheduleGame) => !tvOnly || hasNationalTv(g);
 
-  // B2B bars: one across both cells (through the gap) when the nights sit side by side in a week row; otherwise a
-  // half on each shown night ending in an arrow toward the other (week break, or the other night in another month).
-  const bars = useMemo(() => {
-    const at = new Map(cells.flatMap((d, i) => (d ? [[d, i] as const] : [])));
-    const out: Bar[] = [];
-    for (const pair of b2b.pairs) {
-      if (!visible(pair.first) || !visible(pair.second)) continue; // the other night is filtered out: label only
-      const a = at.get(pair.first.dateEt);
-      const b = at.get(pair.second.dateEt);
-      if (a !== undefined && b === a + 1 && a % 7 !== 6) out.push({ kind: 'full', i: a, pair });
-      else {
-        if (a !== undefined) out.push({ kind: 'start', i: a, pair });
-        if (b !== undefined) out.push({ kind: 'end', i: b, pair });
-      }
-    }
-    return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- visible is rebuilt each render from tvOnly, which is listed
-  }, [cells, b2b, tvOnly]);
-
-  const runBands = useMemo(() => (runs ? runSegments(cells, teamRuns(data, teamId).runs) : []), [runs, cells, data, teamId]);
+  // No lines between cells (B2B nights, road trips / homestands): each game's own labels say it.
   // every shown game of a run carries its own label (its place in the run)
   const runTags = useMemo(() => {
     if (!runs) return [];
@@ -197,25 +175,6 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
             </div>
           );
         })}
-        {bars.map((b) => (
-          <div
-            key={`${b.kind}${b.i}`}
-            className={`ck-b2b-bar ck-b2b-bar-${b.kind}`}
-            data-b2b-bar={b.kind}
-            data-pair={`${b.pair.first.dateEt}/${b.pair.second.dateEt}`}
-            aria-hidden="true"
-            style={{ gridRow: Math.floor(b.i / 7) + 2, gridColumn: `${(b.i % 7) + 1} / span ${b.kind === 'full' ? 2 : 1}` }}
-          />
-        ))}
-        {runBands.map((b) => (
-          <div
-            key={`run${b.i}`}
-            className={`ck-run-band${b.open ? ' ck-run-open' : ''}${b.close ? ' ck-run-close' : ''}${weekView && cells[b.i]!.endsWith('-01') ? ' ck-run-wide-num' : ''}`}
-            data-run={b.run.kind}
-            data-run-from={b.run.from}
-            style={{ gridRow: Math.floor(b.i / 7) + 2, gridColumn: `${(b.i % 7) + 1} / span ${b.span}` }}
-          />
-        ))}
         {runTags.map((t) => (
           <div key={`tag${t.i}`} className={`ck-run-tag${weekView && cells[t.i]!.endsWith('-01') ? ' ck-run-wide-num' : ''}`} data-run={t.run.kind} style={place(t.i)}>
             <RunLabel kind={t.run.kind} text={runLabel(t.run, t.index)} tip={runTip(t.run, t.index)} days={runTipDays(t.run, t.index)} />
@@ -230,36 +189,4 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
       )}
     </section>
   );
-}
-
-/**
- * The road trip / homestand bands of the shown cells: one per run and week row, from its first shown day to its last
- * (days off between its games included). `open` / `close`: the run goes on before / after this piece (another row or
- * month), so that end stays square. `index`: the run's game the label stands at (the piece's first game).
- */
-export function runSegments(cells: readonly (string | null)[], runs: readonly Run[]): { run: Run; i: number; span: number; index: number; open: boolean; close: boolean }[] {
-  const out: { run: Run; i: number; span: number; index: number; open: boolean; close: boolean }[] = [];
-  const shown = cells.filter((d): d is string => !!d);
-  if (!shown.length) return out;
-  const first = shown[0]!;
-  const last = shown.at(-1)!;
-  for (const run of runs) {
-    if (run.to < first || run.from > last) continue;
-    for (let row = 0; row < cells.length / 7; row++) {
-      let i = -1;
-      let span = 0;
-      for (let c = 0; c < 7; c++) {
-        const d = cells[row * 7 + c];
-        if (!d || d < run.from || d > run.to) continue;
-        if (i < 0) i = row * 7 + c;
-        span = row * 7 + c - i + 1;
-      }
-      if (i < 0) continue;
-      const from = cells[i]!;
-      const to = cells[i + span - 1]!;
-      const index = Math.max(0, run.games.findIndex((g) => g.dateEt >= from));
-      out.push({ run, i, span, index, open: from > run.from, close: to < run.to });
-    }
-  }
-  return out;
 }

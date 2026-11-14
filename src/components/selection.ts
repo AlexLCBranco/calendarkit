@@ -51,7 +51,7 @@ export const MAX_SCROLL_STEP = 28;
 /** The matchup links (GameCard MatchLink): a press on one is a click or the start of a marquee. */
 // a game link (the matchup) or a team link (team names and logos, which a marquee could start on before)
 const GAME_LINK = '.ck-mlink, a.ck-tlink';
-const INTERACTIVE = 'button, a, input, label, select, textarea, [role="tab"], [role="option"], [role="listbox"], [data-capture-exclude="true"], .ck-toolbar';
+const INTERACTIVE = 'button, a, input, label, select, textarea, [role="tab"], [role="option"], [role="listbox"], [data-capture-exclude="true"], [data-no-marquee], .ck-toolbar';
 /** Selectable items: games (list rows, week-view lines, the game in a team calendar cell). Never days or rest rows. */
 export const ITEM = '[data-game-id]';
 /** Scrolling containers: items are clipped to them; the one a drag starts in auto-scrolls. */

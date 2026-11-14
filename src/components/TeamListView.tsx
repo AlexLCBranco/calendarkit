@@ -1,17 +1,14 @@
 // Team → List: every game of one team, one row each, opened at the next game.
 
 import { leagueSeries } from '../data/series';
-import { memo, useLayoutEffect, useMemo, useRef, useSyncExternalStore, type RefObject } from 'react';
-import { addMonths, hasNationalTv, isOver, monthOf, opponentSecondNight, sideLabel, teamGames, teamRestDays, teamSeason, weekOf, type CalendarData } from '../data/model';
+import { memo, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
+import { addMonths, hasNationalTv, isOver, monthOf, opponentSecondNight, teamGames, teamRestDays, teamSeason, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
 import { TEAM_BY_ID } from '../data/teams';
 import { GameCard, type GameLink, type RunMark } from './GameCard';
 import { runLabel, runOn, runTip, runTipDays, teamRuns, type Run } from '../data/runs';
-import { useActiveHighlight } from './ActiveHighlight';
-import { ACTIVE_DAY } from './copyAsImage';
 import type { ValueStore } from './valueStore';
-import { WeekStrip } from './WeekStrip';
 import { fmtDate, fmtMonth as fmtMonthLong, isCompact, TEAM_LIST_MAX_WIDTH, useTeamB2B, type WidgetSize } from './widget';
 
 export interface TeamListViewProps {
@@ -35,12 +32,10 @@ export interface TeamListViewProps {
   /** Told whether the next game is at the top (true after opening and after `toNext`, false once scrolled away). */
   onAtNext?: (at: boolean) => void;
   /**
-   * Desktop/tablet: the date of the row at the top goes here while scrolling (only on a change), and a week strip above
-   * the list follows it. Only the strip and the host's title read it: scrolling never re-renders the rows (Rule #1).
+   * The date of the row at the top goes here while scrolling (only on a change). Only the host reads it (the title,
+   * the date block, the reload snapshot): scrolling never re-renders the rows (Rule #1).
    */
   topStore?: ValueStore<string>;
-  /** Local calendar date shown in blue in the strip. */
-  today?: string;
   /**
    * Only this month's rows ("YYYY-MM"); undefined = the whole season. Numbers, records, streaks and B2B nights
    * still come from the whole season; a B2B whose other night is in another month keeps its marks but no bracket.
@@ -55,7 +50,7 @@ export interface TeamListViewProps {
   onLoadMonths?: (from: string, to: string) => void;
   /** Open at this row (a team link) instead of the next game. */
   openAt?: TeamListOpen;
-  /** The strip, the picker or "Today" asked for a row in another month: the host shows that month (then the row is put at the top). */
+  /** The picker or "Today" asked for a row in another month: the host shows that month (then the row is put at the top). */
   onMonthChange?: (month: string) => void;
   /** Mark the next game not over (accent border; default). The Cup Team list's "Played" section has none to mark. */
   markNext?: boolean;
@@ -78,7 +73,7 @@ export interface TeamListHandle {
   toDate: (date: string) => void;
 }
 
-/** While scrolling, the title and week strip catch up with the row at the top at most this often (ms). */
+/** While scrolling, the title and the date block catch up with the row at the top at most this often (ms). */
 export const FOLLOW_MS = 120;
 
 /** Team list rows get the fatigue columns where the whole TEAM_LIST_MAX_WIDTH column fits (desktop). */
@@ -93,7 +88,7 @@ export const rowDate = (date: string) => `${fmtDate(date, { weekday: 'short' })}
  * memo — the date picker's open state lives in CalendarView, and each open / close redrew the whole month
  * (tests/teamlist-rerender.test.tsx).
  */
-export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, today, month, monthTo, onLoadMonths, onMonthChange, markNext = true, cupTag, series = true, runs = false }: TeamListViewProps) {
+export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, showRest = false, only, size, now, timeZone, onOpenGame, gameLink, handle, openAt, onAtNext, topStore, month, monthTo, onLoadMonths, onMonthChange, markNext = true, cupTag, series = true, runs = false }: TeamListViewProps) {
   const compact = isCompact(size);
   const games = useMemo(() => teamGames(data, teamId).filter((g) => (!tvOnly || hasNationalTv(g)) && (!only || only.has(g.gameId))), [data, teamId, tvOnly, only]);
   // rest days come from all the team's games, so with the TV filter a non-TV game day is neither a row nor rest
@@ -130,7 +125,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     const rows = [...list.querySelectorAll<HTMLElement>(':scope > [data-row-date]')];
     // From the scroller's own top (a "Load earlier games" button or "Season start" sits above the rows)
     tops.current = rows.map((r) => ({ top: scrollPos(el, r), date: r.dataset.rowDate! }));
-    // room after the last row so every row can reach the top (a strip day click, ‹ ›), as in the League List; written
+    // room after the last row so every row can reach the top (a picked date), as in the League List; written
     // straight to the spacer, no render
     // (less whatever sits between the last row and the spacer — "Load more games" / "End of schedule" — so the
     // last row still reaches the top, the button under it, when scrolled to the bottom)
@@ -195,7 +190,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     if (row) scrollTo(row.top);
   };
   if (handle) handle.current = { toNext, toDate };
-  // While scrolling, the title and strip follow at most every FOLLOW_MS, and once more when the list stops: every change
+  // While scrolling, the title and the date block follow at most every FOLLOW_MS, and once more when the list stops: every change
   // costs the page a main-thread frame during an otherwise compositor-only scroll (following every row doubled the
   // gesture's main-thread time; docs/HISTORY.md). Reads happen in a frame callback, after layout.
   const timer = useRef<{ last: number; trailing?: ReturnType<typeof setTimeout>; frame: number }>({ last: 0, frame: 0 });
@@ -223,7 +218,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     [],
   );
   // reopen at the next game only when the list changes (not every minute as `now` ticks), rest rows included; after a
-  // month change asked for by the strip, the picker or Today, at that row. A month without the next game opens at its 1st.
+  // month change asked for by the picker or Today, at that row. A month without the next game opens at its 1st.
   useLayoutEffect(() => {
     measure();
     const a = anchor.current;
@@ -250,8 +245,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the list changes, not on every render (`now` ticks); the helpers read refs
   }, [rows, openAt]);
   // rows change size after the first layout (the font arriving, another width): measure again whenever the list does;
-  // and when the scroller does (the week strip mounts above it after the first render, so the room after the
-  // last row, sized from the scroller's height, was short and a month's last row couldn't reach the top)
+  // and when the scroller does (the window resizes: the room after the last row is sized from the scroller's height)
   useLayoutEffect(() => {
     const list = scroller.current?.querySelector('.ck-daylist');
     if (!list || typeof ResizeObserver === 'undefined') return;
@@ -265,38 +259,10 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one observer for the list's life; measure and track read refs
   }, []);
 
-  // The active day's row (the strip's selected day): a class on that row only and the overlay band over it, moved when
-  // the store changes and placed again when the rows change; rows never re-render for it. The band fades on the
-  // compositor (150 ms).
-  const highlight = useActiveHighlight();
-  useLayoutEffect(() => {
-    const el = scroller.current;
-    if (!topStore || !el) return;
-    const apply = () => {
-      const d = topStore.get();
-      for (const r of el.querySelectorAll<HTMLElement>(`.${ACTIVE_DAY}`)) if (r.dataset.rowDate !== d) r.classList.remove(ACTIVE_DAY);
-      const row = d ? el.querySelector<HTMLElement>(`.ck-daylist > [data-row-date="${d}"]`) : null;
-      row?.classList.add(ACTIVE_DAY);
-      highlight.show(row ? { key: d, top: row.offsetTop, left: row.offsetLeft, width: row.offsetWidth, height: row.offsetHeight } : undefined);
-    };
-    apply();
-    return topStore.subscribe(apply);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- highlight is a stable handle (useActiveHighlight); rows re-place the band
-  }, [topStore, rows]);
-
-  // the strip's days: what each date holds (game: opponent; rest day: a row only with "Show rest days")
-  // (the whole season's rows: a day in the next month is still a day to click)
-  const byDate = useMemo(() => {
-    const m = new Map<string, string>();
-    for (const r of allRows) m.set(rowDateOf(r), typeof r === 'string' ? '' : sideLabel(r, teamId));
-    return m;
-  }, [allRows, teamId]);
-  const gameDates = useMemo(() => games.map((g) => g.dateEt), [games]);
   const runMarks = useMemo(() => (runs && !only ? rowRunMarks(rows, teamRuns(data, teamId).runs) : undefined), [runs, only, rows, data, teamId]);
 
   return (
     <section className="ck-team-list" aria-label={`${TEAM_BY_ID.get(teamId)?.name ?? 'Team'} games`} style={{ maxHeight: size.height }}>
-      {topStore && !compact && <TeamStrip store={topStore} byDate={byDate} gameDates={gameDates} today={today} onPick={toDate} />}
       <div className="ck-llist" ref={scroller} data-testid="team-list" onScroll={onScroll} data-select-scroller>
         {games.length === 0 && <p className="ck-empty">No games.</p>}
         {onLoadMonths && month && games.length > 0 &&
@@ -372,7 +338,6 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
             </p>
           ))}
         {handle && <div ref={tail} aria-hidden="true" />}
-        {topStore && highlight.layers}
       </div>
     </section>
   );
@@ -424,31 +389,3 @@ function withRest(games: ScheduleGame[], rest: string[]): (ScheduleGame | string
   }
   return out.concat(rest.slice(r));
 }
-
-/**
- * The Team List's week strip: the week of the row at the top, each day's opponent ("@ DET" / "vs CHI"); days without a
- * row dimmed and disabled; ‹ › = the previous / next week with a game. It reads only the week's Sunday from the store,
- * so it re-renders when the week changes; within a week only the old and new selected day do (WeekStrip
- * selectedStore). Before that, re-rendering the whole strip on every row change doubled the Team List scroll's
- * main-thread time (docs/HISTORY.md).
- */
-const TeamStrip = memo(function TeamStrip({ store, byDate, gameDates, today, onPick }: { store: ValueStore<string>; byDate: Map<string, string>; gameDates: string[]; today?: string; onPick: (date: string) => void }) {
-  const sunday = useSyncExternalStore(store.subscribe, () => (store.get() ? weekOf(store.get())[0]! : ''));
-  if (!sunday) return null;
-  const week = weekOf(sunday);
-  const before = gameDates.filter((d) => d < week[0]!).at(-1);
-  const prev = before && gameDates.find((d) => d >= weekOf(before)[0]!);
-  const next = gameDates.find((d) => d > week[6]!);
-  return (
-    <WeekStrip
-      days={week.map((d) => ({ date: d, sub: byDate.get(d) ?? '', disabled: !byDate.has(d) }))}
-      selectedStore={store}
-      today={today}
-      onPick={onPick}
-      onPrev={() => prev && onPick(prev)}
-      onNext={() => next && onPick(next)}
-      prevDisabled={!prev}
-      nextDisabled={!next}
-    />
-  );
-});

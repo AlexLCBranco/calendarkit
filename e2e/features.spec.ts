@@ -240,29 +240,22 @@ test('team calendar: content scaled to the cell, nothing clipped in any cell —
           logo: card?.querySelector('.ck-matchup .ck-logo-backing')?.getBoundingClientRect().width ?? 0,
           cell: `${cells[0]!.getBoundingClientRect().width.toFixed(1)} × ${cells[0]!.getBoundingClientRect().height.toFixed(1)}`,
           clipped: cells.filter((c) => c.scrollHeight > c.clientHeight + 1 || c.scrollWidth > c.clientWidth + 1).map((c) => c.dataset.date),
-          // fullest cell: card bottom vs the cell's content box bottom (above the B2B bar's padding)
+          // fullest cell: card bottom vs the cell's content box bottom
           fill: cells.map((c) => {
             const k = c.querySelector('.ck-card');
             const b = c.getBoundingClientRect();
             const room = b.bottom - parseFloat(cs(c).paddingBottom) - parseFloat(cs(c).borderBottomWidth);
             return k ? { used: k.getBoundingClientRect().bottom - b.top, room: room - b.top } : { used: 0, room: room - b.top };
           }).sort((a, b) => b.used - a.used)[0]!,
-          // B2B bars stay on the cells' bottom edge, below the content
-          bars: [...g.querySelectorAll<HTMLElement>('[data-b2b-bar]')].map((bar) => {
-            const r = bar.getBoundingClientRect();
-            const cell = cells.map((c) => c.getBoundingClientRect()).find((c) => c.top <= r.top && c.bottom >= r.bottom);
-            return cell ? cell.bottom - r.bottom : -1;
-          }),
+          // no lines between the cells (B2B bars, road-trip bands): the labels on the cells say it
+          connectors: g.querySelectorAll('[data-b2b-bar], .ck-b2b-bar, .ck-run-band').length,
           scroll: document.documentElement.scrollHeight - document.documentElement.clientHeight,
         };
       });
       const name = `${tri} ${r.month}`;
       expect(r.clipped, name).toEqual([]);
       expect(r.scroll, name).toBeLessThanOrEqual(0);
-      for (const gap of r.bars) {
-        expect(gap, `${name}: B2B bar at the bottom edge of its cells`).toBeGreaterThanOrEqual(0);
-        expect(gap, name).toBeLessThanOrEqual(6);
-      }
+      expect(r.connectors, name).toBe(0);
       if (p === 'desktop-xl') {
         expect(r.scale, name).toBeGreaterThanOrEqual(1.2); // the short chip + TV pill: 1.2
         if (r.logo) expect(r.logo, name).toBeCloseTo(16 * r.scale, 1);
@@ -430,7 +423,7 @@ test('week view width cutoff: full-size lines at the cutoff, count grid one pixe
   expect(await sideways(page)).toBeLessThanOrEqual(0);
 });
 
-test('back-to-back pairs: bar across both cells, halves with arrows at a week break, labels, plane, tooltips, list bracket', async ({ page }, info) => {
+test('back-to-back pairs: labels on both cells and no line between them, plane, tooltips, list bracket', async ({ page }, info) => {
   const errors = collectErrors(page);
   const p = info.project.name;
   await open(page, '?view=team&layout=calendar&team=ORL');
@@ -466,7 +459,7 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
       return {
         a: { ...box(ca).toJSON() },
         b: { ...box(cb).toJSON() },
-        bars: bars.map((el) => ({ kind: el.dataset.b2bBar, ...box(el).toJSON(), arrow: getComputedStyle(el, el.dataset.b2bBar === 'start' ? '::after' : '::before').borderLeftWidth + '/' + getComputedStyle(el, el.dataset.b2bBar === 'start' ? '::after' : '::before').borderRightWidth })),
+        bars: [...bars, ...document.querySelectorAll('.ck-b2b-bar')].map((el) => el.className),
         la: label(ca),
         lb: label(cb),
       };
@@ -480,28 +473,8 @@ test('back-to-back pairs: bar across both cells, halves with arrows at a week br
     expect(r.la.plane && r.lb.plane, name).toBe(x.travels);
     expect(r.la.inside && r.lb.inside, name).toBe(true);
     expect(r.la.tip).toBe(r.lb.tip);
-    if (isBreak(x)) {
-      // each half ends in an arrow toward the other night
-      expect(r.bars.map((b) => b.kind), name).toEqual(['start', 'end']);
-      const [s, e] = r.bars;
-      expect(s!.right).toBeGreaterThan(r.a.right - 12);
-      expect(s!.right).toBeLessThanOrEqual(r.a.right + 0.5);
-      expect(s!.arrow).toBe('6px/0px'); // right-pointing triangle
-      expect(e!.left).toBeLessThan(r.b.left + 12);
-      expect(e!.left).toBeGreaterThanOrEqual(r.b.left - 0.5);
-      expect(e!.arrow).toBe('0px/6px'); // left-pointing triangle
-      for (const [bar, cell] of [[s!, r.a], [e!, r.b]] as const) expect(bar.top >= cell.top && bar.bottom <= cell.bottom, name).toBe(true);
-    } else {
-      // one thin bar from night 1 across the gap into night 2
-      expect(r.bars.map((b) => b.kind), name).toEqual(['full']);
-      const bar = r.bars[0]!;
-      expect(bar.height).toBe(3);
-      expect(bar.left).toBeGreaterThan(r.a.left);
-      expect(bar.left).toBeLessThan(r.a.right);
-      expect(bar.right).toBeGreaterThan(r.b.left);
-      expect(bar.right).toBeLessThan(r.b.right);
-      expect(bar.top >= r.a.top && bar.bottom <= r.a.bottom, name).toBe(true);
-    }
+    // no line between the two cells (side by side or across a week break): the labels say it
+    expect(r.bars, name).toEqual([]);
   }
 
   // tooltip on hover and on keyboard focus, exact text, inside the viewport

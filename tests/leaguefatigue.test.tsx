@@ -19,7 +19,7 @@ const XL = { width: 1840, height: 1000 };
 const LEGEND = '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4';
 /** Views with the Fatigue component: League List (desktop) and the 1-week view. The leg dot, the merged chip; no
  * tricode keys (the tricodes there have no yellow marks). */
-const LEGEND_FX = 'B2B back-to-back, 1st night (again tomorrow) · B2B 2nd night (played yesterday) ·  home  away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next';
+const LEGEND_FX = 'B2B back-to-back, 1st night (again tomorrow) · B2B 2nd night (played yesterday) ·  home  away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next · 2d 2 days (quieter)';
 /** GameId → the 3+ day gaps before / after it, worked out here from the dates. */
 function breaks(teamId: number) {
   const games = teamGames(data, teamId);
@@ -28,7 +28,7 @@ function breaks(teamId: number) {
   games.forEach((g, i) => {
     const a = i > 0 ? gap(games[i - 1]!, g) : 0;
     const b = i + 1 < games.length ? gap(g, games[i + 1]!) : 0;
-    if (a >= 3 || b >= 3) out.set(g.gameId, { ...(a >= 3 ? { after: a } : {}), ...(b >= 3 ? { before: b } : {}) });
+    if (a >= 2 || b >= 2) out.set(g.gameId, { ...(a >= 2 ? { after: a } : {}), ...(b >= 2 ? { before: b } : {}) });
   });
   return out;
 }
@@ -111,7 +111,8 @@ describe('leagueFatigue (model)', () => {
       }
     }
     expect(b2b).toBeGreaterThan(400);
-    expect(rested).toBeGreaterThan(200);
+    // every game shows its rest: a back-to-back night or a 2+ day gap on one side (one game a day at most)
+    expect(rested).toBe(0);
   });
 
   it('record on the tooltip: after the game once final (round 22), going in on a game to come', () => {

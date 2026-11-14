@@ -33,7 +33,7 @@
   --ck-note-focus: #5ec8ff;
   /* back-to-back: lemon yellow (hue 53°), apart from the Cup's gold (43°); contrast 14.1:1 on --ck-bg, 11.7:1 on surface-2 */
   --ck-b2b: #f5e042;
-  /* Abnormal rest (3+ days between games), a cool teal unlike the B2B yellow */
+  /* Rest of 2+ days between games (3+ strong, 2 quiet), a cool teal unlike the B2B yellow */
   --ck-rest: #3fc8d8;
   /* Road trips and homestands (runs.css): a rose and a periwinkle, apart from the B2B yellow, the rest teal, the
      accent blue and the TV green */

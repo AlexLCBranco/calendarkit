@@ -158,7 +158,7 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
   const scoreSlots = !compact && day.games.some((g) => !!finalScore(g, g.awayTeam.teamId));
   return (
     <section className="ck-lday" data-day={day.date} aria-label={head}>
-      <h3 className="ck-lday-head" data-text={head}>
+      <h3 className="ck-lday-head">
         {head}
       </h3>
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />

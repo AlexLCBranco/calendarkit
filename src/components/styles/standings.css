@@ -172,11 +172,27 @@
   transform: translateX(-50%);
   z-index: 40;
   max-height: calc(100vh - 80px);
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* the scroller inside scrolls, so the resize grips stay on the edges */
   background: var(--ck-bg);
   border: 1px solid var(--ck-border);
   border-radius: 12px;
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.55);
+}
+.ck-st-pop-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+/* the header stays on top while the tables scroll under it (it is the drag handle) */
+.ck-st-pop .ck-st-pop-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--ck-bg);
+  margin: -12px 0 0;
+  padding: 12px 0 8px;
 }
 .ck-st-pop-body {
   background: var(--ck-bg);
@@ -225,4 +241,92 @@
 }
 .ck-st-mini td {
   height: 28px;
+}
+
+/* Moving and resizing (floatBox.ts): the header is the handle; thin grips on the edges, larger ones on the corners,
+   inside the border so they never widen the popup. Placed: the box is inline (left / top / size), the tables wrap
+   (East under West) when narrower than both, and the body scrolls when shorter. */
+.ck-st-pop-head {
+  cursor: move;
+  user-select: none;
+}
+.ck-st-pop-head button {
+  cursor: pointer;
+}
+.ck-st-pop-placed .ck-st-pop-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.ck-st-pop.ck-float-moving {
+  user-select: none;
+}
+.ck-float-grip {
+  position: absolute;
+  z-index: 2;
+}
+.ck-float-n,
+.ck-float-s {
+  left: 10px;
+  right: 10px;
+  height: 6px;
+  cursor: ns-resize;
+}
+.ck-float-n {
+  top: 0;
+}
+.ck-float-s {
+  bottom: 0;
+}
+.ck-float-e,
+.ck-float-w {
+  top: 10px;
+  bottom: 10px;
+  width: 6px;
+  cursor: ew-resize;
+}
+.ck-float-e {
+  right: 0;
+}
+.ck-float-w {
+  left: 0;
+}
+.ck-float-ne,
+.ck-float-nw,
+.ck-float-se,
+.ck-float-sw {
+  width: 14px;
+  height: 14px;
+}
+.ck-float-ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+}
+.ck-float-sw {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+}
+.ck-float-nw {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+}
+.ck-float-se {
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+}
+/* a small corner mark says the popup can be resized */
+.ck-float-se::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--ck-muted);
+  border-bottom: 2px solid var(--ck-muted);
+  opacity: 0.6;
 }

@@ -26,24 +26,16 @@ test('League List: no active-day highlight (one day on screen), also after the w
   expect(await lit()).toBe(0);
 });
 
-test('Team List: the row at the top highlighted, follows the wheel', async ({ page }) => {
+// The Team List has no day strip (its rows show their dates), so nothing marks an "active" row; the title follows.
+test('Team List: no day strip and no highlighted row, also after the wheel; the title follows', async ({ page }) => {
   await open(page, '?view=team&layout=list&team=LAL');
   const list = page.getByTestId('team-list');
+  await expect(page.getByTestId('week-strip')).toHaveCount(0);
+  const title = await page.getByTestId('team-day-title').textContent();
   await list.hover();
-  for (let i = 0; i < 4; i++) {
-    await page.mouse.wheel(0, 300);
-    await page.waitForTimeout(400); // the strip and title catch up every 120 ms and when the list stops
-    const r = await page.evaluate(() => {
-      const row = document.querySelector<HTMLElement>('.ck-active-day');
-      const band = document.querySelector('.ck-hl.ck-hl-on')?.getBoundingClientRect();
-      const b = row?.getBoundingClientRect();
-      return {
-        rows: [...document.querySelectorAll<HTMLElement>('.ck-active-day')].map((e) => e.dataset.rowDate),
-        selected: document.querySelector<HTMLElement>('[data-testid="week-strip"] [aria-selected="true"]')!.dataset.date,
-        over: !!b && !!band && Math.abs(b.top - band.top) < 1 && Math.abs(b.height - band.height) < 1,
-      };
-    });
-    expect(r.rows).toEqual([r.selected]);
-    expect(r.over).toBe(true);
-  }
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 300);
+  await page.waitForTimeout(400); // the title catches up every 120 ms and when the list stops
+  expect(await page.evaluate(() => document.querySelectorAll('.ck-active-day, .ck-hl').length)).toBe(0);
+  await expect(page.getByTestId('week-strip')).toHaveCount(0);
+  expect(await page.getByTestId('team-day-title').textContent()).not.toBe(title);
 });

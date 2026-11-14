@@ -1,7 +1,6 @@
 // Compact week strip in a real browser. League List: strip ≤ 46 px tall (was 61 + 12), fixed week on
-// a click, ‹ › weeks. Team List (desktop widths): wheel scrolling moves the title and the strip to the row at the top and
-// changes no row (MutationObserver on the rows), a day click puts its row at the top, ‹ › weeks with a game, the top bar
-// stays one row at 1920.
+// a click, ‹ › weeks. Team List (desktop widths): no strip; wheel scrolling moves the title to the row at the top and
+// changes no row (MutationObserver on the rows); the date picker and Today still move the list.
 
 import { expect, test, type Page } from './fixtures';
 
@@ -49,11 +48,12 @@ test('League List: compact strip, fixed week on a click, ‹ › weeks', async (
   expect(await dates()).not.toEqual(week);
 });
 
-test('Team List: title and strip follow the wheel, rows untouched; day click; ‹ ›', async ({ page }, info) => {
+test('Team List: no day strip; the title follows the wheel, rows untouched; picker and Today still move it', async ({ page }, info) => {
   test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop widths');
   await open(page, '?view=team&layout=list&team=LAL');
   const list = page.getByTestId('team-list');
   const title = page.getByTestId('team-day-title');
+  await expect(page.getByTestId('week-strip')).toHaveCount(0);
   /** Date of the row whose top is at (or just above) the list's top edge. */
   const topRow = () =>
     list.evaluate((el) => {
@@ -69,19 +69,19 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; �
   await list.evaluate((el) => {
     const w = window as unknown as { __rowMutations: number };
     w.__rowMutations = 0;
-    // every change counts, except the active-day class moving from row to row (that's its whole job) and the
-    // map's hover class following the pointer as rows pass under it (a class on the row, no re-render)
-    const onlyActiveDay = (r: MutationRecord) => {
+    // every change counts, except the map's hover class following the pointer as rows pass under it (a class on the
+    // row, no re-render)
+    const onlyHover = (r: MutationRecord) => {
       if (r.type !== 'attributes' || r.attributeName !== 'class') return false;
       const was = new Set((r.oldValue ?? '').split(' ').filter(Boolean));
       const now = new Set((r.target as Element).className.split(' ').filter(Boolean));
-      for (const c of ['ck-active-day', 'ck-map-hot']) {
+      for (const c of ['ck-map-hot']) {
         was.delete(c);
         now.delete(c);
       }
       return was.size === now.size && [...was].every((c) => now.has(c));
     };
-    new MutationObserver((m) => (w.__rowMutations += m.filter((r) => !onlyActiveDay(r)).length)).observe(el.querySelector('.ck-team-rows')!, { subtree: true, childList: true, attributes: true, attributeOldValue: true, characterData: true });
+    new MutationObserver((m) => (w.__rowMutations += m.filter((r) => !onlyHover(r)).length)).observe(el.querySelector('.ck-team-rows')!, { subtree: true, childList: true, attributes: true, attributeOldValue: true, characterData: true });
   });
   await list.hover();
   for (let i = 0; i < 8; i++) {
@@ -89,23 +89,17 @@ test('Team List: title and strip follow the wheel, rows untouched; day click; �
     await still(page, 'team-list');
     const row = await topRow();
     await expect(title).toHaveText(long(row));
-    expect(await page.getByTestId('week-strip').locator('[aria-selected="true"]').getAttribute('data-date')).toBe(row);
+    expect(await page.locator('.ck-active-day').count()).toBe(0);
   }
   expect(await page.evaluate(() => (window as unknown as { __rowMutations: number }).__rowMutations)).toBe(0);
-  // a day click: that row at the top
-  const strip = page.getByTestId('week-strip');
-  const target = strip.locator('[role="tab"]:not([disabled]):not([aria-selected="true"])').first();
-  const date = (await target.getAttribute('data-date'))!;
-  await target.click();
+  // the date picker: a game day's row at the top (one of the month's first games, so its row can reach the top)
+  const date = await list.evaluate((el) => [...el.querySelectorAll<HTMLElement>('.ck-team-rows > [data-row-date]')][2]!.dataset.rowDate!);
+  await page.getByTestId('date-pick').click();
+  await page.getByTestId('date-picker').locator(`[data-date="${date}"]`).click();
   await settle(page);
+  await still(page, 'team-list');
   expect(await topRow()).toBe(date);
   await expect(title).toHaveText(long(date));
-  // ›: the next week with a game
-  await strip.getByLabel('Next week').click();
-  await settle(page);
-  const after = await topRow();
-  const sunday = (d: string) => new Date(Date.parse(`${d}T12:00:00Z`) - new Date(`${d}T12:00:00Z`).getUTCDay() * 86_400_000).toISOString().slice(0, 10);
-  expect(sunday(after) > sunday(date)).toBe(true);
   // Today still goes back to the next game
   await page.getByTestId('today').click();
   await settle(page);
