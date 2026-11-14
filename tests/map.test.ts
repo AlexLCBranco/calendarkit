@@ -122,7 +122,7 @@ describe('dots', () => {
     }
   });
 
-  it('two games at nearby arenas the same night (LAL + LAC at home) are spread apart, labels outward', () => {
+  it('two games at nearby arenas the same night (LAL + LAC at home) are spread apart', () => {
     const day = data.dates.find((d) => {
       const ids = data.byDate.get(d)!.map((g) => g.homeTeam.teamTricode);
       return ids.includes('LAL') && ids.includes('LAC');
@@ -131,6 +131,5 @@ describe('dots', () => {
     const la = mapGames(data, data.byDate.get(day)!).filter((m) => ['LAL', 'LAC'].includes(m.game.homeTeam.teamTricode));
     expect(la).toHaveLength(2);
     expect(Math.hypot(la[0]!.dx - la[1]!.dx, la[0]!.dy - la[1]!.dy)).toBeGreaterThanOrEqual(12);
-    expect(la.map((m) => m.labelLeft).sort()).toEqual([false, true]);
   });
 });

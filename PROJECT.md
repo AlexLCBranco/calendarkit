@@ -47,6 +47,10 @@ measurement; open it only when a question needs the backstory.
   labels say it); the Team List has no day strip (or active-row highlight); rest of exactly 2 days gets a quiet teal
   badge, 3+ keeps the strong one; the scope picker is the bar's most prominent control (full name from 1440 px, tricode
   below); Quick standings popup movable / resizable, remembered in `ck:stpop:v1`, "↺" resets (`floatBox.ts`).
+- **v1.66.0** (2026-11-14): both maps are one **travel view** (`src/map/TravelMap.tsx`): a focused game's two
+  teams, last game → this (solid) → next (dashed), miles on each line, zoom to fit; a panel per team under the map
+  (last / this / next, rest = the rest chips, clock change). Hover focuses, click pins (Esc / again / empty map / another
+  day unpins). Road-trip map and `trips.ts` removed; no time-zone tint.
 - **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
   `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 
@@ -66,11 +70,11 @@ measurement; open it only when a question needs the backstory.
   destination's controls only. Both: icon buttons at the right end (Options — Schedule only: TV games only, Rest days
   in the Team List —, ⓘ, Quick standings, Copy); a destination's controls always in the same place and order; the bar
   never hides. Alex picks one after a few days; the other gets deleted (`Menu.tsx`, `menu.css`, the switch).
-- **League List**: one game day at a time, week strip, map of the night's games beside it (desktop). Rows: time,
+- **League List**: one game day at a time, week strip, map of the night's games beside it (desktop; see Maps). Rows: time,
   [away tags] [record] logo AWAY (score) @ (score) HOME logo [record] [home tags] — the tags (Fatigue components) in
   fixed-width columns on the outside, so names, "@" and records line up down the list; its legend is in the ⓘ popover.
   **League Calendar**: week view, 1 or 2 weeks. **Slate**: a day of games as cards with a note box per game.
-  **Team List**: one calendar month, records / streaks / scores, rest rows, the team's road-trip map; no day strip
+  **Team List**: one calendar month, records / streaks / scores, rest rows, the travel map (1920); no day strip
   (date picker, ‹ › game, Today, load more). **Team Calendar**: month grid or 1–2 week spans; no lines between cells.
 - Game info everywhere: local tip-off ((+1) past local midnight, TBD), national TV (NBA TV excluded), Cup / play-in /
   playoff tags, final scores, back-to-backs and 3-in-4 (Fatigue component), rest badge (2 days quiet, ≥ 3 days strong),
@@ -86,6 +90,15 @@ measurement; open it only when a question needs the backstory.
   copies; not in selection images.
 - **Calendar side arrows**: League and Team Calendar, large borderless chevrons sized to the page margin beside the grid, the bar's ‹ › step; never in a
   copy. **Tab title**: "BOS schedule · Nov 2026 — calendarkit", set on every navigation and back / forward.
+- **Maps** (desktop, beside the League List / Team List; never in a copy): one dot per game; nothing focused: "AWAY @
+  HOME" + city where it fits (else "AWAY @ HOME", else HOME, else none — never overlapping). **Focus** = the hovered row
+  or dot, else the pinned game (click a row or dot), else (Team map) the team's game today or next. For both teams:
+  previous game → this (solid) → next (dashed, faded), straight-line miles on each line, "stayed · 0 mi" for the same
+  arena; colours: pink = away / the selected team, green = home / the opponent. The view zooms to fit (CSS transform,
+  `--k` keeps dots/labels/lines at screen size; min span ≈ 480 mi) — not for a dot hovered on the map (it would slide
+  from under the pointer), only for a row hover or a pin. Panel: last / this / next with date, time, city, miles, rest
+  days (`restDays`, = the rest chips; B2B badge for 1), clock change at the later tip-off (DST in between isn't counted).
+  Travel worked out once per game (`travel.ts`, cached per data set); labels placed once per game and width (`view.ts`).
 - **Copy as image** on every view (html-to-image, `src/components/copyAsImage.ts`).
 - **Data**: `public/data/schedule.json`, a daily snapshot of the NBA's schedule feed (cdn.nba.com blocks browsers by
   CORS and headless clients by bot detection, so the site never fetches the feed itself). Schedule first: no live
@@ -110,7 +123,8 @@ measurement; open it only when a question needs the backstory.
   gauntlet installs this repo as a package pinned to a commit. `slate.html` / `src/slate/demo.tsx` is its demo page.
 - `src/shared/nba-schedule/` — copied byte-for-byte from rotationkit; never edit here. `npm run check-shared` (local
   only: needs gh access to the private rotationkit repo) compares it with rotationkit.
-- `src/map/` — League and Team maps (static basemap from `scripts/make-basemap.ts`).
+- `src/map/` — League and Team maps: `TravelMap.tsx` (shared view + panel), `travel.ts` (legs), `view.ts` (zoom, label
+  placement), `LeagueMap.tsx` / `TeamMap.tsx` (thin wrappers); static basemap from `scripts/make-basemap.ts`.
 - `api/odds.ts` — Vercel function proxying ESPN's public scoreboard for moneyline odds.
 - `scripts/` — snapshot job, deploy checks, version check, e2e runners, perf reference builds.
 

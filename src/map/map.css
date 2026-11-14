@@ -1,11 +1,43 @@
-/* The League List's map (LeagueMap). Loaded with the map's own chunk. Time zones: faint tints, apart from the
-   B2B yellow (dots) and the accent blue (hover); the bands are approximate (zones.ts). */
+/* The maps (LeagueMap, TeamMap → TravelMap). Loaded with the map's own chunk. No time-zone tint any more (the panel
+   says the clock change): one quiet land colour, so the two teams' lines and the B2B yellow stand out. Team colours:
+   --ck-team-a pink (away / the selected team), --ck-team-b green (home / the opponent) — clear of the B2B yellow, the
+   rest teal and the 3-in-4 purples. */
+@property --k {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
 .ck-map {
   position: relative;
+  --ck-team-a: #ff7ab8;
+  --ck-team-b: #7ee787;
+}
+.ck-tc-a {
+  --tc: var(--ck-team-a);
+}
+.ck-tc-b {
+  --tc: var(--ck-team-b);
 }
 .ck-map-box {
   position: relative;
   width: 100%;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #0f1218;
+  --k: 1;
+  --u: 1;
+}
+/* the zoomed part: one transform; --k (the zoom) moves with it so everything inside keeps its screen size */
+.ck-map-stage {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  transition: transform 300ms cubic-bezier(0.2, 0.7, 0.2, 1), --k 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ck-map-stage {
+    transition: none;
+  }
 }
 .ck-map-svg {
   position: absolute;
@@ -17,109 +49,248 @@
 .ck-map-land {
   fill: #151820;
   stroke: #262b35;
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
+  stroke-width: calc(1px * var(--u) / var(--k));
 }
 .ck-map-state {
-  stroke: #2f3542;
-  stroke-width: 0.75;
-  vector-effect: non-scaling-stroke;
-}
-.ck-tz-ET {
-  fill: #1d2433;
-}
-.ck-tz-CT {
-  fill: #1b2a2a;
-}
-.ck-tz-MT {
-  fill: #2a2433;
-}
-.ck-tz-PT {
-  fill: #212a1e;
-}
-.ck-map-swatch {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  border: 1px solid #3a4150;
-  vertical-align: -2px;
-}
-.ck-map-swatch.ck-tz-ET {
-  background: #1d2433;
-}
-.ck-map-swatch.ck-tz-CT {
-  background: #1b2a2a;
-}
-.ck-map-swatch.ck-tz-MT {
-  background: #2a2433;
-}
-.ck-map-swatch.ck-tz-PT {
-  background: #212a1e;
+  fill: #1b202b;
+  stroke: #333a48;
+  stroke-width: calc(0.8px * var(--u) / var(--k));
 }
 
-/* a game: the dot on its arena, the home team's code beside it */
+/* a dot (0 × 0 anchor at its place; its contents at screen size whatever the zoom) */
 .ck-map-dot {
   position: absolute;
   width: 0;
   height: 0;
   z-index: 1;
+  transform: scale(calc(1 / var(--k)));
+  transition: opacity 80ms linear;
 }
 .ck-map-pin {
   position: absolute;
-  left: -5px;
-  top: -5px;
-  width: 10px;
-  height: 10px;
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: #cfd6e2;
   box-shadow: 0 0 0 2px var(--ck-bg);
+  pointer-events: auto;
 }
 .ck-map-b2b .ck-map-pin,
 .ck-map-key-b2b {
   background: var(--ck-b2b);
 }
-.ck-map-code {
-  position: absolute;
-  left: 9px;
-  top: -8px;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 700;
-  color: var(--ck-text);
-  white-space: nowrap;
-  text-shadow: 0 0 3px var(--ck-bg), 0 0 3px var(--ck-bg), 0 0 2px var(--ck-bg);
-  pointer-events: none;
-}
-.ck-map-label-left .ck-map-code {
-  left: auto;
-  right: 9px;
-}
-/* off the map (Mexico City, Paris, Manchester): the label inside the frame, pointing out */
 .ck-map-edge .ck-map-pin {
   border-radius: 2px;
 }
-.ck-map-edge .ck-map-code {
+.ck-map-dot[data-map-game] {
+  cursor: pointer;
+}
+/* labels: plain text, click-through (a label must never take a nearby dot's hover) */
+.ck-map-label {
+  position: absolute;
+  padding: 1px 2px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  pointer-events: none;
+  color: var(--ck-text);
+  text-shadow: 0 0 3px var(--ck-bg), 0 0 3px var(--ck-bg), 0 0 2px var(--ck-bg), 0 0 1px var(--ck-bg);
+}
+.ck-ml-strong {
+  font-size: 14px;
+  line-height: 17px;
+  font-weight: 700;
+}
+.ck-ml {
+  font-size: 12px;
+  line-height: 15px;
   font-weight: 600;
   color: var(--ck-muted);
+}
+.ck-map-label .ck-tc-a,
+.ck-map-label .ck-tc-b {
+  color: var(--tc);
 }
 .ck-map-unknown {
   position: absolute;
   left: 6px;
   bottom: 6px;
-  font-size: 11px;
+  font-size: 12px;
+  color: var(--ck-muted);
+  z-index: 4;
+}
+
+/* a focused game: the other dots fade and can't be hovered (the view moved: they'd slide under the pointer) */
+.ck-map-focused .ck-map-dot[data-map-game]:not(.ck-map-hot) {
+  opacity: 0.18;
+  pointer-events: none;
+}
+.ck-map-focused .ck-map-dot[data-map-game]:not(.ck-map-hot) .ck-map-pin {
+  pointer-events: none;
+}
+.ck-map-hot {
+  z-index: 3;
+}
+.ck-map-hot .ck-map-pin {
+  left: -8px;
+  top: -8px;
+  width: 16px;
+  height: 16px;
+  box-shadow: 0 0 0 2px var(--ck-bg), 0 0 0 4px #5ec8ff;
+}
+.ck-map-pinned .ck-map-pin {
+  box-shadow: 0 0 0 2px var(--ck-bg), 0 0 0 5px #5ec8ff, 0 0 10px 5px rgba(94, 200, 255, 0.45);
+}
+
+/* the travel view: each team's places (dots in its colour), the lines, the miles on them */
+.ck-tv-point {
+  z-index: 2;
+  pointer-events: none;
+}
+.ck-tv-point .ck-map-pin {
+  background: var(--tc, #ffffff);
+  pointer-events: none;
+}
+.ck-tv-point.ck-tv-this {
+  z-index: 4;
+}
+.ck-tv-point.ck-map-hot .ck-map-pin {
+  background: #ffffff;
+  pointer-events: auto;
+}
+.ck-tv-dist-at {
+  z-index: 3;
+  pointer-events: none;
+}
+.ck-map-travel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.ck-tv-line {
+  fill: none;
+  stroke: var(--tc);
+  stroke-width: calc(4px * var(--u) / var(--k));
+  stroke-linecap: round;
+}
+.ck-tv-next {
+  stroke-dasharray: calc(9px * var(--u) / var(--k)) calc(7px * var(--u) / var(--k));
+  stroke-linecap: butt;
+  opacity: 0.6;
+}
+.ck-tv-head {
+  fill: var(--tc);
+}
+.ck-map-label.ck-tv-dist {
+  padding: 0 6px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--tc);
+  background: #0d1016;
+  border: 1px solid var(--tc);
+  border-radius: 11px;
+  text-shadow: none;
+}
+.ck-map-label.ck-tv-dist-next {
+  border-style: dashed;
+  color: color-mix(in srgb, var(--tc) 75%, #0d1016);
+}
+
+/* the panel under the map: the game, then one block per team in its colour */
+.ck-tv-panel {
+  margin-top: 8px;
+  font-size: 12.5px;
+  line-height: 19px;
+  color: var(--ck-text);
+  overflow: hidden;
+}
+.ck-tv-idle {
   color: var(--ck-muted);
 }
+.ck-tv-head {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ck-muted);
+  margin-bottom: 4px;
+}
+.ck-tv-head b {
+  color: var(--ck-text);
+}
+.ck-tv-pin {
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #071018;
+  background: #5ec8ff;
+}
+.ck-tv-team {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  border-left: 3px solid var(--tc);
+  padding-left: 7px;
+  margin-top: 4px;
+  color: var(--tc);
+}
+.ck-tv-tri {
+  font-weight: 800;
+  font-size: 14px;
+}
+.ck-tv-row {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-tv-k {
+  display: inline-block;
+  width: 30px;
+  color: var(--ck-muted);
+}
+.ck-tv-mi {
+  font-weight: 800;
+}
+.ck-tv-b2b {
+  padding: 0 4px;
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 11px;
+  color: #1f1a02;
+  background: var(--ck-b2b);
+}
+.ck-fx-chip.ck-tv-chip {
+  margin-left: 6px;
+  font-size: 11px;
+}
+.ck-tv-panel .ck-tlink {
+  color: inherit;
+}
+
 .ck-map-legend {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-top: 8px;
-  font-size: 11px;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0 14px;
+  margin-top: 6px;
+  font-size: 11.5px;
   color: var(--ck-muted);
+  white-space: nowrap;
+  overflow: hidden;
 }
 .ck-map-key {
   white-space: nowrap;
+}
+.ck-map-key.ck-tc-a,
+.ck-map-key.ck-tc-b {
+  color: var(--tc);
+  font-weight: 700;
 }
 .ck-map-key .ck-map-pin {
   position: static;
@@ -129,189 +300,17 @@
   box-shadow: none;
   vertical-align: -1px;
 }
+.ck-key-line {
+  display: inline-block;
+  width: 20px;
+  height: 0;
+  vertical-align: 3px;
+  border-top: 3px solid var(--tc, var(--ck-muted));
+}
+.ck-key-dashed {
+  border-top-style: dashed;
+  opacity: 0.7;
+}
 .ck-map-note {
   opacity: 0.8;
-}
-
-/* Part 3: a hovered game — its dot lit, the others dimmed; its teams' back-to-back travel as arcs (away coral, home
-   sky, bent to opposite sides, arrow at the end); the info line under the map, its height always reserved */
-.ck-map-dot {
-  transition: opacity 80ms linear;
-}
-.ck-map-dimmed .ck-map-dot:not(.ck-map-hot) {
-  opacity: 0.28;
-}
-.ck-map-hot {
-  z-index: 3;
-}
-.ck-map-hot .ck-map-pin {
-  box-shadow: 0 0 0 2px var(--ck-bg), 0 0 0 4px var(--ck-accent);
-}
-.ck-map-dot[data-map-game] {
-  cursor: default;
-}
-.ck-map-pin {
-  pointer-events: auto;
-}
-.ck-map-travel {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  z-index: 2;
-}
-.ck-travel {
-  fill: none;
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-  /* a dark casing so a line stays readable across the other */
-  filter: drop-shadow(0 0 1.5px var(--ck-bg));
-}
-.ck-travel-away {
-  stroke: #ff8f5a;
-  fill: #ff8f5a;
-  color: #ff8f5a;
-}
-.ck-travel-home {
-  stroke: #5ec8ff;
-  fill: #5ec8ff;
-  color: #5ec8ff;
-}
-.ck-travel.ck-travel-away,
-.ck-travel.ck-travel-home {
-  fill: none;
-}
-.ck-travel-head {
-  stroke: none;
-}
-.ck-travel-end {
-  position: absolute;
-  width: 0;
-  height: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-.ck-travel-ring {
-  position: absolute;
-  left: -6px;
-  top: -6px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid currentColor;
-  box-sizing: border-box;
-}
-.ck-travel-label {
-  position: absolute;
-  left: 9px;
-  font-size: 11px;
-  line-height: 14px;
-  font-weight: 700;
-  white-space: nowrap;
-  text-shadow: 0 0 3px var(--ck-bg), 0 0 3px var(--ck-bg), 0 0 2px var(--ck-bg);
-}
-/* the two teams' labels never on top of each other: away above the ring, home below */
-.ck-travel-end.ck-travel-away .ck-travel-label {
-  top: -20px;
-}
-.ck-travel-end.ck-travel-home .ck-travel-label {
-  top: 6px;
-}
-.ck-map-info {
-  margin-top: 6px;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--ck-muted);
-  overflow: hidden;
-}
-.ck-map-info b {
-  color: var(--ck-text);
-}
-.ck-map-info-place,
-.ck-map-info-travel {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Team map: one road trip — numbered stops, the route (home legs dashed), home as a square, the trip's numbers below */
-.ck-route {
-  fill: none;
-  stroke: #5ec8ff;
-  stroke-width: 2.25;
-  stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
-  filter: drop-shadow(0 0 1.5px var(--ck-bg));
-}
-.ck-route-home {
-  stroke-dasharray: 5 5;
-  opacity: 0.75;
-}
-.ck-route-head {
-  fill: #5ec8ff;
-}
-.ck-trip-home .ck-map-pin {
-  border-radius: 2px;
-  background: var(--ck-text);
-}
-.ck-trip-home .ck-map-code {
-  color: var(--ck-muted);
-}
-.ck-trip-stop .ck-trip-num {
-  left: -9px;
-  top: -9px;
-  width: auto;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  box-sizing: border-box;
-  border-radius: 9px;
-  background: #5ec8ff;
-  color: #071018;
-  font-size: 11px;
-  line-height: 18px;
-  font-weight: 800;
-  text-align: center;
-  white-space: nowrap;
-}
-.ck-trip-stop .ck-map-code {
-  left: 13px;
-  top: -9px;
-  font-size: 12px;
-  line-height: 18px;
-}
-.ck-trip-stop.ck-map-label-left .ck-map-code {
-  left: auto;
-  right: 13px;
-}
-.ck-trip-stats {
-  margin-top: 8px;
-  font-size: 12px;
-  line-height: 20px;
-  color: var(--ck-muted);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.ck-trip-stats b {
-  color: var(--ck-text);
-}
-.ck-trip-stop.ck-label-up .ck-map-code {
-  top: -29px;
-  left: -9px;
-  right: auto;
-}
-.ck-trip-stop.ck-label-down .ck-map-code {
-  top: 11px;
-  left: -9px;
-  right: auto;
-}
-/* stacked near the right edge (New York / Philadelphia): anchored on the right, so the label stays inside */
-.ck-trip-stop.ck-map-label-left.ck-label-up .ck-map-code,
-.ck-trip-stop.ck-map-label-left.ck-label-down .ck-map-code {
-  left: auto;
-  right: -9px;
 }

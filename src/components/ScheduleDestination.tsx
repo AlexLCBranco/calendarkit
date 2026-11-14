@@ -17,7 +17,7 @@ import { DestinationFrame, leagueListWidth, SelectionCopyStage, useSelectionCopy
 import { FatigueLegend } from './FatigueMark';
 import { FATIGUE_SLOTS_MIN_WIDTH, leagueListStyle, LeagueListView, ListDaySection, listDays, listTitle, nearestDay } from './LeagueListView';
 import { LeagueWeekView } from './LeagueWeekView';
-import { hoverHandlers, useClearHover, useHoverRow } from './MapHover';
+import { hoverHandlers, useClearHover, useHoverRow, usePinRow } from './MapHover';
 import { MonthNavigator } from './MonthNavigator';
 import { monthNav, PeriodNav, type PeriodNavProps } from './PeriodNav';
 import { OptionsIcon } from './Menu';
@@ -350,8 +350,11 @@ export function ScheduleDestination(p: ScheduleProps) {
   };
   // The game hovered in the League List or on its map; the list's row is lit without re-rendering it
   const [mapHover] = useState(() => createValueStore(''));
+  // The game pinned on the map (a click on its row or dot); another day, view or team unpins it
+  const [mapPin] = useState(() => createValueStore(''));
   useHoverRow(mapHover, root);
-  useClearHover(mapHover, `${state.mode}|${state.layout}|${nearestDay(days, state.date)}|${state.tvOnly}|${state.teamId}`);
+  usePinRow(mapPin);
+  useClearHover(mapHover, `${state.mode}|${state.layout}|${nearestDay(days, state.date)}|${state.tvOnly}|${state.teamId}`, mapPin);
 
   /** The date on show: the day (League List / Slate), the row at the top (Team List), today if it is in the shown week or month, else its first day. */
   const lookingAt = (): string => {
@@ -517,12 +520,12 @@ export function ScheduleDestination(p: ScheduleProps) {
   let body: ReactNode;
   if (team) {
     body = teamMap ? (
-      <div className="ck-league-split" {...hoverHandlers(mapHover)}>
+      <div className="ck-league-split" {...hoverHandlers(mapHover, mapPin)}>
         <TeamListView {...teamListProps} />
         <div className="ck-map-slot">
           <NextFrame>
             <Suspense fallback={null}>
-              <TeamMap data={data} teamId={state.teamId} now={now} room={{ width: size.width - TEAM_LIST_MAX_WIDTH - LEAGUE_MAP_GAP, height: size.height - 120 }} hover={mapHover} />
+              <TeamMap data={data} teamId={state.teamId} today={today} timeZone={timeZone} room={{ width: size.width - TEAM_LIST_MAX_WIDTH - LEAGUE_MAP_GAP, height: size.height - 120 }} hover={mapHover} pin={mapPin} />
             </Suspense>
           </NextFrame>
         </div>
@@ -537,12 +540,12 @@ export function ScheduleDestination(p: ScheduleProps) {
   } else if (list && leagueSideBySide(size.width)) {
     // The map beside the list (desktop); it stays put while a busy night scrolls
     body = (
-      <div className="ck-league-split" {...hoverHandlers(mapHover)}>
+      <div className="ck-league-split" {...hoverHandlers(mapHover, mapPin)}>
         {leagueList}
         <div className="ck-map-slot">
           <NextFrame>
             <Suspense fallback={null}>
-              <LeagueMap data={data} games={listDay?.games ?? NO_GAMES} room={{ width: size.width - listWidth - LEAGUE_MAP_GAP, height: size.height - 48 }} hover={mapHover} />
+              <LeagueMap data={data} games={listDay?.games ?? NO_GAMES} room={{ width: size.width - listWidth - LEAGUE_MAP_GAP, height: size.height - 48 }} hover={mapHover} pin={mapPin} timeZone={timeZone} />
             </Suspense>
           </NextFrame>
         </div>

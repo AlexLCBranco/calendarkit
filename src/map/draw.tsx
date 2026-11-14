@@ -34,3 +34,15 @@ export function arc(from: { x: number; y: number }, to: { x: number; y: number }
   return `M${f(from.x)} ${f(from.y)} Q${f(cx)} ${f(cy)} ${f(to.x)} ${f(to.y)}`;
 }
 
+
+/** The point at `t` (0…1) along arc(from, to, side), map units. */
+export function arcPoint(from: { x: number; y: number }, to: { x: number; y: number }, side: 'away' | 'home', t: number): { x: number; y: number } {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const k = Math.max(BEND * len, 10) * (side === 'away' ? 1 : -1);
+  const cx = (from.x + to.x) / 2 - (dy / len) * k;
+  const cy = (from.y + to.y) / 2 + (dx / len) * k;
+  const u = 1 - t;
+  return { x: u * u * from.x + 2 * u * t * cx + t * t * to.x, y: u * u * from.y + 2 * u * t * cy + t * t * to.y };
+}

@@ -52,6 +52,7 @@ test('load earlier / more: the row on screen stays where it was; one month per c
     const row = page.locator('[data-testid="team-list"] .ck-card[data-game-id]').filter({ hasText: ' @ ' }).first();
     await row.scrollIntoViewIfNeeded();
     await row.locator('.ck-time').hover();
-    await expect(page.getByTestId('map-info')).toContainText('Game ');
+    await expect(page.getByTestId('team-map')).toHaveAttribute('data-focus', (await row.getAttribute('data-game-id'))!);
+    await expect(page.getByTestId('map-panel')).toContainText('last');
   }
 });

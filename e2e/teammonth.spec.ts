@@ -1,7 +1,7 @@
 // The Team List shows one calendar month, in a real browser against the served snapshot. Rows = that
 // month's games (+ rest days); the month title in the team header; the week strip's ‹ › and day clicks, the date picker
 // and Today switch months and put the row at the top; a B2B split across the month edge keeps its marks but no bracket;
-// the Team map's stops in another month don't switch months; the whole-list copy = the month; month change timing.
+// the Team map's game in another month doesn't switch months; the whole-list copy = the month; month change timing.
 
 import { expect, test, type Page } from './fixtures';
 import { monthTitle as title, showMonth } from './teamMonths';
@@ -202,57 +202,33 @@ test('a B2B split across a month edge: badge and chips on both nights, no bracke
   }
 });
 
-test.describe('Team map (1920): a stop in another month', () => {
+test.describe('Team map (1920): the focused game in another month', () => {
   test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'the Team map shows at 1920 only'));
 
-  test('hovering a stop in another month: no month change, no row lit, the info line shows it; a stop in the month lights its row', async ({ page }) => {
+  test('a pinned game in another month: hovering its dot changes no month and lights no row; in the month, it lights its row', async ({ page }) => {
     await open(page, 'BOS');
-    // a real road trip across a month edge (runs of games outside the home metro, from the snapshot), and a clock just
-    // before its first game, so it is the current trip the map shows
-    const trip = await page.evaluate(async () => {
-      type G = { gameId: string; gameDateEst: string; gameDateTimeUTC: string; arenaName: string; arenaCity: string; homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } };
-      const raw = await (await fetch('/calendar/data/schedule.json')).json();
-      const all = (raw.leagueSchedule.gameDates as { games: G[] }[]).flatMap((d) => d.games).filter((g) => /^00[2456]/.test(g.gameId));
-      const metro = (c: string) => ({ Inglewood: 'Los Angeles', Brooklyn: 'New York' })[c] ?? c;
-      for (const tri of [...new Set(all.map((g) => g.homeTeam.teamTricode))].filter(Boolean).sort()) {
-        const games = all.filter((g) => g.homeTeam.teamTricode === tri || g.awayTeam.teamTricode === tri).sort((a, b) => a.gameDateTimeUTC.localeCompare(b.gameDateTimeUTC));
-        const cities = new Map<string, number>();
-        for (const g of games) if (g.homeTeam.teamTricode === tri) cities.set(g.arenaCity, (cities.get(g.arenaCity) ?? 0) + 1);
-        const home = [...cities].sort((a, b) => b[1] - a[1])[0]![0];
-        let run: G[] = [];
-        for (const g of [...games, undefined]) {
-          if (g && g.arenaName && metro(g.arenaCity) !== metro(home)) {
-            run.push(g);
-            continue;
-          }
-          const months = new Set(run.map((x) => x.gameDateEst.slice(0, 7)));
-          if (months.size > 1 && run[0]!.gameDateEst >= '2026-11-01') return { tri, ids: run.map((x) => x.gameId), months: [...months], start: run[0]!.gameDateTimeUTC };
-          run = [];
-        }
-      }
-      return null;
-    });
-    expect(trip, 'a road trip across a month edge in the snapshot').toBeTruthy();
-    await page.clock.setFixedTime(new Date(Date.parse(trip!.start) - 3_600_000));
-    await page.goto(`/calendar/?view=team&layout=list&team=${trip!.tri}`);
     const map = page.getByTestId('team-map');
     await expect(map.locator('.ck-map-svg')).toBeVisible();
-    await page.getByTestId('team-list').evaluate((el) => (el.scrollTop = el.scrollHeight)); // the trip's rows off screen
-    await expect(page.getByTestId('team-month')).toHaveText(title(trip!.months[0]!));
-    const shown = new Set(await page.locator('[data-testid="team-list"] [data-game-id]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.gameId!)));
-    const stops = await map.locator('[data-map-game]').evaluateAll((els) => els.map((e) => (e as HTMLElement).dataset.mapGame!));
-    const out = stops.find((id) => !shown.has(id));
-    const inside = stops.find((id) => shown.has(id));
-    expect(out && inside, `${trip!.tri}: stops in both months`).toBeTruthy();
+    // pin a November game, then show December
+    const nov = page.locator('[data-testid="team-list"] .ck-card[data-game-id]').first();
+    const id = (await nov.getAttribute('data-game-id'))!;
+    await nov.scrollIntoViewIfNeeded();
+    await nov.locator('.ck-time').click();
+    await expect(map).toHaveAttribute('data-pinned', '');
+    await expect(map).toHaveAttribute('data-focus', id);
+    await showMonth(page, '2026-12');
     const rowsBefore = await rowDates(page);
-    await map.locator(`[data-map-game="${out}"] .ck-map-pin`).first().hover({ force: true });
+    await map.locator(`[data-map-game="${id}"] .ck-map-pin`).hover({ force: true });
     await page.waitForTimeout(300);
-    await expect(page.getByTestId('team-month')).toHaveText(title(trip!.months[0]!));
+    await expect(page.getByTestId('team-month')).toHaveText(title('2026-12'));
     expect(await rowDates(page)).toEqual(rowsBefore);
     await expect(page.locator('[data-testid="team-list"] .ck-map-hot')).toHaveCount(0);
-    await expect(page.getByTestId('map-info')).toContainText(/Game \d+:/);
-    await map.locator(`[data-map-game="${inside}"] .ck-map-pin`).first().hover({ force: true });
-    const row = page.locator(`[data-testid="team-list"] [data-game-id="${inside}"]`);
+    await expect(page.getByTestId('map-panel')).toContainText('last');
+    // back to November: the dot lights its row, in view
+    await page.mouse.move(2, 2);
+    await showMonth(page, '2026-11');
+    await map.locator(`[data-map-game="${id}"] .ck-map-pin`).hover({ force: true });
+    const row = page.locator(`[data-testid="team-list"] [data-game-id="${id}"]`);
     await expect(row).toHaveClass(/ck-map-hot/);
     const inView = await row.evaluate((r) => {
       const l = r.closest('[data-testid="team-list"]')!.getBoundingClientRect();

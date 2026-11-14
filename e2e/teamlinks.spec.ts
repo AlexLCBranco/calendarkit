@@ -230,7 +230,7 @@ test.describe('team links', () => {
   test('the map labels stay plain, click-through text (a link there would take a nearby pin\x27s hover)', async ({ page }) => {
     for (const [search, sel] of <[string, string][]>[['?view=league&layout=list&date=2026-11-16', 'league-map'], ['?view=team&layout=list&team=LAL', 'team-map']]) {
       await open(page, search);
-      const codes = page.getByTestId(sel).locator('.ck-map-code');
+      const codes = page.getByTestId(sel).locator('.ck-map-label');
       await expect(codes.first()).toBeVisible();
       await expect(codes.locator('a')).toHaveCount(0);
       expect(await codes.first().evaluate((e) => getComputedStyle(e).pointerEvents)).toBe('none');
