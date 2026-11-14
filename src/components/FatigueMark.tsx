@@ -49,7 +49,7 @@ export function FatigueMark({ f, className = '', component = false, children }: 
 export const FatigueLegend = ({ component = false }: { component?: boolean }) =>
   component ? (
     <div className="ck-fm-legend ck-fx-legend" data-testid="fatigue-legend">
-      <B2BBadge leg={1} /> back-to-back, 1st night (again tomorrow) · <B2BBadge leg={2} /> 2nd night (played yesterday) · <NightIcon home tonight /> home <NightIcon home={false} tonight /> away, earlier night first, tonight solid · <span className="ck-fx-chip">3in4 · 2nd</span> 3 games in 4 days, tonight the 2nd · <span className="ck-fx-rest ck-fx-rest-after">4d</span> since last game · <span className="ck-fx-rest ck-fx-rest-before">4d</span> until next · <span className="ck-fx-rest ck-fx-rest-after ck-fx-rest-short">2d</span> 2 days (quieter)
+      <B2BBadge leg={1} /> back-to-back, 1st night (again tomorrow) · <B2BBadge leg={2} /> 2nd night (played yesterday) · <NightIcon home tonight /> home <NightIcon home={false} tonight /> away, earlier night first, tonight solid · <span className="ck-fx-chip">3in4 · 2nd</span> 3 games in 4 days, tonight the 2nd · <span className="ck-fx-rest ck-fx-rest-after">4d</span> since last game · <span className="ck-fx-rest ck-fx-rest-before">4d</span> until next · <span className="ck-fx-rest ck-fx-rest-after ck-fx-rest-short">2d</span> 2 days
     </div>
   ) : (
     <div className="ck-fm-legend" data-testid="fatigue-legend">

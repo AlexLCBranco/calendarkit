@@ -269,13 +269,13 @@ test('League List day by day: 20 × "Next day", frame times and main-thread time
 
 /**
  * Team List (LAL's whole season, ~82 rows + rest rows, wheeled from the first game to the last and back).
- * The Team List shows one month, so that gesture can't run on it any more. Like the League List, two
- * A/B checks against the same reference, each the same user action on both builds (frames keep the old
- * `team-scroll-frame-*` baselines; main thread ≤ ×REF_RATIO the reference):
+ * The Team List shows one month, so that gesture can't run on it any more. An A/B check against the same reference,
+ * the same user action on both builds (frames keep the old `team-scroll-frame-*` baselines; main thread ≤ ×REF_RATIO
+ * the reference):
  * - `team-scroll`: LAL from the top of its list (current: November's 1st row; reference: the season's first game) in a
  *   1920 × 700 window, wheel 1500 px down and back up (the month overflows that window).
- * - `team-month-nav`: 12 clicks on the strip's "Next week" from where the list opens (Nov 15): on the current build
- *   that crosses into December and January (two month changes), on the reference it scrolls the long list.
+ * The Team List has no week strip, so there is no week-by-week gesture both builds share; a month change's cost is
+ * guarded in e2e/teammonth.spec.ts (click → next frame).
  */
 async function openTeamList(p: Page, base: string) {
   await p.goto(`${base}/?view=team&layout=list&team=LAL`);
@@ -304,32 +304,6 @@ test('wheel-scrolling the Team List (a month; the reference: the season from its
   // the current build's month overflowed the window (so the gesture scrolled)
   await openTeamList(page, CURRENT);
   expect(await page.getByTestId('team-list').evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(300);
-});
-
-test('Team List week by week across months: 12 × the strip’s "Next week", frame times and main-thread time', async ({ page, browser }) => {
-  test.setTimeout(240_000);
-  await page.clock.setFixedTime(NOW);
-  const ref = await refPage(browser);
-  await ref.clock.setFixedTime(NOW);
-  const arm = (name: string, p: Page, base: string): Arm => ({
-    name,
-    page: p,
-    reset: () => openTeamList(p, base),
-    gesture: async () => {
-      for (let i = 0; i < 12; i++) {
-        await p.getByLabel('Next week').click();
-        await p.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
-      }
-    },
-  });
-  const runs = await scrollRunsAB('team-month-nav', [arm('current', page, CURRENT), arm('reference', ref, refBase)]);
-  await ref.close();
-  checkScroll('team-month-nav', runs);
-  // the current build crossed two month edges
-  await openTeamList(page, CURRENT);
-  await expect(page.getByTestId('team-month')).toHaveText('November 2026');
-  for (let i = 0; i < 12; i++) await page.getByLabel('Next week').click();
-  await expect(page.getByTestId('team-month')).toHaveText(/January 2027|February 2027/);
 });
 
 test('switching views: click → next frame', async ({ page }) => {

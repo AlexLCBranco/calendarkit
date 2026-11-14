@@ -103,7 +103,8 @@ test('side arrows step the shown range; the tab title follows; a team link opens
     const svg = b.querySelector('svg')!.getBoundingClientRect();
     return { bg: cs.backgroundColor, border: cs.borderTopWidth, chevron: svg.height, width: b.getBoundingClientRect().width };
   });
-  expect(look.bg).toBe('rgba(0, 0, 0, 0)');
+  // transparent (alpha 0): after a hover the colour fades back to rgba(255, 255, 255, 0), still no box
+  expect(look.bg).toMatch(/^rgba\(\d+, \d+, \d+, 0\)$/);
   expect(look.border).toBe('0px');
   expect(look.chevron).toBeGreaterThanOrEqual(40);
   expect(look.width).toBeGreaterThan(20); // 1920 window: ~30 px of margin used
