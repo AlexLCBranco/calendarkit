@@ -11,7 +11,7 @@ import { APP } from './app';
 import { serveRef } from './refbuild';
 import { copySlate } from './slatecopy';
 
-const REF = { commit: '50cb65d474accdacbf259284c143aa676ca1b815', version: '1.64.0' };
+const REF = { commit: '48ea34d9d1ac8196d6daf58ebaf3506610b6ab4c', version: '1.65.0' };
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [1, 5, 12, 15];
 
