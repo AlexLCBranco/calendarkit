@@ -215,7 +215,9 @@ test('marquee in the Slate: 3 selected games copy by the same rule as the whole 
   // (narrow cards would come out 2 + 1; the wide cards with their note boxes come out one column)
   const [cw, ch] = [r.stage.cards[0]!.w, Math.max(...r.stage.cards.map((k) => k.h))];
   const gap = r.stage.cards.length > 1 ? Math.max(r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw, r.stage.cards[1]!.y - r.stage.cards[0]!.y - ch) : 0;
-  for (let c = 1; c <= 3; c++) expect(fit({ width: c * (cw + gap), height: Math.ceil(3 / c) * (ch + gap) }), `${c} columns would be no larger`).toBeLessThanOrEqual(fit(r.stage) + 1e-6);
+  // measured the same way for the shown layout and the alternatives (the zoomed cards' heights are fractional, the stage's whole pixels)
+  const fitOf = (c: number) => fit({ width: c * (cw + gap), height: Math.ceil(3 / c) * (ch + gap) });
+  for (let c = 1; c <= 3; c++) expect(fitOf(c), `${c} columns would be no larger`).toBeLessThanOrEqual(fitOf(r.stage.cols) + 1e-6);
   console.log(`[slate] selection of 3: ${r.stage.cols} column(s)`);
   expect(r.px.outsideOpaque).toBe(0);
   console.log(`[slate] selection of 3: ${r.stage.width}×${r.stage.height} CSS px × ${r.ratio}, copied in ${r.ms} ms`);

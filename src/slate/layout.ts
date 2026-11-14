@@ -68,11 +68,12 @@ export const SLATE_CARD_WIDTH = SLATE_INFO_WIDTH + 2 * (SLATE_CARD_PAD + SLATE_C
 export const slateInfoColumns = (width: number, cup: CupTrackKind = false) => Math.max(1, Math.floor((width + SLATE_GRID_GAP) / (slateCardWidth(cup) + SLATE_GRID_GAP)));
 
 /**
- * Each card is the game's info at its old size (the info-only card's content width) beside a note box
- * that takes the rest of the card. The grid starts at the page's left edge and fills the widget: two columns while each
- * card's note box keeps SLATE_NOTE_MIN, else one.
+ * Each card is the game's info at its old size (the info-only card's content width), the room right of
+ * it holding the note's space label and switch, and the note box under the team rows across the whole card. The grid
+ * starts at the page's left edge and fills the widget: two columns while the room right of the info keeps
+ * SLATE_NOTE_MIN (the column rule from when the note box sat there, kept so the grid is unchanged), else one.
  */
-/** The gap between the info and the note box, and the gap between cards (CSS px). */
+/** The gap between the info and the room right of it, and the gap between cards (CSS px). */
 export const SLATE_NOTE_GAP = 14;
 export const SLATE_GRID_GAP = 12;
 /** The narrowest note box worth writing in (Alex: "~300 px"). */
@@ -116,15 +117,23 @@ export const slateColumns = (width: number, cup: CupTrackKind = false) => (slate
 
 /**
  * In a copied slate with note boxes, the game's info is drawn larger inside the card — the card keeps
- * its on-screen width, the note box gives the room (down to SLATE_COPY_NOTE_MIN), at most ×SLATE_COPY_ZOOM_MAX; the card
- * only grows in height as much as the bigger content needs. Pasted and shrunk on the whiteboard, the text, logos and
- * scores stay readable. CSS `zoom` (layout, not a transform), so the image stays crisp at its pixel ratio. Info-only
- * cards (notes hidden) are exactly their content: nothing to give, ×1.
+ * its on-screen width; the note box is under the team rows, so the info may take the card's width but for the space
+ * label in the top-right corner (SLATE_COPY_HEAD), at most ×SLATE_COPY_ZOOM_MAX; the card only grows in height as much
+ * as the bigger content needs. Pasted and shrunk on the whiteboard, the text, logos and scores stay readable. CSS
+ * `zoom` (layout, not a transform), so the image stays crisp at its pixel ratio. Info-only cards (notes hidden) are
+ * exactly their content: nothing to give, ×1.
  */
 export const SLATE_COPY_ZOOM_MAX = 1.35;
-export const SLATE_COPY_NOTE_MIN = 160;
+/** The room the copy keeps right of the info for the space label ("POST" at 11 px bold in its pill: ~42 px). */
+export const SLATE_COPY_HEAD = 56;
+/**
+ * A copied card's width (calendarkit's images; Alex, 2026-11-13): no wider than the info at ×SLATE_COPY_ZOOM_MAX plus
+ * the label's room — the note under the rows made copied cards taller, and at the on-screen width a 15-game night's image
+ * fitted to the page showed the names at 10.9 px (this width: ≥ 12). Never wider than on screen (`shown`).
+ */
+export const slateCopyCardWidth = (shown: number, cup: CupTrackKind = false) => Math.min(shown, Math.ceil(slateInfoWidth(cup) * SLATE_COPY_ZOOM_MAX) + SLATE_COPY_HEAD + 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER));
 export function slateCopyZoom(cardWidth: number, cup: CupTrackKind = false, notes = true): number {
   if (!notes) return 1;
-  const room = cardWidth - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - SLATE_NOTE_GAP - SLATE_COPY_NOTE_MIN;
+  const room = cardWidth - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - SLATE_COPY_HEAD;
   return Math.max(1, Math.min(SLATE_COPY_ZOOM_MAX, Math.floor((room / slateInfoWidth(cup)) * 100) / 100));
 }

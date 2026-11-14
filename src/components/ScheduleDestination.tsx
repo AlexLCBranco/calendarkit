@@ -4,7 +4,7 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { addDays, addMonths, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
 import { TEAM_BY_ID } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { slateCopyColumns, slateCopyZoom, slateImageSize, slatePixelRatio, SLATE_CARD_BORDER, SLATE_CARD_PAD } from '../slate/layout';
+import { slateCopyCardWidth, slateCopyColumns, slateCopyZoom, slateImageSize, slatePixelRatio } from '../slate/layout';
 import { localNotesStore } from '../slate/notes';
 import type { SlateOdds } from '../slate/odds';
 import { slateCopyCup } from '../slate/SlateCard';
@@ -281,11 +281,16 @@ export function ScheduleDestination(p: ScheduleProps) {
   const copySlate = (button: HTMLButtonElement, games: ScheduleGame[]) => {
     const cards = [...(root.current?.querySelectorAll<HTMLElement>('[data-testid="slate"] .ck-slate-card') ?? [])];
     if (!games.length || !cards.length) return Promise.reject(new Error('no games to copy'));
-    // the on-screen card size: same width, so the text wraps the same; rows as tall as the tallest card
-    const shown = { width: cards[0]!.getBoundingClientRect().width, height: Math.max(...cards.map((c) => c.getBoundingClientRect().height)) };
-    // The copy draws the info larger inside the same width, so its cards are that much taller
-    const zoom = slateCopyZoom(shown.width, slateCopyCup(data, games), !hideNotes);
-    const frame = 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER); // the card's padding and border don't scale
+    // the card size: info-only cards as on screen; with notes no wider than the enlarged info and the label need
+    // (slateCopyCardWidth); rows as tall as the tallest card. The copy draws the info larger (the note box under it keeps
+    // its size), so its cards are that much taller: each card's info height × (zoom − 1) more — an estimate (the note
+    // may wrap narrower than on screen); the real heights follow once drawn
+    const cup = slateCopyCup(data, games);
+    const onScreen = cards[0]!.getBoundingClientRect().width;
+    const width = hideNotes ? onScreen : slateCopyCardWidth(onScreen, cup);
+    const zoom = slateCopyZoom(width, cup, !hideNotes);
+    const grown = (c: HTMLElement) => c.getBoundingClientRect().height + (c.querySelector('.ck-slate-info')?.getBoundingClientRect().height ?? 0) * (zoom - 1);
+    const shown = { width, height: Math.max(...cards.map(grown)) };
     const page = { width: window.innerWidth, height: window.innerHeight };
     return new Promise<HTMLCanvasElement>((resolve, reject) => {
       // the columns from the estimated card; once drawn, from the copy's real card height (zoomed text rounds its own
@@ -307,7 +312,7 @@ export function ScheduleDestination(p: ScheduleProps) {
           },
         });
       };
-      stage({ width: shown.width, height: (shown.height - frame) * zoom + frame }, true);
+      stage(shown, true);
     });
   };
 

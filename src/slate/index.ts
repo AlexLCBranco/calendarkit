@@ -23,7 +23,7 @@ export {
   type Slot,
   type SlateNotes,
 } from './notes';
-export { slateColumns, slateCopyColumns, slateImageSize, slateInfoColumns, slateNoteWidth, slatePixelRatio, SLATE_CARD_WIDTH, SLATE_COPY_GAP, SLATE_INFO_WIDTH, SLATE_NOTE_MIN } from './layout';
+export { slateColumns, slateCopyCardWidth, slateCopyColumns, slateImageSize, slateInfoColumns, slateNoteWidth, slatePixelRatio, SLATE_CARD_WIDTH, SLATE_COPY_GAP, SLATE_INFO_WIDTH, SLATE_NOTE_MIN } from './layout';
 export { useTooltip } from './tooltip';
 // Team links: a host provides TeamLinkContext (calendarkit's CalendarView; the gauntlet's widget with teamCalendarUrl)
 export { TeamLinkContext, teamLinkTarget, teamCalendarUrl, type TeamLinks } from './teamLink';

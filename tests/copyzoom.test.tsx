@@ -1,38 +1,50 @@
 // @vitest-environment jsdom
-// A copied slate draws the game's info larger inside the same card width (the note box gives the
-// room, down to SLATE_COPY_NOTE_MIN), at most ×1.35; info-only cards (notes hidden) stay ×1.
+// A copied slate draws the game's info larger inside the same card width (the note box is under the team rows, so
+// the info may take the card's width but for the space label's SLATE_COPY_HEAD), at most ×1.35; info-only cards stay ×1.
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SlateCopy } from '../src/slate/SlateCard';
-import { slateCopyZoom, slateInfoWidth, SLATE_CARD_BORDER, SLATE_CARD_PAD, SLATE_COPY_NOTE_MIN, SLATE_COPY_ZOOM_MAX, SLATE_NOTE_GAP } from '../src/slate/layout';
+import { slateCopyCardWidth, slateCopyZoom, slateInfoWidth, SLATE_CARD_BORDER, SLATE_CARD_PAD, SLATE_COPY_HEAD, SLATE_COPY_ZOOM_MAX } from '../src/slate/layout';
 import { data } from './feed';
 import { createNotesStore } from '../src/slate/notes';
 const memoryNotesStore = () => createNotesStore(undefined, undefined);
 
 afterEach(cleanup);
 
-const noteOf = (card: number, cup: 0 | 1 | 3, z: number) => card - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - SLATE_NOTE_GAP - slateInfoWidth(cup) * z;
+/** The room left right of the zoomed info, for the space label. */
+const headRoom = (card: number, cup: 0 | 1 | 3, z: number) => card - 2 * (SLATE_CARD_PAD + SLATE_CARD_BORDER) - slateInfoWidth(cup) * z;
 
 describe('slateCopyZoom', () => {
-  it('a regular night at 1920 (card ~944 px): the cap, ×1.35, the note box keeps ≥ 160 px', () => {
-    expect(slateCopyZoom(944, 0)).toBe(SLATE_COPY_ZOOM_MAX);
-    expect(noteOf(944, 0, SLATE_COPY_ZOOM_MAX)).toBeGreaterThanOrEqual(SLATE_COPY_NOTE_MIN);
+  it('a regular night at 1920 (card ~914 px): the cap, ×1.35, the label keeps its corner', () => {
+    expect(slateCopyZoom(914, 0)).toBe(SLATE_COPY_ZOOM_MAX);
+    expect(headRoom(914, 0, SLATE_COPY_ZOOM_MAX)).toBeGreaterThanOrEqual(SLATE_COPY_HEAD);
   });
-  it('a Cup night (wide info): only what the note box can give, never below ×1', () => {
-    const z = slateCopyZoom(914, 3);
-    expect(z).toBeGreaterThanOrEqual(1);
-    expect(z).toBeLessThan(1.1);
-    // a stakes night already leaves the box under 160 px on screen: nothing to give
-    expect(noteOf(914, 3, 1)).toBeLessThan(SLATE_COPY_NOTE_MIN);
-    expect(z).toBe(1);
-    // the Cup track alone (cup 1): some room, the box kept at ≥ 160
-    const z1 = slateCopyZoom(944, 1);
-    expect(z1).toBeGreaterThan(1);
-    expect(noteOf(944, 1, z1)).toBeGreaterThanOrEqual(SLATE_COPY_NOTE_MIN - 1);
+  it('a Cup night (wide info): as large as the card allows with the label room kept, never below ×1', () => {
+    for (const cup of [1, 3] as const) {
+      const z = slateCopyZoom(914, cup);
+      expect(z).toBeGreaterThan(1);
+      expect(z).toBeLessThanOrEqual(SLATE_COPY_ZOOM_MAX);
+      expect(headRoom(914, cup, z)).toBeGreaterThanOrEqual(SLATE_COPY_HEAD);
+      expect(headRoom(914, cup, z + 0.01)).toBeLessThan(SLATE_COPY_HEAD);
+    }
     expect(slateCopyZoom(600, 3)).toBe(1);
   });
   it('notes hidden: ×1 (the card is exactly its content)', () => {
     expect(slateCopyZoom(944, 0, false)).toBe(1);
+  });
+});
+
+describe('slateCopyCardWidth', () => {
+  it('with notes: as wide as the info at ×1.35 plus the label room — narrower than the 914 px screen card on a regular night, still ×1.35', () => {
+    const w = slateCopyCardWidth(914, 0);
+    expect(w).toBeLessThan(914);
+    expect(slateCopyZoom(w, 0)).toBe(SLATE_COPY_ZOOM_MAX);
+    expect(headRoom(w, 0, SLATE_COPY_ZOOM_MAX)).toBeGreaterThanOrEqual(SLATE_COPY_HEAD);
+    expect(headRoom(w, 0, SLATE_COPY_ZOOM_MAX)).toBeLessThan(SLATE_COPY_HEAD + 1);
+  });
+  it('never wider than on screen: a Cup stakes night keeps the screen width', () => {
+    expect(slateCopyCardWidth(914, 3)).toBe(914);
+    expect(slateCopyCardWidth(600, 0)).toBe(600);
   });
 });
 

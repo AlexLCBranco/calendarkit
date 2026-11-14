@@ -9,11 +9,14 @@ const OUT = 'test-output/copy-images';
 /** Copies via `button`, returns the PNG's facts and the stage measured while it was on screen. */
 export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selection', name: string) {
   await page.evaluate(() => {
-    const w = window as unknown as { __slate?: unknown };
+    const w = window as unknown as { __slate?: unknown; __slateObs?: MutationObserver };
     w.__slate = undefined;
+    w.__slateObs?.disconnect();
     const obs = new MutationObserver(() => {
       const root = document.querySelector<HTMLElement>('.ck-capture .ck-slate-copy');
-      if (root && !w.__slate) {
+      // measured again on every change while on screen: the copy may be laid out once more (other columns, once its
+      // real card heights are known) — the last layout is the one copied
+      if (root) {
         const r0 = root.getBoundingClientRect();
         const card = root.querySelector('.ck-slate-name')!;
         w.__slate = {
@@ -25,17 +28,22 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
           links: root.querySelectorAll('a').length,
           cards: [...root.querySelectorAll('.ck-slate-card')].map((c) => {
             const r = c.getBoundingClientRect();
-            // The note box (its rect in the image, the slot label, its text, controls left in it)
-            const n = c.querySelector('.ck-gnote');
+            // The note box (its rect in the image, its text, the text's overflow), the space label in the card's corner (its
+            // rect), controls left in the card's note parts
+            const n = c.querySelector<HTMLElement>('.ck-gnote');
             const nr = n?.getBoundingClientRect();
-            const note = n && nr ? { x: nr.left - r0.left, y: nr.top - r0.top, w: nr.width, h: nr.height, slot: n.querySelector('.ck-gnote-slot')?.textContent ?? '', text: n.querySelector('.ck-gnote-text')?.textContent ?? '', controls: n.querySelectorAll('button, textarea, [data-testid="note-switch"]').length } : null;
+            const head = c.querySelector('.ck-gnote-head');
+            const hr = c.querySelector('.ck-gnote-slot')?.getBoundingClientRect();
+            const t = n?.querySelector<HTMLElement>('.ck-gnote-text');
+            const ir = c.querySelector('.ck-slate-info')!.getBoundingClientRect();
+            const note = n && nr ? { x: nr.left - r0.left, y: nr.top - r0.top, w: nr.width, h: nr.height, slot: head?.querySelector('.ck-gnote-slot')?.textContent ?? '', text: t?.textContent ?? '', controls: c.querySelectorAll('.ck-gnote button, .ck-gnote textarea, .ck-gnote-head button, [data-testid="note-switch"]').length, cut: t ? t.scrollHeight - t.clientHeight : 0, scrollbar: t ? t.offsetWidth - t.clientWidth : 0, label: hr ? { x: hr.left - r0.left, y: hr.top - r0.top, w: hr.width, h: hr.height } : null, infoRight: ir.right - r0.left, infoBottom: ir.bottom - r0.top } : null;
             return { id: c.getAttribute('data-game-id'), x: r.left - r0.left, y: r.top - r0.top, w: r.width, h: r.height, note };
           }),
         };
-        obs.disconnect();
       }
     });
-    obs.observe(document.body, { childList: true, subtree: true });
+    w.__slateObs = obs;
+    obs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
   });
   const button = page.getByTestId(testId);
   await page.evaluate(() => navigator.clipboard.writeText(''));
@@ -43,7 +51,8 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
   await button.click();
   await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 });
   const ms = Date.now() - t0;
-  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; links: number; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number } | null }[] };
+  await page.evaluate(() => (window as unknown as { __slateObs?: MutationObserver }).__slateObs?.disconnect());
+  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; links: number; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number; cut: number; scrollbar: number; label: { x: number; y: number; w: number; h: number } | null; infoRight: number; infoBottom: number } | null }[] };
   const ratio = Number((await button.getAttribute('data-captured'))!.split('@')[1]);
   const png = await page.evaluate(async () => {
     const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;

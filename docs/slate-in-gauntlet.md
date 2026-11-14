@@ -39,7 +39,11 @@ store per page shared by every widget (a note typed in one widget shows in the o
 `ck:notes:v1`, following other tabs (calendarkit's included) through the `storage` event with **one listener per page**,
 however many widgets. Never write a second store on the same key.
 
-**Notes design (final — don't re-decide):** each card = the game's info on the left + a note box on the right,
+**Notes design (final — don't re-decide; layout redone in v1.64.0):** each card = the game's info on top + a note box
+under the team rows across the card's full width, the PRE / LIVE / POST label and ⇄ in the card's top-right corner beside
+the odds; on screen the box grows up to 5 lines, then scrolls inside (its own scrollbar; the wheel scrolls the page
+until the note is clicked into); copies (`SlateCopy`, also the gauntlet widget) show the whole note, never capped (calendarkit's images draw
+their cards `slateCopyCardWidth` wide: the enlarged info + the label, ~737 px on a regular night);
 always shown (an empty box is the space Alex writes or draws over on the whiteboard). Three slots, PRE / LIVE / POST,
 switched with ⇄ (PRE → LIVE → POST → PRE); the slot on show is saved with the note; **nothing switches it but Alex**
 (not tip-off, not the game ending). A note belongs to the **game** (its gameId), not to a widget, board or view: the same
@@ -55,7 +59,8 @@ calendarkit's Slate toolbar is the backup).
 "Final" + OT; then the ↗ icon, the green "TV" pill with the networks in its tooltip, the short Cup / play-off labels), beside
 the away row and the home row ("@" before the home team): logo (28 px), team name, record and streak going in, the Fatigue
 component (B2B badge with the leg dot, the two nights as house / plane, the 3-in-4 chip as the stretch only, "7in11"),
-score (winner bright), moneyline odds (decimal). National TV games: green outline and tint. Then the note box. Wrap
+score (winner bright), moneyline odds (decimal). National TV games: green outline and tint. Then the note box (under the
+rows, full width; its label and ⇄ in the card's top-right corner). Wrap
 the grid in an element with class `ck-root` (the colours and font are variables on it) and `ck-slate-widget` (no
 background: nothing is drawn between or around the cards, only the cards are opaque); import `src/slate/slate.css` once
 (calendarkit's widget stylesheet, every rule scoped to `.ck-*`, no html/body rules; 35.7 KB, 7.6 KB gz). Tooltips
@@ -63,13 +68,12 @@ background: nothing is drawn between or around the cards, only the cards are opa
 `node` to render inside it (as slate.html does). `SlateCopy` is the copied image's layout (no controls, the note box as
 static text) if the widget ever copies.
 
-**Size:** a card = the info (`SLATE_INFO_WIDTH`, 505 px: strip 80 + 8 + the row's fixed tracks) + a 14 px gap
-+ the note box; 8 px padding and a 1 px border; cards 12 px apart (`SLATE_GRID_GAP`); 78 px tall. Info-only
+**Size:** a card = the info (`SLATE_INFO_WIDTH`) + the room right of it (the note's label and ⇄), the note box under both; 8 px padding and a 1 px border; cards 12 px apart (`SLATE_GRID_GAP`); 78 px tall. Info-only
 cards (no store) are `SLATE_CARD_WIDTH` (523 px) wide, as many per row as fit the width (`slateInfoColumns`: 3 in 1840 px).
 With notes: **Two columns while each note box keeps 300 px (`SLATE_NOTE_MIN`), i.e. a
 width ≥ 1588 px; else one column, cards as wide as the width.** (Measured in calendarkit: 1920 window → 2 columns, cards
-914 px, note box 426 px; 1280 → 1 column, card 1233 px, box 745 px.) A card is ≥ 78 px tall; a long note grows its box, its card and its row (no inner scrollbar, the font
-never shrinks). The widget's height = rows × card height + gaps + the grid's 8 px top / 16 px bottom padding — it grows
+914 px, note box 426 px; 1280 → 1 column, card 1233 px, box 745 px.) On screen a long note grows its box up to 5 lines, then scrolls inside; in copies it grows its card
+whole (the font never shrinks). The widget's height = rows × card height + gaps + the grid's 8 px top / 16 px bottom padding — it grows
 with the day's games and the notes; scaling by the corners (phase 2) should scale this whole layout (a CSS transform),
 not change `width`, so the columns stay put. Copies (calendarkit) use `SLATE_COPY_GAP` = 24 px between cards and half of it
 around them, transparent; their columns follow the largest-cards rule (`slateCopyColumns`). No virtualization: a day is

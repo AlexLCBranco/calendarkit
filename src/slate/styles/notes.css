@@ -1,16 +1,17 @@
-/* Slate notes (the tight info block: slate.css): the game's info on the left, the note box on the right taking the rest
-   of the card — a dark rounded box with a light outline (Alex's hand-made boards), text inside. */
+/* Slate notes (the tight info block: slate.css): the game's info on top, the note box under the team rows across the
+   card's full width — a dark rounded box with a light outline (Alex's hand-made boards), text inside; the space label
+   and its switch in the card's top-right corner, beside the odds. */
 .ck-slate-card.ck-with-note {
-  display: grid;
-  grid-template-columns: var(--ck-slate-info) minmax(0, 1fr);
-  column-gap: var(--ck-slate-note-gap);
-  align-items: stretch;
+  position: relative;
+  row-gap: 6px;
 }
+/* the info keeps its own width (the room right of it holds the space label) */
 .ck-with-note .ck-slate-info {
+  align-self: flex-start;
   min-width: 0;
 }
 .ck-gnote {
-  position: relative;
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -18,28 +19,33 @@
   border: 1px solid var(--ck-note-line);
   border-radius: 8px;
 }
-/* the slot label and the switch, in the box's top right corner */
+/* the space label and the switch, in the card's top right corner */
 .ck-gnote-head {
   position: absolute;
-  top: 5px;
-  right: 6px;
+  top: var(--ck-slate-pad);
+  right: var(--ck-slate-pad);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   z-index: 1;
 }
 .ck-gnote-slot {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--ck-muted);
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 4px;
+  color: var(--ck-text);
+  background: var(--ck-note-bg);
+  border: 1px solid var(--ck-note-line);
 }
 .ck-gnote-switch {
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1;
-  padding: 2px 4px;
-  color: var(--ck-muted);
+  padding: 2px 5px;
+  color: var(--ck-text);
   background: transparent;
   border: 1px solid var(--ck-border);
   border-radius: 4px;
@@ -47,39 +53,62 @@
 }
 .ck-gnote-switch:hover,
 .ck-gnote-switch:focus-visible {
-  color: var(--ck-text);
-  border-color: var(--ck-muted);
+  border-color: var(--ck-accent);
 }
-/* the box grows with its text: a hidden copy of the text (::after) and the field share one grid cell */
+/* The box grows with its text up to 5 lines (NoteBox.tsx NOTE_LINES), then the field scrolls inside: the hidden copy
+   of the text (::after) gives the height, the field lies over it */
 .ck-gnote-grow {
-  flex: 1;
-  display: grid;
+  --ck-note-line-h: 1.35;
+  --ck-note-pad-y: 8px;
+  flex: 1 0 auto;
+  position: relative;
+  display: block;
+  font-size: 15px;
+  line-height: var(--ck-note-line-h);
+}
+.ck-gnote-grow[data-text] {
+  overflow: hidden;
+  max-height: calc(5 * var(--ck-note-line-h) * 1em + 2 * var(--ck-note-pad-y));
 }
 .ck-gnote-grow::after,
 .ck-gnote-text {
-  grid-area: 1 / 1;
+  display: block;
   font: inherit;
   font-size: 15px;
-  line-height: 1.35;
-  padding: 8px 64px 8px 10px;
+  line-height: var(--ck-note-line-h);
+  padding: var(--ck-note-pad-y) 10px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  min-height: 0;
+  box-sizing: border-box;
 }
-.ck-gnote-grow::after {
+/* the copy's text: whole, at least one line (an empty box stays a dark box) */
+.ck-gnote-static {
+  min-height: calc(var(--ck-note-line-h) * 1em + 2 * var(--ck-note-pad-y));
+}
+.ck-gnote-grow[data-text]::after {
   content: attr(data-text);
   visibility: hidden;
 }
-.ck-gnote-text {
+textarea.ck-gnote-text {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  box-sizing: border-box;
+  margin: 0;
   resize: none;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ck-muted) transparent;
   border: 0;
+  border-radius: 8px;
   background: transparent;
   color: var(--ck-text);
   outline: none;
+}
+/* focused: the note scrolls on its own and doesn't hand the wheel on to the page at its ends */
+textarea.ck-gnote-text:focus {
+  overscroll-behavior: contain;
 }
 .ck-gnote:focus-within {
   border-color: var(--ck-note-focus);

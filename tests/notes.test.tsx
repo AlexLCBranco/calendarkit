@@ -237,6 +237,45 @@ describe('Slate cards with notes', () => {
   });
 });
 
+describe('note layout and wheel', () => {
+  it('the note box is under the team rows, a direct child of the card (full width); the space label and ⇄ are outside the box, in the card', () => {
+    open();
+    const c = cards()[0]!;
+    const kids = [...c.children].map((k) => k.className);
+    // info first, then the corner head, then the box: the box is not beside the info any more
+    expect(kids).toEqual(['ck-slate-info', 'ck-gnote-head', 'ck-gnote']);
+    const head = c.querySelector('.ck-gnote-head')!;
+    expect(head.querySelector('[data-testid="note-slot"]')).not.toBeNull();
+    expect(head.querySelector('[data-testid="note-switch"]')).not.toBeNull();
+    expect(c.querySelector('.ck-gnote [data-testid="note-switch"], .ck-gnote [data-testid="note-slot"]')).toBeNull();
+  });
+  it('a wheel over an unfocused note scrolls the page (default prevented, the scroller moved); a focused note keeps it', () => {
+    open();
+    const t = box(0).getByTestId('note-text') as HTMLTextAreaElement;
+    const scrollBy = vi.fn();
+    const proto = Element.prototype as unknown as { scrollBy?: unknown };
+    const old = proto.scrollBy;
+    proto.scrollBy = scrollBy;
+    try {
+      const wheel = () => {
+        const e = new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true });
+        t.dispatchEvent(e);
+        return e.defaultPrevented;
+      };
+      expect(wheel()).toBe(true);
+      expect(scrollBy).toHaveBeenCalledWith({ left: 0, top: 120 });
+      scrollBy.mockClear();
+      t.focus();
+      expect(wheel()).toBe(false);
+      expect(scrollBy).not.toHaveBeenCalled();
+      t.blur();
+      expect(wheel()).toBe(true);
+    } finally {
+      proto.scrollBy = old;
+    }
+  });
+});
+
 describe('Hide all notes at load', () => {
   it('the Slate opens with its notes hidden, every load, stored notes untouched', () => {
     const id = '0022600001';

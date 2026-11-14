@@ -2,8 +2,9 @@
 // SlateView.tsx). Inputs: the schedule data, a date, a time zone, a notes store — nothing from calendarkit's app shell,
 // URL or page. Each card: both teams (logo, full name, record and streak going in, Fatigue component), "@" before the
 // home team, the tip-off time or the final score (OT), the hoopsjunkie "↗" icon, the Cup / play-off labels and the
-// national TV names; Beside the facts, a note box per game (NoteBox: pregame / live / postgame), the grid
-// filling the width it is given, two columns while each note box keeps SLATE_NOTE_MIN. No timers, no requests: the
+// national TV names; under the team rows, across the card, a note box per game (NoteBox: pregame / live / postgame; its
+// space label and switch in the card's top-right corner), the grid filling the width it is given, two columns while the
+// room right of the info keeps SLATE_NOTE_MIN. No timers, no requests: the
 // data comes in (loadCalendarData fetches it once per page), only the logos are images.
 
 import { memo, useEffect, useSyncExternalStore, type CSSProperties } from 'react';
@@ -12,7 +13,7 @@ import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { dateFormat, finalScore, hasNationalTv, leagueSeasonLines, markers, nationalTv, overtime, teamLabel, tipoff, type CalendarData, type SeasonLine } from '../data/model';
 import { TEAM_BY_ID } from '../data/teams';
 import { Fatigue } from './Fatigue';
-import { slateCardWidth, slateColumns, slateCopyZoom, slateImageSize, slateInfoColumns, slateInfoWidth, SLATE_CARD_PAD, SLATE_COPY_GAP, cupExtra, SLATE_CUP_TRACK, type CupTrackKind, SLATE_GRID_GAP, SLATE_NOTE_GAP, SLATE_ROW_GAP, SLATE_ROW_TRACKS, SLATE_STRIP, SLATE_STRIP_GAP } from './layout';
+import { slateCardWidth, slateColumns, slateCopyZoom, slateImageSize, slateInfoColumns, slateInfoWidth, SLATE_CARD_PAD, SLATE_COPY_GAP, cupExtra, SLATE_CUP_TRACK, type CupTrackKind, SLATE_GRID_GAP, SLATE_ROW_GAP, SLATE_ROW_TRACKS, SLATE_STRIP, SLATE_STRIP_GAP } from './layout';
 import { cupStandingsOf } from '../data/cup';
 import { useCupFates, useCupStakes } from './cupFates';
 import { cupStakesNow, type StakeChip } from '../data/cupStakes';
@@ -117,7 +118,6 @@ const layoutVars = (cup: CupTrackKind) => ({
   '--ck-slate-strip-gap': `${SLATE_STRIP_GAP}px`,
   '--ck-slate-row-gap': `${SLATE_ROW_GAP}px`,
   '--ck-slate-tracks': `${T.at}px ${T.logo}px ${T.name}px ${T.rec}px ${T.streak}px ${cup ? `${SLATE_CUP_TRACK + cupExtra(cup)}px ` : ''}${T.fx}px ${T.score}px ${T.odds}px`,
-  '--ck-slate-note-gap': `${SLATE_NOTE_GAP}px`,
   '--ck-slate-grid-gap': `${SLATE_GRID_GAP}px`,
 });
 const VARS = [layoutVars(0), layoutVars(1), layoutVars(2), layoutVars(3)] as const;
