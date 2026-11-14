@@ -43,7 +43,7 @@ measurement; open it only when a question needs the backstory.
 - **v1.62.0** (2026-11-13): road trips / homestands in the Team views (`src/data/runs.ts`, `styles/runs.css`), side
   arrows beside the calendars, the tab title follows the page (`src/pageTitle.ts`), the Slate opens with notes hidden,
   team links open the Team Calendar.
-- **v1.65.0** (2026-11-13): Team Calendar has no lines between cells (B2B bars and road-trip bands removed; the cells'
+- **v1.65.0–1.65.1** (2026-11-13): Team Calendar has no lines between cells (B2B bars and road-trip bands removed; the cells'
   labels say it); the Team List has no day strip (or active-row highlight); rest of exactly 2 days gets a quiet teal
   badge, 3+ keeps the strong one; the scope picker is the bar's most prominent control (full name from 1440 px, tricode
   below); Quick standings popup movable / resizable, remembered in `ck:stpop:v1`, "↺" resets (`floatBox.ts`).
