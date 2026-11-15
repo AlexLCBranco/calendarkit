@@ -6,9 +6,9 @@ spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Featu
 
 ## 2026-11-15
 - v1.71.1: day-strip tooltips never cover the top bar and only their game squares take the pointer (a tip opened under a resting pointer could sit on the team picker); logos inside game squares no longer look like team links
-- BK-3 — Bigger hover squares with the matchup. v1.71.0: tooltip day strips with 50 × 42 squares ("vs LAL" / "@ DEN", logo, each a hoopsjunkie link; rest days empty, tonight ringed); season-series squares say "BOS @ DEN"; Team Calendar selection images carry the streak again
-- BK-2 — Cup simulator: big, playable knockout bracket. v1.70.0: click a team to advance it QF → SF → Final → champion; margins in Detailed; group picks that move the seeds clear only the stale knockout picks; race and bracket share the bottom row, tables and bracket on one screen
-- BK-1 — Win/loss streaks everywhere. v1.69.0: streaks in more places — one StreakChip (same rule, colours and popup) in League List rows, Team Calendar cells, Cup groups and the simulator tables; not in the League week view or the Cup schedule league lists (no room)
+- CK-3 — Bigger hover squares with the matchup. v1.71.0: tooltip day strips with 50 × 42 squares ("vs LAL" / "@ DEN", logo, each a hoopsjunkie link; rest days empty, tonight ringed); season-series squares say "BOS @ DEN"; Team Calendar selection images carry the streak again
+- CK-2 — Cup simulator: big, playable knockout bracket. v1.70.0: click a team to advance it QF → SF → Final → champion; margins in Detailed; group picks that move the seeds clear only the stale knockout picks; race and bracket share the bottom row, tables and bracket on one screen
+- CK-1 — Win/loss streaks everywhere. v1.69.0: streaks in more places — one StreakChip (same rule, colours and popup) in League List rows, Team Calendar cells, Cup groups and the simulator tables; not in the League week view or the Cup schedule league lists (no room)
 - v1.68.0: Standings column set "Extended" — W-L, 3-pt (≤ 3), 10-pt (≥ 10), .500+, <.500 (going into the game), OT, Close; margins on the final score, OT included (as ESPN),…
 - v1.67.0: the feed writes double overtime as "Final/OT2" — every OT reader (OT marker, Cup OT rule, standings OT column) accepts "Final/OT", "Final/<n>OT" and "Final/OT<n>" thr…
 
