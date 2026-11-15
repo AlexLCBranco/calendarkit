@@ -54,11 +54,11 @@ describe('matches NBA.com standings for 2026-11-05 (games through Nov 4)', () =>
       const t = [...s.West, ...s.East].find((x) => x.tricode === tri)!;
       expect({
         wl: fmtRec(t), home: fmtRec(t.home), road: fmtRec(t.road), neutral: fmtRec(t.neutral), conf: fmtRec(t.conf), div: fmtRec(t.div),
-        l10: fmtRec(t.last10), ot: fmtRec(t.ot), close3: fmtRec(t.close3), over500: fmtRec(t.over500), streak: t.streak,
+        l10: fmtRec(t.last10), ot: fmtRec(t.ot), close3: fmtRec(t.close3), ten: fmtRec(t.ten), over500: fmtRec(t.over500), streak: t.streak,
         pf: t.pf, pa: t.pa, ppg: t.ppg.toFixed(1), oppg: t.oppg.toFixed(1), seed: t.seed, gb: t.gb,
       }).toEqual({
         wl: `${col(r, 'WINS')}-${col(r, 'LOSSES')}`, home: col(r, 'HOME'), road: col(r, 'ROAD'), neutral: col(r, 'NEUTRAL'), conf: col(r, 'ConferenceRecord'), div: col(r, 'DivisionRecord'),
-        l10: col(r, 'L10'), ot: col(r, 'OT'), close3: col(r, 'ThreePTSOrLess'), over500: col(r, 'OppOver500'), streak: col(r, 'strCurrentStreak').replace(' ', ''),
+        l10: col(r, 'L10'), ot: col(r, 'OT'), close3: col(r, 'ThreePTSOrLess'), ten: col(r, 'TenPTSOrMore'), over500: col(r, 'OppOver500'), streak: col(r, 'strCurrentStreak').replace(' ', ''),
         pf: Number(col(r, 'TotalPoints')), pa: Number(col(r, 'OppTotalPoints')), ppg: Number(col(r, 'PointsPG')).toFixed(1), oppg: Number(col(r, 'OppPointsPG')).toFixed(1),
         seed: Number(col(r, 'PlayoffRank')), gb: col(r, 'ConferenceGamesBack') === '-' ? 0 : Number(col(r, 'ConferenceGamesBack')),
       });
@@ -152,6 +152,18 @@ describe('what counts, splits and schedule columns', () => {
       close: '1-1', ot: '0-1', home: '1-0', road: '1-1', neutral: '1-0', streak: 'W1', l10: '3-1',
     });
     expect(b.diffPg).toBeCloseTo((5 + 6 - 2 + 12) / 4);
+  });
+  it('3-pt (≤ 3) and 10-pt (≥ 10) games on the final score, OT included; vs below .500 going into the game', () => {
+    // BOS beats NYK by 3 in OT (NYK 0-0 going in: .500+), loses to MIA by 10 (MIA 0-0), beats NYK by 11 (NYK 0-1: below .500)
+    const s = computeStandings([fin('BOS', 'NYK', { by: 3, ot: true }), fin('MIA', 'BOS', { by: 10 }), fin('BOS', 'NYK', { by: 11 })]);
+    const b = seedOf(s.East, 'BOS');
+    expect({ close3: fmtRec(b.close3), ten: fmtRec(b.ten), over500: fmtRec(b.over500), under500: fmtRec(b.under500), ot: fmtRec(b.ot) }).toEqual({
+      close3: '1-0', ten: '1-1', over500: '1-1', under500: '1-0', ot: '1-0',
+    });
+  });
+  it('every game is either vs .500+ or vs below .500 (snapshot fixture)', () => {
+    const s = computeStandings(buildCalendarData(parseSchedule(feed)).games);
+    for (const t of [...s.West, ...s.East]) expect([t.over500.w + t.under500.w, t.over500.l + t.under500.l], t.tricode).toEqual([t.w, t.l]);
   });
   it('games left (home / road), back-to-backs left, and the record on each night of a back-to-back', () => {
     const g = (date: string, home: string, away: string, final?: [number, number]) => game({ date, utc: `${date}T23:30:00Z`, home: ID[home], away: ID[away], final });

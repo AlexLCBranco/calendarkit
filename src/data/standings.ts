@@ -36,6 +36,8 @@ export const PLAYOFF_SEEDS = 6;
 export const PLAY_IN_SEEDS = 10;
 /** "Close game": decided by this many points or fewer. */
 export const CLOSE_MARGIN = 5;
+/** "10-pt games": decided by this many points or more. */
+export const TEN_MARGIN = 10;
 
 export interface Rec {
   w: number;
@@ -107,8 +109,12 @@ export interface TeamStanding {
   over500: Rec;
   /** Decided by CLOSE_MARGIN points or fewer (overtime included). */
   close: Rec;
-  /** Decided by 3 or fewer (NBA.com's column; used to check the margin logic). */
+  /** Decided by 3 or fewer (on the final score, overtime included — as ESPN and NBA.com). */
   close3: Rec;
+  /** Decided by TEN_MARGIN or more (on the final score). */
+  ten: Rec;
+  /** vs opponents below .500 going into the game (the rest of the games: over500 + under500 = all). */
+  under500: Rec;
   ot: Rec;
   last10: Rec;
   /** "W3", "L1"; "" before the first game. */
@@ -184,7 +190,7 @@ export function computeStandings(games: readonly ScheduleGame[]): Standings {
   for (const t of TEAMS)
     lines.set(t.id, {
       teamId: t.id, tricode: t.tricode, conference: t.conference, division: t.division, w: 0, l: 0, pct: 0,
-      home: rec(), road: rec(), neutral: rec(), conf: rec(), div: rec(), over500: rec(), close: rec(), close3: rec(), ot: rec(), last10: rec(),
+      home: rec(), road: rec(), neutral: rec(), conf: rec(), div: rec(), over500: rec(), under500: rec(), close: rec(), close3: rec(), ten: rec(), ot: rec(), last10: rec(),
       streak: '', pf: 0, pa: 0, ppg: 0, oppg: 0, diffPg: 0, left: { total: 0, home: 0, road: 0, neutral: 0, b2b: 0 }, b2bFirst: rec(), b2bSecond: rec(),
     });
   const vs = new Map<number, Map<number, Rec>>(TEAMS.map((t) => [t.id, new Map()]));
@@ -209,9 +215,10 @@ export function computeStandings(games: readonly ScheduleGame[]): Standings {
       if (o.conference === t.conference) add(t.conf, win);
       if (o.division === t.division) add(t.div, win);
       const ob = before.get(o.id)!;
-      if (ob.w >= ob.l) add(t.over500, win);
+      add(ob.w >= ob.l ? t.over500 : t.under500, win);
       if (margin <= CLOSE_MARGIN) add(t.close, win);
       if (margin <= 3) add(t.close3, win);
+      if (margin >= TEN_MARGIN) add(t.ten, win);
       if (isOt(g)) add(t.ot, win);
       t.pf += me.score;
       t.pa += opp.score;

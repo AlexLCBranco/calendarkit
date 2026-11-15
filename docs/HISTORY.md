@@ -2314,6 +2314,11 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   `tests/fixtures/boxscore-0022600228-2ot.json`). The guard stays, with both forms. **Stale banner**: past 36 h an
   orange strip at the bottom centre ("Data is 3 days old (updated …): the daily update may have failed …"), in the
   page's bottom padding (covers nothing), `data-capture-exclude` (never in a copy), desktop only.
+- **v1.68.0 — extended standings.** A fifth column set, **Extended** (after Splits; Splits itself unchanged so it keeps
+  its fit): W-L, **3-pt** (decided by ≤ 3), **10-pt** (≥ 10), .500+, **<.500** (vs teams below .500 going into the
+  game — the complement of .500+, so the two add up to the record), OT, Close. Margins on the final score, overtime
+  included, as ESPN (said in the tooltips). 10-pt is checked against NBA.com's TenPTSOrMore for all 30 teams (fixture
+  of 2026-11-05). A new set rather than a wider Splits, so Splits keeps its columns and fit.
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

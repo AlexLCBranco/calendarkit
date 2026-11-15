@@ -1,4 +1,4 @@
-// Standings (West and East side by side, four column sets) and the header’s condensed popup,
+// Standings (West and East side by side, five column sets) and the header’s condensed popup,
 // against the served snapshot — every W / L worked out here from the raw feed, the fit at 1600 × 1000 and 1920 × 950 in
 // every set (both tables, no scroll, one line per row, the longest name with a clinch marker), the lines, sorting both
 // tables, tie hovers, team links, the copies read back from the clipboard, and the popup opening and closing over every view.
@@ -26,12 +26,13 @@ const snapshotRecords = (page: Page) =>
     return t;
   }, APP);
 
-type SetKey = 'main' | 'splits' | 'form' | 'schedule';
-const SET_LABEL: Record<SetKey, string> = { main: 'Main', splits: 'Splits', form: 'Form & scoring', schedule: 'Schedule & B2B' };
+type SetKey = 'main' | 'splits' | 'extended' | 'form' | 'schedule';
+const SET_LABEL: Record<SetKey, string> = { main: 'Main', splits: 'Splits', extended: 'Extended', form: 'Form & scoring', schedule: 'Schedule & B2B' };
 /** What each column set shows after seed and team: header labels, the cells' column keys, the group row (after the conference title). */
 const SETS: Record<SetKey, { heads: string[]; keys: string[]; groups: string[] }> = {
   main: { heads: ['W', 'L', 'Pct', 'GB', 'Conf', 'Home', 'Road', 'L10', 'Strk', 'Diff'], keys: ['w', 'l', 'pct', 'gb', 'conf', 'home', 'road', 'l10', 'streak', 'diff'], groups: ['', 'Splits', 'Form', 'Per game'] },
   splits: { heads: ['W-L', 'Home', 'Road', 'Conf', 'Div', '.500+', 'Close', 'OT'], keys: ['wl', 'home', 'road', 'conf', 'div', 'over500', 'close', 'ot'], groups: ['', 'Splits', 'Games'] },
+  extended: { heads: ['W-L', '3-pt', '10-pt', '.500+', '<.500', 'OT', 'Close'], keys: ['wl', 'close3', 'ten', 'over500', 'under500', 'ot', 'close'], groups: ['', 'Games'] },
   form: { heads: ['W-L', 'L10', 'Strk', 'PF', 'PA', 'Diff'], keys: ['wl', 'l10', 'streak', 'ppg', 'oppg', 'diff'], groups: ['', 'Form', 'Per game'] },
   schedule: { heads: ['W-L', 'Left', 'Home', 'Road', 'B2B', '1st', '2nd'], keys: ['wl', 'left', 'leftHome', 'leftRoad', 'leftB2b', 'b2b1', 'b2b2'], groups: ['', 'Remaining', 'B2B legs'] },
 };
@@ -102,7 +103,7 @@ test.describe('Standings view', () => {
   test('no West / East / League toggle and no League view any more', async ({ page }) => {
     await openStandings(page);
     await expect(page.getByRole('tablist', { name: 'Standings table' })).toHaveCount(0);
-    await expect(page.getByRole('tablist', { name: 'Standings columns' }).getByRole('tab')).toHaveText(['Main', 'Splits', 'Form & scoring', 'Schedule & B2B']);
+    await expect(page.getByRole('tablist', { name: 'Standings columns' }).getByRole('tab')).toHaveText(['Main', 'Splits', 'Extended', 'Form & scoring', 'Schedule & B2B']);
     await expect(page.locator('[data-testid="standings"]').getByRole('tab')).toHaveCount(0);
     await expect(page.locator('[data-table]')).toHaveCount(0);
     expect(await page.getByTestId('standings-table').evaluateAll((ts) => ts.map((t) => t.getAttribute('data-conference')))).toEqual(['West', 'East']);

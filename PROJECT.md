@@ -54,12 +54,13 @@ measurement; open it only when a question needs the backstory.
 - **Batch 2026-11-15** (spec `docs/specs/batch-2026-11-15.md`; details in docs/HISTORY.md "Batch 2026-11-15"):
   - v1.67.0 — the feed writes 2OT as "Final/OT2" now (it stopped the daily job Nov 13–14); every OT reader goes through
     `overtimeOf()` (`model.ts`). Data older than 36 h shows an orange banner at the bottom centre (never in a copy).
+  - v1.68.0 — Standings column set **Extended**: W-L, 3-pt, 10-pt, .500+, <.500, OT, Close.
 - **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
   `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 
 ## What the app is
 - **Destinations**: **Schedule** (League or Team by the scope picker; views List · Calendar · Slate), **Cup** (Groups ·
-  Schedule · Simulator · History), **Standings** (West | East side by side, four column sets). Page history ← → with
+  Schedule · Simulator · History), **Standings** (West | East side by side, five column sets: Main · Splits · Extended · Form & scoring · Schedule & B2B). Page history ← → with
   real browser history entries.
 - **Scope picker** (team / All teams): the bar's most prominent control — 36 px tall in the 44 px row, 16 px bold,
   24 px logo, accent outline and tint; the full team name in a 316 px picker from 1440 px, the tricode in 176 px below

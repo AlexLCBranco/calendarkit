@@ -58,6 +58,9 @@ const COLUMNS: Column[] = [
   rec('over500', '.500+', 'Games', 'vs teams at .500 or better going into the game (NBA.com’s “vs. over .500”)', (t) => t.over500),
   rec('close', 'Close', 'Games', 'Games decided by 5 points or fewer', (t) => t.close),
   rec('ot', 'OT', 'Games', 'Overtime games', (t) => t.ot),
+  rec('close3', '3-pt', 'Games', 'Games decided by 3 points or fewer — on the final score, overtime included (as ESPN)', (t) => t.close3),
+  rec('ten', '10-pt', 'Games', 'Games decided by 10 points or more — on the final score, overtime included (as ESPN)', (t) => t.ten),
+  rec('under500', '<.500', 'Games', 'vs teams below .500 going into the game (the rest of the games after “.500+”)', (t) => t.under500),
   rec('l10', 'L10', 'Form', 'Last 10 games', (t) => t.last10),
   {
     key: 'streak', label: 'Strk', group: 'Form', tip: 'Current streak',
