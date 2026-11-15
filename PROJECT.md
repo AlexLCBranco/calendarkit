@@ -58,6 +58,8 @@ measurement; open it only when a question needs the backstory.
   - v1.69.0 — streaks (one `StreakChip`, `src/slate/streakPopup.tsx`) also in League List rows, Team Calendar cells, Cup
     groups and the simulator's tables; not in the League week view or the Cup schedule's league lists (no room).
   - v1.70.0 — the simulator's knockout bracket is playable and big (`CupBracket.tsx`, `src/data/cupBracket.ts`).
+  - v1.71.0 — tooltip day strips: 50 × 42 squares with the matchup ("vs LAL" / "@ DEN", logo), each a hoopsjunkie
+    link (the tip stays while the pointer moves onto it); series popup squares say "BOS @ DEN" with the home logo.
 - **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
   `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 

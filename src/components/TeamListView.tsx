@@ -372,7 +372,7 @@ export function rowRunMarks(rows: readonly (ScheduleGame | string)[], runs: read
     const mark: RunMark = { kind: run.kind, pos: joinedUp && joinedDown ? 'mid' : joinedUp ? 'last' : joinedDown ? 'first' : 'only' };
     if (typeof r !== 'string') {
       const index = run.games.findIndex((g) => g.gameId === r.gameId);
-      if (index >= 0) mark.label = { text: runLabel(run, index), tip: runTip(run, index), days: runTipDays(run, index) };
+      if (index >= 0) mark.label = { text: runLabel(run, index), tip: runTip(run, index), days: runTipDays(run, index), games: run.games.map((g) => g.gameId).join(' ') };
     }
     out.set(typeof r === 'string' ? r : r.gameId, mark);
   });

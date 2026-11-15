@@ -27,6 +27,7 @@ export function FatigueMark({ f, className = '', component = false, children }: 
       data-tif={f.tif?.position}
       data-tip={f.tip}
       data-tip-days={f.days}
+      data-tip-games={f.tif?.merged.ids.join(' ')}
       aria-label={f.tip}
       role="img"
       tabIndex={0}

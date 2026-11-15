@@ -179,7 +179,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
         })}
         {runTags.map((t) => (
           <div key={`tag${t.i}`} className={`ck-run-tag${weekView && cells[t.i]!.endsWith('-01') ? ' ck-run-wide-num' : ''}`} data-run={t.run.kind} style={place(t.i)}>
-            <RunLabel kind={t.run.kind} text={runLabel(t.run, t.index)} tip={runTip(t.run, t.index)} days={runTipDays(t.run, t.index)} />
+            <RunLabel kind={t.run.kind} text={runLabel(t.run, t.index)} tip={runTip(t.run, t.index)} days={runTipDays(t.run, t.index)} games={t.run.games.map((g) => g.gameId).join(' ')} />
           </div>
         ))}
       </div>

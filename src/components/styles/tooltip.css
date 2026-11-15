@@ -19,11 +19,17 @@
 [data-tip] {
   cursor: help;
 }
-/* The 3-in-4 stretch's days under the text (Tooltip.tsx DayStrip): game days filled purple, rest days empty,
-   tonight yellow-ringed; the date under each cell */
+/* A tip with a day strip (3-in-4 stretch, road trip): wider than a text tip, and it takes the pointer — its game
+   squares are links (it stays while the pointer is on it, tooltip.tsx) */
+.ck-tooltip.ck-tooltip-days {
+  max-width: calc(100vw - 16px);
+  pointer-events: auto;
+}
+/* The days under the text (tooltip.tsx DayStrip): a square per day — a game day with the opponent's logo and
+   "vs LAL" / "@ DEN" on purple, a rest day empty with a dashed edge, tonight ringed in yellow; the date under each */
 .ck-tip-days {
   display: flex;
-  gap: 3px;
+  gap: 4px;
   margin: 4px 0 2px;
   white-space: nowrap;
 }
@@ -31,28 +37,43 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-width: 16px;
+  gap: 3px;
 }
-.ck-tip-day > i {
-  display: block;
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
+.ck-tip-sq {
+  --ck-logo: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 50px;
+  height: 42px;
+  border-radius: 5px;
   border: 1px solid #7c4dcc;
   box-sizing: border-box;
+  color: var(--ck-text);
+  font-style: normal;
+  text-decoration: none;
 }
-.ck-tip-game > i,
-.ck-tip-tonight > i {
+.ck-tip-game .ck-tip-sq,
+.ck-tip-tonight .ck-tip-sq {
+  background: color-mix(in srgb, #7c4dcc 55%, #05070a);
+}
+a.ck-tip-sq:hover {
   background: #7c4dcc;
 }
-.ck-tip-rest > i {
+.ck-tip-rest .ck-tip-sq {
   background: transparent;
-  border-color: #4c3d75;
+  border: 1px dashed #4c3d75;
 }
-.ck-tip-tonight > i {
+.ck-tip-tonight .ck-tip-sq {
   outline: 2px solid var(--ck-b2b);
   outline-offset: 1px;
+}
+.ck-tip-match {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
 }
 .ck-tip-num {
   font-size: 10px;

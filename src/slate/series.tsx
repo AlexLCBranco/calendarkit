@@ -8,7 +8,7 @@
 
 import { dateFormat, finalScore, overtime, type CalendarData } from '../data/model';
 import { leagueSeries, seriesChip, seriesStatus, type SeriesGame } from '../data/series';
-import { TEAM_BY_ID } from '../data/teams';
+import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from './links';
 import { useHoverPopup } from './hoverPopup';
@@ -45,8 +45,18 @@ function Square({ g, current, gameLink }: { g: ScheduleGame; current: boolean; g
   const date = fmtDate(g.dateEt, { month: 'short', day: 'numeric' });
   const where = `${tri(g.awayTeam.teamId)} @ ${tri(g.homeTeam.teamId)}`;
   const label = r ? `${date}, ${where}: ${r.win ? tri(g.awayTeam.teamId) : tri(g.homeTeam.teamId)} won ${Math.max(r.score, r.oppScore)}–${Math.min(r.score, r.oppScore)}${ot ? ` (${ot})` : ''}` : `${date}, ${where}: to come`;
+  const logo = teamLogo(g.homeTeam.teamId);
+  // where it is played, as the day strips say it: the home team's logo, "BOS @ DEN"
   const body = (
     <>
+      <span className="ck-series-match" data-testid="series-match">
+        {logo && (
+          <span className="ck-logo-backing ck-series-logo">
+            <img src={logo} alt="" width={16} height={16} />
+          </span>
+        )}
+        {where}
+      </span>
       {r && <span className="ck-series-win">{r.win ? tri(g.awayTeam.teamId) : tri(g.homeTeam.teamId)}</span>}
       {r && (
         <span className="ck-series-score">

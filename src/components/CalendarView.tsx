@@ -11,6 +11,7 @@ import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import type { SlateOdds } from '../slate/odds';
 import { useSeriesPopup } from '../slate/series';
 import { useStreakPopup } from '../slate/streakPopup';
+import { stripGamesOf } from '../slate/stripGames';
 import { TeamLinkContext, teamLinkTarget, type TeamLinks } from '../slate/teamLink';
 import { useTooltip } from '../slate/tooltip';
 import { BAR_SHORT_BELOW, seasonDay, type CalendarHandle, type CalendarState, type CupState, type Destination, type PageHistory, type TeamLayout, type TeamTarget, type ViewSnapshot } from './calendarState';
@@ -113,7 +114,9 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
   }));
   const stateRef = useRef(state);
   stateRef.current = state;
-  const tooltip = useTooltip();
+  // the day strips' squares: the matchup and its hoopsjunkie page
+  const stripGames = useMemo(() => stripGamesOf(data, gameLink), [data, gameLink]);
+  const tooltip = useTooltip(stripGames);
   // A square of the season-series popup is its game's hoopsjunkie page
   const streakPop = useStreakPopup(data, { gameLink });
   const series = useSeriesPopup(data, { gameLink });

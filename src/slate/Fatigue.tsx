@@ -73,6 +73,7 @@ export function Fatigue({ f, team, size = 'full', badge = 'left', focusable = fa
       data-stretch={m && `${mergedLabel(m)}/${m.position}`}
       data-tip={f.tip}
       data-tip-days={f.days}
+      data-tip-games={m?.ids.join(' ')}
       aria-label={label(team, f)}
       role="img"
       tabIndex={focusable ? 0 : undefined}

@@ -2343,6 +2343,16 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   CupDestination (kept while the page is open, never stored). **Layout**: the games, the six tables, then a bottom row
   of the wild-card race (370 px column, West over East) and the bracket (the rest) — tables and bracket on one screen,
   no scroll at 1920 × 950 and 1600 × 1000 with every game picked and the bracket played (e2e/simulator.spec.ts).
+- **v1.71.0 — bigger hover squares with the matchup.** The tooltip's day strip (3-in-4 stretches, road trips /
+  homestands): 50 × 42 px squares; a game day shows the opponent's logo and "vs LAL" / "@ DEN" and is the game's
+  hoopsjunkie page; a rest day stays empty with a dashed edge; tonight / this game ringed in yellow. The strip format
+  (`data-tip-days`) is unchanged; the elements also carry `data-tip-games` (the stretch's game ids) and the host's
+  `stripGamesOf` (`src/slate/stripGames.ts`) finds the team (the one every game shares) and each matchup when a tip
+  opens. A tip with a strip takes the pointer and stays `STRIP_CLOSE_MS` (180 ms) after leaving its element, and
+  while the pointer is on it, so a square can be clicked; text tips close at once as before. Season-series popup
+  squares: 84 px, "BOS @ DEN" with the home logo on top. **Cup squares in popups**: there are none — Cup squares only
+  appear always-visible (Slate cards, Cup groups, Cup history), which stay as they are. Also fixed here: Team
+  Calendar selection images lacked the v1.69.0 streak chip (e2e/copy.spec.ts caught it).
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

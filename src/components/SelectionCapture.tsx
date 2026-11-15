@@ -5,7 +5,7 @@
 
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { cupTag, hasNationalTv, opponentSecondNight, type CalendarData } from '../data/model';
+import { cupTag, hasNationalTv, leagueSeasonLines, opponentSecondNight, type CalendarData } from '../data/model';
 import { cupNightHeading, cupNights, cupTeamTag } from '../data/cupSchedule';
 import { teamThreeInFour } from '../data/scheduleTags';
 import { timeGroups } from './dayflow';
@@ -84,7 +84,7 @@ function TeamDays({ data, teamId, now, timeZone, games, cellWidth, teamScale = 1
         <div key={date} className="ck-cell ck-day-cell ck-sel-day" data-date={date} style={{ width: cellWidth }}>
           <span className="ck-sel-dayhead">{dayHead(date, gs.length)}</span>
           {gs.map((g) => (
-            <GameCard key={g.gameId} game={g} teamId={teamId} b2b={b2b.byGame.get(g.gameId)} tif={tif.get(g.gameId)} tvPill opponentB2B={opponentSecondNight(data, g, teamId)} now={now} timeZone={timeZone} teamFirst logos scores size="compact" />
+            <GameCard key={g.gameId} game={g} teamId={teamId} b2b={b2b.byGame.get(g.gameId)} tif={tif.get(g.gameId)} tvPill opponentB2B={opponentSecondNight(data, g, teamId)} lines={leagueSeasonLines(data).get(g.gameId)} now={now} timeZone={timeZone} teamFirst logos scores size="compact" />
           ))}
         </div>
       ))}

@@ -310,7 +310,7 @@
 }
 .ck-series-sq {
   position: relative;
-  width: 64px;
+  width: 84px; /* "BOS @ DEN" with the home logo */
   border: 1px solid var(--ck-border);
   border-radius: 6px;
   background: var(--ck-surface-2);
@@ -326,7 +326,7 @@
   justify-content: center;
   gap: 1px;
   width: 100%;
-  min-height: 52px;
+  min-height: 70px;
   padding: 4px 2px;
   background: none;
   border: 0;
@@ -342,6 +342,17 @@
 }
 a.ck-series-pick:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+.ck-series-match {
+  --ck-logo: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ck-muted);
 }
 .ck-series-win {
   font-weight: 700;

@@ -18,9 +18,9 @@ import { StreakChip } from '../slate/streakPopup';
 import type { RunKind } from '../data/runs';
 
 /** A road trip / homestand game's label ("Road trip · 3/5"); its tooltip names that game's place, the dates and the cities. */
-export function RunLabel({ kind, text, tip, days }: { kind: RunKind; text: string; tip: string; days: string }) {
+export function RunLabel({ kind, text, tip, days, games }: { kind: RunKind; text: string; tip: string; days: string; /** the run's game ids (the strip's matchups) */ games?: string }) {
   return (
-    <span className="ck-run-label" data-run={kind} data-tip={tip} data-tip-days={days} data-testid="run-label" tabIndex={0} aria-label={tip.replace(/\n/g, ', ')}>
+    <span className="ck-run-label" data-run={kind} data-tip={tip} data-tip-days={days} data-tip-games={games} data-testid="run-label" tabIndex={0} aria-label={tip.replace(/\n/g, ', ')}>
       {text}
     </span>
   );
@@ -120,7 +120,7 @@ export interface GameCardProps {
 export interface RunMark {
   kind: RunKind;
   pos: 'first' | 'mid' | 'last' | 'only';
-  label?: { text: string; tip: string; days: string };
+  label?: { text: string; tip: string; days: string; games?: string };
 }
 
 /** The host's game-page URL for a game (hoopsjunkie, config.ts gameLinkUrl), or undefined (no link: undecided teams). */
@@ -191,6 +191,7 @@ export function TifChip({ tif }: { tif: ThreeInFour }) {
       data-sets={tif.sets.length}
       data-tip={tip}
       data-tip-days={mergedDays(m)}
+      data-tip-games={m.ids.join(' ')}
       aria-label={tip}
       role="img"
       tabIndex={0}
