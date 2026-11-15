@@ -51,7 +51,7 @@ function Square({ g, current, gameLink }: { g: ScheduleGame; current: boolean; g
     <>
       <span className="ck-series-match" data-testid="series-match">
         {logo && (
-          <span className="ck-logo-backing ck-series-logo">
+          <span className="ck-sq-logo">
             <img src={logo} alt="" width={16} height={16} />
           </span>
         )}

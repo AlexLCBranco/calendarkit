@@ -42,7 +42,7 @@ function DayStrip({ days, games }: { days: string; games?: ReadonlyMap<string, S
         const body = g ? (
           <>
             {logo && (
-              <span className="ck-logo-backing ck-tip-logo">
+              <span className="ck-sq-logo">
                 <img src={logo} alt="" width={16} height={16} />
               </span>
             )}
@@ -105,7 +105,10 @@ export function useTooltip(games?: StripGames) {
     if (!el || !tip) return;
     el.style.left = `${clampX(tip.x - el.offsetWidth / 2, el.offsetWidth)}px`;
     const above = tip.top - el.offsetHeight - 6;
-    el.style.top = `${above >= 4 ? above : tip.bottom + 6}px`;
+    // A tip with a strip takes the pointer on its squares, so it never covers the top bar (it opens below its element
+    // instead): a tip that opened under a resting pointer must not sit on the controls the next click goes to
+    const floor = tip.days ? (document.querySelector('[data-testid="top-bar"]')?.getBoundingClientRect().bottom ?? 0) + 4 : 4;
+    el.style.top = `${above >= floor ? above : tip.bottom + 6}px`;
   });
   useEffect(() => {
     if (!tip) return;
@@ -118,7 +121,7 @@ export function useTooltip(games?: StripGames) {
   return {
     handlers: { onMouseOver: show, onFocus: show, onMouseLeave: leave, onBlur: hide },
     node: tip && (
-      <div ref={ref} className={`ck-tooltip${tip.days ? ' ck-tooltip-days' : ''}`} role="tooltip" data-testid="tooltip" data-capture-exclude="true" onMouseEnter={keep} onMouseLeave={hide}>
+      <div ref={ref} className={`ck-tooltip${tip.days ? ' ck-tooltip-days' : ''}`} role="tooltip" data-testid="tooltip" data-capture-exclude="true" onMouseEnter={keep} onMouseLeave={later}>
         {tip.text}
         {tip.days && <DayStrip days={tip.days} games={strip} />}
       </div>

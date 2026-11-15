@@ -11,14 +11,18 @@ const ORANGE = 'rgb(224, 138, 60)'; // --ck-stale
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'colours: one width is enough'));
 
 test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
-  await page.clock.setFixedTime(NOW);
+  // the clock 40 h after the served snapshot, so the stamp is stale whatever day the snapshot is from (a fixed clock
+  // broke when the daily update caught up)
+  await page.goto('/calendar/data/schedule.json');
+  const snapshot = Date.parse((JSON.parse(await page.locator('body').innerText()) as { meta: { time: string } }).meta.time);
+  await page.clock.setFixedTime(Math.max(NOW.getTime(), snapshot + 40 * 3_600_000));
   const css = (sel: string, prop: string, pseudo?: string) => page.locator(sel).first().evaluate((e, [p, ps]) => getComputedStyle(e, ps || null).getPropertyValue(p!), [prop, pseudo]);
   // League List: the Fatigue components' badges (the tricodes beside them lost their yellow marks)
   await page.goto('/calendar/?view=league&layout=list&date=2026-10-24');
   await expect(page.locator('.ck-card .ck-fx-b2b').first()).toBeVisible();
   expect(await css('.ck-card .ck-fx-b2b', 'background-color')).toBe(YELLOW);
   expect(await page.locator('.ck-card .ck-fm-n1, .ck-card .ck-fm-n2').count()).toBe(0);
-  // the data stamp is stale at this clock (snapshot of Oct 28 vs Nov 15): orange, its own variable
+  // the data stamp is stale at this clock: orange, its own variable
   expect(await css('[data-testid="data-updated"]', 'color')).toBe(ORANGE);
   expect(await page.locator('.ck-root').evaluate((e) => getComputedStyle(e).getPropertyValue('--ck-stale').trim())).toBe('#e08a3c');
   // week view, 2 weeks (no component): the 2nd night's tricode filled, the 1st ringed

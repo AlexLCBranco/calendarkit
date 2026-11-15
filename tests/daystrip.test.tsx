@@ -67,6 +67,8 @@ describe('the day strip in the tooltip', () => {
     await wait(STRIP_CLOSE_MS + 60);
     expect(screen.getByTestId('tooltip')).toBeTruthy();
     fireEvent.mouseLeave(screen.getByTestId('tooltip'));
+    expect(screen.getByTestId('tooltip')).toBeTruthy(); // a moment, to cross the gap to the next square
+    await wait(STRIP_CLOSE_MS + 60);
     expect(screen.queryByTestId('tooltip')).toBeNull();
   });
   it('a text tooltip without a strip still closes at once', () => {

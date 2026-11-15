@@ -2353,6 +2353,13 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   squares: 84 px, "BOS @ DEN" with the home logo on top. **Cup squares in popups**: there are none — Cup squares only
   appear always-visible (Slate cards, Cup groups, Cup history), which stay as they are. Also fixed here: Team
   Calendar selection images lacked the v1.69.0 streak chip (e2e/copy.spec.ts caught it).
+- **v1.71.1 — strip tip fixes.** CI on v1.71.0: a day-strip tip that opened under a resting pointer (the list changed
+  under it) sat on the team picker and, taking the pointer, stayed — e2e/teammonth.spec.ts hung. Now only the game
+  squares take the pointer, the tip waits a moment to cross between squares, and a strip tip opens below its element
+  rather than over the top bar. Logos inside game squares (strips, series popup) use `.ck-sq-logo`, not
+  `.ck-logo-backing` (the team-link audit counts those; a team link can't sit inside the square's game link).
+  e2e/b2b-color.spec.ts sets its clock 40 h after the served snapshot (a fixed clock broke once the data was current).
+  New: e2e/daystrip.spec.ts (hover → square → hoopsjunkie in a new tab).
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

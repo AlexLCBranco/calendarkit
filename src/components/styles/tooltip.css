@@ -19,10 +19,13 @@
 [data-tip] {
   cursor: help;
 }
-/* A tip with a day strip (3-in-4 stretch, road trip): wider than a text tip, and it takes the pointer — its game
-   squares are links (it stays while the pointer is on it, tooltip.tsx) */
+/* A tip with a day strip (3-in-4 stretch, road trip): wider than a text tip; its game squares are links (it stays
+   while the pointer is on one, tooltip.tsx) */
 .ck-tooltip.ck-tooltip-days {
   max-width: calc(100vw - 16px);
+}
+/* only the game squares take the pointer; clicks on the rest of the tip go through to what is under it */
+.ck-tooltip-days a.ck-tip-sq {
   pointer-events: auto;
 }
 /* The days under the text (tooltip.tsx DayStrip): a square per day — a game day with the opponent's logo and
