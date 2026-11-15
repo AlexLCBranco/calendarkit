@@ -17,6 +17,19 @@ const fmtDay = (date: string) => dateFormat('en-US', { weekday: 'short', month: 
 /** The attribute value for a streak element. */
 export const streakAttr = (teamId: number, gameId?: string) => `${teamId}|${gameId ?? ''}`;
 
+/**
+ * "W3" / "L2" — the one streak element every view uses: green W / red L (.ck-streak-w / -l), the popup on hover or
+ * focus. `gameId`: the line's game (the streak through it once final, going into it before); none = the current streak.
+ * Empty (the column kept) without a streak. `base`: the view's own class for size and column.
+ */
+export function StreakChip({ teamId, gameId, streak, base = 'ck-streak', testId, label }: { teamId: number; gameId?: string; streak?: { kind: 'W' | 'L'; n: number }; base?: string; testId?: string; label?: string }) {
+  return (
+    <span className={`${base}${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-testid={testId} data-streak={streak ? streakAttr(teamId, gameId) : undefined} tabIndex={streak ? 0 : undefined} aria-label={streak ? label : undefined}>
+      {streak ? `${streak.kind}${streak.n}` : ''}
+    </span>
+  );
+}
+
 export function StreakList({ data, teamId, gameId, gameLink }: { data: CalendarData; teamId: number; gameId?: string; gameLink?: GameLink }) {
   const games = streakGames(data, teamId, gameId);
   if (!games.length) return null;

@@ -13,6 +13,8 @@ import { TEAM_BY_ID, teamLogo, type Conference } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from '../slate/links';
 import { TeamLink } from '../slate/teamLink';
+import { StreakChip } from '../slate/streakPopup';
+import { currentStreaks } from '../data/streak';
 import { HostTag, VenueBadge, type Venue } from '../slate/VenueMarker';
 import { hostArena, prepFor, type Prep } from '../data/knockout';
 import { prizeLines } from '../data/cupPrize';
@@ -130,7 +132,7 @@ export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onM
             {res.groups
               .filter((g) => g.conference === c)
               .map((g) => (
-                <SimTable key={g.group} name={g.group.replace(' Group ', ' ')} teams={g.teams} wc={res.wildCards.find((w) => w.conference === c)!.teams[0]?.teamId} />
+                <SimTable key={g.group} name={g.group.replace(' Group ', ' ')} teams={g.teams} wc={res.wildCards.find((w) => w.conference === c)!.teams[0]?.teamId} streaks={currentStreaks(data)} />
               ))}
           </div>
         ))}
@@ -199,7 +201,8 @@ function Depends({ u }: { u: { rule: Tiebreak; games: string[] } }) {
   );
 }
 
-function SimTable({ name, teams, wc }: { name: string; teams: RankedLine[]; wc?: number }) {
+/** A group table; `streaks`: each team's real current streak (the picks don't change it). */
+function SimTable({ name, teams, wc, streaks }: { name: string; teams: RankedLine[]; wc?: number; streaks: ReadonlyMap<number, { kind: 'W' | 'L'; n: number }> }) {
   return (
     <div className="ck-sim-table" data-testid="sim-group" data-group={name}>
       <div className="ck-sim-trow ck-sim-thead">
@@ -223,6 +226,7 @@ function SimTable({ name, teams, wc }: { name: string; teams: RankedLine[]; wc?:
           <TeamLink teamId={t.teamId} className="ck-sim-tri">
             {t.tricode}
           </TeamLink>
+          <StreakChip base="ck-streak ck-sim-streak" teamId={t.teamId} streak={streaks.get(t.teamId)} testId="sim-streak" />
           <span className="ck-sim-extra">{t.undecided ? <Depends u={t.undecided} /> : t.tiebreak && i <= 1 ? <span className="ck-sim-tbtag">{TB_SHORT[t.tiebreak]}</span> : t.tied ? <span className="ck-sim-tbtag">tied</span> : null}</span>
           <span className="ck-sim-rec">
             {t.w}-{t.l}

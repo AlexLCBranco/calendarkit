@@ -29,7 +29,7 @@ import { leagueSeries } from '../data/series';
 import { fmtOdds, gameOdds, type DayOdds, type GameOdds, type SlateOdds } from './odds';
 import { GameLinkIcon, ScoreLink, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
-import { streakAttr } from './streakPopup';
+import { StreakChip } from './streakPopup';
 
 /** The day's games (TV games only when filtered), in tip-off order; [] on a day without games. */
 export const slateGames = (data: CalendarData, date: string, tvOnly = false) => {
@@ -225,9 +225,7 @@ function TeamRow({ cup, team, gameId, f, line, score, url, odds, provider, home 
       <span className="ck-slate-rec" data-tip={rec ? tip : undefined}>
         {rec ? `${rec.wins}-${rec.losses}` : ''}
       </span>
-      <span className={`ck-slate-streak${streak ? ` ck-streak-${streak.kind.toLowerCase()}` : ''}`} data-testid="slate-streak" data-streak={streak ? streakAttr(team.teamId, gameId) : undefined} tabIndex={streak ? 0 : undefined} aria-label={streak ? tip : undefined}>
-        {streak ? `${streak.kind}${streak.n}` : ''}
-      </span>
+      <StreakChip teamId={team.teamId} gameId={gameId} streak={streak} base="ck-slate-streak" testId="slate-streak" label={tip} />
       {cup && (isKnockout(cup.game) ? <KoTrack data={cup.data} game={cup.game} teamId={team.teamId} home={home} /> : <CupTrack {...cup} teamId={team.teamId} />)}
       <Fatigue f={f} team={teamLabel(team)} shortChip />
       {/* A final score is the game's page */}

@@ -55,6 +55,8 @@ measurement; open it only when a question needs the backstory.
   - v1.67.0 — the feed writes 2OT as "Final/OT2" now (it stopped the daily job Nov 13–14); every OT reader goes through
     `overtimeOf()` (`model.ts`). Data older than 36 h shows an orange banner at the bottom centre (never in a copy).
   - v1.68.0 — Standings column set **Extended**: W-L, 3-pt, 10-pt, .500+, <.500, OT, Close.
+  - v1.69.0 — streaks (one `StreakChip`, `src/slate/streakPopup.tsx`) also in League List rows, Team Calendar cells, Cup
+    groups and the simulator's tables; not in the League week view or the Cup schedule's league lists (no room).
 - **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
   `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 
@@ -82,7 +84,7 @@ measurement; open it only when a question needs the backstory.
   (date picker, ‹ › game, Today, load more). **Team Calendar**: month grid or 1–2 week spans; no lines between cells.
 - Game info everywhere: local tip-off ((+1) past local midnight, TBD), national TV (NBA TV excluded), Cup / play-in /
   playoff tags, final scores, back-to-backs and 3-in-4 (Fatigue component), rest badge (2 days quiet, ≥ 3 days strong),
-  season-series chip and popup, streak popup, moneyline odds on the Slate.
+  season-series chip and popup, streaks (`StreakChip`: one element, colours and popup everywhere), moneyline odds on the Slate.
 - **Click rule**: game things (matchup, score, Cup square, series square, ↗) open the game's hoopsjunkie page in a new
   tab; team names / logos / tricodes open that team's **Team Calendar** here (`TEAM_LINK_LAYOUT`; the scope picker
   keeps the current layout). Nothing with a pointer cursor is dead

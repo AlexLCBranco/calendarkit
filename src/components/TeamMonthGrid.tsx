@@ -3,7 +3,7 @@
 import { seriesLine } from '../slate/series';
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import { addDays, hasNationalTv, isOver, monthCells, nationalTv, opponentSecondNight, seasonMonths, teamGames, type B2BPair, type CalendarData } from '../data/model';
+import { addDays, hasNationalTv, isOver, leagueSeasonLines, monthCells, nationalTv, opponentSecondNight, seasonMonths, teamGames, type B2BPair, type CalendarData } from '../data/model';
 import { teamThreeInFour, type ThreeInFour } from '../data/scheduleTags';
 import { TEAM_BY_ID } from '../data/teams';
 import { CopyButton } from './CopyButton';
@@ -44,7 +44,9 @@ export function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | 
   const pair = { teamId: widest.teamId, first: game, second: game, code: 'AA', fromCity: '', toCity: '', travels: true, tip: '' } as B2BPair;
   // and in the widest 3-in-4 chip of the season: "7in11 · 2nd" (cells show the merged chip)
   const tif: ThreeInFour = { position: 3, sets: [], merged: { ids: Array(7).fill(''), dates: Array(7).fill('2026-11-01'), days: 11, position: 2 } };
-  return { game, teamId: widest.teamId, b2b: [{ pair, night: 1 }], tif, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, tvPill: true, size: 'compact' };
+  // and the widest streak ("W10")
+  const lines = new Map([[widest.teamId, { streak: { kind: 'W' as const, n: 10 } }]]);
+  return { game, teamId: widest.teamId, b2b: [{ pair, night: 1 }], tif, lines, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, tvPill: true, size: 'compact' };
 }
 
 export interface TeamMonthGridProps {
@@ -170,7 +172,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
             <div key={date} className={cls} role="gridcell" data-date={date} data-b2b={nights?.map((n) => n.night).join(' ')} style={place(i)} onClick={() => g && setSelected(date)}>
               {/* week views can cross a month: the 1st says which */}
               <span className="ck-daynum">{weekView && date.endsWith('-01') ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
-              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} gameLink={compact ? undefined : gameLink} seriesTip={seriesLine(data, g)} />}
+              {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} gameLink={compact ? undefined : gameLink} seriesTip={seriesLine(data, g)} lines={compact ? undefined : leagueSeasonLines(data).get(g.gameId)} />}
               {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
             </div>
           );

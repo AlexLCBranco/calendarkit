@@ -38,3 +38,18 @@ export function streakGames(data: CalendarData, teamId: number, gameId?: string)
   for (let i = done.length - 1; i >= 0 && done[i]!.win === done.at(-1)!.win; i--) out.push(done[i]!);
   return out;
 }
+
+const currentCache = new WeakMap<CalendarData, Map<number, { kind: 'W' | 'L'; n: number }>>();
+
+/** Every team's current streak (through its last final regular-season game), for the views without a game line. Once per data set. */
+export function currentStreaks(data: CalendarData): ReadonlyMap<number, { kind: 'W' | 'L'; n: number }> {
+  let out = currentCache.get(data);
+  if (out) return out;
+  out = new Map();
+  for (const teamId of data.teamDates.keys()) {
+    const games = streakGames(data, teamId);
+    if (games.length) out.set(teamId, { kind: games[0]!.win ? 'W' : 'L', n: games.length });
+  }
+  currentCache.set(data, out);
+  return out;
+}

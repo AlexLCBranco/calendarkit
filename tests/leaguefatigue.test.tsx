@@ -180,7 +180,7 @@ describe('Fatigue component (round 5)', () => {
     for (const c of cards) {
       const g = data.games.find((x) => x.gameId === c.dataset.gameId)!;
       const m = c.querySelector('.ck-matchup')!;
-      expect([...m.children].map((x) => x.className.split(' ')[0]).sort(), g.gameId).toEqual(['ck-fx', 'ck-fx', 'ck-rec', 'ck-rec', 'ck-teams', ...(m.querySelector('.ck-ot') ? ['ck-ot'] : [])].sort());
+      expect([...m.children].map((x) => x.className.split(' ')[0]).sort(), g.gameId).toEqual(['ck-fx', 'ck-fx', 'ck-rec', 'ck-rec', 'ck-streak', 'ck-streak', 'ck-teams', ...(m.querySelector('.ck-ot') ? ['ck-ot'] : [])].sort());
       const fxs = [...m.querySelectorAll(':scope > .ck-fx')];
       [g.awayTeam, g.homeTeam].forEach((t, i) => {
         const fx = fxs[i]!;

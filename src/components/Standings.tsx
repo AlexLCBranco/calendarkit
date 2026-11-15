@@ -14,7 +14,7 @@ import { CopyButton } from './CopyButton';
 import { EDGES, useFloatBox } from './floatBox';
 import { COLUMN_SETS, type StandingsSet } from './standingsSets';
 import './styles/standings.css';
-import { streakAttr } from '../slate/streakPopup';
+import { StreakChip } from '../slate/streakPopup';
 
 const fmtThrough = (date: string) => dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 const fmtGb = (gb: number) => (gb === 0 ? '—' : gb.toFixed(1).replace(/\.0$/, ''));
@@ -64,7 +64,7 @@ const COLUMNS: Column[] = [
   rec('l10', 'L10', 'Form', 'Last 10 games', (t) => t.last10),
   {
     key: 'streak', label: 'Strk', group: 'Form', tip: 'Current streak',
-    cell: (t) => <span className={t.streak.startsWith('W') ? 'ck-st-good' : t.streak ? 'ck-st-bad' : ''} data-streak={t.streak ? streakAttr(t.teamId) : undefined} tabIndex={t.streak ? 0 : undefined}>{t.streak || '—'}</span>,
+    cell: (t) => <Streak t={t} />,
     sort: (t) => (t.streak.startsWith('W') ? 1 : -1) * Number(t.streak.slice(1) || 0),
   },
   num('ppg', 'PF', 'Per game', 'Points for, per game', (t) => t.ppg, { cell: (t) => fmt1(t.ppg) }),
@@ -79,6 +79,12 @@ const COLUMNS: Column[] = [
 ];
 const COLUMN_BY_KEY = new Map(COLUMNS.map((c) => [c.key, c]));
 
+
+/** The shared streak chip ("W3", the popup); "—" before a team's first game. */
+function Streak({ t }: { t: SeededTeam }) {
+  if (!t.streak) return <>—</>;
+  return <StreakChip base="ck-st-streak" teamId={t.teamId} streak={{ kind: t.streak[0] as 'W' | 'L', n: Number(t.streak.slice(1)) }} />;
+}
 
 type Sort = { key: string; asc: boolean };
 const SEED_SORT: Sort = { key: 'seed', asc: true };
@@ -309,7 +315,7 @@ export function StandingsPopup({ data, onClose }: { data: CalendarData; onClose:
                     <td>{fmtGb(t.gb)}</td>
                     <td>{fmtRec(t.last10)}</td>
                     <td>
-                      <span className={t.streak.startsWith('W') ? 'ck-st-good' : t.streak ? 'ck-st-bad' : ''} data-streak={t.streak ? streakAttr(t.teamId) : undefined} tabIndex={t.streak ? 0 : undefined}>{t.streak || '—'}</span>
+                      <Streak t={t} />
                     </td>
                   </tr>
                 ))}

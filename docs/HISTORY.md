@@ -2319,6 +2319,17 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   game — the complement of .500+, so the two add up to the record), OT, Close. Margins on the final score, overtime
   included, as ESPN (said in the tooltips). 10-pt is checked against NBA.com's TenPTSOrMore for all 30 teams (fixture
   of 2026-11-05). A new set rather than a wider Splits, so Splits keeps its columns and fit.
+- **v1.69.0 — streaks in more places.** One component, `StreakChip` (`src/slate/streakPopup.tsx`): "W3" / "L2", green /
+  red (.ck-streak-w / -l), the streak popup on hover / focus; Slate cards, Team List rows and Standings (+ Quick
+  standings, which switched from their own colours) now use it too. New: **League List rows** (each team's streak
+  outside its record, fixed slot), **Team Calendar cells** (the team's streak in the tags; the sizing probe carries
+  "W10"), **Cup groups** (current streak under the name, on a dark backing so it reads on every team colour; beside the
+  name it pushed the game slots out for "Minnesota Timberwolves" at 1600), **simulator tables** (the real current
+  streak, own column). Rule everywhere: a game's line through it once final, going in before; no game → current streak
+  (`currentStreaks`, once per data set). **Skipped**: the League week view (lines are scaled to the busiest day; a
+  streak on each side shrinks every line) and the Cup schedule's league lists (By group / By date: four columns of
+  one-line rows with every game on one screen — tried By date, its rows stuck out at 1600 and 1920); its Team list
+  already has them.
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

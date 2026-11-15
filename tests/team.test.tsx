@@ -234,7 +234,7 @@ describe('selected team first, both logos', () => {
     // the text without the rest badges ("2d"), which sit right against the records
     const matchup = el.container.querySelector(`[data-game-id="${g.gameId}"] .ck-matchup`)!.cloneNode(true) as Element;
     matchup.querySelectorAll('.ck-fx-rest').forEach((r) => r.remove());
-    expect(matchup.textContent!.replace(/B2B|\d+in\d+( · \d+(st|nd|rd|th))?/g, '').replace(/\s+/g, ' ').trim()).toMatch(new RegExp(`^(\\d+-\\d+ )?${g.awayTeam.teamTricode} @ ${g.homeTeam.teamTricode}( \\d+-\\d+)?$`));
+    expect(matchup.textContent!.replace(/B2B|\d+in\d+( · \d+(st|nd|rd|th))?/g, '').replace(/\s+/g, ' ').trim()).toMatch(new RegExp(`^([WL]\\d+ )?(\\d+-\\d+ )?${g.awayTeam.teamTricode} @ ${g.homeTeam.teamTricode}( \\d+-\\d+)?( [WL]\\d+)?$`));
   });
 });
 

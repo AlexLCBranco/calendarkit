@@ -244,3 +244,25 @@
 .ck-slots .ck-rec-home {
   text-align: left;
 }
+/* Streaks (StreakChip): League List rows put each team's outside its record, in a fixed slot so they line up down
+   the list; Team Calendar cells put the team's in the tags. Colours: .ck-streak-w / -l (season.css). */
+.ck-streak.ck-lstreak {
+  min-width: 0;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ck-slots .ck-streak.ck-lstreak {
+  display: inline-block;
+  width: 2.3em; /* "W10" */
+  text-align: right;
+}
+.ck-slots .ck-streak.ck-lstreak-home {
+  text-align: left;
+}
+.ck-streak.ck-cstreak {
+  min-width: 0;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
