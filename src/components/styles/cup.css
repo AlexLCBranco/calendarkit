@@ -678,10 +678,12 @@
   font-weight: 700;
   white-space: nowrap;
 }
+/* the race in a narrow column (West over East), the bracket takes the rest of the width */
 .ck-sim-bottom {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  grid-template-columns: 370px minmax(0, 1fr);
   gap: 10px;
+  align-items: stretch;
 }
 .ck-sim-panel {
   border: 1px solid var(--ck-border);
@@ -702,8 +704,8 @@
 }
 .ck-sim-races {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 6px;
 }
 .ck-sim-race-row {
   display: grid;
@@ -779,9 +781,198 @@
     grid-template-columns: 1fr;
     gap: 6px;
   }
-  .ck-sim-bottom {
-    grid-template-columns: 1fr 1fr;
-  }
+}
+
+/* The playable knockout bracket (CupBracket.tsx): West QF → SF → Final ← SF ← QF East, the champion under the Final */
+.ck-kb-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ck-kb-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.ck-kb-hint {
+  color: var(--ck-muted);
+  font-size: 11px;
+}
+.ck-kb {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+.ck-kb-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ck-kb-colhead {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+}
+.ck-kb-round {
+  color: var(--ck-cup);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.ck-kb-when {
+  color: var(--ck-muted);
+  font-size: 11px;
+}
+.ck-kb-games {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 10px;
+}
+.ck-kb-col-final .ck-kb-games {
+  justify-content: center;
+}
+.ck-kb-match {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+/* a stub line toward the next round: right on the West side, left on the East side */
+.ck-kb-col:not(.ck-kb-col-final):not(.ck-kb-col-east) .ck-kb-match::after,
+.ck-kb-col-east .ck-kb-match::after {
+  content: '';
+  position: absolute;
+  top: 34px;
+  width: 18px;
+  border-top: 2px solid var(--ck-border);
+}
+.ck-kb-col:not(.ck-kb-col-final):not(.ck-kb-col-east) .ck-kb-match::after {
+  left: 100%;
+}
+.ck-kb-col-east .ck-kb-match::after {
+  right: 100%;
+}
+.ck-kb-team {
+  --ck-logo: 22px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid var(--ck-border);
+  border-radius: 6px;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+}
+button.ck-kb-team {
+  cursor: pointer;
+}
+button.ck-kb-team:hover {
+  border-color: var(--ck-accent);
+}
+.ck-kb-seed {
+  width: 10px;
+  flex: none;
+  text-align: right;
+}
+.ck-kb-tri {
+  font-size: 15px;
+  font-weight: 800;
+}
+.ck-kb-won {
+  border-color: #1f8f5f;
+  background: color-mix(in srgb, #1f8f5f 28%, var(--ck-surface));
+}
+.ck-kb-lost {
+  opacity: 0.45;
+}
+.ck-kb-lost .ck-kb-tri {
+  text-decoration: line-through;
+}
+.ck-kb-open {
+  border-style: dashed;
+  background: transparent;
+}
+.ck-kb-wait {
+  color: var(--ck-muted);
+  font-size: 11px;
+}
+.ck-kb-score {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ck-kb-team .ck-ko-prep {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ck-muted);
+  font-size: 10px;
+}
+.ck-kb-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 18px;
+  font-size: 11px;
+}
+.ck-kb-meta:empty {
+  display: none;
+}
+.ck-kb-link {
+  color: var(--ck-muted);
+  text-decoration: none;
+}
+.ck-kb-link:hover {
+  color: var(--ck-text);
+}
+.ck-kb-champ {
+  --ck-logo: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border: 1px dashed var(--ck-cup);
+  border-radius: 8px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ck-kb-champ-set {
+  border-style: solid;
+  background: color-mix(in srgb, var(--ck-cup) 18%, transparent);
+}
+.ck-kb-trophy {
+  font-size: 20px;
+}
+.ck-kb-champ-name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 17px;
+}
+.ck-kb-champ-city {
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 13px;
+}
+.ck-kb-champ-none {
+  color: var(--ck-muted);
+  font-weight: 700;
 }
 
 /* Tonight in the Cup — one compact row of tonight's Cup games (wraps only if it must) */

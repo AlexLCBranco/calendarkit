@@ -57,6 +57,7 @@ measurement; open it only when a question needs the backstory.
   - v1.68.0 — Standings column set **Extended**: W-L, 3-pt, 10-pt, .500+, <.500, OT, Close.
   - v1.69.0 — streaks (one `StreakChip`, `src/slate/streakPopup.tsx`) also in League List rows, Team Calendar cells, Cup
     groups and the simulator's tables; not in the League week view or the Cup schedule's league lists (no room).
+  - v1.70.0 — the simulator's knockout bracket is playable and big (`CupBracket.tsx`, `src/data/cupBracket.ts`).
 - **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
   `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 
@@ -123,7 +124,7 @@ measurement; open it only when a question needs the backstory.
   `calendarState.ts` = state / page types and pure helpers; `TopBar.tsx` = the shell's bar parts (← →, ⓘ);
   `Menu.tsx` = the two menu variants, the rail and the switch; `Popover.tsx` = the bar's icon-button popovers.
   Styles: `calendar.css` is an ordered list of `@import`s of `styles/*.css`.
-- `src/data/` — pure derivations (`model.ts`, `cup*.ts`, `fatigue.ts`, `rest.ts`, `streak.ts`, `standings.ts`,
+- `src/data/` — pure derivations (`model.ts`, `cup*.ts` (`cupBracket.ts`: the simulator's playable bracket), `fatigue.ts`, `rest.ts`, `streak.ts`, `standings.ts`,
   `odds.ts`, `regulation.ts`), loading (`load.ts`).
 - `src/slate/` — the Slate's self-contained part (imports only `src/slate`, `src/data`, `src/shared`, React); the
   gauntlet installs this repo as a package pinned to a commit. `slate.html` / `src/slate/demo.tsx` is its demo page.

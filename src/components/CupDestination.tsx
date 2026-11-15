@@ -6,6 +6,7 @@ import { TEAM_BY_ID } from '../data/teams';
 import { CUP_START, seasonDay, type CupState } from './calendarState';
 import { capturePixelRatio, copyElement, COPY_PIXEL_RATIO } from './copyAsImage';
 import type { SimMode, SimPicks } from './CupSimulator';
+import type { BracketPicks } from '../data/cupBracket';
 import { DestinationFrame, SelectionCopyStage, useSelectionCopy, type DestinationApi, type DestinationProps } from './destination';
 import { Segmented } from './Segmented';
 import { SelectionBar } from './SelectionBar';
@@ -37,6 +38,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
   // The simulator's picks and mode — kept while the page is open (leaving the Cup keeps them), never stored
   const [simPicks, setSimPicks] = useState<SimPicks>(() => new Map());
   const [simMode, setSimMode] = useState<SimMode>('quick');
+  const [koPicks, setKoPicks] = useState<BracketPicks>(() => new Map());
   const onCupNight = useCallback((night: string) => setCupView((v) => (v.night === night ? v : { ...v, night })), []);
   const cupSchedule = active && cupView.tab === 'schedule';
   const cupSim = active && cupView.tab === 'simulator';
@@ -95,7 +97,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
       }
     >
       <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>
-        <CupView data={data} today={today} gameLink={gameLink} history={cupHist ? { season: cupView.hs, onSeason: (hs) => setCupView((v) => ({ ...v, hs })) } : undefined} sim={cupSim ? { picks: simPicks, onPicks: setSimPicks, mode: simMode, onMode: setSimMode } : undefined} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
+        <CupView data={data} today={today} gameLink={gameLink} history={cupHist ? { season: cupView.hs, onSeason: (hs) => setCupView((v) => ({ ...v, hs })) } : undefined} sim={cupSim ? { picks: simPicks, onPicks: setSimPicks, mode: simMode, onMode: setSimMode, bracket: koPicks, onBracket: setKoPicks } : undefined} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
       </Suspense>
       {selKind && <SelectionBar store={selection} copy={copySelection} />}
       {selCapture && selKind && <SelectionCopyStage capture={selCapture} kind={selKind} list team={cupTeam} teamId={selTeamId} cup p={p} />}

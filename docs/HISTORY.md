@@ -2330,6 +2330,19 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   streak on each side shrinks every line) and the Cup schedule's league lists (By group / By date: four columns of
   one-line rows with every game on one screen — tried By date, its rows stuck out at 1600 and 1920); its Team list
   already has them.
+- **v1.70.0 — playable Cup bracket.** The simulator's bracket is a game: West QF → SF → **Final** ← SF ← QF East in
+  five columns, the champion under the Final (trophy, logo, city over name — "Cleveland Cavaliers" on one line didn't
+  fit the column at 1600). Click a team to advance it, again to take it back; Detailed adds a margin per game (as the
+  group picks). Logic in `src/data/cupBracket.ts` (`bracketOf`): QF 1 v 4 and 2 v 3 hosted by seeds 1 and 2, the SF at
+  the higher seed (`semifinal()`), the Final neutral; slots by bracket position. Group picks that move the seeds drop
+  only the knockout picks whose team left its game, and what depended on them (an effect writes the pruned picks back);
+  "Reset to real results" clears both. A knockout game the feed has played is its real result (score, "Final ↗"), not a
+  pick. Each game: seed, 22 px logo, 15 px tricode, HOST on the home team (Final: the neutral arena badge), WC,
+  "margin?" when a seed hangs on a margin (short in the rows; the race and the tables keep "depends on margin"), the QF
+  rest / travel; each round: its nights from the feed and the prize per player. Picks live with the group picks in
+  CupDestination (kept while the page is open, never stored). **Layout**: the games, the six tables, then a bottom row
+  of the wild-card race (370 px column, West over East) and the bracket (the rest) — tables and bracket on one screen,
+  no scroll at 1920 × 950 and 1600 × 1000 with every game picked and the bracket played (e2e/simulator.spec.ts).
 
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId

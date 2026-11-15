@@ -72,7 +72,7 @@ describe('the simulator view', () => {
     const dens = () => document.querySelector(`[data-testid="sim-group"][data-group="West A"] [data-team="DEN"]`)!;
     expect(dens().querySelector('[data-testid="sim-depends"]')!.textContent).toBe('depends on margin');
     expect(gameRow(G[2]!).classList).toContain('ck-sim-needs');
-    expect(screen.getByTestId('sim-bracket').textContent).toMatch(/depends on margin/);
+    expect(screen.getByTestId('sim-bracket').querySelector('[data-testid="sim-depends"]')!.textContent).toBe('margin?'); // short in the bracket rows; the full text in its tooltip
     // detailed: type the margins
     fireEvent.click(within(screen.getByRole('tablist', { name: 'Pick mode' })).getByRole('tab', { name: 'Detailed' }));
     expect(gameRow(G[2]!).dataset.picked).toBe('DEN'); // the picks stayed

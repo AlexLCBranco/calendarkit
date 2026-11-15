@@ -5,27 +5,23 @@
 // into a guess: a spot that depends on one says "depends on margin" and points at the games. Nothing is fetched; picks
 // live in the page (they survive leaving the Cup and coming back, not a reload) and never touch real data.
 
-import { useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, type CSSProperties } from 'react';
 import { CUP_GROUP_END, cupGroupsOf, isCountedCupGame, LAST_SEASON_WINS, realResults } from '../data/cup';
-import { computeCup, semifinal, type GroupResult, type RankedLine, type Seed, type Tiebreak } from '../data/cupEngine';
+import { computeCup, type GroupResult, type RankedLine, type Tiebreak } from '../data/cupEngine';
 import { dateFormat, finalStatusText, type CalendarData } from '../data/model';
-import { TEAM_BY_ID, teamLogo, type Conference } from '../data/teams';
+import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from '../slate/links';
 import { TeamLink } from '../slate/teamLink';
 import { StreakChip } from '../slate/streakPopup';
 import { currentStreaks } from '../data/streak';
-import { HostTag, VenueBadge, type Venue } from '../slate/VenueMarker';
-import { hostArena, prepFor, type Prep } from '../data/knockout';
-import { prizeLines } from '../data/cupPrize';
+import type { Venue } from '../slate/VenueMarker';
 
-/** A small muted line under a knockout round — the prize per player; the source in its tooltip. */
-export const PrizeLine = ({ text, source }: { text: string; source: string }) => (
-  <p className="ck-prize" data-testid="cup-prize" title={`Per player (two-way players: half). Source: ${source}`}>
-    {text}
-  </p>
-);
 import { TEAM_COLOR } from './CupView';
+import { CupBracket } from './CupBracket';
+import { bracketOf, samePicks, type BracketKey, type BracketPicks } from '../data/cupBracket';
+import { cupBoard } from '../data/cupSchedule';
+export { PrizeLine } from './CupBracket';
 
 export interface SimPick {
   winner: number;
@@ -70,10 +66,25 @@ export interface CupSimulatorProps {
   onPicks: (picks: SimPicks) => void;
   mode: SimMode;
   onMode: (mode: SimMode) => void;
+  /** The knockout picks (the bracket played through to a champion). */
+  bracket: BracketPicks;
+  onBracket: (picks: BracketPicks) => void;
 }
 
-export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onMode }: CupSimulatorProps) {
+export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onMode, bracket: bracketPicks, onBracket }: CupSimulatorProps) {
   const res = useMemo(() => simulate(data, picks), [data, picks]);
+  const knockout = useMemo(() => { const b = cupBoard(data); return [...b.qf, ...b.sf, ...b.final]; }, [data]);
+  const bracket = useMemo(() => bracketOf(res, bracketPicks, knockout), [res, bracketPicks, knockout]);
+  // group picks that move the seeds drop only the knockout picks whose team is no longer in its game
+  useEffect(() => {
+    if (!samePicks(bracket.picks, bracketPicks)) onBracket(bracket.picks);
+  }, [bracket, bracketPicks, onBracket]);
+  const pickKo = (key: BracketKey, p?: { winner: number; margin?: number }) => {
+    const next = new Map(bracket.picks);
+    if (p) next.set(key, p);
+    else next.delete(key);
+    onBracket(next);
+  };
   // every group game, by date: played ones (real) and the rest (to pick)
   const nights = useMemo(() => {
     const m = new Map<string, ScheduleGame[]>();
@@ -112,7 +123,7 @@ export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onM
             </button>
           ))}
         </span>
-        <button type="button" className="ck-button" data-testid="sim-reset" disabled={!picks.size} onClick={() => onPicks(new Map())}>
+        <button type="button" className="ck-button" data-testid="sim-reset" disabled={!picks.size && !bracketPicks.size} onClick={() => (onPicks(new Map()), onBracket(new Map()))}>
           Reset to real results
         </button>
       </header>
@@ -166,7 +177,7 @@ export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onM
             ))}
           </div>
         </div>
-        <Bracket data={data} seeds={res.seeds} quarterfinals={res.quarterfinals} finalVenue={finalVenue} />
+        <CupBracket data={data} bracket={bracket} mode={mode} onPick={pickKo} finalVenue={finalVenue} gameLink={gameLink} depends={(u) => <Depends u={u} short />} />
       </div>
     </section>
   );
@@ -191,12 +202,12 @@ function Diff({ t }: { t: { diff: number; unknownDiff: string[] } }) {
   return <span className={`ck-cup-chip ck-sim-diff ${t.diff > 0 ? 'ck-cup-pos' : t.diff < 0 ? 'ck-cup-neg' : 'ck-cup-zero'}`}>{signed(t.diff)}</span>;
 }
 
-/** "depends on margin": the spot isn't decided until the named games get a margin. */
-function Depends({ u }: { u: { rule: Tiebreak; games: string[] } }) {
+/** "depends on margin": the spot isn't decided until the named games get a margin. `short`: "margin?" (bracket rows). */
+function Depends({ u, short = false }: { u: { rule: Tiebreak; games: string[] }; short?: boolean }) {
   const what = u.rule === 'points' ? 'points scored' : 'margin';
   return (
     <span className="ck-sim-depends" data-testid="sim-depends" data-games={u.games.join(' ')} title={`Decided by ${u.rule === 'points' ? 'points scored' : 'point differential'}: needs the ${what} of ${u.games.length} picked game${u.games.length === 1 ? '' : 's'} (outlined in the list)`}>
-      depends on {what}
+      {short ? `${u.rule === 'points' ? 'points' : 'margin'}?` : `depends on ${what}`}
     </span>
   );
 }
@@ -301,74 +312,6 @@ function SimGame({ g, real, pick, mode, needsMargin, url, onPick }: { g: Schedul
           ↗
         </a>
       )}
-    </div>
-  );
-}
-
-function SeedTeam({ s, host, prep }: { s?: Seed; host?: boolean; prep?: Prep }) {
-  if (!s) return <span className="ck-sim-bteam">TBD</span>;
-  return (
-    <span className="ck-sim-bteam" data-team={tri(s.teamId)}>
-      <span className="ck-sim-seed">{s.seed}</span>
-      <Logo id={s.teamId} />
-      <TeamLink teamId={s.teamId} className="ck-sim-tri">
-        {tri(s.teamId)}
-      </TeamLink>
-      {s.wildCard && <span className="ck-cup-wc">WC</span>}
-      {host && <HostTag />}
-      {s.undecided && <Depends u={s.undecided} />}
-      {prep && (
-        <span className="ck-ko-prep" data-testid="ko-prep" title={prep.tip}>
-          {prep.text}
-        </span>
-      )}
-    </span>
-  );
-}
-
-/** The bracket from the seeds: per conference 1 v 4 and 2 v 3 (the better record hosts), the semifinal at the higher seed, the final neutral. */
-function Bracket({ data, seeds, quarterfinals, finalVenue }: { data: CalendarData; seeds: Record<Conference, Seed[]>; quarterfinals: { conference: Conference; high: Seed; low: Seed; host: number }[]; finalVenue: Venue }) {
-  void semifinal;
-  // What each round is worth per player this season (with its source), or nothing without one
-  const prize = prizeLines(Number(data.seasonYear.slice(0, 4)));
-  // Rest / travel before the quarterfinal, from the real schedule: the trip to the host's arena from
-  // the team's last game; the rest only once the feed gives this matchup its night (QF nights: Dec 4–5, not yet assigned)
-  const qfDates = [...new Set(data.games.filter((g) => g.isCupKnockout && /quarter/i.test(g.gameSubLabel ?? '')).map((g) => g.dateEt))].sort();
-  const prep = (team: number, host: number) => (qfDates[0] ? prepFor(data, team, qfDates[0], hostArena(data, host), qfDates.length === 1) : prepFor(data, team, undefined, undefined));
-  return (
-    <div className="ck-sim-panel ck-sim-bracket" data-testid="sim-bracket">
-      <h3>Knockout bracket</h3>
-      <div className="ck-sim-bgrid">
-        {(['West', 'East'] as const).map((c) => {
-          const qf = quarterfinals.filter((q) => q.conference === c);
-          return (
-            <div key={c} className="ck-sim-bconf" data-conference={c}>
-              <h4>{c}</h4>
-              {qf.map((q, k) => (
-                <div key={k} className="ck-sim-bgame" data-testid="sim-qf" data-host={tri(q.host)}>
-                  <span className="ck-sim-bround">QF</span>
-                  <SeedTeam s={q.high} host prep={prep(q.high.teamId, q.host)} />
-                  <span className="ck-sim-vs">vs</span>
-                  <SeedTeam s={q.low} prep={prep(q.low.teamId, q.host)} />
-                </div>
-              ))}
-              {prize && <PrizeLine text={prize.qf} source={prize.source} />}
-              <div className="ck-sim-bgame ck-sim-bsf" data-testid="sim-sf">
-                <span className="ck-sim-bround">SF</span>
-                <span className="ck-sim-bteam">QF winners · the higher seed hosts</span>
-              </div>
-              {prize && <PrizeLine text={prize.sf} source={prize.source} />}
-              {!seeds[c].length && <span className="ck-sim-bteam">TBD</span>}
-            </div>
-          );
-        })}
-        <div className="ck-sim-bgame ck-sim-bfinal" data-testid="sim-final">
-          <span className="ck-sim-bround">Final</span>
-          <span className="ck-sim-bteam">West winner vs East winner</span>
-          <VenueBadge venue={finalVenue} />
-          {prize && <PrizeLine text={prize.final} source={prize.source} />}
-        </div>
-      </div>
     </div>
   );
 }

@@ -21,7 +21,8 @@ describe('Cup prize money', () => {
     render(<CalendarView data={data} size={{ width: 1920, height: 1000 }} now={Date.parse('2026-11-06T15:00:00Z')} timeZone="UTC" initial={{ mode: 'cup', cup: { tab: 'simulator' } }} />);
     await screen.findByTestId('cup-sim');
     expect(screen.getAllByTestId('cup-prize').map((p) => p.textContent)).toEqual([
-      'QF loss $60,499 / player', 'SF loss $120,997 / player', 'QF loss $60,499 / player', 'SF loss $120,997 / player', 'Runner-up $241,994 · Champion $604,985 / player',
+      // West QF, West SF, the Final, East SF, East QF (the bracket's columns, left to right)
+      'QF loss $60,499 / player', 'SF loss $120,997 / player', 'Runner-up $241,994 · Champion $604,985 / player', 'SF loss $120,997 / player', 'QF loss $60,499 / player',
     ]);
   });
 });
