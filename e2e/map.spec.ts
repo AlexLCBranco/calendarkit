@@ -14,6 +14,23 @@ async function open(page: Page, date: string, extra = '') {
   await page.waitForFunction(() => !!document.querySelector('[data-testid="league-list"] [data-game-id]'));
 }
 const map = (page: Page) => page.getByTestId('league-map');
+/**
+ * Waits until an element's box holds still (two reads 150 ms apart agree) and returns it: the map re-sizes a moment
+ * after a window resize, and zooms in or out over 300 ms (map.css), so a box read or a click right away can be stale.
+ */
+const settledBox = async (page: Page, el: ReturnType<Page['locator']>) => {
+  let prev = await el.boundingBox();
+  await expect
+    .poll(async () => {
+      await page.waitForTimeout(150);
+      const cur = await el.boundingBox();
+      const same = JSON.stringify(cur) === JSON.stringify(prev);
+      prev = cur;
+      return same;
+    })
+    .toBe(true);
+  return prev;
+};
 
 type FeedGame = { gameId: string; gameDateEst: string; arenaName: string; arenaCity: string; arenaState: string; homeTeam: { teamTricode: string }; awayTeam: { teamTricode: string } };
 const feedDay = (page: Page, date: string) =>
@@ -47,7 +64,7 @@ test('placement: right of the list, inside the window, never over list content; 
   expect(r.m[2] - r.m[0]).toBeGreaterThan(info.project.name === 'desktop-xl' ? 600 : 280);
   // a short window: the day overflows and scrolls; the map doesn't move
   await page.setViewportSize({ width: page.viewportSize()!.width, height: 640 });
-  const before = await map(page).boundingBox();
+  const before = await settledBox(page, map(page));
   const list = page.getByTestId('league-list');
   await list.hover();
   for (let i = 0; i < 10; i++) await page.mouse.wheel(0, 400);
@@ -321,7 +338,9 @@ test('click pins: stays while the pointer moves onto the map; another row shows 
   await expect(map(page)).not.toHaveAttribute('data-pinned', /.*/);
   // a click on a dot pins too; another day unpins
   await unfocused(page); // (a dot can be hovered once the map shows the whole country again)
-  await page.locator(`[data-testid="league-map"] .ck-map-dot[data-map-game="${b}"] .ck-map-pin`).click({ force: true });
+  const dotB = page.locator(`[data-testid="league-map"] .ck-map-dot[data-map-game="${b}"] .ck-map-pin`);
+  await settledBox(page, dotB); // the zoom back out moves the dot for 300 ms
+  await dotB.click({ force: true });
   await expect(map(page)).toHaveAttribute('data-pinned', '');
   await expect(map(page)).toHaveAttribute('data-focus', b);
   await page.getByLabel('Next day').click();
