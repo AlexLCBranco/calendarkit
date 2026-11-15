@@ -26,7 +26,7 @@ import { SelectionStyle } from './SelectionBar';
 import { SLATE_MIN_WIDTH } from './SlateView';
 import { StandingsDestination } from './StandingsDestination';
 import { MenuSwitch, Rail, RAIL_WIDTH, useMenuVariant } from './Menu';
-import { BarInfo, PageArrows, StandingsIcon } from './TopBar';
+import { BarInfo, PageArrows, StaleBanner, StandingsIcon } from './TopBar';
 import { isCompact, type WidgetSize } from './widget';
 import './calendar.css';
 
@@ -372,6 +372,7 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
             <StandingsPopup data={data} onClose={closeStPop} />
           </Suspense>
         )}
+        {updatedAt && !compact && <StaleBanner updatedAt={updatedAt} now={now} timeZone={timeZone} />}
         {tooltip.node}
         {series.node}
         {streakPop.node}

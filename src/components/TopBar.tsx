@@ -33,6 +33,33 @@ function DataStamp({ updatedAt, now, timeZone }: { updatedAt: string; now: numbe
 }
 
 /**
+ * A small orange strip at the bottom centre of the window once the data is older than 36 h ("Data is 3 days old …"),
+ * so a stopped daily update can't go unnoticed (the ⓘ turning orange alone wasn't enough). It sits in the page's
+ * bottom padding, so it covers nothing; never in a copy.
+ */
+export function StaleBanner({ updatedAt, now, timeZone }: { updatedAt: string; now: number; timeZone?: string }) {
+  const t = Date.parse(updatedAt);
+  const valid = !Number.isNaN(t);
+  const age = useClockValue((n) => (valid && n - t > STALE_AFTER_MS ? n - t : 0), now);
+  // appears when it crosses 36 h: one timeout makes the clock read the time then (it has no minute tick)
+  useEffect(() => {
+    const left = t + STALE_AFTER_MS - Date.now();
+    if (!valid || age || left <= 0 || left > 2 ** 31 - 1) return;
+    const id = setTimeout(() => window.dispatchEvent(new Event(CLOCK_TICK_EVENT)), left + 50);
+    return () => clearTimeout(id);
+  }, [t, valid, age]);
+  if (!age) return null;
+  const days = Math.floor(age / 86_400_000);
+  const old = days >= 2 ? `${days} days` : `${Math.floor(age / 3_600_000)} hours`;
+  const when = dateFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone }).format(t);
+  return (
+    <div className="ck-stale-banner" role="status" data-testid="stale-banner" data-capture-exclude="true">
+      ⚠ Data is {old} old (updated {when}): the daily update may have failed — recent scores and games may be missing
+    </div>
+  );
+}
+
+/**
  * The page history's ← →, at the far left of the top bar — long arrows in one joined pill, unlike the
  * date block's round ‹ › (a day); greyed out when there is nothing there; the tooltip names the page.
  */

@@ -27,7 +27,7 @@ const finals = (page: Page): Promise<Final[]> =>
     return (raw.leagueSchedule.gameDates as { games: G[] }[])
       .flatMap((d) => d.games)
       .filter((g) => /^00[2456]/.test(g.gameId) && g.gameStatus === 3)
-      .map((g) => ({ gameId: g.gameId, date: g.gameDateEst.slice(0, 10), home: g.homeTeam, away: g.awayTeam, ot: /^Final\/(\d*OT)$/.exec(g.gameStatusText.trim())?.[1] }));
+      .map((g) => ({ gameId: g.gameId, date: g.gameDateEst.slice(0, 10), home: g.homeTeam, away: g.awayTeam, ot: ((m) => m && `${m[1] || m[2] || ''}OT`)(/^Final\/(?:(\d*)OT|OT(\d+))$/.exec(g.gameStatusText.trim())) ?? undefined }));
   });
 const norm = (s: string | null) => (s ?? '').replace(/\s+/g, ' ').trim();
 

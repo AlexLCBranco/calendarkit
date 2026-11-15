@@ -28,12 +28,22 @@ test('stamp in the viewer\'s zone (in ⓘ\'s popover), muted while fresh; orange
   await info.click();
   await expect(page.getByTestId('bar-info-pop')).toContainText(expected(time));
   await page.keyboard.press('Escape');
+  await expect(page.getByTestId('stale-banner')).toHaveCount(0);
 
   await page.clock.setFixedTime(Date.parse(time) + 37 * H);
   await page.goto('/calendar/');
   await expect(info).toHaveCSS('color', 'rgb(224, 138, 60)'); // --ck-stale orange (B2B is yellow)
   await info.click();
   await expect(page.getByTestId('bar-info-pop')).toContainText('daily update may have failed');
+  // and a banner in the window, small, inside it, never in a copy
+  const banner = page.getByTestId('stale-banner');
+  await expect(banner).toBeVisible();
+  await expect(banner).toContainText('Data is 37 hours old');
+  await expect(banner).toHaveAttribute('data-capture-exclude', 'true');
+  const box = (await banner.boundingBox())!;
+  const vp = page.viewportSize()!;
+  expect(box.y + box.height).toBeLessThanOrEqual(vp.height);
+  expect(box.height).toBeLessThanOrEqual(16);
 });
 
 test('Try again: the first request fails, the retry loads the schedule', async ({ page }) => {

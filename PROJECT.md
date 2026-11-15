@@ -51,6 +51,9 @@ measurement; open it only when a question needs the backstory.
   teams, last game → this (solid) → next (dashed), miles on each line, zoom to fit; a panel per team under the map
   (last / this / next, rest = the rest chips, clock change). Hover focuses, click pins (Esc / again / empty map / another
   day unpins). Road-trip map and `trips.ts` removed; no time-zone tint.
+- **Batch 2026-11-15** (spec `docs/specs/batch-2026-11-15.md`; details in docs/HISTORY.md "Batch 2026-11-15"):
+  - v1.67.0 — the feed writes 2OT as "Final/OT2" now (it stopped the daily job Nov 13–14); every OT reader goes through
+    `overtimeOf()` (`model.ts`). Data older than 36 h shows an orange banner at the bottom centre (never in a copy).
 - **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
   `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
 
@@ -173,6 +176,7 @@ measurement; open it only when a question needs the backstory.
   knockout count; the Cup Final doesn't).
 - National TV = `nationalBroadcasters` only, NBA TV left out (NBA.com's own filter excludes it). Shown as an
   importance marker, not where-to-watch.
+- Overtime is read only through `overtimeOf()`: the feed writes "Final/OT", "Final/2OT" and "Final/OT2".
 - Cup standings use NBA.com's rules; an OT game counts its regulation points (stored in the snapshot as
   `calendarkit.regulation`) and 0 differential for the OT margin. The simulator and stakes chips use the same engine
   (`cupEngine.ts`).

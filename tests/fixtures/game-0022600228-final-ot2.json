@@ -1,0 +1,27 @@
+{
+ "gameId": "0022600228",
+ "gameStatus": 3,
+ "gameStatusText": "Final/OT2",
+ "gameDateEst": "2026-11-12T00:00:00Z",
+ "gameDateTimeUTC": "2026-11-13T00:00:00Z",
+ "gameSubtype": "",
+ "gameSubLabel": "",
+ "ifNecessary": "false",
+ "isNeutral": false,
+ "arenaName": "Capital One Arena",
+ "arenaCity": "Washington",
+ "arenaState": "DC",
+ "broadcasters": {
+  "nationalBroadcasters": []
+ },
+ "homeTeam": {
+  "teamId": 1610612764,
+  "teamTricode": "WAS",
+  "score": 140
+ },
+ "awayTeam": {
+  "teamId": 1610612765,
+  "teamTricode": "DET",
+  "score": 144
+ }
+}

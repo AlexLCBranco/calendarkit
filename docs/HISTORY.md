@@ -2302,6 +2302,19 @@ projects, 6 tests each, with unit tests and a dev server running on the same PC)
   daily data commits pass. Tests: `tests/version.test.tsx`, `e2e/version.spec.ts` (corner, fixed when scrolling, covers
   nothing, = package.json and git HEAD; against the live site: no-cache).
 
+### Batch 2026-11-15
+- **v1.67.0 — data update unblocked, stale banner.** The daily job failed on Nov 13 and 14: the feed now writes a
+  double-overtime final as "Final/OT2" (DET 144 @ WAS 140, Nov 12) instead of "Final/2OT", and the snapshot guard in
+  `tests/overtime.test.tsx` stopped the job; "Live data freshness" failed 3 times and nobody noticed. One reader for
+  all of it, `overtimeOf()` in `model.ts` ("Final/OT", "Final/<n>OT", "Final/OT<n>" → "OT" / "<n>OT"), used by
+  `overtime()`, the Cup's OT rule (`cup.ts`: 0 differential + regulation points) and the standings' OT column
+  (`standings.ts`); Cup squares and simulator tooltips write "Final/2OT" either way (`finalStatusText`). The shared
+  parser (`parse.ts`, rotationkit's) only trims the text, so it needed nothing. The regulation fetch reads the
+  boxscore's REGULAR periods, so a "Final/OT2" Cup game is stored like any other (tested with the real 2OT boxscore,
+  `tests/fixtures/boxscore-0022600228-2ot.json`). The guard stays, with both forms. **Stale banner**: past 36 h an
+  orange strip at the bottom centre ("Data is 3 days old (updated …): the daily update may have failed …"), in the
+  page's bottom padding (covers nothing), `data-capture-exclude` (never in a copy), desktop only.
+
 ## Requests for rotationkit (module gaps — not forked here)
 - **Playoff round**: the module has `gameType: 'playoffs'` but no round. calendarkit reads it from the gameId
   (`004 YY 00 R S G`, R = round) in `playoffRound()` in `src/data/model.ts`. Please add e.g. `playoffRound: 1–4 | null`

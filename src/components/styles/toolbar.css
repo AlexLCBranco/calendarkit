@@ -121,6 +121,26 @@
 .ck-stamp-stale {
   color: var(--ck-stale);
 }
+/* Stale data: an orange strip in the page's 16 px bottom padding, bottom centre (the version is bottom right). */
+.ck-stale-banner {
+  position: fixed;
+  left: 50%;
+  bottom: 1px;
+  transform: translateX(-50%);
+  z-index: 20;
+  max-width: calc(100vw - 140px);
+  padding: 0 10px;
+  line-height: 14px;
+  border-radius: 4px;
+  background: var(--ck-stale);
+  color: #15110c;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
 .ck-note-icon {
   display: inline-grid;
   place-items: center;

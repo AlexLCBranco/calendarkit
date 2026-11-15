@@ -1,0 +1,82 @@
+{
+ "game": {
+  "gameId": "0022600228",
+  "gameStatus": 3,
+  "gameStatusText": "Final",
+  "period": 6,
+  "homeTeam": {
+   "teamId": 1610612764,
+   "teamTricode": "WAS",
+   "score": 140,
+   "periods": [
+    {
+     "period": 1,
+     "periodType": "REGULAR",
+     "score": 32
+    },
+    {
+     "period": 2,
+     "periodType": "REGULAR",
+     "score": 29
+    },
+    {
+     "period": 3,
+     "periodType": "REGULAR",
+     "score": 29
+    },
+    {
+     "period": 4,
+     "periodType": "REGULAR",
+     "score": 31
+    },
+    {
+     "period": 5,
+     "periodType": "OVERTIME",
+     "score": 11
+    },
+    {
+     "period": 6,
+     "periodType": "OVERTIME",
+     "score": 8
+    }
+   ]
+  },
+  "awayTeam": {
+   "teamId": 1610612765,
+   "teamTricode": "DET",
+   "score": 144,
+   "periods": [
+    {
+     "period": 1,
+     "periodType": "REGULAR",
+     "score": 33
+    },
+    {
+     "period": 2,
+     "periodType": "REGULAR",
+     "score": 31
+    },
+    {
+     "period": 3,
+     "periodType": "REGULAR",
+     "score": 30
+    },
+    {
+     "period": 4,
+     "periodType": "REGULAR",
+     "score": 27
+    },
+    {
+     "period": 5,
+     "periodType": "OVERTIME",
+     "score": 11
+    },
+    {
+     "period": 6,
+     "periodType": "OVERTIME",
+     "score": 12
+    }
+   ]
+  }
+ }
+}

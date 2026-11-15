@@ -8,7 +8,7 @@
 import { useMemo, type CSSProperties } from 'react';
 import { CUP_GROUP_END, cupGroupsOf, isCountedCupGame, LAST_SEASON_WINS, realResults } from '../data/cup';
 import { computeCup, semifinal, type GroupResult, type RankedLine, type Seed, type Tiebreak } from '../data/cupEngine';
-import { dateFormat, type CalendarData } from '../data/model';
+import { dateFormat, finalStatusText, type CalendarData } from '../data/model';
 import { TEAM_BY_ID, teamLogo, type Conference } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from '../slate/links';
@@ -241,7 +241,7 @@ function SimGame({ g, real, pick, mode, needsMargin, url, onPick }: { g: Schedul
   if (real) {
     const winner = h.score > a.score ? h.teamId : a.teamId;
     return (
-      <a className="ck-sim-game ck-sim-real" href={url} target="_blank" rel="noopener noreferrer" data-game-id={g.gameId} data-testid="sim-game" title={`${a.teamTricode} ${a.score} @ ${h.teamTricode} ${h.score} · ${g.statusText} — open on hoopsjunkie`}>
+      <a className="ck-sim-game ck-sim-real" href={url} target="_blank" rel="noopener noreferrer" data-game-id={g.gameId} data-testid="sim-game" title={`${a.teamTricode} ${a.score} @ ${h.teamTricode} ${h.score} · ${finalStatusText(g.statusText)} — open on hoopsjunkie`}>
         <span className={winner === a.teamId ? 'ck-sim-won' : 'ck-sim-lost'}>
           {a.teamTricode} {a.score}
         </span>

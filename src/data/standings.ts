@@ -26,7 +26,7 @@
 // column, which matches this rule for all 30 teams on 2026-11-05 (opponents over .500 today matched 4 of 30).
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
-import type { CalendarData } from './model';
+import { overtimeOf, type CalendarData } from './model';
 import { TEAMS, TEAM_BY_ID, type Conference, type Division } from './teams';
 
 /** Regular-season games per team. */
@@ -155,7 +155,7 @@ const signed = (n: number) => (n > 0 ? `+${n}` : `${n}`);
 /** Only finished regular-season games count (the Cup Championship is a 006 game, so never). */
 export const countsInStandings = (g: ScheduleGame) => g.gameType === 'regular' && g.status === 'final' && !!g.homeTeam.teamId && !!g.awayTeam.teamId;
 const daysApart = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86_400_000);
-const isOt = (g: ScheduleGame) => /^Final\/\d*OT$/i.test(g.statusText);
+const isOt = (g: ScheduleGame) => !!overtimeOf(g.statusText);
 
 interface Ctx {
   lines: Map<number, TeamStanding>;

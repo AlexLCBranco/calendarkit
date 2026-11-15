@@ -5,12 +5,13 @@
 // gameSubLabel "West Group A" … "East Group C"; knockout games "in-season-knockout". Final scores only — no period
 // scores. The Cup rules leave overtime out of point differential and points scored. Differential: an OT game was tied
 // at the end of regulation, so it counts 0 (NBA.com "Cup 101"; the owner's call).
-// Points scored: an OT game ("Final/OT", "Final/2OT") counts its regulation points, which the daily snapshot
+// Points scored: an OT game ("Final/OT", "Final/2OT" or "Final/OT2") counts its regulation points, which the daily snapshot
 // job takes from the game's boxscore (src/data/regulation.ts); until a game's totals are stored it counts its final score.
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { TEAMS, type Conference } from './teams';
 import type { RegulationTotals } from './regulation';
+import { finalStatusText, overtimeOf } from './model';
 
 /** Group play runs Oct 30 – Nov 27 (2026-27); only finished group games inside it count. */
 export const CUP_GROUP_START = '2026-10-30';
@@ -85,7 +86,7 @@ export function cupSlots(games: readonly ScheduleGame[]): Map<number, CupSlot[]>
   const out = new Map<number, CupSlot[]>();
   for (const g of group) {
     const played = isCountedCupGame(g);
-    const final = played ? `${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.teamTricode} ${g.homeTeam.score} · ${g.statusText || 'Final'}` : undefined;
+    const final = played ? `${g.awayTeam.teamTricode} ${g.awayTeam.score} @ ${g.homeTeam.teamTricode} ${g.homeTeam.score} · ${finalStatusText(g.statusText)}` : undefined;
     for (const [me, opp, home] of [
       [g.homeTeam, g.awayTeam, true],
       [g.awayTeam, g.homeTeam, false],
@@ -136,7 +137,7 @@ export const CUP_CHASERS = 2;
 export const isCountedCupGame = (g: ScheduleGame) =>
   g.isCupGroupGame && g.status === 'final' && g.dateEt >= CUP_GROUP_START && g.dateEt <= CUP_GROUP_END && !!g.homeTeam.teamId && !!g.awayTeam.teamId;
 
-const isOt = (g: ScheduleGame) => /^Final\/\d*OT$/i.test(g.statusText);
+const isOt = (g: ScheduleGame) => !!overtimeOf(g.statusText);
 
 /**
  * Teams by group from every Cup group game in the feed (finished or not), so 0-0 teams are listed too. A group with no

@@ -91,3 +91,26 @@ describe('app: Try again after a failed load', () => {
     expect(calls).toBe(2);
   });
 });
+
+describe('stale-data banner', () => {
+  const banner = () => screen.queryByTestId('stale-banner');
+  it('none while the data is under 36 hours old', () => {
+    view(T + 36 * H - 60_000, 'UTC');
+    expect(banner()).toBeNull();
+  });
+  it('past 36 hours: a banner with the age and the update time, left out of copies', () => {
+    view(T + 37 * H, 'UTC');
+    expect(banner()!.textContent).toMatch(/Data is 37 hours old \(updated Oct 23, 11:29\): the daily update may have failed/);
+    expect(banner()!.getAttribute('data-capture-exclude')).toBe('true');
+    cleanup();
+    view(T + 3 * 24 * H + H, 'UTC');
+    expect(banner()!.textContent).toMatch(/Data is 3 days old/);
+  });
+  it('none without a feed time, and none on phones', () => {
+    view(T + 5 * 24 * H, 'UTC', null);
+    expect(banner()).toBeNull();
+    cleanup();
+    render(<CalendarView data={data} size={{ width: 360, height: 700 }} now={T + 5 * 24 * H} timeZone="UTC" note="tz" updatedAt={UPDATED} />);
+    expect(banner()).toBeNull();
+  });
+});

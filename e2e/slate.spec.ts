@@ -100,7 +100,8 @@ test('cards: full team names, "@" before the home team, time or final score with
     await expect(rows.nth(1).locator('.ck-slate-at')).toHaveText('@');
     await expect(rows.nth(0).locator('.ck-slate-score')).toHaveText(String(g.awayTeam.score));
     await expect(rows.nth(1).locator('.ck-slate-score')).toHaveText(String(g.homeTeam.score));
-    const ot = g.gameStatusText.match(/(\d?OT)/)?.[1];
+    const m = /^Final\/(?:(\d*)OT|OT(\d+))$/.exec(g.gameStatusText.trim()); // "Final/2OT" or "Final/OT2"
+    const ot = m && `${m[1] || m[2] || ''}OT`;
     await expect(card.getByTestId('slate-status')).toHaveText(ot ? `Final ${ot}` : 'Final');
     const win = g.awayTeam.score > g.homeTeam.score ? 0 : 1;
     await expect(rows.nth(win).locator('.ck-slate-score')).toHaveClass(/ck-score-win/);

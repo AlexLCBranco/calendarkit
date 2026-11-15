@@ -351,11 +351,28 @@ export function finalScore(g: ScheduleGame, teamId: number): { score: number; op
   return { score, oppScore, win: score > oppScore };
 }
 
-/** "OT", "2OT", "3OT" for a final game decided in overtime (status text "Final/OT", "Final/2OT", …); else undefined. */
+/**
+ * "OT", "2OT", "3OT" from a final status text, or undefined for "Final" and anything else. The feed has written
+ * multiple overtimes both ways — "Final/2OT" and "Final/OT2" — so both are read; one overtime is "Final/OT".
+ */
+export function overtimeOf(statusText: string): string | undefined {
+  const m = /^Final\s*\/\s*(?:(\d+)\s*OT|OT\s*(\d+)?)$/i.exec(statusText.trim());
+  if (!m) return undefined;
+  const n = Number(m[1] ?? m[2] ?? 1);
+  return n > 1 ? `${n}OT` : 'OT';
+}
+
+/** "OT", "2OT", "3OT" for a final game decided in overtime (see overtimeOf); else undefined. */
 export function overtime(g: ScheduleGame): string | undefined {
   if (g.status !== 'final') return undefined;
-  return /^Final\/(\d*OT)$/i.exec(g.statusText)?.[1]?.toUpperCase();
+  return overtimeOf(g.statusText);
 }
+
+/** The status text as the app writes it: "Final", "Final/OT", "Final/2OT" (whichever way the feed wrote it). */
+export const finalStatusText = (statusText: string) => {
+  const ot = overtimeOf(statusText);
+  return ot ? `Final/${ot}` : statusText || 'Final';
+};
 
 export interface SeasonLine {
   /** Regular-season game number (1–82); undefined for the Cup Final, play-in and playoff games. */

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { CalendarView } from '../src/components/CalendarView';
-import { overtime } from '../src/data/model';
+import { overtime, overtimeOf } from '../src/data/model';
 import { dataOf, game, TEAM } from './synthetic';
 
 afterEach(cleanup);
@@ -30,10 +30,14 @@ describe('overtime()', () => {
     expect(overtime(game({ date: '2026-11-10', utc: '2026-11-11T00:00:00Z', raw: { gameStatusText: 'OT 2:31' } }))).toBeUndefined();
   });
 
-  it('every final status text in the served snapshot is "Final" or "Final/<n>OT"', () => {
+  // Guard: a new way of writing a final would slip past every OT reader, so the daily job stops on it.
+  it('every final status text in the served snapshot is "Final", "Final/<n>OT" or "Final/OT<n>"', () => {
     const feed = JSON.parse(readFileSync('public/data/schedule.json', 'utf8')) as { leagueSchedule: { gameDates: { games: { gameStatus: number; gameStatusText: string }[] }[] } };
     const texts = new Set(feed.leagueSchedule.gameDates.flatMap((d) => d.games.filter((g) => g.gameStatus === 3).map((g) => g.gameStatusText.trim())));
-    for (const t of texts) expect(t).toMatch(/^Final(\/\d*OT)?$/);
+    for (const t of texts) {
+      expect(t).toMatch(/^Final(\/(\d*OT|OT\d+))?$/);
+      if (t !== 'Final') expect(overtimeOf(t), t).toBeDefined();
+    }
   });
 });
 
