@@ -1,13 +1,9 @@
 # Feature backlog — calendarkit
 
-Planned work only, nothing built. Shipped items move to `BUILT.md` (rules: CLAUDE.md, "Feature backlog and built list").
+Planned work only, nothing built. Shipped items move to `BUILT.md` (rules: CLAUDE.md, "Feature backlog, built list and ideas").
 Specs are written here from Claude chat. Item IDs are BK-1, BK-2, ... (never reused).
 
 ## Ready
-
-### BK-1 — Win/loss streaks everywhere
-What it changes: streaks (with the existing hover popup) show wherever a team's record or name has room: League List, League week view, Team Calendar, Cup groups, Cup schedule, simulator tables.
-Spec: `docs/specs/batch-2026-11-15.md`, item 3.
 
 ### BK-2 — Cup simulator: big, playable knockout bracket
 What it changes: the NBA Cup simulator gets a large knockout bracket you can play through.

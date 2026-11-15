@@ -2,10 +2,10 @@
 
 Shipped work only, newest first. Planned work is in `FEATURE_BACKLOG.md`, never here.
 Entries dated before 2026-11-16 were backfilled from the git commit messages (data, docs, test-only, merge and
-spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog and built list").
+spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-15
-- v1.69.0: streaks in more places — one StreakChip (same rule, colours and popup) in League List rows, Team Calendar cells, Cup groups and the simulator tables; not in the League week view or the Cup schedule league lists (no room)
+- BK-1 — Win/loss streaks everywhere. v1.69.0: streaks in more places — one StreakChip (same rule, colours and popup) in League List rows, Team Calendar cells, Cup groups and the simulator tables; not in the League week view or the Cup schedule league lists (no room)
 - v1.68.0: Standings column set "Extended" — W-L, 3-pt (≤ 3), 10-pt (≥ 10), .500+, <.500 (going into the game), OT, Close; margins on the final score, OT included (as ESPN),…
 - v1.67.0: the feed writes double overtime as "Final/OT2" — every OT reader (OT marker, Cup OT rule, standings OT column) accepts "Final/OT", "Final/<n>OT" and "Final/OT<n>" thr…
 
