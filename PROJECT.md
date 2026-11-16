@@ -56,7 +56,11 @@ measurement; open it only when a question needs the backstory.
     `overtimeOf()` (`model.ts`). Data older than 36 h shows an orange banner at the bottom centre (never in a copy).
   - v1.68.0 — Standings column set **Extended**: W-L, 3-pt, 10-pt, .500+, <.500, OT, Close.
   - v1.69.0 — streaks (one `StreakChip`, `src/slate/streakPopup.tsx`) also in League List rows, Team Calendar cells, Cup
-    groups and the simulator's tables; not in the League week view or the Cup schedule's league lists (no room).
+    groups and the simulator's tables (the Cup ones removed again in v1.72.0); not in the League week view or the Cup
+    schedule's league lists (no room).
+- **v1.72.0** (2026-11-16): no streaks in the Cup standings (groups, simulator tables); each team's current conference
+  position ("2nd E", `conferencePositions` in `standings.ts`) beside its record in League List rows (not in the Team
+  List: its busiest rows have no room). A team without a finished game shows none.
   - v1.70.0 — the simulator's knockout bracket is playable and big (`CupBracket.tsx`, `src/data/cupBracket.ts`).
   - v1.71.0 — tooltip day strips: 50 × 42 squares with the matchup ("vs LAL" / "@ DEN", logo), each a hoopsjunkie
     link (the tip stays while the pointer moves onto it); series popup squares say "BOS @ DEN" with the home logo.

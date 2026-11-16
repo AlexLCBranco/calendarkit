@@ -13,8 +13,6 @@ import { dateFormat, type CalendarData } from '../data/model';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { TeamLink } from '../slate/teamLink';
 import { CupSquare } from '../slate/CupSquare';
-import { StreakChip } from '../slate/streakPopup';
-import { currentStreaks } from '../data/streak';
 import type { GameLink } from '../slate/links';
 import CupSchedule, { type CupScheduleProps } from './CupSchedule';
 import CupSimulator, { type CupSimulatorProps } from './CupSimulator';
@@ -74,7 +72,6 @@ export default function CupView({ data, schedule, gameLink, sim, today, history 
 
 function CupStandingsView({ data, gameLink, tonight }: { data: CalendarData; gameLink?: GameLink; tonight?: ReactNode }) {
   const s = useMemo(() => cupStandings(data.games, data.regulation), [data]);
-  const streaks = currentStreaks(data); // once per data set
   return (
     <section className="ck-cupview" aria-label="NBA Cup standings" data-testid="cup">
       <div className="ck-cup-capture" data-testid="cup-grid">
@@ -96,7 +93,7 @@ function CupStandingsView({ data, gameLink, tonight }: { data: CalendarData; gam
                 <span className="ck-cup-num ck-cup-diff-col">DIFF</span>
               </div>
               {g.teams.map((t) => (
-                <TeamPill key={t.teamId} t={t} gameLink={gameLink} streak={streaks.get(t.teamId)} />
+                <TeamPill key={t.teamId} t={t} gameLink={gameLink} />
               ))}
             </div>
           ))}
@@ -139,7 +136,7 @@ function Logo({ teamId }: { teamId: number }) {
   );
 }
 
-function TeamPill({ t, gameLink, streak }: { t: CupTeamLine; gameLink?: GameLink; streak?: { kind: 'W' | 'L'; n: number } }) {
+function TeamPill({ t, gameLink }: { t: CupTeamLine; gameLink?: GameLink }) {
   const team = TEAM_BY_ID.get(t.teamId);
   const why = t.tied ? 'Tied: no tiebreaker separates them yet' : t.tiebreak ? `Placed by ${TIEBREAK_TEXT[t.tiebreak]}` : undefined;
   return (
@@ -160,7 +157,6 @@ function TeamPill({ t, gameLink, streak }: { t: CupTeamLine; gameLink?: GameLink
       <span className="ck-cup-main">
         <span className="ck-cup-namebox">
           <TeamLink teamId={t.teamId} className="ck-cup-name">{team ? `${team.city} ${team.name}` : t.tricode}</TeamLink>
-          <StreakChip base="ck-streak ck-cup-streak" teamId={t.teamId} streak={streak} testId="cup-streak" />
         </span>
         <Slots slots={t.slots} gameLink={gameLink} />
       </span>

@@ -5,6 +5,7 @@ import { Fragment, type ReactNode } from 'react';
 import { SeriesChip } from '../slate/series';
 import type { SeriesGame } from '../data/series';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
+import type { ConfPosition } from '../data/standings';
 import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord } from '../data/model';
 import { mergedChip, mergedDays, mergedTip, type ThreeInFour } from '../data/scheduleTags';
 import { GameLinkIcon, seasonTip, TeamLogo, TipTime } from '../slate/parts';
@@ -92,6 +93,8 @@ export interface GameCardProps {
   copyable?: boolean;
   /** League List: each team's record going into the game, beside it on the outside ("3-1 [logo] BOS … DET [logo] 2-2"). */
   records?: ReadonlyMap<number, TeamRecord>;
+  /** Each team's current conference position (conferencePositions): beside its record (League List rows). Not in the Team List: its rows have no room (two TV pills or a Cup tag fill them). */
+  positions?: ReadonlyMap<number, ConfPosition>;
   /**
    * Both teams' season lines for this game (leagueSeasonLines): their streaks. League rows: each team's streak outside
    * its record; team cells (no season block): the selected team's streak in the tags.
@@ -210,7 +213,7 @@ export const TV_NAMES_MAX = 2;
 
 export const B2BDot =({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, lines, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip, run }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, positions, lines, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip, run }: GameCardProps) {
   const iconUrl = linkIcon ? gameLinkProp?.(game) : undefined;
   // the matchup is the game link only without the icon (calendar cells; week lines use MatchLink themselves)
   const gameLink = linkIcon ? undefined : gameLinkProp;
@@ -256,6 +259,17 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         {recText(recOf(t))}
       </span>
     );
+  // the current conference position, between the record and the streak (an empty slot when unknown, so rows line up)
+  const pos = (teamId: number, home = false) => {
+    const p = positions?.get(teamId);
+    return (
+      positions && (
+        <span className={`ck-pos${home ? ' ck-pos-home' : ''}`} title={p?.tip} data-testid="row-pos" data-team-id={teamId}>
+          {p?.text ?? ''}
+        </span>
+      )
+    );
+  };
   // "[logo] BOS 113 @ 121 DET [logo]": first team (away, or the selected team), its score, "@"/"vs", the other score,
   // the other team, logos on the outside. Each side wraps as one unit in narrow cells.
   const [first, second] = side ? [side.team, side.opponent] : [game.awayTeam, game.homeTeam];
@@ -284,6 +298,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         {fx && <Fatigue f={fatigue!.get(first.teamId)} team={teamLabel(first)} badge="right" />}
         {!side && lines && <StreakChip base="ck-streak ck-lstreak" teamId={first.teamId} gameId={game.gameId} streak={lines.get(first.teamId)?.streak} testId="row-streak" />}
         {!side && lines && ' '}
+        {!side && positions && <>{pos(first.teamId)} </>}
         {!side && rec(first)}
         {(records || fx) && ' '}
         <MatchLink game={game} gameLink={gameLink} className="ck-teams">
@@ -306,6 +321,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         </MatchLink>
         {(records || fx) && ' '}
         {!side && rec(second, true)}
+        {!side && positions && <> {pos(second.teamId, true)}</>}
         {!side && lines && ' '}
         {!side && lines && <StreakChip base="ck-streak ck-lstreak ck-lstreak-home" teamId={second.teamId} gameId={game.gameId} streak={lines.get(second.teamId)?.streak} testId="row-streak" />}
         {fx && <Fatigue f={fatigue!.get(second.teamId)} team={teamLabel(second)} />}

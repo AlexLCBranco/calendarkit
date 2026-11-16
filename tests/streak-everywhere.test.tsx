@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Streaks wherever a team's record or name has room — League List rows, Team Calendar cells, Cup groups, the
-// simulator's tables (not the Cup schedule's league lists: no room) — all one component (StreakChip): the same rule (a final game's line
+// Streaks wherever a team's record or name has room — League List rows, Team Calendar cells (not the Cup standings:
+// the groups and the simulator's tables, nor the Cup schedule's league lists) — all one component (StreakChip): the same rule (a final game's line
 // includes it, a game to come shows the streak going in, a view without a game the current streak), the same colours,
 // the same popup.
 
@@ -75,13 +75,11 @@ describe('Team Calendar cells', () => {
 });
 
 describe('Cup views', () => {
-  it('groups: the current streak after each name', async () => {
-    render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'cup' }} />);
+  it('groups: no streaks in the standings rows', async () => {
+    const { container } = render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'cup' }} />);
     await screen.findAllByTestId('cup-group');
-    const pill = (tri: string) => document.querySelector(`[data-testid="cup-group"] [data-team="${tri}"] [data-testid="cup-streak"]`) as HTMLElement;
-    expect([pill('BOS').textContent, pill('BOS').dataset.streak]).toEqual(['W3', `${ID.BOS}|`]);
-    expect(pill('ATL').textContent).toBe('L1');
-    expect(pill('MIA').textContent).toBe('');
+    expect(container.querySelector('[data-testid="cup-group"] [data-team="BOS"]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-testid="cup-group"] [data-streak]')).toHaveLength(0);
   });
   it('schedule (league lists): no streaks — four columns of one-line rows, every game on one screen', () => {
     const d = render(<CupSchedule data={data} list="league" by="date" size={SIZE} now={NOW} today="2026-11-07" timeZone="UTC" />).container;
@@ -90,10 +88,10 @@ describe('Cup views', () => {
     const g = render(<CupSchedule data={data} list="league" by="group" size={SIZE} now={NOW} today="2026-11-07" timeZone="UTC" />).container;
     expect(g.querySelectorAll('[data-testid="cg-streak"]')).toHaveLength(0);
   });
-  it('simulator tables: the real current streak', async () => {
-    render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'cup', cup: { tab: 'simulator' } }} />);
+  it('simulator tables: no streaks', async () => {
+    const { container } = render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'cup', cup: { tab: 'simulator' } }} />);
     await screen.findAllByTestId('sim-group');
-    const row = (tri: string) => document.querySelector(`[data-testid="sim-group"] [data-team="${tri}"] [data-testid="sim-streak"]`)!.textContent;
-    expect([row('BOS'), row('ATL'), row('MIA')]).toEqual(['W3', 'L1', '']);
+    expect(container.querySelector('[data-testid="sim-group"] [data-team="BOS"]')).not.toBeNull();
+    expect(container.querySelectorAll('[data-testid="sim-group"] [data-streak]')).toHaveLength(0);
   });
 });

@@ -20,7 +20,7 @@ const text = (el: Element) => el.textContent!.replace(/\s+/g, ' ').trim();
 /** Matchup text without the League List's records (tests/records.test.tsx), streaks (tests/streak-everywhere.test.tsx) and Fatigue components. */
 const bare = (el: Element) => {
   const c = el.cloneNode(true) as Element;
-  c.querySelectorAll('.ck-rec, .ck-lstreak, .ck-fx').forEach((r) => r.remove());
+  c.querySelectorAll('.ck-rec, .ck-pos, .ck-lstreak, .ck-fx').forEach((r) => r.remove());
   return text(c);
 };
 const card = (root: ParentNode, id: string) => root.querySelector(`.ck-card[data-game-id="${id}"]`)!;

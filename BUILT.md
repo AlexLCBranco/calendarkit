@@ -4,6 +4,12 @@ Shipped work only, newest first. Planned work is in `FEATURE_BACKLOG.md`, never 
 Entries dated before 2026-11-16 were backfilled from the git commit messages (data, docs, test-only, merge and
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-16
+- CK-5 — Show a team's position in its league (v1.72.0)
+  League List rows show each team's current conference position ("2nd E") beside its record (not in the Team List: no room there).
+- CK-4 — Remove the streak from the NBA Cup standings (v1.72.0)
+  The Cup group standings and the simulator's group tables no longer show a streak after the team.
+
 ## 2026-11-15
 - v1.71.1: day-strip tooltips never cover the top bar and only their game squares take the pointer (a tip opened under a resting pointer could sit on the team picker); logos inside game squares no longer look like team links
 - CK-3 — Bigger hover squares with the matchup. v1.71.0: tooltip day strips with 50 × 42 squares ("vs LAL" / "@ DEN", logo, each a hoopsjunkie link; rest days empty, tonight ringed); season-series squares say "BOS @ DEN"; Team Calendar selection images carry the streak again

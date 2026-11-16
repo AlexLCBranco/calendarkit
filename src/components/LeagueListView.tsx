@@ -10,6 +10,7 @@ import { GameCard, type GameLink } from './GameCard';
 import { PeriodNav } from './PeriodNav';
 import { WeekStrip } from './WeekStrip';
 import { FatigueLegend } from './FatigueMark';
+import { conferencePositions } from '../data/standings';
 import { fmtDate, isCompact, LEAGUE_LIST_COLUMN, LEAGUE_ROW_HEIGHT, leagueSideBySide, leagueZoom, LIST_MAX_WIDTH, plural, type WidgetSize } from './widget';
 
 export interface LeagueListViewProps {
@@ -153,6 +154,7 @@ const dayHeading = (date: string, n: number) => `${fmtDate(date, { weekday: 'sho
 export const ListDaySection = memo(function ListDaySection({ day, data, compact, fatigueSlots = false, now, timeZone, onOpenGame, gameLink, heading, cupTag, series = false }: { series?: boolean; day: ListDay; data: CalendarData; compact: boolean; fatigueSlots?: boolean; now: number; timeZone?: string; onOpenGame?: (gameId: string) => void; gameLink?: GameLink; heading?: string; cupTag?: (g: ScheduleGame) => string | undefined }) {
   const records = compact ? undefined : leagueRecords(data); // once per data set
   const lines = compact ? undefined : leagueSeasonLines(data); // once per data set: the streaks
+  const positions = compact ? undefined : conferencePositions(data); // once per data set
   const fatigue = leagueFatigue(data); // once per data set
   const head = heading ?? dayHeading(day.date, day.games.length);
   // A day with any final score keeps the score slots on its other rows too, so every row's names, "@" and records
@@ -166,7 +168,7 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} scoreSlots={scoreSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} lines={lines && (lines.get(g.gameId) ?? NO_LINES)} gameLink={gameLink} linkIcon cupTag={cupTag?.(g)} series={series ? leagueSeries(data).get(g.gameId) : undefined} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} scoreSlots={scoreSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} positions={positions} lines={lines && (lines.get(g.gameId) ?? NO_LINES)} gameLink={gameLink} linkIcon cupTag={cupTag?.(g)} series={series ? leagueSeries(data).get(g.gameId) : undefined} copyable />
         ))}
       </div>
     </section>

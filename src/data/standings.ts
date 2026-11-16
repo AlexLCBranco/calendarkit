@@ -27,6 +27,7 @@
 
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { overtimeOf, type CalendarData } from './model';
+import { ordinal } from './scheduleTags';
 import { TEAMS, TEAM_BY_ID, type Conference, type Division } from './teams';
 
 /** Regular-season games per team. */
@@ -181,6 +182,33 @@ export function leagueStandings(data: CalendarData): Standings {
   let s = cache.get(data);
   if (!s) cache.set(data, (s = computeStandings(data.games)));
   return s;
+}
+
+/** A team's place in its conference standings now: "2nd E" on the game rows, the full words in the tooltip. */
+export interface ConfPosition {
+  seed: number;
+  conference: Conference;
+  text: string;
+  tip: string;
+}
+const positionsCache = new WeakMap<CalendarData, Map<number, ConfPosition>>();
+
+/**
+ * Every team's current conference position (the Standings view's seeds), once per data set. A team without a
+ * finished game has none: before the season every seed is only a tiebreak of 0-0 records.
+ */
+export function conferencePositions(data: CalendarData): ReadonlyMap<number, ConfPosition> {
+  let out = positionsCache.get(data);
+  if (out) return out;
+  out = new Map();
+  const s = leagueStandings(data);
+  for (const conf of [s.West, s.East])
+    for (const t of conf) {
+      if (t.w + t.l === 0) continue;
+      out.set(t.teamId, { seed: t.seed, conference: t.conference, text: `${ordinal(t.seed)} ${t.conference[0]}`, tip: `${ordinal(t.seed)} in the ${t.conference} now` });
+    }
+  positionsCache.set(data, out);
+  return out;
 }
 
 /** `games`: every game the app shows (regular season, Cup Championship, play-in, playoffs), any order. */

@@ -244,6 +244,23 @@
 .ck-slots .ck-rec-home {
   text-align: left;
 }
+/* Conference position now ("2nd E"), between the record and the streak; a fixed slot (fits "15th W") in the
+   League List so rows line up. */
+.ck-pos {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ck-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ck-slots .ck-pos {
+  display: inline-block;
+  width: 3.6em;
+  text-align: right;
+}
+.ck-slots .ck-pos-home {
+  text-align: left;
+}
 /* Streaks (StreakChip): League List rows put each team's outside its record, in a fixed slot so they line up down
    the list; Team Calendar cells put the team's in the tags. Colours: .ck-streak-w / -l (season.css). */
 .ck-streak.ck-lstreak {

@@ -47,7 +47,7 @@ describe('League List', () => {
   it('"NYK 118 @ 121 BOS OT": the marker after the last score, muted; aria-label says overtime', () => {
     const el = render(<CalendarView data={data} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-10' }} />).container;
     const c = el.querySelector(`.ck-card[data-game-id="${ot.gameId}"]`)!;
-    expect(text(c.querySelector('.ck-matchup')!)).toBe('L1 0-1 NYK 118 @ 121 BOS 1-0 W1 OT'); // records and streaks after the game outside the logos
+    expect(text(c.querySelector('.ck-matchup')!)).toBe('L1 4th E 0-1 NYK 118 @ 121 BOS 1-0 1st E W1 OT'); // records, conference positions and streaks after the game outside the logos
     expect(otOf(c)).toBe('OT');
     expect(c.getAttribute('aria-label')).toContain('final NYK 118, BOS 121 (OT)');
     expect(otOf(el.querySelector(`.ck-card[data-game-id="${ot2.gameId}"]`)!)).toBe('2OT');
