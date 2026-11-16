@@ -32,6 +32,7 @@ import { TeamMonthGrid } from './TeamMonthGrid';
 import { TeamPicker } from './TeamPicker';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
+import { conferencePositions } from '../data/standings';
 import { fmtRange, isCompact, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 
 const NO_GAMES: readonly ScheduleGame[] = [];
@@ -557,7 +558,7 @@ export function ScheduleDestination(p: ScheduleProps) {
 
   return (
     <DestinationFrame slots={slots} sub={sub} date={date} options={options} info={leagueKey}>
-      {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? teamListPeriod : undefined} />}
+      {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? teamListPeriod : undefined} position={list ? conferencePositions(data).get(state.teamId) : undefined} />}
       {body}
       {!list && !slate && !compact && nav && <SideArrows nav={nav} />}
       {selKind && <SelectionBar store={selection} copy={copySelection} />}
@@ -575,7 +576,7 @@ export function ScheduleDestination(p: ScheduleProps) {
             {state.tvOnly && <span className="ck-capture-filter">TV games only</span>}
             {note && <span className="ck-note">{note}</span>}
           </div>
-          {team && <TeamHeader teamId={state.teamId} compact={compact} period={list ? teamListPeriod : undefined} />}
+          {team && <TeamHeader teamId={state.teamId} compact={compact} period={list ? teamListPeriod : undefined} position={list ? conferencePositions(data).get(state.teamId) : undefined} />}
           {team ? (
             list ? (
               <TeamListView data={data} teamId={state.teamId} tvOnly={state.tvOnly} showRest={state.showRest && !compact} size={fullHeight} now={now} timeZone={timeZone} month={teamListMonth} monthTo={teamListTo} runs={!compact} />

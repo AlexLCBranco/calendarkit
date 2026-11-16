@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-16
+- Team List header shows the conference position (v1.73.0)
+  The Team List header shows the team's current position after its name ("2nd in the East"), since its rows have no room for it.
 - CK-5 — Show a team's position in its league (v1.72.0)
   League List rows show each team's current conference position ("2nd E") beside its record (not in the Team List: no room there).
 - CK-4 — Remove the streak from the NBA Cup standings (v1.72.0)

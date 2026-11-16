@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Each team's current conference position ("2nd E") beside its record: both teams in League List rows (between the
-// record and the streak); not in the Team List (no room). Current standings, not as of the game.
+// record and the streak); the Team List has no room in its rows, so its header shows the team's once. Current standings, not as of the game.
 
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -53,7 +53,17 @@ describe('League List rows', () => {
 });
 
 describe('Team List rows', () => {
-  it('no position: the rows have no room', () => {
+  it('the header shows the team’s position once, after its name; the Team Calendar’s header doesn’t', () => {
+    const c = render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: ID.BOS, date: '2026-11-08' }} />).container;
+    const pos = c.querySelector('[data-testid="team-header"] [data-testid="team-pos"]')!;
+    expect(pos.textContent).toBe('2nd in the East');
+    expect(pos.previousElementSibling!.textContent).toBe('Boston Celtics');
+    cleanup();
+    const cal = render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'calendar', teamId: ID.BOS, date: '2026-11-08' }} />).container;
+    expect(cal.querySelector('[data-testid="team-header"]')).not.toBeNull();
+    expect(cal.querySelector('[data-testid="team-pos"]')).toBeNull();
+  });
+  it('no position in the rows: they have no room', () => {
     const c = render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: ID.BOS, date: '2026-11-08' }} />).container;
     const block = c.querySelector(`[data-game-id="${G[3]!.gameId}"] [data-testid="season"]`)!;
     expect(block.querySelector('.ck-record')!.textContent).toBe('3-1');

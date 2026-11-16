@@ -61,6 +61,7 @@ measurement; open it only when a question needs the backstory.
 - **v1.72.0** (2026-11-16): no streaks in the Cup standings (groups, simulator tables); each team's current conference
   position ("2nd E", `conferencePositions` in `standings.ts`) beside its record in League List rows (not in the Team
   List: its busiest rows have no room). A team without a finished game shows none.
+- **v1.73.0** (2026-11-16): the Team List header shows the team's position once, after its name ("2nd in the East").
   - v1.70.0 — the simulator's knockout bracket is playable and big (`CupBracket.tsx`, `src/data/cupBracket.ts`).
   - v1.71.0 — tooltip day strips: 50 × 42 squares with the matchup ("vs LAL" / "@ DEN", logo), each a hoopsjunkie
     link (the tip stays while the pointer moves onto it); series popup squares say "BOS @ DEN" with the home logo.

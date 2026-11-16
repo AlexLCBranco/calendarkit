@@ -1,6 +1,7 @@
 // Team views: large logo on its light disc + the team's full name.
 
 import type { CSSProperties } from 'react';
+import type { ConfPosition } from '../data/standings';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { fullName } from './widget';
 import { TeamLink } from '../slate/teamLink';
@@ -16,17 +17,23 @@ function BigLogo({ teamId, px, link }: { teamId: number; px: number; link: boole
 }
 
 /**
- * Team views: large logo on its disc + full name; the Team List adds the month it shows, plain text.
+ * Team views: large logo on its disc + full name; the Team List adds the team's current conference position after
+ * the name (its rows have no room for it) and the month it shows, plain text.
  * `link`: logo and name link to the Team view — the Cup schedule's team; not the Team view's own header,
  * which would link to itself.
  */
-export function TeamHeader({ teamId, compact = false, period, link = false }: { teamId: number; compact?: boolean; period?: string; link?: boolean }) {
+export function TeamHeader({ teamId, compact = false, period, link = false, position }: { teamId: number; compact?: boolean; period?: string; link?: boolean; position?: ConfPosition }) {
   const t = TEAM_BY_ID.get(teamId);
   const name = t ? fullName(t) : 'Team';
   return (
     <div className="ck-team-header" data-testid="team-header">
       <BigLogo teamId={teamId} px={compact ? 40 : 48} link={link} />
       <h2 className="ck-team-name">{link ? <TeamLink teamId={teamId}>{name}</TeamLink> : name}</h2>
+      {position && (
+        <span className="ck-team-pos" data-testid="team-pos" title="Current conference standings">
+          {`${position.ordinal} in the ${position.conference}`}
+        </span>
+      )}
       {period && (
         <span className="ck-team-period" data-testid="team-month">
           {period}

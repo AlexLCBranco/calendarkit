@@ -187,6 +187,8 @@ export function leagueStandings(data: CalendarData): Standings {
 /** A team's place in its conference standings now: "2nd E" on the game rows, the full words in the tooltip. */
 export interface ConfPosition {
   seed: number;
+  /** "2nd" */
+  ordinal: string;
   conference: Conference;
   text: string;
   tip: string;
@@ -205,7 +207,7 @@ export function conferencePositions(data: CalendarData): ReadonlyMap<number, Con
   for (const conf of [s.West, s.East])
     for (const t of conf) {
       if (t.w + t.l === 0) continue;
-      out.set(t.teamId, { seed: t.seed, conference: t.conference, text: `${ordinal(t.seed)} ${t.conference[0]}`, tip: `${ordinal(t.seed)} in the ${t.conference} now` });
+      out.set(t.teamId, { seed: t.seed, ordinal: ordinal(t.seed), conference: t.conference, text: `${ordinal(t.seed)} ${t.conference[0]}`, tip: `${ordinal(t.seed)} in the ${t.conference} now` });
     }
   positionsCache.set(data, out);
   return out;
