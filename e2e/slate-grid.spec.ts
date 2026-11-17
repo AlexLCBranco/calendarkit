@@ -1,28 +1,31 @@
 // CK-7: the Slate as a tight grid — cards touch, one 1 px divider line between them (shared borders), all corners
 // square, the outer edge too; a card and its note box are one cell; the national-TV card's teal highlight is an inset
 // outline inside its cell (the dividers stay grey, its neighbours untouched). Nothing a card shows changes: every
-// card's parts (class, text, size) are compared with e2e/slate-grid-baseline.json, recorded from the layout before
-// CK-7 (with gaps) — same parts in the same order with the same text, none smaller, none outside its card.
-// SLATE_GRID_BASELINE=write records it again. The copy: e2e/slate.spec.ts and the touch check here.
-import { readFileSync, writeFileSync } from 'node:fs';
+// card's parts (class, text, size) are compared with the same cards drawn by the last build before CK-7 (BEFORE, built
+// and served in the same run by refbuild.ts, so on the same machine's fonts) — same parts in the same order with the
+// same text, none smaller, none outside its card. The copy: e2e/slate.spec.ts and the touch check here.
+import type { Server } from 'node:http';
 import { expect, test, type Page } from './fixtures';
+import { APP } from './app';
 import { setNotes } from './nav';
+import { serveRef } from './refbuild';
 import { copySlate } from './slatecopy';
 
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'desktop sizes set here'));
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 const DAYS = ['2026-11-06', '2026-11-14']; // TV games, streaks, series chips, B2Bs; a Cup group night
-const BASELINE = 'e2e/slate-grid-baseline.json';
-type Part = [cls: string, text: string, w: number, h: number];
-type Card = { id: string; parts: Part[] };
+const BEFORE = '96146441a1f3baf0f40e0285420bbb96e4bdc67d'; // v1.73.0: the Slate with gaps
 
-async function open(page: Page, date: string, notes: boolean) {
+let ref: { base: string; server: Server } | undefined;
+test.afterAll(() => ref?.server.close());
+
+async function open(page: Page, date: string, notes: boolean, base?: string) {
   await page.route('**/api/odds**', (r) => r.fulfill({ status: 404, body: '' })); // no odds: the same content every run
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.setViewportSize({ width: 1920, height: 950 });
   await page.clock.setFixedTime(NOW);
-  await page.goto(`?view=league&layout=slate&date=${date}`);
+  await page.goto(`${base ? new URL(APP, base).href : ''}?view=league&layout=slate&date=${date}`);
   await expect(page.locator('[data-testid="slate"] .ck-slate-card').first()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
   await setNotes(page, notes);
@@ -38,7 +41,7 @@ const partsOf = (page: Page) =>
         .filter((e) => !e.closest('.ck-gnote') || e.classList.contains('ck-gnote'))
         .map((e) => {
           const r = e.getBoundingClientRect();
-          const cls = `${e.tagName.toLowerCase()}.${(e.getAttribute("class") ?? "").trim().replace(/\s+/g, '.')}`;
+          const cls = `${e.tagName.toLowerCase()}.${(e.getAttribute('class') ?? '').trim().replace(/\s+/g, '.')}`;
           if (r.width && (r.left < box.left - 0.5 || r.right > box.right + 0.5 || r.top < box.top - 0.5 || r.bottom > box.bottom + 0.5)) out.push(cls);
           return [cls, e.children.length ? '' : (e.textContent ?? '').trim(), Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10] as [string, string, number, number];
         });
@@ -47,19 +50,19 @@ const partsOf = (page: Page) =>
   );
 
 test('every part of every card is still there, no smaller, inside its card (notes hidden and shown)', async ({ page }) => {
-  test.setTimeout(120_000);
-  const record: Record<string, Card[]> = {};
-  const base: Record<string, Card[]> = process.env.SLATE_GRID_BASELINE === 'write' ? {} : JSON.parse(readFileSync(BASELINE, 'utf8'));
+  test.setTimeout(240_000); // the first run builds BEFORE
+  ref ??= await serveRef(BEFORE);
   for (const date of DAYS)
     for (const notes of [false, true]) {
-      await open(page, date, notes);
       const key = `${date} notes ${notes ? 'shown' : 'hidden'}`;
+      await open(page, date, notes, ref.base);
+      const before = await partsOf(page);
+      await open(page, date, notes);
       const cards = await partsOf(page);
-      record[key] = cards.map(({ id, parts }) => ({ id, parts }));
-      if (!base[key]) continue;
-      expect(cards.map((c) => c.id), key).toEqual(base[key]!.map((c) => c.id));
+      expect(before.length, key).toBeGreaterThan(0);
+      expect(cards.map((c) => c.id), key).toEqual(before.map((c) => c.id));
       for (const [i, c] of cards.entries()) {
-        const was = base[key]![i]!;
+        const was = before[i]!;
         const where = `${key}, ${c.id}`;
         expect(c.out, `${where}: parts outside the card`).toEqual([]);
         expect(c.parts.map((p) => [p[0], p[1]]), `${where}: parts and text`).toEqual(was.parts.map((p) => [p[0], p[1]]));
@@ -70,7 +73,6 @@ test('every part of every card is still there, no smaller, inside its card (note
         }
       }
     }
-  if (process.env.SLATE_GRID_BASELINE === 'write') writeFileSync(BASELINE, `${JSON.stringify(record, null, 1)}\n`);
 });
 
 /** The cards' boxes, borders and corners. */

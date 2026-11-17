@@ -15,6 +15,8 @@ spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Featu
   League List rows show each team's current conference position ("2nd E") beside its record (not in the Team List: no room there).
 - CK-4 — Remove the streak from the NBA Cup standings (v1.72.0)
   The Cup group standings and the simulator's group tables no longer show a streak after the team.
+### Internal
+- test: the CK-7 content check compares against v1.73.0 built in the same run (CI's Linux fonts differ from a Windows baseline)
 
 ## 2026-11-15
 - v1.71.1: day-strip tooltips never cover the top bar and only their game squares take the pointer (a tip opened under a resting pointer could sit on the team picker); logos inside game squares no longer look like team links
