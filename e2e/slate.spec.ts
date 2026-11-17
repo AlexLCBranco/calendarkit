@@ -235,3 +235,26 @@ test('marquee in the Slate: 3 selected games copy by the same rule as the whole 
   expect(r.px.outsideOpaque).toBe(0);
   console.log(`[slate] selection of 3: ${r.stage.width}×${r.stage.height} CSS px × ${r.ratio}, copied in ${r.ms} ms`);
 });
+
+// gauntlet GT-5: a game over tonight shows its final score as soon as ESPN has it (the odds answer carries it), not
+// only the morning after with the daily snapshot.
+test('a game the snapshot still has upcoming shows ESPN\'s final score, OT included, when the odds answer brings it', async ({ page }) => {
+  const date = '2026-11-20';
+  await openSlate(page);
+  const games = (await snapshot(page))[date]!;
+  const [g, other] = games;
+  await page.route('**/api/odds**', (r) =>
+    r.fulfill({ json: { date, games: {}, live: true, finals: { [`${g!.awayTeam.teamTricode}@${g!.homeTeam.teamTricode}`]: { away: 118, home: 121, statusText: 'Final/OT' } } } }),
+  );
+  await openSlate(page, date);
+  const card = page.locator(`.ck-slate-card[data-game-id="${g!.gameId}"]`);
+  const rows = card.locator('.ck-slate-row');
+  await expect(rows.nth(0).locator('.ck-slate-score')).toHaveText('118');
+  await expect(rows.nth(1).locator('.ck-slate-score')).toHaveText('121');
+  await expect(rows.nth(1).locator('.ck-slate-score')).toHaveClass(/ck-score-win/);
+  await expect(card.getByTestId('slate-status')).toHaveText('Final OT');
+  // a game ESPN doesn't have as over keeps its tip-off time
+  const next = page.locator(`.ck-slate-card[data-game-id="${other!.gameId}"]`);
+  await expect(next.locator('.ck-slate-score').first()).toHaveText('');
+  await expect(next.getByTestId('tipoff')).toHaveText(/^\d\d:\d\d( \(\+1\))?$|^TBD$/);
+});

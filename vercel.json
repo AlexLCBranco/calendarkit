@@ -38,6 +38,24 @@
       ]
     },
     {
+      "source": "/slatekit/manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/calendar/slatekit/manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
       "source": "/calendar/version.json",
       "headers": [
         {

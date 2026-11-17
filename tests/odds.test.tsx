@@ -6,9 +6,9 @@ import { act, cleanup, render } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GET } from '../api/odds';
-import { dayOdds, decimalOdds, espnDate, eventKey, nbaTricode, oddsCacheSeconds, type EspnEvent } from '../src/data/odds';
+import { anyLive, dayFinals, dayOdds, decimalOdds, espnDate, eventKey, finalText, nbaTricode, oddsCacheSeconds, type EspnEvent } from '../src/data/odds';
 import { TEAMS } from '../src/data/teams';
-import { createOddsStore, ODDS_REFRESH_MS, ODDS_RETRY_MS, oddsKey, type DayOdds } from '../src/slate/odds';
+import { createOddsStore, LIVE_REFRESH_MS, ODDS_REFRESH_MS, ODDS_RETRY_MS, oddsKey, withFinal, withFinals, type DayOdds } from '../src/slate/odds';
 import { SlateDay } from '../src/slate/SlateCard';
 import { data } from './feed';
 
@@ -152,5 +152,88 @@ describe('cards', () => {
     render(<SlateDay data={data} date={date} width={1840} timeZone="UTC" />);
     expect(f).not.toHaveBeenCalled();
     expect([...document.querySelectorAll('[data-testid="slate-odds"]')].every((c) => c.textContent === '')).toBe(true);
+  });
+});
+
+// gauntlet GT-5: the night's final scores from ESPN (the same answer as the odds), shown before the morning snapshot.
+describe('final scores from ESPN', () => {
+  const finished = fixture('scoreboard-20261115.json') as { events: EspnEvent[] }; // real answer of 2026-11-15, trimmed
+
+  it('reads every finished game with both scores, keyed like the odds; overtime from the periods played', () => {
+    const f = dayFinals(finished);
+    expect(Object.keys(f)).toHaveLength(9);
+    expect(f['IND@PHI']).toEqual({ away: 124, home: 131, statusText: 'Final' });
+    expect(f['SAS@UTA']).toEqual({ away: 110, home: 102, statusText: 'Final' }); // ESPN "SA", "UTAH"
+    expect(f['NYK@TOR']).toEqual({ away: 112, home: 108, statusText: 'Final/OT' }); // 5 periods
+    expect(finalText(4)).toBe('Final');
+    expect(finalText(6)).toBe('Final/2OT');
+  });
+
+  it('a game not over, or a half-written answer, is left out', () => {
+    const [a, b, c] = finished.events;
+    const playing = { ...a!, competitions: [{ ...a!.competitions[0]!, status: { period: 3, type: { state: 'in', completed: false } } }], status: { type: { state: 'in' } } };
+    const noScore = { ...b!, competitions: [{ ...b!.competitions[0]!, competitors: b!.competitions[0]!.competitors.map((x) => ({ ...x, score: undefined })) }] };
+    const tied = { ...c!, competitions: [{ ...c!.competitions[0]!, competitors: c!.competitions[0]!.competitors.map((x) => ({ ...x, score: '100' })) }] };
+    expect(dayFinals({ events: [playing, noScore, tied] })).toEqual({});
+    expect(dayFinals(pre)).toEqual({});
+    expect(anyLive([playing])).toBe(true);
+    expect(anyLive(finished.events)).toBe(false);
+  });
+
+  it('cache: 2 minutes while a game is on (the final shows soon after the end)', () => {
+    const [a, ...rest] = finished.events;
+    const playing = { ...a!, competitions: [{ ...a!.competitions[0]!, status: { type: { state: 'in' } } }], status: { type: { state: 'in' } } };
+    expect(oddsCacheSeconds([playing, ...rest])).toBe(120);
+    expect(oddsCacheSeconds(finished.events)).toBe(86_400);
+  });
+
+  it('the server function sends the finals and whether a game is on', async () => {
+    vi.stubGlobal('fetch', async () => new Response(JSON.stringify(finished), { status: 200 }));
+    const j = (await (await GET(new Request('https://x.test/api/odds?date=2026-11-15'))).json()) as DayOdds;
+    expect(j.finals?.['NYK@TOR']).toEqual({ away: 112, home: 108, statusText: 'Final/OT' });
+    expect(j.live).toBe(false);
+  });
+
+  it('a card: a game the snapshot still has scheduled shows ESPN\'s final; the same game object when there is none', () => {
+    const g = [...data.byDate.values()].flat().find((x) => x.status !== 'final')!;
+    expect(withFinal(g, undefined)).toBe(g);
+    expect(withFinal(g, { date: g.dateEt, games: {} })).toBe(g);
+    const day: DayOdds = { date: g.dateEt, games: {}, finals: { [oddsKey(g)]: { away: 99, home: 101, statusText: 'Final/OT' } } };
+    const f = withFinal(g, day);
+    expect(f).toMatchObject({ status: 'final', statusText: 'Final/OT', awayTeam: { score: 99 }, homeTeam: { score: 101 } });
+    expect(g.status).not.toBe('final'); // the snapshot's game is untouched
+    const list = [g];
+    expect(withFinals(list, { date: g.dateEt, games: {} })).toBe(list);
+    // a game the snapshot already has as final keeps the snapshot's score
+    const done = [...data.byDate.values()].flat().find((x) => x.status === 'final');
+    if (done) expect(withFinal(done, { date: done.dateEt, games: {}, finals: { [oddsKey(done)]: { away: 1, home: 2, statusText: 'Final' } } })).toBe(done);
+  });
+
+  it('cards show the final scores when they come, and the refresh goes every 2 minutes while a game is on, then stops when all are over', async () => {
+    vi.useFakeTimers();
+    const date = [...data.byDate.keys()].sort().find((d) => data.byDate.get(d)!.length >= 2 && data.byDate.get(d)!.every((x) => x.status !== 'final'))!;
+    const night = data.byDate.get(date)!;
+    const answers: DayOdds[] = [
+      { date, games: {}, live: true },
+      { date, games: {}, live: true, finals: { [oddsKey(night[0]!)]: { away: 120, home: 101, statusText: 'Final' } } },
+      { date, games: {}, live: false, finals: Object.fromEntries(night.map((g) => [oddsKey(g), { away: 100, home: 90, statusText: 'Final' }])) },
+    ];
+    let n = 0;
+    const store = createOddsStore(async () => answers[Math.min(n++, answers.length - 1)]!);
+    render(<SlateDay data={data} date={date} width={1840} timeZone="UTC" odds={store} />);
+    const scores = (g: { gameId: string }) => [...document.querySelectorAll(`[data-game-id="${g.gameId}"] .ck-slate-score`)].map((s) => s.textContent);
+    await act(async () => vi.advanceTimersByTimeAsync(0));
+    expect(n).toBe(1);
+    expect(scores(night[0]!)).toEqual(['', '']);
+    await act(async () => vi.advanceTimersByTimeAsync(LIVE_REFRESH_MS));
+    expect(n).toBe(2);
+    expect(scores(night[0]!)).toEqual(['120', '101']);
+    expect(scores(night[1]!)).toEqual(['', '']);
+    await act(async () => vi.advanceTimersByTimeAsync(LIVE_REFRESH_MS));
+    expect(n).toBe(3);
+    expect(scores(night[1]!)).toEqual(['100', '90']);
+    // all over: no more requests
+    await act(async () => vi.advanceTimersByTimeAsync(5 * ODDS_REFRESH_MS));
+    expect(n).toBe(3);
   });
 });

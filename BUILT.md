@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-17
+- Final scores the same night, and the gauntlet's Slate always up to date (v1.76.0)
+  A Slate card shows a game's final score within minutes of the end (from ESPN, with the odds), not the next morning; the gauntlet's whiteboard now loads calendarkit's current Slate itself, so changes here reach it with each deploy.
 - Notes can be typed in the gauntlet's Slate widget: click a note there (v1.75.0)
   The copy layout, shown live by the gauntlet, opens a clicked note in calendarkit's own field (with ⇄); it looks like the copy until then.
 

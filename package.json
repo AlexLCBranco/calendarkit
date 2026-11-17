@@ -1,11 +1,11 @@
 {
   "name": "calendarkit",
   "private": true,
-  "version": "1.75.0",
+  "version": "1.76.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build && vite build --config vite.slate.config.ts",
+    "build": "tsc && vite build && vite build --config vite.slate.config.ts && vite build --config vite.slatekit.config.ts",
     "preview": "vite preview --port 4180 --strictPort",
     "test": "vitest run",
     "e2e": "playwright test",

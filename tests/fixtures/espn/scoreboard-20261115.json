@@ -1,0 +1,328 @@
+{
+ "events": [
+  {
+   "id": "401909985",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "PHI"
+       },
+       "score": "131"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "IND"
+       },
+       "score": "124"
+      }
+     ],
+     "status": {
+      "period": 4,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  },
+  {
+   "id": "401909986",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "PHX"
+       },
+       "score": "123"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "LAL"
+       },
+       "score": "131"
+      }
+     ],
+     "status": {
+      "period": 4,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  },
+  {
+   "id": "401909987",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "LAC"
+       },
+       "score": "113"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "CHA"
+       },
+       "score": "105"
+      }
+     ],
+     "status": {
+      "period": 4,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  },
+  {
+   "id": "401909988",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "UTAH"
+       },
+       "score": "102"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "SA"
+       },
+       "score": "110"
+      }
+     ],
+     "status": {
+      "period": 4,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  },
+  {
+   "id": "401909989",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "BOS"
+       },
+       "score": "131"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "DAL"
+       },
+       "score": "94"
+      }
+     ],
+     "status": {
+      "period": 4,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  },
+  {
+   "id": "401909990",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "TOR"
+       },
+       "score": "108"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "NY"
+       },
+       "score": "112"
+      }
+     ],
+     "status": {
+      "period": 5,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final/OT"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  },
+  {
+   "id": "401909991",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "WSH"
+       },
+       "score": "119"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "HOU"
+       },
+       "score": "147"
+      }
+     ],
+     "status": {
+      "period": 4,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  },
+  {
+   "id": "401909992",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "MIL"
+       },
+       "score": "106"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "ATL"
+       },
+       "score": "113"
+      }
+     ],
+     "status": {
+      "period": 4,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  },
+  {
+   "id": "401909993",
+   "competitions": [
+    {
+     "competitors": [
+      {
+       "homeAway": "home",
+       "team": {
+        "abbreviation": "SAC"
+       },
+       "score": "103"
+      },
+      {
+       "homeAway": "away",
+       "team": {
+        "abbreviation": "OKC"
+       },
+       "score": "125"
+      }
+     ],
+     "status": {
+      "period": 4,
+      "type": {
+       "state": "post",
+       "completed": true,
+       "detail": "Final"
+      }
+     }
+    }
+   ],
+   "status": {
+    "type": {
+     "state": "post"
+    }
+   }
+  }
+ ]
+}

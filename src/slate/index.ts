@@ -3,7 +3,7 @@
 // (loadCalendarData), a date, a time zone and a notes store (localNotesStore by default); nothing from calendarkit's app
 // shell. Styles: ./slate.css. docs/slate-in-gauntlet.md is the guide.
 
-export { loadCalendarData } from '../data/load';
+export { loadCalendarData, refreshCalendarData, SCHEDULE_CHECK_MS } from '../data/load';
 export type { CalendarData } from '../data/model';
 export { SCHEDULE_DATA_URL } from '../data/address';
 export { SlateCard, SlateCopy, SlateDay, slateGames, type SlateDayProps } from './SlateCard';
@@ -30,4 +30,4 @@ export { TeamLinkContext, teamLinkTarget, teamCalendarUrl, type TeamLinks } from
 // The streak popup and the series popup, for a host that wants them on its cards
 export { useStreakPopup } from './streakPopup';
 export { useSeriesPopup } from './series';
-export { createOddsStore, fmtOdds, liveOddsStore, oddsKey, ODDS_URL, type DayOdds, type GameOdds, type SlateOdds } from './odds';
+export { createOddsStore, fmtOdds, liveOddsStore, oddsKey, ODDS_URL, withFinal, withFinals, type DayOdds, type GameFinal, type GameOdds, type SlateOdds } from './odds';

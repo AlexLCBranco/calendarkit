@@ -2,8 +2,10 @@
 // "AWAY@HOME" ({ date, games: { "PHI@DET": { away: 2.15, home: 1.74, provider: "DraftKings" } } }). A Vercel function so
 // the browser makes one small same-origin request and the CDN caches it (src/data/odds.ts: oddsCacheSeconds); ESPN
 // needs no key, so nothing secret lives here. Any failure answers 502 with no odds: the Slate then shows none.
+// The same answer carries the night's final scores as ESPN has them (`finals`, gauntlet GT-5): the Slate shows a score
+// once the game ends, not only the morning after with the daily snapshot.
 
-import { dayOdds, espnDate, oddsCacheSeconds, type EspnEvent } from '../src/data/odds.js';
+import { anyLive, dayFinals, dayOdds, espnDate, oddsCacheSeconds, type EspnEvent } from '../src/data/odds.js';
 
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
@@ -20,6 +22,8 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const board = await json<{ events?: EspnEvent[] }>(`${BASE}/scoreboard?dates=${day}`);
     const odds = await dayOdds(date!, board, (id) => json(`${BASE}/summary?event=${encodeURIComponent(id)}`));
+    // The night's finished games with their scores, and whether any is on (gauntlet GT-5).
+    Object.assign(odds, { finals: dayFinals(board), live: anyLive(board.events) });
     const age = oddsCacheSeconds(board.events);
     return Response.json(odds, { headers: { 'cache-control': `public, max-age=60, s-maxage=${age}, stale-while-revalidate=${age}` } });
   } catch (e) {

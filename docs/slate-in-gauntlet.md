@@ -91,7 +91,8 @@ same origin, no CORS — e2e `move.spec.ts` fetches it from a gauntlet page). Th
 snapshotted daily at 11:00 UTC by this repo's GitHub Action (`.github/workflows/schedule-update.yml`; GitHub may start it
 hours late), committed to `public/data/schedule.json`, deployed by Vercel; the action then waits until the live file is
 the committed one (`scripts/verify-deploy.ts`, polling the address above). Final scores therefore appear the morning
-after (live scores would need another source — phase 5). ~0.6 MB (only the fields the app reads; the raw feed is ~4 MB), ~18 KB brotli; `Cache-Control: public, max-age=60, stale-while-revalidate=300`.
+after — but since v1.76.0 (gauntlet GT-5) the odds answer also carries the night's final scores as ESPN has them
+(`finals`, refreshed every 2 min while a game is on), and the cards show them at once (`withFinals`). ~0.6 MB (only the fields the app reads; the raw feed is ~4 MB), ~18 KB brotli; `Cache-Control: public, max-age=60, stale-while-revalidate=300`.
 (A long stale-while-revalidate served day-old data through the rewrite.)
 
 **Must know:**
@@ -103,3 +104,12 @@ after (live scores would need another source — phase 5). ~0.6 MB (only the fie
 - `src/slate/` imports only `src/slate`, `src/data`, `src/shared` and React (unit test). calendarkit's Slate is built from
   it, so a card change in calendarkit is a change here — one source of truth.
 - `ck:notes:handoff:v1` (old origin only) and the `#ck-handoff=` fragment are the one-time move from the old address; ignore them.
+
+**Run-time kit (v1.76.0, gauntlet GT-5):** `npm run build` also builds `src/slate/kit.ts` on its own into
+`/calendar/slatekit/` (`vite.slatekit.config.ts`): one ES module, its stylesheet, and `manifest.json` (`{ api, version,
+js, css }`, no-cache). The gauntlet's whiteboard loads it at run time, so a change to the Slate here reaches its widgets
+with this site's deploy (an open whiteboard checks every 5 min and when its tab comes back), no new pin there. React
+is not in the kit: it reads the page's from `globalThis.__calendarkitHost`. `SLATEKIT_API` (kit.ts) is raised only
+when a name the gauntlet uses is removed or changed (tests/slatekit.test.ts lists them); the gauntlet then keeps its
+pinned copy until it is updated. A page that stays open picks up a newer schedule snapshot with
+`refreshCalendarData` (every `SCHEDULE_CHECK_MS`).

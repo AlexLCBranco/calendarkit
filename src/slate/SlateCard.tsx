@@ -7,7 +7,7 @@
 // room right of the info keeps SLATE_NOTE_MIN. No timers, no requests: the
 // data comes in (loadCalendarData fetches it once per page), only the logos are images.
 
-import { memo, useEffect, useSyncExternalStore, type CSSProperties } from 'react';
+import { memo, useEffect, useMemo, useSyncExternalStore, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { dateFormat, finalScore, hasNationalTv, leagueSeasonLines, markers, nationalTv, overtime, teamLabel, tipoff, type CalendarData, type SeasonLine } from '../data/model';
@@ -26,7 +26,7 @@ import { NoteBox, NoteCopy, NoteLive } from './NoteBox';
 import type { SlateNotes } from './notes';
 import { SeriesChip } from './series';
 import { leagueSeries } from '../data/series';
-import { fmtOdds, gameOdds, type DayOdds, type GameOdds, type SlateOdds } from './odds';
+import { fmtOdds, gameOdds, withFinals, type DayOdds, type GameOdds, type SlateOdds } from './odds';
 import { GameLinkIcon, ScoreLink, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
 import { StreakChip } from './streakPopup';
@@ -61,18 +61,24 @@ export interface SlateDayProps {
  */
 const NO_SUB = () => () => {};
 const NONE = () => undefined;
+const NO_GAMES: ScheduleGame[] = [];
 
-/** The day's odds from the store (undefined until they come, or without a store). */
-function useDayOdds(odds: SlateOdds | undefined, date: string, allOver: boolean): DayOdds | undefined {
+/** The day's odds from the store (undefined until they come, or without a store), and the night's games with the
+    finals ESPN already has (gauntlet GT-5): a night is over once every game is final, either way. */
+function useDayOdds(odds: SlateOdds | undefined, date: string, raw: ScheduleGame[]): { day: DayOdds | undefined; games: ScheduleGame[] } {
   const day = useSyncExternalStore(odds ? (fn) => odds.subscribe(date, fn) : NO_SUB, odds ? () => odds.get(date) : NONE);
+  const games = useMemo(() => withFinals(raw, day), [raw, day]);
+  const allOver = games.every((g) => g.status === 'final');
   // after the cards are on screen (an effect): load, and refresh while shown
   useEffect(() => odds?.show(date, allOver), [odds, date, allOver]);
-  return day;
+  return { day, games };
 }
 
 export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = false, gameLink, odds }: SlateDayProps) {
-  const games = slateGames(data, date, tvOnly);
-  const day = useDayOdds(odds, date, (data.byDate.get(date) ?? []).every((g) => g.status === 'final'));
+  // The whole night decides when the refresh stops (tvOnly or not), as before; the cards are the games shown.
+  const { day } = useDayOdds(odds, date, data.byDate.get(date) ?? NO_GAMES);
+  const shown = useMemo(() => slateGames(data, date, tvOnly), [data, date, tvOnly]);
+  const games = useMemo(() => withFinals(shown, day), [shown, day]);
   const night = isCupNight(games);
   const fates = useCupFates(data, night);
   const chips = useCupStakes(data, date, night);
@@ -130,7 +136,9 @@ const slateVars = (cols: number, cup: CupTrackKind = false) => ({ ...varsOf(cup)
 /** The Cup track kind of a copied night (as SlateCopy draws it). */
 export const slateCopyCup = (data: CalendarData, games: readonly ScheduleGame[]) => cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt));
 
-export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds, gameLink, editNotes = false }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds; /** A host showing the copy layout live (the gauntlet's Slate widget): each card's "↗" and score links; none in images. */ gameLink?: GameLink; /** A host showing the copy layout live: a click on a note opens it for typing (NoteLive); never in images. */ editNotes?: boolean }) {
+export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, odds, gameLink, editNotes = false }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds; /** A host showing the copy layout live (the gauntlet's Slate widget): each card's "↗" and score links; none in images. */ gameLink?: GameLink; /** A host showing the copy layout live: a click on a note opens it for typing (NoteLive); never in images. */ editNotes?: boolean }) {
+  // The finals ESPN already has (gauntlet GT-5): a game over tonight shows its score before the morning snapshot.
+  const games = useMemo(() => withFinals(raw, odds), [raw, odds]);
   const cup = slateCopyCup(data, games);
   // The info drawn larger inside the card (its info column widened to match), the note box narrower
   const zoom = slateCopyZoom(cardWidth, cup, !!notes);

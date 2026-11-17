@@ -27,18 +27,29 @@ export interface GameOdds {
   home: number;
   provider?: string;
 }
-/** The odds of one ET date, keyed "AWAY@HOME" by NBA tricodes. */
+/** A game ESPN has as finished (gauntlet GT-5): its final score, before the daily snapshot has it. */
+export interface GameFinal {
+  away: number;
+  home: number;
+  /** "Final", "Final/OT", "Final/2OT": as the snapshot writes it. */
+  statusText: string;
+}
+/** The odds of one ET date, keyed "AWAY@HOME" by NBA tricodes; with the games ESPN has as finished (`finals`, same
+    keys) and whether any game is being played (`live`: the store then asks more often). */
 export interface DayOdds {
   date: string;
   games: Record<string, GameOdds>;
+  finals?: Record<string, GameFinal>;
+  live?: boolean;
 }
 
 type Moneyline = { home?: { close?: { odds?: string }; open?: { odds?: string } }; away?: { close?: { odds?: string }; open?: { odds?: string } } };
 type EspnOdds = { provider?: { name?: string }; moneyline?: Moneyline };
+type EspnStatus = { period?: number; type?: { state?: string; completed?: boolean } };
 export type EspnEvent = {
   id: string;
-  competitions: { competitors: { homeAway: 'home' | 'away'; team: { abbreviation: string } }[]; odds?: EspnOdds[]; status?: { type?: { state?: string } } }[];
-  status?: { type?: { state?: string } };
+  competitions: { competitors: { homeAway: 'home' | 'away'; team: { abbreviation: string }; score?: string }[]; odds?: EspnOdds[]; status?: EspnStatus }[];
+  status?: EspnStatus;
 };
 
 /** The moneyline of an odds entry (current line = `close`, else `open`), or undefined. */
@@ -78,12 +89,43 @@ export async function dayOdds(date: string, scoreboard: { events?: EspnEvent[] }
   return { date, games };
 }
 
+/** "Final", "Final/OT", "Final/2OT" from the number of periods played (4 in regulation). */
+export const finalText = (period: number | undefined) => {
+  const ot = (period ?? 4) - 4;
+  return ot <= 0 ? 'Final' : ot === 1 ? 'Final/OT' : `Final/${ot}OT`;
+};
+
+/**
+ * The games ESPN's scoreboard has as finished (state "post" and completed), with both scores, keyed like the odds.
+ * Checked 2026-11-17 on the live scoreboard: `competitors[].score` ("131"), `status.type.completed`, `status.period`.
+ */
+export function dayFinals(scoreboard: { events?: EspnEvent[] }): Record<string, GameFinal> {
+  const out: Record<string, GameFinal> = {};
+  for (const e of scoreboard.events ?? []) {
+    const key = eventKey(e);
+    const c = e.competitions[0];
+    const status = c?.status ?? e.status;
+    if (!key || !c || eventState(e) !== 'post' || status?.type?.completed === false) continue;
+    const score = (side: 'home' | 'away') => Number(c.competitors.find((x) => x.homeAway === side)?.score);
+    const away = score('away');
+    const home = score('home');
+    if (!Number.isFinite(away) || !Number.isFinite(home) || away === home) continue; // a half-written answer
+    out[key] = { away, home, statusText: finalText(status?.period) };
+  }
+  return out;
+}
+
+/** Any game of the scoreboard being played. */
+export const anyLive = (events: EspnEvent[] | undefined) => (events ?? []).some((e) => eventState(e) === 'in');
+
 /**
  * How long the CDN keeps a day's answer (s-maxage, seconds). Every game over: the line can't change any more → a day.
- * Otherwise 10 minutes (lines move during the day; at most 6 scoreboard requests per hour per date reach ESPN, however
- * many people open the Slate).
+ * A game being played: 2 minutes, so a final score shows soon after the game ends (gauntlet GT-5; at most 30 scoreboard
+ * requests per hour per date reach ESPN, and only while games are on). Otherwise 10 minutes (lines move during the day; at
+ * most 6 requests per hour per date, however many people open the Slate).
  */
-export const oddsCacheSeconds = (events: EspnEvent[] | undefined) => ((events ?? []).length > 0 && (events ?? []).every((e) => eventState(e) === 'post') ? 86_400 : 600);
+export const oddsCacheSeconds = (events: EspnEvent[] | undefined) =>
+  (events ?? []).length > 0 && (events ?? []).every((e) => eventState(e) === 'post') ? 86_400 : anyLive(events) ? 120 : 600;
 
 /** YYYY-MM-DD → ESPN's `dates` (YYYYMMDD), or undefined for anything else. */
 export const espnDate = (date: string | null) => (date && /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(`${date}T00:00:00Z`)) ? date.replaceAll('-', '') : undefined);
