@@ -201,7 +201,8 @@ test('two tabs: typing and switching in one shows up in the other; the typing ta
 });
 
 test('the wheel over a note: scrolls the page until the note is clicked into; then the note; after leaving it, the page again', async ({ page }) => {
-  // a 15-game night, so the Slate scrolls
+  // a 15-game night, so the Slate scrolls (900 px tall: the tight grid, CK-7, made the night ~100 px shorter)
+  await page.setViewportSize({ width: page.viewportSize()!.width, height: 900 });
   await openSlate(page);
   const busy = await page.evaluate(async () => {
     const raw = await (await fetch('/calendar/data/schedule.json')).json();
@@ -356,8 +357,9 @@ test('copy: each card with its box — the shown slot\'s label and text, no ⇄;
   // the "largest cards" rule with the new cards: no other column count shows them larger on the page
   const fit = (s: { width: number; height: number }) => Math.min(PAGE.width / s.width, PAGE.height / s.height);
   const [cw, ch] = [k[0]!.w, Math.max(...k.map((c) => c.h))];
-  const gap = k.length > 1 ? k[1]!.x - k[0]!.x - cw : 120;
-  for (let c = 1; c <= k.length; c++) expect(fit({ width: c * (cw + gap), height: Math.ceil(k.length / c) * (ch + gap) })).toBeLessThanOrEqual(fit(r.stage) + 1e-6);
+  // CK-7: the cards touch (one shared 1 px line), the margin around them is the first card's offset
+  const m = k[0]!.x;
+  for (let c = 1; c <= k.length; c++) expect(fit({ width: c * cw - (c - 1) + 2 * m, height: Math.ceil(k.length / c) * ch - (Math.ceil(k.length / c) - 1) + 2 * m })).toBeLessThanOrEqual(fit(r.stage) + 1e-6);
   console.log(`[notes] copy of ${k.length} cards (${cw} × ${ch} CSS px each): ${r.stage.cols} columns, ${r.stage.width}×${r.stage.height} × ${r.ratio}, ${r.ms} ms`);
 });
 

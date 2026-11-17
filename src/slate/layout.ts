@@ -1,19 +1,26 @@
 // Slate: pure layout rules for the copied image of a day's game cards.
 
 /**
- * Sketching space (CSS px) between the cards of a copied slate, and half of it around them: everything there is
- * transparent, for drawing on the whiteboard. The site's own gap is 12 px. One constant, to tune. 120 px. * 24 px — each card now carries its own note box (the space written over on the whiteboard) and is ~2× wider, and with
- * 120 px a 12- or 15-game night fitted to a 1920 × 911 page showed the team names at ~10 px (24 px: ≥ 12.9 px).
+ * CK-7 (2026-11-16): the Slate is a tight grid, like a table — the cards touch and share their 1 px border, so one
+ * divider line splits them (a "gap" of −1: each card starts on the last pixel of the one before). Was 120 px, then
+ * 24 px between copied cards and 12 px on screen.
  */
-export const SLATE_COPY_GAP = 24;
+export const SLATE_SHARED_BORDER = -1;
+/** Between the cards of a copied slate: the shared border (CK-7). */
+export const SLATE_COPY_GAP = SLATE_SHARED_BORDER;
+/**
+ * Transparent space around a copied slate (CSS px), for drawing on the whiteboard: half the old 24 px gap, kept so
+ * only the space between the cards changed (CK-7).
+ */
+export const SLATE_COPY_MARGIN = 12;
 
 /** The page the image goes onto when no window is measured (Alex's whiteboard window). */
 export const SLATE_PAGE = { width: 1920, height: 911 };
 
-/** The image's CSS size for `n` cards in `cols` columns (gap between, half a gap around). */
-export function slateImageSize(n: number, cols: number, card: { width: number; height: number }, gap = SLATE_COPY_GAP) {
+/** The image's CSS size for `n` cards in `cols` columns: `gap` between them (−1: a shared border), `margin` around. */
+export function slateImageSize(n: number, cols: number, card: { width: number; height: number }, gap = SLATE_COPY_GAP, margin = gap > 0 ? gap / 2 : SLATE_COPY_MARGIN) {
   const rows = Math.ceil(n / cols);
-  return { width: cols * (card.width + gap), height: rows * (card.height + gap), rows };
+  return { width: cols * card.width + (cols - 1) * gap + 2 * margin, height: rows * card.height + (rows - 1) * gap + 2 * margin, rows };
 }
 
 /** How much the image is scaled to fit the page (both sides inside it). */
@@ -25,11 +32,11 @@ export const fitScale = (img: { width: number; height: number }, page: { width: 
  * 1920 × 911 page come out 3 × 4, not 2 × 6; 3 cards come out 2 + 1 (fitted ×1.62; one row of 3 would be ×1.08) — Alex
  * chose this rule over "3 = one row" (2026-10-30). Ties: fewer columns.
  */
-export function slateCopyColumns(n: number, card: { width: number; height: number }, page = SLATE_PAGE, gap = SLATE_COPY_GAP): number {
+export function slateCopyColumns(n: number, card: { width: number; height: number }, page = SLATE_PAGE, gap = SLATE_COPY_GAP, margin?: number): number {
   let best = 1;
   let bestScale = 0;
   for (let cols = 1; cols <= Math.max(1, n); cols++) {
-    const s = fitScale(slateImageSize(n, cols, card, gap), page);
+    const s = fitScale(slateImageSize(n, cols, card, gap, margin), page);
     if (s > bestScale + 1e-9) {
       best = cols;
       bestScale = s;
@@ -73,9 +80,9 @@ export const slateInfoColumns = (width: number, cup: CupTrackKind = false) => Ma
  * starts at the page's left edge and fills the widget: two columns while the room right of the info keeps
  * SLATE_NOTE_MIN (the column rule from when the note box sat there, kept so the grid is unchanged), else one.
  */
-/** The gap between the info and the room right of it, and the gap between cards (CSS px). */
+/** The gap between the info and the room right of it (CSS px); between cards, the shared border (CK-7; was 12 px). */
 export const SLATE_NOTE_GAP = 14;
-export const SLATE_GRID_GAP = 12;
+export const SLATE_GRID_GAP = SLATE_SHARED_BORDER;
 /** The narrowest note box worth writing in (Alex: "~300 px"). */
 export const SLATE_NOTE_MIN = 300;
 

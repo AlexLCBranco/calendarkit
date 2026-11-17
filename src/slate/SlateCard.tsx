@@ -13,7 +13,7 @@ import { leagueFatigue, type TeamFatigue } from '../data/fatigue';
 import { dateFormat, finalScore, hasNationalTv, leagueSeasonLines, markers, nationalTv, overtime, teamLabel, tipoff, type CalendarData, type SeasonLine } from '../data/model';
 import { TEAM_BY_ID } from '../data/teams';
 import { Fatigue } from './Fatigue';
-import { slateCardWidth, slateColumns, slateCopyZoom, slateImageSize, slateInfoColumns, slateInfoWidth, SLATE_CARD_PAD, SLATE_COPY_GAP, cupExtra, SLATE_CUP_TRACK, type CupTrackKind, SLATE_GRID_GAP, SLATE_ROW_GAP, SLATE_ROW_TRACKS, SLATE_STRIP, SLATE_STRIP_GAP } from './layout';
+import { slateCardWidth, slateColumns, slateCopyZoom, slateImageSize, slateInfoColumns, slateInfoWidth, SLATE_CARD_PAD, SLATE_COPY_MARGIN, cupExtra, SLATE_CUP_TRACK, type CupTrackKind, SLATE_ROW_GAP, SLATE_ROW_TRACKS, SLATE_STRIP, SLATE_STRIP_GAP } from './layout';
 import { cupStandingsOf } from '../data/cup';
 import { useCupFates, useCupStakes } from './cupFates';
 import { cupStakesNow, type StakeChip } from '../data/cupStakes';
@@ -118,15 +118,14 @@ const layoutVars = (cup: CupTrackKind) => ({
   '--ck-slate-strip-gap': `${SLATE_STRIP_GAP}px`,
   '--ck-slate-row-gap': `${SLATE_ROW_GAP}px`,
   '--ck-slate-tracks': `${T.at}px ${T.logo}px ${T.name}px ${T.rec}px ${T.streak}px ${cup ? `${SLATE_CUP_TRACK + cupExtra(cup)}px ` : ''}${T.fx}px ${T.score}px ${T.odds}px`,
-  '--ck-slate-grid-gap': `${SLATE_GRID_GAP}px`,
 });
 const VARS = [layoutVars(0), layoutVars(1), layoutVars(2), layoutVars(3)] as const;
 const varsOf = (cup: CupTrackKind) => VARS[cup === true ? 1 : cup === false ? 0 : cup];
 const slateVars = (cols: number, cup: CupTrackKind = false) => ({ ...varsOf(cup), '--ck-slate-cols': cols }) as CSSProperties;
 
 /**
- * The copied image (and a selection's): the cards in `cols` columns, SLATE_COPY_GAP apart and half of it around them,
- * on nothing — only the cards are opaque. `cardWidth`: the on-screen card width, so cards wrap their text as on screen.
+ * The copied image (and a selection's): the cards in `cols` columns, touching (one shared 1 px line between them, CK-7),
+ * SLATE_COPY_MARGIN around them, on nothing — only the cards are opaque. `cardWidth`: the on-screen card width, so cards wrap their text as on screen.
  */
 /** The Cup track kind of a copied night (as SlateCopy draws it). */
 export const slateCopyCup = (data: CalendarData, games: readonly ScheduleGame[]) => cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt));
@@ -136,7 +135,7 @@ export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds,
   // The info drawn larger inside the card (its info column widened to match), the note box narrower
   const zoom = slateCopyZoom(cardWidth, cup, !!notes);
   return (
-    <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-gap': `${SLATE_COPY_GAP}px` } as CSSProperties} data-zoom={zoom}>
+    <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-margin': `${SLATE_COPY_MARGIN}px` } as CSSProperties} data-zoom={zoom}>
       {games.map((g) => (
         <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy />
       ))}

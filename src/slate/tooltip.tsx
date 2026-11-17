@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { teamLogo } from '../data/teams';
+import { claimPopup, POPUP_GRACE_MS, releasePopup } from './popupGate';
 
 /** A left edge for a box `w` px wide near `x`, kept 8 px inside the viewport. */
 export const clampX = (x: number, w: number) => Math.max(8, Math.min(x, document.documentElement.clientWidth - w - 8));
@@ -23,7 +24,7 @@ export interface StripGame {
 export type StripGames = (ids: readonly string[]) => ReadonlyMap<string, StripGame> | undefined;
 
 /** How long a tooltip with a day strip stays after the pointer leaves its element, so the pointer can reach a square. */
-export const STRIP_CLOSE_MS = 180;
+export const STRIP_CLOSE_MS = POPUP_GRACE_MS;
 
 /**
  * A day strip under the text, from `data-tip-days` ("YYYY-MM-DD:g|r|t" joined by spaces — a game, a rest day,
@@ -74,32 +75,47 @@ function DayStrip({ days, games }: { days: string; games?: ReadonlyMap<string, S
  * One floating tooltip for every `[data-tip]` element in the widget, shown on hover and keyboard focus. Fixed
  * positioning, so cells with overflow: hidden don't clip it, and clamped into the viewport. A tip with a day strip
  * stays a moment after the pointer leaves its element and while the pointer is on it, so a game square can be clicked;
- * `games` gives the strip its matchups (none: plain squares).
+ * `games` gives the strip its matchups (none: plain squares). Streaks and series chips have their own popups, so the
+ * tooltip ignores them (also inside an element with a tip). Open and "has a strip" are kept in refs too: a fast sweep
+ * fires the next mouseover before React re-renders. One popup at a time across every hook (popupGate).
  */
 export function useTooltip(games?: StripGames) {
   const [tip, setTip] = useState<{ text: string; days?: string; ids?: string; x: number; top: number; bottom: number }>();
   const ref = useRef<HTMLDivElement>(null);
   const closer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const shown = useRef<'plain' | 'days'>(undefined);
+  const [hide] = useState(() => {
+    const h = () => {
+      clearTimeout(closer.current);
+      if (!shown.current) return;
+      shown.current = undefined;
+      releasePopup(h);
+      setTip(undefined);
+    };
+    return h;
+  });
   const keep = () => clearTimeout(closer.current);
-  const hide = () => (keep(), setTip(undefined));
   const later = () => {
     keep();
-    closer.current = setTimeout(() => setTip(undefined), STRIP_CLOSE_MS);
+    closer.current = setTimeout(hide, STRIP_CLOSE_MS);
   };
+  // leaving: a tip with a strip stays for the trip into it, a plain one goes at once
+  const leave = () => (shown.current === 'days' ? later() : hide());
   const show = (e: SyntheticEvent) => {
     const target = e.target as Element;
     if (ref.current?.contains(target)) return keep();
     const el = target.closest?.('[data-tip]');
-    // A streak has its popup instead
-    if (!el || target.closest?.('[data-streak]')) return tip?.days ? later() : hide();
+    // A streak or a series chip has its popup instead
+    if (!el || target.closest?.('[data-streak], [data-series-game]')) return leave();
     keep();
+    claimPopup(hide);
     const r = el.getBoundingClientRect();
     const text = el.getAttribute('data-tip')!;
     const days = el.getAttribute('data-tip-days') ?? undefined;
     const ids = el.getAttribute('data-tip-games') ?? undefined;
+    shown.current = days ? 'days' : 'plain';
     setTip((t) => (t && t.text === text && t.days === days && t.x === r.left + r.width / 2 && t.top === r.top ? t : { text, days, ids, x: r.left + r.width / 2, top: r.top, bottom: r.bottom }));
   };
-  const leave = () => (tip?.days ? later() : hide());
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el || !tip) return;
@@ -112,11 +128,10 @@ export function useTooltip(games?: StripGames) {
   });
   useEffect(() => {
     if (!tip) return;
-    const timer = closer;
-    const onScroll = () => (clearTimeout(timer.current), setTip(undefined));
-    window.addEventListener('scroll', onScroll, true);
-    return () => (window.removeEventListener('scroll', onScroll, true), clearTimeout(timer.current));
-  }, [tip]);
+    window.addEventListener('scroll', hide, true);
+    return () => window.removeEventListener('scroll', hide, true);
+  }, [tip, hide]);
+  useEffect(() => hide, [hide]);
   const strip = tip?.days && tip.ids && games ? games(tip.ids.split(' ')) : undefined;
   return {
     handlers: { onMouseOver: show, onFocus: show, onMouseLeave: leave, onBlur: hide },

@@ -1,11 +1,12 @@
 // Slate view: a day of games as cards in two columns, the day changed only by ← / → (top bar and
-// keyboard), opening on today. Its copy: a transparent PNG where only the cards are opaque, SLATE_COPY_GAP apart, in a
+// keyboard), opening on today. Its copy: a transparent PNG where only the cards are opaque, touching (one shared 1 px line, CK-7), SLATE_COPY_MARGIN around them, in a
 // column count that suits the page (1920 × 911 here), sharp at 2× its fitted size. Desktop widths.
 
 import { mkdirSync } from 'node:fs';
 import { test as plain } from '@playwright/test';
 import { expect, test, type Page } from './fixtures';
 import { copySlate } from './slatecopy';
+import { SLATE_COPY_MARGIN } from '../src/slate/layout';
 import { titleFor, setNotes } from './nav';
 import { FEED_TEAMS } from './feedTeams';
 
@@ -175,12 +176,13 @@ test('copy: 1, 5, 12 and 15 games — transparent around the cards, page-shaped,
     expect(r.ratio, 'pixels per CSS px ≥ 2 × the fitted scale').toBeGreaterThanOrEqual(2 * s);
     // page-shaped: no other column count would show the cards larger
     const [cw, ch] = [r.stage.cards[0]!.w, Math.max(...r.stage.cards.map((k) => k.h))];
-    // the gap between cards: side by side, or (one column) one under the other — was the x step only, which in
-    // one column came out as −card width and let every comparison pass
-    const gap = r.stage.cards.length < 2 ? r.stage.cards[0]!.x * 2 : r.stage.cols > 1 ? r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw : r.stage.cards[1]!.y - r.stage.cards[0]!.y - r.stage.cards[0]!.h;
+    // CK-7: the cards touch (one shared 1 px line), the transparent margin around them is the first card's offset
+    const margin = r.stage.cards[0]!.x;
+    expect(margin).toBe(SLATE_COPY_MARGIN);
+    if (n > 1) expect(r.stage.cols > 1 ? r.stage.cards[1]!.x - cw : r.stage.cards[1]!.y - r.stage.cards[0]!.h, 'the next card starts on the shared border').toBeCloseTo(margin - 1, 0);
     // The copy's zoomed cards have fractional heights while the image is whole pixels, so the shown
     // layout is measured the same way as the alternatives
-    const fitOf = (c: number) => fit({ width: c * (cw + gap), height: Math.ceil(n / c) * (ch + gap) });
+    const fitOf = (c: number) => fit({ width: c * cw - (c - 1) + 2 * margin, height: Math.ceil(n / c) * ch - (Math.ceil(n / c) - 1) + 2 * margin });
     const shown = fitOf(r.stage.cols);
     for (let c = 1; c <= n; c++) {
       expect(fitOf(c), `${c} columns would be no larger`).toBeLessThanOrEqual(shown + 1e-6);
@@ -215,9 +217,11 @@ test('marquee in the Slate: 3 selected games copy by the same rule as the whole 
   // the same rule as the whole day (largest cards on the page; Alex, 2026-10-30): no other column count shows them larger
   // (narrow cards would come out 2 + 1; the wide cards with their note boxes come out one column)
   const [cw, ch] = [r.stage.cards[0]!.w, Math.max(...r.stage.cards.map((k) => k.h))];
-  const gap = r.stage.cards.length > 1 ? Math.max(r.stage.cards[1]!.x - r.stage.cards[0]!.x - cw, r.stage.cards[1]!.y - r.stage.cards[0]!.y - ch) : 0;
+  // CK-7: the cards touch (one shared 1 px line), SLATE_COPY_MARGIN around them
+  const margin = r.stage.cards[0]!.x;
+  expect(margin).toBe(SLATE_COPY_MARGIN);
   // measured the same way for the shown layout and the alternatives (the zoomed cards' heights are fractional, the stage's whole pixels)
-  const fitOf = (c: number) => fit({ width: c * (cw + gap), height: Math.ceil(3 / c) * (ch + gap) });
+  const fitOf = (c: number) => fit({ width: c * cw - (c - 1) + 2 * margin, height: Math.ceil(3 / c) * ch - (Math.ceil(3 / c) - 1) + 2 * margin });
   for (let c = 1; c <= 3; c++) expect(fitOf(c), `${c} columns would be no larger`).toBeLessThanOrEqual(fitOf(r.stage.cols) + 1e-6);
   console.log(`[slate] selection of 3: ${r.stage.cols} column(s)`);
   expect(r.px.outsideOpaque).toBe(0);

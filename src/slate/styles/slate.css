@@ -13,19 +13,21 @@
   position: relative;
 }
 /* Notes hidden — as many tight cards as fit (slateInfoColumns), each exactly its content's width,
-   filled left to right, then down, in tip-off order */
+   filled left to right, then down, in tip-off order.
+   CK-7: a tight grid, like a table — no gap; every card has its full 1 px border and reaches 1 px into the next
+   column and row (margin −1 px right and bottom), so neighbours share one divider line; all corners square. The
+   tracks are a pixel narrower than the card, and the grid keeps 1 px on its right and bottom for the last card's edge. */
 .ck-slate-grid {
   margin: 0; /* From the page's left edge, like the League List */
-  padding: 8px 0 16px;
+  padding: 8px 1px 17px 0;
   display: grid;
-  grid-template-columns: repeat(var(--ck-slate-cols), var(--ck-slate-card-w));
-  gap: var(--ck-slate-grid-gap);
+  grid-template-columns: repeat(var(--ck-slate-cols), calc(var(--ck-slate-card-w) - 1px));
+  gap: 0;
 }
 /* With the note boxes, the grid fills the widget in 1 or 2 columns (slateColumns) */
 .ck-slate-grid.ck-slate-wide {
   max-width: none;
   grid-template-columns: repeat(var(--ck-slate-cols), minmax(0, 1fr));
-  gap: var(--ck-slate-grid-gap);
 }
 /* One card: the strip (time or "Final", link, TV, labels) beside the away and the home team's rows. */
 .ck-slate-card {
@@ -35,7 +37,8 @@
   padding: var(--ck-slate-pad);
   background: var(--ck-surface-2);
   border: 1px solid var(--ck-border);
-  border-radius: 10px;
+  border-radius: 0;
+  margin: 0 -1px -1px 0;
   color: var(--ck-text);
 }
 .ck-slate-info {
@@ -95,11 +98,11 @@
   color: var(--ck-text);
   text-decoration: none;
 }
-/* National TV games — the TV badge's green as an outline (border + inset ring: no layout change) and a
-   faint tint over the opaque card, so copies keep it on their transparent page */
+/* National TV games — the TV badge's green as an inset outline (2 px inside the card's border: the divider lines and
+   the neighbours keep theirs; no layout change) and a faint tint over the opaque card, so copies keep it on their
+   transparent page */
 .ck-slate-card.ck-slate-tv {
-  border-color: var(--ck-tv);
-  box-shadow: inset 0 0 0 1px var(--ck-tv);
+  box-shadow: inset 0 0 0 2px var(--ck-tv);
   background: linear-gradient(var(--ck-tv-tint), var(--ck-tv-tint)), var(--ck-surface-2);
 }
 .ck-slate-status {
@@ -189,11 +192,12 @@
 .ck-slate-copy .ck-slate-info {
   zoom: var(--ck-copy-zoom, 1);
 }
+/* the copy: the same tight grid (CK-7), SLATE_COPY_MARGIN of transparent page around it */
 .ck-slate-copy {
   display: grid;
-  grid-template-columns: repeat(var(--ck-slate-cols), var(--ck-slate-card));
-  gap: var(--ck-slate-gap);
-  padding: calc(var(--ck-slate-gap) / 2);
+  grid-template-columns: repeat(var(--ck-slate-cols), calc(var(--ck-slate-card) - 1px));
+  gap: 0;
+  padding: var(--ck-slate-margin) calc(var(--ck-slate-margin) + 1px) calc(var(--ck-slate-margin) + 1px) var(--ck-slate-margin);
   align-items: stretch;
 }
 

@@ -17,7 +17,7 @@
   min-width: 0;
   background: var(--ck-note-bg);
   border: 1px solid var(--ck-note-line);
-  border-radius: 8px;
+  border-radius: 0; /* CK-7: all lines straight */
 }
 /* the space label and the switch, in the card's top right corner */
 .ck-gnote-head {
@@ -101,7 +101,7 @@ textarea.ck-gnote-text {
   scrollbar-width: thin;
   scrollbar-color: var(--ck-muted) transparent;
   border: 0;
-  border-radius: 8px;
+  border-radius: 0;
   background: transparent;
   color: var(--ck-text);
   outline: none;

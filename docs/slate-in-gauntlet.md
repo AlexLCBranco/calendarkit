@@ -65,18 +65,19 @@ the grid in an element with class `ck-root` (the colours and font are variables 
 background: nothing is drawn between or around the cards, only the cards are opaque); import `src/slate/slate.css` once
 (calendarkit's widget stylesheet, every rule scoped to `.ck-*`, no html/body rules; 35.7 KB, 7.6 KB gz). Tooltips
 (records, streaks, fatigue — with the day strip): `useTooltip()` gives `handlers` to spread on the wrapper and a
-`node` to render inside it (as slate.html does). `SlateCopy` is the copied image's layout (no controls, the note box as
+`node` to render inside it (as slate.html does). The tooltip, `useStreakPopup` and `useSeriesPopup` are one popup at a time across every widget on the page, and each
+closes within 100 ms of the pointer leaving its element (an 80 ms grace, `POPUP_GRACE_MS`, for the trip into a popup's links; CK-6). `SlateCopy` is the copied image's layout (no controls, the note box as
 static text) if the widget ever copies.
 
-**Size:** a card = the info (`SLATE_INFO_WIDTH`) + the room right of it (the note's label and ⇄), the note box under both; 8 px padding and a 1 px border; cards 12 px apart (`SLATE_GRID_GAP`); 78 px tall. Info-only
+**Size:** a card = the info (`SLATE_INFO_WIDTH`) + the room right of it (the note's label and ⇄), the note box under both; 8 px padding and a 1 px border; **a tight grid (CK-7): the cards touch and share their border, one 1 px divider line between them, square corners** (`SLATE_GRID_GAP` = −1); 78 px tall. Info-only
 cards (no store) are `SLATE_CARD_WIDTH` (523 px) wide, as many per row as fit the width (`slateInfoColumns`: 3 in 1840 px).
 With notes: **Two columns while each note box keeps 300 px (`SLATE_NOTE_MIN`), i.e. a
 width ≥ 1588 px; else one column, cards as wide as the width.** (Measured in calendarkit: 1920 window → 2 columns, cards
 914 px, note box 426 px; 1280 → 1 column, card 1233 px, box 745 px.) On screen a long note grows its box up to 5 lines, then scrolls inside; in copies it grows its card
-whole (the font never shrinks). The widget's height = rows × card height + gaps + the grid's 8 px top / 16 px bottom padding — it grows
+whole (the font never shrinks). The widget's height = rows × (card height − 1) + 1 + the grid's 8 px top / 16 px bottom padding — it grows
 with the day's games and the notes; scaling by the corners (phase 2) should scale this whole layout (a CSS transform),
-not change `width`, so the columns stay put. Copies (calendarkit) use `SLATE_COPY_GAP` = 24 px between cards and half of it
-around them, transparent; their columns follow the largest-cards rule (`slateCopyColumns`). No virtualization: a day is
+not change `width`, so the columns stay put. Copies (calendarkit) are the same tight grid (`SLATE_COPY_GAP` = −1, the shared border) with `SLATE_COPY_MARGIN` = 12 px
+around them, transparent (`slateImageSize`); their columns follow the largest-cards rule (`slateCopyColumns`). No virtualization: a day is
 at most 15 games.
 
 **Pinned date (decided):** a widget stores its own date. Inserting one defaults to today (the viewer's local date, as

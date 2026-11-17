@@ -47,5 +47,8 @@ export function SelectionStyle({ store, scope }: { store: SelectionStore; scope:
   const ids = useSelection(store);
   if (!ids.size) return null;
   const sel = [...ids].map((id) => `${scope} [data-game-id="${CSS.escape(id)}"]`).join(',\n');
-  return <style data-testid="selection-style">{`${sel} { outline: 2px solid var(--ck-accent); outline-offset: -1px; background-color: rgba(78, 161, 255, 0.16); }`}</style>;
+  // A Slate card's outline sits inside its border (CK-7: the cards share their divider lines, an outline over them would
+  // cover the neighbours'); elsewhere over the edge as before
+  const slate = [...ids].map((id) => `${scope} .ck-slate-card[data-game-id="${CSS.escape(id)}"]`).join(',\n');
+  return <style data-testid="selection-style">{`${sel} { outline: 2px solid var(--ck-accent); outline-offset: -1px; background-color: rgba(78, 161, 255, 0.16); }\n${slate} { outline-offset: -3px; }`}</style>;
 }

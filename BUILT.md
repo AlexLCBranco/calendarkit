@@ -5,6 +5,10 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-16
+- CK-7 — Tight grid: divider lines instead of gaps between Slate cards (v1.74.0)
+  The Slate's cards touch, split by one 1 px line with square corners, on screen, in copies and in the gauntlet's widget; the TV card's teal is an inset outline.
+- CK-6 — Hover popups close as soon as the cursor leaves (v1.74.0)
+  Tooltips, streak and season-series popups close within 100 ms of leaving, swap without overlap, and never stay stuck after a fast sweep.
 - Team List header shows the conference position (v1.73.0)
   The Team List header shows the team's current position after its name ("2nd in the East"), since its rows have no room for it.
 - CK-5 — Show a team's position in its league (v1.72.0)

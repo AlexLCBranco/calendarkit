@@ -99,7 +99,7 @@ test('streak after the record on every card, as of that night; columns line up a
   expect(new Set(per).size, 'the same team shows different streaks on different nights').toBeGreaterThan(1);
 });
 
-test('national TV games: green outline + tint, exactly those cards; the green in the copy, none on other cards', async ({ page }, info) => {
+test('national TV games: green inset outline + tint, exactly those cards; the green in the copy, none on other cards', async ({ page }, info) => {
   test.setTimeout(120_000);
   await openSlate(page);
   const snap = await snapshot(page);
@@ -110,8 +110,9 @@ test('national TV games: green outline + tint, exactly those cards; the green in
     const got = await cards(page).evaluateAll((cs) => cs.map((c) => ({ id: c.getAttribute('data-game-id')!, border: getComputedStyle(c).borderTopColor, ring: getComputedStyle(c).boxShadow, bg: getComputedStyle(c).backgroundImage })));
     for (const c of got) {
       const want = snap.byDate[date]!.find((g) => g.id === c.id)!.tv;
-      expect(c.border === TV, `${date} ${c.id} outline`).toBe(want);
-      expect(c.ring.includes(TV), `${date} ${c.id} ring`).toBe(want);
+      // CK-7: the border is the grid's divider line on every card; TV cards' green is a 2 px ring inside it
+      expect(c.border === TV, `${date} ${c.id} border stays the divider`).toBe(false);
+      expect(c.ring.includes(TV) && /2px inset|inset .*2px/.test(c.ring), `${date} ${c.id} inset ring ${c.ring}`).toBe(want);
       expect(c.bg !== 'none', `${date} ${c.id} tint`).toBe(want);
       if (want) tv++;
     }

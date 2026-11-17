@@ -1,13 +1,17 @@
 // Slate copy layout: the column count of the copied image follows the page's shape, not the screen's two
 // columns; the pixel ratio keeps it sharp at 2× its fitted size.
 import { describe, expect, it } from 'vitest';
-import { fitScale, slateCopyColumns, slateImageSize, slatePixelRatio, SLATE_COPY_GAP, SLATE_PAGE } from '../src/components/slate';
+import { fitScale, slateCopyColumns, slateImageSize, slatePixelRatio, SLATE_COPY_GAP, SLATE_COPY_MARGIN, SLATE_PAGE } from '../src/components/slate';
 
 const CARD = { width: 474, height: 120 };
 
 describe('slate copy layout', () => {
-  it('one constant gap: between the cards and half of it around them', () => {
-    expect(slateImageSize(4, 2, CARD)).toEqual({ width: 2 * CARD.width + 2 * SLATE_COPY_GAP, height: 2 * CARD.height + 2 * SLATE_COPY_GAP, rows: 2 });
+  it('CK-7: the cards touch, sharing one 1 px border, with SLATE_COPY_MARGIN around them (was 24 px between, 12 around)', () => {
+    expect(SLATE_COPY_GAP).toBe(-1);
+    expect(slateImageSize(4, 2, CARD)).toEqual({ width: 2 * CARD.width - 1 + 2 * SLATE_COPY_MARGIN, height: 2 * CARD.height - 1 + 2 * SLATE_COPY_MARGIN, rows: 2 });
+    expect(slateImageSize(1, 1, CARD)).toEqual({ width: CARD.width + 2 * SLATE_COPY_MARGIN, height: CARD.height + 2 * SLATE_COPY_MARGIN, rows: 1 });
+    // a positive gap: half of it around, as before
+    expect(slateImageSize(4, 2, CARD, 24)).toEqual({ width: 2 * CARD.width + 48, height: 2 * CARD.height + 48, rows: 2 });
     expect(slateImageSize(5, 2, CARD).rows).toBe(3);
   });
 
