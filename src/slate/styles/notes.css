@@ -117,3 +117,11 @@ textarea.ck-gnote-text:focus {
 .ck-slate-copy .ck-gnote {
   border-color: var(--ck-note-line);
 }
+/* A note open for typing in a live copy (NoteLive): as tall as its text, like the copy (never capped) */
+.ck-gnote-grow.ck-gnote-live {
+  max-height: none;
+  overflow: visible;
+}
+.ck-gnote-copy[data-editable] {
+  cursor: text;
+}

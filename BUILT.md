@@ -4,6 +4,10 @@ Shipped work only, newest first. Planned work is in `FEATURE_BACKLOG.md`, never 
 Entries dated before 2026-11-16 were backfilled from the git commit messages (data, docs, test-only, merge and
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-17
+- Notes can be typed in the gauntlet's Slate widget: click a note there (v1.75.0)
+  The copy layout, shown live by the gauntlet, opens a clicked note in calendarkit's own field (with ⇄); it looks like the copy until then.
+
 ## 2026-11-16
 - CK-7 — Tight grid: divider lines instead of gaps between Slate cards (v1.74.0)
   The Slate's cards touch, split by one 1 px line with square corners, on screen, in copies and in the gauntlet's widget; the TV card's teal is an inset outline.

@@ -22,7 +22,7 @@ import { CupSquare } from './CupSquare';
 import { HostTag, VenueBadge } from './VenueMarker';
 import { knockoutVenue, prepFor, venueArena } from '../data/knockout';
 import type { GameLink } from './links';
-import { NoteBox, NoteCopy } from './NoteBox';
+import { NoteBox, NoteCopy, NoteLive } from './NoteBox';
 import type { SlateNotes } from './notes';
 import { SeriesChip } from './series';
 import { leagueSeries } from '../data/series';
@@ -130,21 +130,21 @@ const slateVars = (cols: number, cup: CupTrackKind = false) => ({ ...varsOf(cup)
 /** The Cup track kind of a copied night (as SlateCopy draws it). */
 export const slateCopyCup = (data: CalendarData, games: readonly ScheduleGame[]) => cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt));
 
-export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds, gameLink }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds; /** A host showing the copy layout live (the gauntlet's Slate widget): each card's "↗" and score links; none in images. */ gameLink?: GameLink }) {
+export function SlateCopy({ data, games, cols, cardWidth, timeZone, notes, odds, gameLink, editNotes = false }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds; /** A host showing the copy layout live (the gauntlet's Slate widget): each card's "↗" and score links; none in images. */ gameLink?: GameLink; /** A host showing the copy layout live: a click on a note opens it for typing (NoteLive); never in images. */ editNotes?: boolean }) {
   const cup = slateCopyCup(data, games);
   // The info drawn larger inside the card (its info column widened to match), the note box narrower
   const zoom = slateCopyZoom(cardWidth, cup, !!notes);
   return (
     <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-margin': `${SLATE_COPY_MARGIN}px` } as CSSProperties} data-zoom={zoom}>
       {games.map((g) => (
-        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy />
+        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy editNotes={editNotes} />
       ))}
     </div>
   );
 }
 
 /** One game as a card. */
-export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, copy = false, cupNight = false, fates, chips }: { data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; copy?: boolean; /** The night's Cup track (cupKind; true = 1) */ cupNight?: CupTrackKind; /** IN / OUT */ fates?: Decided; /** Tonight's stakes chips */ chips?: Map<number, StakeChip[]> }) {
+export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, copy = false, editNotes = false, cupNight = false, fates, chips }: { data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; copy?: boolean; /** In the copy layout, notes open for typing on a click (SlateCopy editNotes) */ editNotes?: boolean; /** The night's Cup track (cupKind; true = 1) */ cupNight?: CupTrackKind; /** IN / OUT */ fates?: Decided; /** Tonight's stakes chips */ chips?: Map<number, StakeChip[]> }) {
   const fx = leagueFatigue(data).get(game.gameId);
   const lines = leagueSeasonLines(data).get(game.gameId);
   const result = finalScore(game, game.awayTeam.teamId);
@@ -196,7 +196,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
           <TeamRow cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.homeTeam} gameId={game.gameId} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} url={url} score={result && { n: result.oppScore, win: !result.win }} odds={odds?.home} provider={odds?.provider} home />
         </div>
       </div>
-      {notes && (copy ? <NoteCopy note={notes.get(game.gameId)} /> : <NoteBox store={notes} gameId={game.gameId} label={`${away} at ${home}`} />)}
+      {notes && (copy ? editNotes ? <NoteLive store={notes} gameId={game.gameId} label={`${away} at ${home}`} /> : <NoteCopy note={notes.get(game.gameId)} /> : <NoteBox store={notes} gameId={game.gameId} label={`${away} at ${home}`} />)}
     </article>
   );
 });
