@@ -7,13 +7,18 @@ import { storedRegulation } from './regulation';
 
 let cached: Promise<CalendarData> | undefined;
 
+/** The app's data from a snapshot as served (schedule.json's JSON): what loadCalendarData makes, without fetching or
+    keeping it. The gauntlet uses it for a Slate frozen in an archive file (its GT-10), whose snapshot travels in the file. */
+export function calendarDataFromRaw(raw: unknown): CalendarData {
+  const time = (raw as { meta?: { time?: unknown } } | null)?.meta?.time;
+  return { ...buildCalendarData(parseSchedule(raw)), updatedAt: typeof time === 'string' ? time : undefined, regulation: storedRegulation(raw) };
+}
+
 export function loadCalendarData(url = SCHEDULE_DATA_URL, fetchImpl: typeof fetch = fetch): Promise<CalendarData> {
   cached ??= (async () => {
     const res = await fetchImpl(url);
     if (!res.ok) throw new Error(`schedule: HTTP ${res.status}`);
-    const raw = await res.json();
-    const time = raw?.meta?.time;
-    return { ...buildCalendarData(parseSchedule(raw)), updatedAt: typeof time === 'string' ? time : undefined, regulation: storedRegulation(raw) };
+    return calendarDataFromRaw(await res.json());
   })();
   cached.catch(() => (cached = undefined)); // allow a retry after a failure
   return cached;

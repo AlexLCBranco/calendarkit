@@ -166,7 +166,16 @@ async function tabOpenedBy(browser: Browser, act: () => Promise<unknown>): Promi
 
 test('the link is a "↗" after the time: tooltip, no underline (brightens), click / middle / ctrl open the game page; names are no link; never in a copy', async ({ page, context, browser }, info) => {
   await context.route('https://hoopsjunkie.io/**', (r) => r.fulfill({ status: 200, contentType: 'text/html', body: 'stub' }));
-  await openSlate(page, '2026-11-16');
+  // a night not played yet in the served snapshot (a played night's final scores are links too): never a fixed date,
+  // the daily snapshot plays them out
+  await openSlate(page);
+  const night = await page.evaluate(async () => {
+    const raw = await (await fetch('/calendar/data/schedule.json')).json();
+    const by: Record<string, number[]> = {};
+    for (const d of raw.leagueSchedule.gameDates as { games: RawGame[] }[]) for (const g of d.games) if (/^00[2456]/.test(g.gameId)) (by[g.gameDateEst.slice(0, 10)] ??= []).push(g.gameStatus);
+    return Object.keys(by).sort().find((d) => by[d]!.length >= 2 && by[d]!.every((s) => s === 1))!;
+  });
+  await openSlate(page, night);
   const card = cards(page).first();
   const id = (await card.getAttribute('data-game-id'))!;
   const want = await page.evaluate(async (id) => {
@@ -220,7 +229,7 @@ test('the link is a "↗" after the time: tooltip, no underline (brightens), cli
   // series chip; before, the spot was checked to be plain background)
   if (info.project.name !== 'desktop-xl') return;
   await page.setViewportSize({ width: 1920, height: 911 });
-  await openSlate(page, '2026-11-16');
+  await openSlate(page, night);
   const r = await copySlate(page, 'copy-view', 'slate-icon');
   expect(r.stage.links).toBe(0);
   expect(r.stage.cards.length).toBeGreaterThan(0);

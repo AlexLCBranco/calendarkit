@@ -36,3 +36,15 @@ describe('refreshCalendarData', () => {
     expect(await refreshCalendarData('t', 'x', answer({ nope: 1 }) as typeof fetch)).toBeUndefined();
   });
 });
+
+describe('calendarDataFromRaw (gauntlet GT-10)', () => {
+  it('the same data as loading the snapshot, without fetching or keeping it', async () => {
+    const { calendarDataFromRaw, loadCalendarData } = await import('../src/data/load');
+    const made = calendarDataFromRaw(raw);
+    const loaded = await loadCalendarData('x', answer(raw) as typeof fetch);
+    expect(made.updatedAt).toBe(raw.meta.time);
+    expect([...made.byDate.keys()]).toEqual([...loaded.byDate.keys()]);
+    expect(made).not.toBe(loaded);
+    expect(await loadCalendarData('x', answer({}) as typeof fetch)).toBe(loaded); // the page's data is untouched
+  });
+});

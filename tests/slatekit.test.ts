@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import * as kit from '../src/slate/kit';
 
 const USED = [
-  'claimPopup', 'hoopsjunkieLink', 'liveOddsStore', 'loadCalendarData', 'localNotesStore', 'refreshCalendarData', 'releasePopup',
+  'calendarDataFromRaw', 'claimPopup', 'createNotesStore', 'createOddsStore', 'hoopsjunkieLink', 'liveOddsStore', 'loadCalendarData', 'localNotesStore', 'refreshCalendarData', 'releasePopup',
   'SCHEDULE_CHECK_MS', 'SlateCopy', 'slateCardWidth', 'slateCopyCardWidth', 'slateCopyCup', 'slateGames', 'SLATE_GRID_GAP',
   'teamCalendarUrl', 'teamLinkTarget', 'TeamLinkContext', 'useSeriesPopup', 'useStreakPopup', 'useTooltip', 'withFinals',
 ];

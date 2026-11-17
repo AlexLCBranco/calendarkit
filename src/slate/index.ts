@@ -3,7 +3,7 @@
 // (loadCalendarData), a date, a time zone and a notes store (localNotesStore by default); nothing from calendarkit's app
 // shell. Styles: ./slate.css. docs/slate-in-gauntlet.md is the guide.
 
-export { loadCalendarData, refreshCalendarData, SCHEDULE_CHECK_MS } from '../data/load';
+export { calendarDataFromRaw, loadCalendarData, refreshCalendarData, SCHEDULE_CHECK_MS } from '../data/load';
 export type { CalendarData } from '../data/model';
 export { SCHEDULE_DATA_URL } from '../data/address';
 export { SlateCard, SlateCopy, SlateDay, slateGames, type SlateDayProps } from './SlateCard';
