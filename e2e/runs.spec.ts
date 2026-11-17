@@ -97,7 +97,10 @@ test('side arrows step the shown range; the tab title follows; a team link opens
   const next = await page.getByTestId('side-next').boundingBox();
   expect(prev!.x + prev!.width).toBeLessThanOrEqual(grid!.x + 1);
   expect(next!.x).toBeGreaterThanOrEqual(grid!.x + grid!.width - 1);
-  // they blend in: no box (transparent, no border), a big chevron filling the page margin
+  // they blend in: no box (transparent, no border), a big chevron filling the page margin. The pointer leaves and the
+  // hover colour's fade back finishes first: read mid-fade it was rgba(255, 255, 255, 0.008) (CI, desktop-xl)
+  await page.mouse.move(grid!.x + grid!.width / 2, 5);
+  await expect.poll(() => page.getByTestId('side-next').evaluate((b) => getComputedStyle(b).backgroundColor), { timeout: 2000 }).toMatch(/^rgba\(\d+, \d+, \d+, 0\)$/);
   const look = await page.getByTestId('side-next').evaluate((b) => {
     const cs = getComputedStyle(b);
     const svg = b.querySelector('svg')!.getBoundingClientRect();
