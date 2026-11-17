@@ -80,7 +80,15 @@ test('columns of cards (round 9: 2 at 1920, 1 at 1280 — notes.spec.ts); every 
   await page.getByRole('tab', { name: 'List', exact: true }).click();
   await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   const list = await facts('.ck-lday[data-day="2026-11-15"] .ck-card');
-  for (const id of want) expect(slate[id], id).toEqual(list[id]);
+  // a game already played in the served snapshot: the card shows "Final" (no tip-off time), the List row keeps its time
+  const final = new Set((await snapshot(page))['2026-11-15']!.filter((g) => g.gameStatus === 3).map((g) => g.gameId));
+  for (const id of want) {
+    if (final.has(id)) {
+      await expect(page.locator(`[data-game-id="${id}"]`).first()).toBeAttached();
+      expect(slate[id]!.time, `${id} final: no tip-off on the card`).toBeUndefined();
+      expect({ ...slate[id], time: undefined }, id).toEqual({ ...list[id], time: undefined });
+    } else expect(slate[id], id).toEqual(list[id]);
+  }
 });
 
 test('cards: full team names, "@" before the home team, time or final score with OT', async ({ page }) => {

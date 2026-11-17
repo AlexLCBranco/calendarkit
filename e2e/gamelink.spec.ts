@@ -68,8 +68,9 @@ async function iconChecks(page: Page, host: Locator, link: Locator, look: () => 
   expect(await link.getAttribute('aria-label')).toBe('Open on hoopsjunkie');
   expect(await link.getAttribute('data-capture-exclude')).toBe('true');
   expect(await link.evaluate((a) => a.parentElement!.classList.contains('ck-tags') && a === a.parentElement!.firstElementChild)).toBe(true);
-  expect(await host.locator('.ck-mlink').count()).toBe(0);
-  expect(await host.locator('.ck-matchup').evaluate((m) => !!m.closest('a') || !!m.querySelector('a:not([data-team-link])'))).toBe(false);
+  // no link-styled matchup (a played game's scores are its own links, .ck-score-link)
+  expect(await host.locator('.ck-mlink:not(.ck-score-link)').count()).toBe(0);
+  expect(await host.locator('.ck-matchup').evaluate((m) => !!m.closest('a') || !!m.querySelector('a:not([data-team-link]):not(.ck-score-link)'))).toBe(false);
   expect(await host.locator('.ck-matchup a[data-team-link]').count()).toBeGreaterThan(0);
   const lum = (c: string) => c.match(/\d+/g)!.slice(0, 3).reduce((t, v) => t + Number(v), 0);
   // the Slate's .ck-slate-link, measured on a probe in the same root

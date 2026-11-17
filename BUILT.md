@@ -17,6 +17,7 @@ spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Featu
   The Cup group standings and the simulator's group tables no longer show a streak after the team.
 ### Internal
 - test: the CK-7 content check compares against v1.73.0 built in the same run (CI's Linux fonts differ from a Windows baseline)
+- test: slate, gamelink and smoke e2e accept games already played in the data snapshot (Nov 15–16 finals: "Final" instead of a time, score links, "IND124@131PHI")
 
 ## 2026-11-15
 - v1.71.1: day-strip tooltips never cover the top bar and only their game squares take the pointer (a tip opened under a resting pointer could sit on the team picker); logos inside game squares no longer look like team links
