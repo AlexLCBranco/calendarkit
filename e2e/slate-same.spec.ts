@@ -11,7 +11,7 @@ import { APP } from './app';
 import { serveRef } from './refbuild';
 import { copySlate } from './slatecopy';
 
-const REF = { commit: '48ea34d9d1ac8196d6daf58ebaf3506610b6ab4c', version: '1.65.0' };
+const REF = { commit: '3bfd288d708023bee69c2185b441a988c1de6b68', version: '1.74.0' }; // moved on purpose: CK-7's tight grid (was 48ea34d, v1.65.0)
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [1, 5, 12, 15];
 
