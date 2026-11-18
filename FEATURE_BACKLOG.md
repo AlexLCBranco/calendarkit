@@ -73,3 +73,8 @@ Use the same team injury link anywhere else a team's name already has room for i
 ### CK-18 — Standings: hover and click to reach the games
 **What:** in the Standings view (image `docs/backlog-img/CK-18-standings.png`), the numbers become ways into the games: hovering a team's W-L shows its last 5 results (each a game link, like the streak popup); hovering a Remaining number (Left, Home, Road, B2B) or a B2B-legs record lists those games (each a game link). Click pins the popup like the other popups. Team name still opens the Team view.
 **Tests:** unit for which games each cell lists; e2e: hover opens the right popup, a link in it points to the game.
+
+### CK-19 — Standings: offensive and defensive rating
+**What:** a new column set in Standings (`COLUMNS` in `src/components/Standings.tsx`), group "Ratings": ORtg (points scored per 100 possessions), DRtg (points allowed per 100 possessions, lower is better, sorts ascending) and Net (ORtg − DRtg), each with the team's league rank in small text. Both tables side by side as usual.
+Step 1, then stop and report: find a free source for team possessions (NBA.com's team advanced stats, or team box score totals to estimate possessions), fetched at build time like `schedule.json` if the browser can't call it. If there's no free reliable source, mark `Blocked:` with what was found.
+**Tests:** unit: possessions/rating math from a fixture; e2e: the Ratings set shows ORtg, DRtg, Net for all 30 teams and sorting DRtg puts the lowest first.
