@@ -7,6 +7,8 @@ spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Featu
 ## 2026-11-18
 - Slate notes box: always 3 lines, scrolls inside (v1.78.0, for the gauntlet's GT-11)
   Every note box on a Slate is 3 lines tall, empty or not, so all cards are the same height; a longer note scrolls inside its box; a copied picture still shows each note whole.
+### Internal
+- test: the Slate pixel reference moved to v1.78.0 (the 3-line notes box changes the Slate on purpose)
 
 ## 2026-11-17
 - A Slate can be drawn from a saved schedule, for the gauntlet's archive files (v1.77.0)
