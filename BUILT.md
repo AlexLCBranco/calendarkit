@@ -4,6 +4,10 @@ Shipped work only, newest first. Planned work is in `FEATURE_BACKLOG.md`, never 
 Entries dated before 2026-11-16 were backfilled from the git commit messages (data, docs, test-only, merge and
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-18
+- Slate notes box: always 3 lines, scrolls inside (v1.78.0, for the gauntlet's GT-11)
+  Every note box on a Slate is 3 lines tall, empty or not, so all cards are the same height; a longer note scrolls inside its box; a copied picture still shows each note whole.
+
 ## 2026-11-17
 - A Slate can be drawn from a saved schedule, for the gauntlet's archive files (v1.77.0)
   Nothing changes in calendarkit itself; the gauntlet's saved boards keep their night's games as they were.

@@ -1,16 +1,17 @@
 // Slate note box: the game's note under its team rows, the card's full width — a text field the person types in,
 // three spaces (PRE / LIVE / POST) switched with [⇄], the space on show saved with the note. The label and the switch
 // sit in the card's top-right corner (beside the odds), not in the box. It subscribes to its own game only
-// (useSyncExternalStore on the notes store), so typing re-renders this box and nothing else. The box grows with its
-// text up to NOTE_LINES lines (a hidden copy of the text sizes it), then scrolls inside. While the field isn't focused
+// (useSyncExternalStore on the notes store), so typing re-renders this box and nothing else. The box is always NOTE_LINES
+// lines tall, empty or not (gauntlet GT-11: every card the same height); a longer note scrolls inside. While the field isn't focused
 // the wheel scrolls the page, never the note (onWheel below); once clicked into, the note scrolls.
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { nextSlot, SLOT_LABEL, type GameNote, type SlateNotes } from './notes';
 
 const LABEL: Record<string, string> = { pre: 'pregame', live: 'live', post: 'postgame' };
-/** The on-screen box's height cap in lines (notes.css reads the same number). Copies are never capped. */
-export const NOTE_LINES = 5;
+/** The on-screen box's height in lines, and a live copy's (notes.css uses the same number). Copied pictures are never
+    capped. */
+export const NOTE_LINES = 3;
 
 /** The nearest ancestor that scrolls vertically (the Slate's own scroller, or the page). */
 function scroller(el: HTMLElement): Element {
@@ -83,7 +84,8 @@ export function NoteBox({ store, gameId, label }: { store: SlateNotes; gameId: s
 }
 
 /** The note box as it is copied: the shown space's label (no switch) and its whole text — never capped, no scrollbar.
-    With `onEdit` (NoteLive), a click on the box opens it for typing. */
+    With `onEdit` (NoteLive, a host showing the copy live) the box is 3 lines, scrolling inside (GT-11), and a click on
+    it opens it for typing. */
 export function NoteCopy({ note, onEdit }: { note: GameNote; onEdit?: () => void }) {
   return (
     <>
@@ -101,8 +103,8 @@ export function NoteCopy({ note, onEdit }: { note: GameNote; onEdit?: () => void
 
 /**
  * A note in the copy layout shown live by a host (the gauntlet's Slate widget, `SlateCopy editNotes`): exactly the copy
- * (NoteCopy) until clicked; then calendarkit's field in the same box, the space label with its ⇄, the box growing with
- * the text as a copy does (never capped). Enter adds a line; the note is saved as typed (the store's delay); leaving
+ * (NoteCopy) until clicked; then calendarkit's field in the same box, the space label with its ⇄, the box 3 lines tall
+ * like calendarkit's own (the field scrolls inside: gauntlet GT-11). Enter adds a line; the note is saved as typed (the store's delay); leaving
  * the field (a click elsewhere, Escape, Tab) saves it at once and shows the copy again. It follows its own game only, so
  * a note typed elsewhere (another tab) shows here as it is saved.
  */
@@ -124,7 +126,7 @@ export function NoteLive({ store, gameId, label }: { store: SlateNotes; gameId: 
   return (
     <>
       <NoteHead slot={slot} onSwitch={() => store.set(gameId, { shown: nextSlot(slot) }, true)} keepFocus />
-      <div className="ck-gnote ck-gnote-copy" data-testid="note" data-slot={slot} data-editing="true">
+      <div className="ck-gnote ck-gnote-copy" data-testid="note" data-slot={slot} data-editable="true" data-editing="true">
         <span className="ck-gnote-grow ck-gnote-live" data-text={`${note[slot]} `}>
           <textarea
             ref={field}

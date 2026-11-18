@@ -1,7 +1,7 @@
 // The Slate's wide layout and its note boxes in a real browser (desktop widths): from the left edge, 1 or
 // 2 columns by the note box's width; notes saved in localStorage (`ck:notes:v1`, keyed by gameId) and back after a
 // reload; three slots, the shown one saved, never switched by the clock; Switch all; Hide all (not remembered); two tabs
-// in sync without losing the typing tab's caret; the box under the team rows, capped at 5 lines with its own scrollbar,
+// in sync without losing the typing tab's caret; the box under the team rows, always 3 lines with its own scrollbar (notes-cap.spec.ts),
 // the wheel scrolling the page until the note is focused; the space label in the card's corner; export / import; copies with the boxes; and
 // typing touching no other card, keystroke → frame timed.
 
@@ -320,7 +320,7 @@ test('copy: each card with its box — the shown slot\'s label and text, no ⇄;
   await card(page, 0).getByTestId('note-text').fill('Pregame: watch the matchup inside.');
   await card(page, 1).getByTestId('note-switch').click();
   await card(page, 1).getByTestId('note-text').fill('Live: 10-0 run to open the 3rd.');
-  // a note far past the screen's 5 lines: copied whole — no scrollbar, nothing cut
+  // a note far past the screen's 3 lines: copied whole — no scrollbar, nothing cut
   const long = Array.from({ length: 12 }, (_, i) => `Copy line ${i + 1}.`).join('\n');
   await card(page, 3).getByTestId('note-text').fill(long);
   await page.mouse.click(5, 900);
@@ -339,7 +339,7 @@ test('copy: each card with its box — the shown slot\'s label and text, no ⇄;
     expect(k.note!.label!.y + k.note!.label!.h).toBeLessThan(k.note!.y);
     expect(k.note!.y).toBeGreaterThanOrEqual(k.note!.infoBottom);
   }
-  // 12 lines at 15 px × 1.35: the long note's box is far taller than the screen's 5-line cap
+  // 12 lines at 15 px × 1.35: the long note's box is far taller than the screen's 3-line box
   expect(r.stage.cards[3]!.note!.h).toBeGreaterThan(12 * 20);
   expect(r.px.outsideOpaque, 'outside the cards: transparent').toBe(0);
   expect(r.px.insideClear, 'cards: opaque').toBe(0);

@@ -55,11 +55,13 @@
 .ck-gnote-switch:focus-visible {
   border-color: var(--ck-accent);
 }
-/* The box grows with its text up to 5 lines (NoteBox.tsx NOTE_LINES), then the field scrolls inside: the hidden copy
-   of the text (::after) gives the height, the field lies over it */
+/* The box is always 3 lines tall, empty or not (gauntlet GT-11, NoteBox.tsx NOTE_LINES): every card of a Slate the
+   same height; a longer note scrolls inside with its own scrollbar. The field lies over the box. Copied pictures are
+   never capped (.ck-gnote-copy without data-editable): the whole note shows. */
 .ck-gnote-grow {
   --ck-note-line-h: 1.35;
   --ck-note-pad-y: 8px;
+  --ck-note-box-h: calc(3 * var(--ck-note-line-h) * 1em + 2 * var(--ck-note-pad-y));
   flex: 1 0 auto;
   position: relative;
   display: block;
@@ -68,7 +70,7 @@
 }
 .ck-gnote-grow[data-text] {
   overflow: hidden;
-  max-height: calc(5 * var(--ck-note-line-h) * 1em + 2 * var(--ck-note-pad-y));
+  height: var(--ck-note-box-h);
 }
 .ck-gnote-grow::after,
 .ck-gnote-text {
@@ -117,10 +119,14 @@ textarea.ck-gnote-text:focus {
 .ck-slate-copy .ck-gnote {
   border-color: var(--ck-note-line);
 }
-/* A note open for typing in a live copy (NoteLive): as tall as its text, like the copy (never capped) */
-.ck-gnote-grow.ck-gnote-live {
-  max-height: none;
-  overflow: visible;
+/* The copy layout shown live by a host (the gauntlet's Slate widget, SlateCopy editNotes): its notes are 3 lines too,
+   shown (NoteCopy with data-editable: the text scrolls in the box) and open for typing (NoteLive: the field scrolls) */
+.ck-gnote-copy[data-editable] .ck-gnote-grow {
+  height: var(--ck-note-box-h);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ck-muted) transparent;
 }
 .ck-gnote-copy[data-editable] {
   cursor: text;
