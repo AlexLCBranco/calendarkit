@@ -4,7 +4,7 @@
 // self-contained part (src/slate/, also used by the gauntlet's Slate widget); this file adds calendarkit's own frame —
 // the scroller and the notes toolbar (Switch all, Hide all notes, Export / Import).
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { TEAM_BY_ID } from '../data/teams';
 import { dateFormat } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -14,6 +14,13 @@ import { exportFile, parseExport, SLOT_LABEL, SLOTS, type NotesStore, type Slot 
 import { SlateDay, slateGames } from '../slate/SlateCard';
 import type { SlateOdds } from '../slate/odds';
 import { LIST_MAX_WIDTH } from './widget';
+import { firstTipText, useMinuteTick } from './clock';
+
+/** The night's first tip-off (ms), from the games with a set time; undefined when none has one. */
+export const firstTip = (games: readonly ScheduleGame[]) => {
+  const t = games.flatMap((g) => (g.startTimeUtc ? [Date.parse(g.startTimeUtc)] : []));
+  return t.length ? Math.min(...t) : undefined;
+};
 
 export { SlateCard, SlateCopy, slateGames } from '../slate/SlateCard';
 
@@ -57,9 +64,18 @@ export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840
     return () => card.classList.remove('ck-slate-focus');
   }, [focusGame, hideNotes]);
   const tri = focusTeam ? TEAM_BY_ID.get(focusTeam)?.tricode : undefined;
+  // The night's first tip-off (the whole night, TV filter or not); the countdown ticks only until it has started
+  const first = firstTip(data.byDate.get(date) ?? []);
+  const live = first !== undefined && Date.now() < first;
+  const countdown = firstTipText(first, useMinuteTick(live));
+  const tip = countdown && (
+    <span className="ck-slate-countdown" data-testid="first-tip" data-capture-exclude="true">
+      {countdown}
+    </span>
+  );
   return (
     <section className="ck-slate" aria-label="Games of the day" data-day={date}>
-      {notes && <NotesTools notes={notes} games={games} hideNotes={hideNotes} onHideNotes={onHideNotes} />}
+      {notes ? <NotesTools notes={notes} games={games} hideNotes={hideNotes} onHideNotes={onHideNotes} extra={tip} /> : tip}
       {tri && !focusGame && (
         <p className="ck-slate-nofocus" data-testid="slate-no-team" data-capture-exclude="true">
           {tri} doesn’t play {date === today ? 'today' : `on ${dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`))}`}
@@ -77,7 +93,7 @@ export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840
  * a card's own switch), "Hide all notes" (a view toggle, not remembered), Export (a JSON file of every note) and Import
  * (merges such a file: per slot the file's text wins; tells how many games came in, or why nothing changed).
  */
-function NotesTools({ notes, games, hideNotes, onHideNotes }: { notes: NotesStore; games: ScheduleGame[]; hideNotes: boolean; onHideNotes?: (hide: boolean) => void }) {
+function NotesTools({ notes, games, hideNotes, onHideNotes, extra }: { notes: NotesStore; games: ScheduleGame[]; hideNotes: boolean; onHideNotes?: (hide: boolean) => void; /** The page's first tip-off countdown, after the toggle */ extra?: ReactNode }) {
   const [message, setMessage] = useState<{ text: string; error?: boolean }>();
   const file = useRef<HTMLInputElement>(null);
   const exportNotes = () => {
@@ -112,6 +128,7 @@ function NotesTools({ notes, games, hideNotes, onHideNotes }: { notes: NotesStor
       <button type="button" className="ck-tool" aria-pressed={hideNotes} onClick={() => onHideNotes?.(!hideNotes)} data-testid="notes-hide">
         {hideNotes ? 'Show notes' : 'Hide all notes'}
       </button>
+      {extra}
       <span className="ck-slate-tools-end">
         <button type="button" className="ck-tool" onClick={exportNotes} data-testid="notes-export">
           Export notes

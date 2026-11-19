@@ -4,6 +4,7 @@
 import { expect, test, type Page } from './fixtures';
 import { SLATE_CARD_WIDTH } from '../src/slate/layout';
 import { APP } from './app';
+import { copySlate } from './slatecopy';
 
 const NOW = new Date('2026-11-17T15:00:00Z');
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'one desktop size'));
@@ -76,4 +77,24 @@ test('CK-10: the header line tops the Slate on /calendar and in the gauntlet-sty
   expect(top).toBe(true);
   await page.goto(`${APP}slate.html?date=2026-11-16&notes=0`);
   await expect(page.getByTestId('slate-header')).toHaveText('SLATE · 16-11 · NBA');
+});
+
+test('CK-14: the first tip-off countdown is on the Slate page, never in the copied image', async ({ page }) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.route('**/api/odds**', (r) => r.fulfill({ status: 404, body: '' }));
+  await page.clock.setFixedTime(new Date('2026-11-17T21:46:00Z'));
+  await page.goto('?view=league&layout=slate&date=2026-11-17');
+  await expect(page.locator('.ck-slate-card').first()).toBeVisible();
+  await expect(page.getByTestId('first-tip')).toHaveText(/^First tip-off in (\d+h )?\d+m$/);
+  await expect(page.locator('[data-testid="slate"] [data-testid="first-tip"]')).toHaveCount(0);
+  const r = await copySlate(page, 'copy-view', 'slate-first-tip');
+  expect(r.stage.firstTip).toBe(false);
+  expect(r.stage.cards.length).toBeGreaterThan(0);
+});
+
+test('CK-14: no countdown once the night has started', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-18T03:00:00Z'));
+  await page.goto('?view=league&layout=slate&date=2026-11-17');
+  await expect(page.locator('.ck-slate-card').first()).toBeVisible();
+  await expect(page.getByTestId('first-tip')).toHaveCount(0);
 });

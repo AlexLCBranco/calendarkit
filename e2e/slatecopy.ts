@@ -28,6 +28,8 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
           links: root.querySelectorAll('a').length,
           // the header line ("SLATE · 18-11 · NBA") in the copied node
           header: root.querySelector('[data-testid="slate-header"]')?.textContent ?? null,
+          // the Slate page's countdown (CK-14) is never in the copied node
+          firstTip: !!root.closest('.ck-capture')?.querySelector('[data-testid="first-tip"]'),
           headerBox: (() => {
             const h = root.querySelector('[data-testid="slate-header"]')?.getBoundingClientRect();
             return h ? { x: h.left - r0.left, y: h.top - r0.top, w: h.width, h: h.height } : null;
@@ -58,7 +60,7 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
   await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 });
   const ms = Date.now() - t0;
   await page.evaluate(() => (window as unknown as { __slateObs?: MutationObserver }).__slateObs?.disconnect());
-  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; links: number; header: string | null; headerBox: { x: number; y: number; w: number; h: number } | null; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number; cut: number; scrollbar: number; label: { x: number; y: number; w: number; h: number } | null; infoRight: number; infoBottom: number } | null }[] };
+  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; links: number; header: string | null; firstTip: boolean; headerBox: { x: number; y: number; w: number; h: number } | null; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number; cut: number; scrollbar: number; label: { x: number; y: number; w: number; h: number } | null; infoRight: number; infoBottom: number } | null }[] };
   const ratio = Number((await button.getAttribute('data-captured'))!.split('@')[1]);
   const png = await page.evaluate(async () => {
     const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;

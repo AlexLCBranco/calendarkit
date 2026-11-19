@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-18
+- CK-14 — Countdown to the first tip-off on the Slate page (v1.83.0)
+  The Slate page says "First tip-off in 2h 14m" beside the notes buttons until the night's first game starts; it is never in the Slate itself or a copied image.
 - CK-10 — Slate header line (v1.82.0)
   Every Slate starts with "SLATE · 18-11 · NBA" across its top, on screen, in copied images and in the gauntlet's widget; the kit exports `slateHeaderLabel` so a combined Slate can say "NBA + Football".
 - CK-12 — Slate: score right beside the team name (v1.81.0)

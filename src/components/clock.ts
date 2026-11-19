@@ -69,3 +69,33 @@ export function useClockValue<T>(derive: (now: number) => T, fallback: number): 
   return useSyncExternalStore(clock?.subscribe ?? noSubscribe, () => derive(clock?.get() ?? fallback));
 }
 const noSubscribe = () => () => {};
+
+/**
+ * A minute tick for a countdown on show (the Slate page's "First tip-off in 2h 14m"): Date.now(), re-read at each
+ * minute boundary while `active`; nothing runs when it isn't (the clock above still has no minute tick of its own).
+ */
+export function useMinuteTick(active: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const read = () => {
+      const t = Date.now();
+      setNow(t);
+      timer = setTimeout(read, 60_000 - (t % 60_000) + 20);
+    };
+    read();
+    return () => clearTimeout(timer);
+  }, [active]);
+  return now;
+}
+
+/** "First tip-off in 2h 14m" (or "in 14m", "in 1d 3h") until `first` (ms); undefined once it has started. */
+export function firstTipText(first: number | undefined, now: number): string | undefined {
+  if (first === undefined || now >= first) return undefined;
+  const mins = Math.ceil((first - now) / 60_000);
+  const d = Math.floor(mins / 1440);
+  const h = Math.floor((mins % 1440) / 60);
+  const m = mins % 60;
+  return `First tip-off in ${d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`}`;
+}

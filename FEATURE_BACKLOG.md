@@ -10,10 +10,6 @@ Specs are written here from Claude chat. Item IDs are CK-1, CK-2, ... (never reu
 **Tests:** e2e: button visible with notes on and off; its box doesn't overlap any odds cell.
 **Blocked:** which button is meant? calendarkit's own one ("Show notes" / "Hide all notes" in the toolbar above the cards on /slate) is already always visible and far from the odds. The one that shows only in some states is the gauntlet's: its date bar (`DateBar` / `toggleSlateNotes` in gauntlet `src/slate/SlateWidget.tsx`) appears only while the widget is selected, so it belongs in the gauntlet's backlog. (Also seen: in the gauntlet's live copy each card's ⇄ switch shows only while a note is being typed in, and the room kept for it, `SLATE_COPY_HEAD` 56 px, fits the PRE/LIVE/POST label only, so the ⇄ then covers the odds. If that is the one meant, say so and it is a calendarkit fix.)
 
-### CK-14 — Countdown to the first tip-off on the Slate page
-**What:** on the Slate *page* (/slate, not inside the Slate itself, so never in copied images), a countdown to the first game's tip-off of that night ("First tip-off in 2h 14m"); once it's started, hide it. Reuse the one-minute clock (`src/components/clock.ts`).
-**Tests:** unit for the text at fixed times; e2e that it's on the page and not in the copied image.
-
 ### CK-15 — Slate game button: player props and injury reports
 **What:** each Slate card gets a small game button that opens a pop-up with links (no betting inside the app, links only):
 - "Player props" → FanDuel's NBA player-props page. Linking to the exact game needs FanDuel's own game ID; if Claude Code can't find a reliable way to build that URL, link to FanDuel's NBA props section and say so in the report.
