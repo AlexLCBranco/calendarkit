@@ -202,7 +202,19 @@ measurement; open it only when a question needs the backstory.
 - Defaults are never stored (rest days on, Hide all notes **on** — the Slate opens with notes hidden —, TV filter) until a settings page exists. Slate notes are
   stored (content): localStorage `ck:notes:v1`, per game, three slots (pre / live / post), the slot switched only by the
   person — format and rules in docs/slate-in-gauntlet.md.
-- Countdown to tip-off dropped on purpose (no minute tick; the clock moves at midnight and on waking).
+- No countdown on game rows (no minute tick in the widget clock; it moves at midnight and on waking). The one countdown
+  is the Slate *page*'s "First tip-off in 2h 14m" (CK-14): `useMinuteTick` in clock.ts, ticking only while it shows,
+  never in the Slate part or a copy.
+- Slate cards (v1.80–1.85): the season-series chip is drawn inverted for a back-to-back meeting (`leagueRematches`);
+  the score follows the name (one track); a header line "SLATE · 18-11 · NBA" (`slateHeaderLabel`, shared pattern
+  with footykit); a game button "⋯" in the away row's empty "@" cell (links: FanDuel NBA props, ESPN injuries, the
+  official report), "❄" instead when the arena city feels ≤ −10 °C at tip-off (Open-Meteo through `liveColdStore()`,
+  like the odds; e2e and unit tests never call it). The gauntlet gets the button and the flag only once it passes
+  `gameMenu` / `cold` and renders `useGameLinksPopup`.
+- Season-series popup: ◀ season ▶ back two seasons from `public/data/past-seasons.json` (scripts/make-past-seasons.ts,
+  ESPN, run once per new season), loaded on the first switch only.
+- Standings cells W-L / W / L, Remaining and B2B legs list their games (`cellGames`), hover; a click pins
+  (`useHoverPopup` `pin`).
 - League List score slots per day: a day with any final score keeps empty score slots on its unplayed rows too (every
   row in the same columns); a day with none stays tight around the "@" ("CHA @ WAS"). Elsewhere (Team List) unplayed
   rows still have no score slots.
