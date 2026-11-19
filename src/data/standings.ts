@@ -458,3 +458,41 @@ export function tieText(t: SeededTeam): string | undefined {
   if (t.tie.drawing) lines.push('Still level after every tiebreaker: the NBA would hold a drawing (shown A–Z)');
   return lines.join('\n');
 }
+
+/** The Standings cells that open a list of games (CK-18). */
+export type CellGamesKey = 'wl' | 'left' | 'leftHome' | 'leftRoad' | 'leftB2b' | 'b2b1' | 'b2b2';
+/** How many recent results the W-L cell lists. */
+export const LAST_RESULTS = 5;
+
+/**
+ * The games behind a Standings cell, in date order, by the same rules as computeStandings: W-L → the last
+ * LAST_RESULTS counted results; Left / Home / Road → the regular-season games still to play (Home / Road: not at a
+ * neutral site); B2B → the 2nd nights of back-to-backs still to come; B2B legs 1st / 2nd → the counted games on the
+ * 1st / 2nd night of a back-to-back (the record's games).
+ */
+export function cellGames(games: readonly ScheduleGame[], teamId: number, key: CellGamesKey): ScheduleGame[] {
+  const list = games
+    .filter((g) => g.homeTeam.teamId === teamId || g.awayTeam.teamId === teamId)
+    .sort((a, b) => a.dateEt.localeCompare(b.dateEt) || (a.startTimeUtc ?? '').localeCompare(b.startTimeUtc ?? '') || a.gameId.localeCompare(b.gameId));
+  const toPlay = (g: ScheduleGame) => g.gameType === 'regular' && g.status !== 'final' && !g.teamsTbd;
+  const home = (g: ScheduleGame) => g.homeTeam.teamId === teamId;
+  switch (key) {
+    case 'wl':
+      return list.filter(countsInStandings).slice(-LAST_RESULTS);
+    case 'left':
+      return list.filter(toPlay);
+    case 'leftHome':
+      return list.filter((g) => toPlay(g) && !g.isNeutral && home(g));
+    case 'leftRoad':
+      return list.filter((g) => toPlay(g) && !g.isNeutral && !home(g));
+  }
+  const out: ScheduleGame[] = [];
+  list.forEach((g, i) => {
+    const prev = list[i - 1];
+    if (!prev || daysApart(prev.dateEt, g.dateEt) !== 1) return;
+    if (key === 'leftB2b' && g.status !== 'final') out.push(g);
+    if (key === 'b2b1' && countsInStandings(prev)) out.push(prev);
+    if (key === 'b2b2' && countsInStandings(g)) out.push(g);
+  });
+  return out;
+}

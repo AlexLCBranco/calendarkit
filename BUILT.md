@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-18
+- CK-18 — Standings: hover and click to reach the games (v1.87.0)
+  In Standings, hovering W-L (or W / L in Main) lists the team's last 5 results, and hovering Left, Home, Road, B2B or a B2B-legs record lists those games, each a link to the game; a click pins the pop-up.
 - CK-17 — Season-series popup: other seasons (v1.86.0)
   The season-series popup has ◀ season ▶ to show the same two teams' meetings in the two previous seasons (2025-26, 2024-25: dates, winners, scores, from ESPN), with that season's count and result.
 - CK-16 — Cold-weather flag on games (v1.85.0)

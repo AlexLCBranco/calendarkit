@@ -7,7 +7,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { CalendarData } from '../data/model';
 import { dateFormat } from '../data/model';
-import { CLINCH_TEXT, fmtPct, fmtRec, leagueStandings, PLAY_IN_SEEDS, PLAYOFF_SEEDS, tieText, type Rec, type SeededTeam } from '../data/standings';
+import { cellGames, CLINCH_TEXT, fmtPct, fmtRec, leagueStandings, PLAY_IN_SEEDS, PLAYOFF_SEEDS, tieText, type CellGamesKey, type Rec, type SeededTeam } from '../data/standings';
+import { CellGamesList, CELL_ATTR } from './StandingsGames';
+import { useHoverPopup } from '../slate/hoverPopup';
+import type { GameLink } from '../slate/links';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { TeamLink } from '../slate/teamLink';
 import { CopyButton } from './CopyButton';
@@ -132,10 +135,24 @@ export interface StandingsViewProps {
   data: CalendarData;
   /** The column set both tables show. */
   set: StandingsSet;
+  /** The game page of the cells' game lists (CK-18); none: plain rows. */
+  gameLink?: GameLink;
+  timeZone?: string;
 }
 
+/** The cells that open their games on hover (pinned by a click), CK-18. */
+const CELL_GAMES: Partial<Record<string, CellGamesKey>> = { wl: 'wl', w: 'wl', l: 'wl', left: 'left', leftHome: 'leftHome', leftRoad: 'leftRoad', leftB2b: 'leftB2b', b2b1: 'b2b1', b2b2: 'b2b2' };
+
 /** West and East side by side, one column set for both, one sort for both (each within its own conference). */
-export default function StandingsView({ data, set }: StandingsViewProps) {
+export default function StandingsView({ data, set, gameLink, timeZone }: StandingsViewProps) {
+  const gamesPop = useHoverPopup(
+    CELL_ATTR,
+    (v) => {
+      const [id, key] = v.split(':') as [string, CellGamesKey];
+      return <CellGamesList data={data} teamId={Number(id)} cell={key} games={cellGames(data.games, Number(id), key)} gameLink={gameLink} timeZone={timeZone} />;
+    },
+    { className: 'ck-series-pop ck-st-games-pop', label: 'Games', testId: 'st-games-popup', pin: true },
+  );
   const s = leagueStandings(data);
   const cols = useMemo(() => COLUMN_SETS[set].keys.map((k) => COLUMN_BY_KEY.get(k)!), [set]);
   const [sort, setSort] = useState<Sort>(SEED_SORT);
@@ -158,7 +175,7 @@ export default function StandingsView({ data, set }: StandingsViewProps) {
     return [...teams].sort((a, b) => (sort.asc ? col.sort(a) - col.sort(b) : col.sort(b) - col.sort(a)) || a.seed - b.seed);
   };
   return (
-    <section className="ck-standings" aria-label="Standings" data-testid="standings">
+    <section className="ck-standings" aria-label="Standings" data-testid="standings" {...gamesPop.handlers}>
       <div className="ck-st-capture" data-testid="standings-capture" data-set={set}>
         <header className="ck-st-head">
           <h2 className="ck-st-title">Standings</h2>
@@ -209,7 +226,13 @@ export default function StandingsView({ data, set }: StandingsViewProps) {
                     </td>
                     {cols.map((c, j) => (
                       <td key={c.key} data-col={c.key} className={gstart(j) ? 'ck-st-gstart' : undefined}>
-                        {c.cell(t)}
+                        {CELL_GAMES[c.key] ? (
+                          <span className="ck-st-games" {...{ [CELL_ATTR]: `${t.teamId}:${CELL_GAMES[c.key]}` }} tabIndex={0} role="button" aria-label={`${t.tricode} ${c.tip}: show the games`}>
+                            {c.cell(t)}
+                          </span>
+                        ) : (
+                          c.cell(t)
+                        )}
                       </td>
                     ))}
                   </tr>
@@ -220,6 +243,7 @@ export default function StandingsView({ data, set }: StandingsViewProps) {
         </div>
         <Legend />
       </div>
+      {gamesPop.node}
     </section>
   );
 }

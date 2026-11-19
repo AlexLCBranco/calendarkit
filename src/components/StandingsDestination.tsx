@@ -11,7 +11,7 @@ import { SET_OPTIONS, type StandingsSet } from './standingsSets';
 const StandingsView = lazy(() => import('./Standings'));
 
 export function StandingsDestination(p: DestinationProps & { api: RefObject<DestinationApi | undefined> }) {
-  const { active, data, today, root, slots } = p;
+  const { active, data, today, root, slots, gameLink, timeZone } = p;
   // The column set both conference tables show — kept while the page is open, never stored
   const [stSet, setStSet] = useState<StandingsSet>('main');
 
@@ -32,7 +32,7 @@ export function StandingsDestination(p: DestinationProps & { api: RefObject<Dest
   return (
     <DestinationFrame slots={slots} sub={<Segmented label="Standings columns" value={stSet} options={SET_OPTIONS} onChange={setStSet} />}>
       <Suspense fallback={<p className="ck-empty">Loading the standings…</p>}>
-        <StandingsView data={data} set={stSet} />
+        <StandingsView data={data} set={stSet} gameLink={gameLink} timeZone={timeZone} />
       </Suspense>
     </DestinationFrame>
   );

@@ -330,3 +330,39 @@
   border-bottom: 2px solid var(--ck-muted);
   opacity: 0.6;
 }
+/* CK-18: the cells that list their games on hover (a click pins the pop-up) */
+.ck-st-games {
+  cursor: pointer;
+  border-bottom: 1px dotted var(--ck-muted);
+}
+.ck-st-games:hover,
+.ck-st-games:focus-visible {
+  color: var(--ck-accent);
+  outline: none;
+}
+.ck-st-games-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 340px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.ck-st-g {
+  display: grid;
+  grid-template-columns: 92px 64px auto;
+  gap: 8px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: var(--ck-text);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+a.ck-st-g:hover,
+a.ck-st-g:focus-visible {
+  background: var(--ck-surface-2);
+}
+.ck-st-g-date {
+  color: var(--ck-muted);
+}

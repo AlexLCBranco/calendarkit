@@ -12,16 +12,24 @@ import { clampX } from './tooltip';
 
 export const POPUP_CLOSE_MS = POPUP_GRACE_MS;
 
-export function useHoverPopup(attr: string, render: (value: string, close: () => void) => ReactNode, box: { className: string; label: string; testId: string }) {
+/**
+ * `box.pin`: a click on the element pins the popup — it stays when the pointer leaves, until Escape, a click outside it
+ * or another click on the element (the Standings cells' game lists, CK-18).
+ */
+export function useHoverPopup(attr: string, render: (value: string, close: () => void) => ReactNode, box: { className: string; label: string; testId: string; pin?: boolean }) {
   const [open, setOpen] = useState<{ value: string; x: number; top: number; bottom: number }>();
   const ref = useRef<HTMLDivElement>(null);
   const closer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const isOpen = useRef(false);
+  const pinned = useRef(false);
+  const [isPinned, setPinned] = useState(false);
   const [close] = useState(() => {
     const c = () => {
       clearTimeout(closer.current);
       if (!isOpen.current) return;
       isOpen.current = false;
+      pinned.current = false;
+      setPinned(false);
       releasePopup(c);
       setOpen(undefined);
     };
@@ -30,6 +38,7 @@ export function useHoverPopup(attr: string, render: (value: string, close: () =>
   const keep = () => clearTimeout(closer.current);
   const later = () => {
     keep();
+    if (pinned.current) return;
     if (isOpen.current) closer.current = setTimeout(close, POPUP_GRACE_MS);
   };
   const over = (e: SyntheticEvent) => {
@@ -37,6 +46,8 @@ export function useHoverPopup(attr: string, render: (value: string, close: () =>
     if (ref.current?.contains(t)) return keep();
     const el = t.closest?.(`[${attr}]`);
     if (!el) return later();
+    // pinned: another element's popup waits for the pin to end
+    if (pinned.current && el.getAttribute(attr) !== open?.value) return;
     keep();
     claimPopup(close);
     isOpen.current = true;
@@ -57,6 +68,26 @@ export function useHoverPopup(attr: string, render: (value: string, close: () =>
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [open, close]);
+  // a pinned popup closes on a press outside it and its element
+  useEffect(() => {
+    if (!isPinned) return;
+    const outside = (e: PointerEvent) => {
+      const t = e.target as Element;
+      if (!ref.current?.contains(t) && !t.closest?.(`[${attr}]`)) close();
+    };
+    window.addEventListener('pointerdown', outside, true);
+    return () => window.removeEventListener('pointerdown', outside, true);
+  }, [isPinned, attr, close]);
+  const click = (e: SyntheticEvent) => {
+    if (!box.pin) return;
+    const el = (e.target as Element).closest?.(`[${attr}]`);
+    if (!el || ref.current?.contains(e.target as Node)) return;
+    if (pinned.current && open?.value === el.getAttribute(attr)) return close();
+    pinned.current = false;
+    over(e);
+    pinned.current = true;
+    setPinned(true);
+  };
   useEffect(() => close, [close]);
   const content = open ? render(open.value, close) : null;
   return {
@@ -64,9 +95,10 @@ export function useHoverPopup(attr: string, render: (value: string, close: () =>
       onMouseOver: over,
       onFocus: (e: SyntheticEvent) => ((e.target as Element).closest?.(`[${attr}]`) || ref.current?.contains(e.target as Node) ? over(e) : undefined),
       onMouseLeave: later,
+      onClick: click,
     },
     node: content && (
-      <div ref={ref} className={box.className} role="dialog" aria-label={box.label} data-testid={box.testId} data-capture-exclude="true" onMouseEnter={keep} onMouseLeave={later}>
+      <div ref={ref} className={box.className} role="dialog" aria-label={box.label} data-testid={box.testId} data-pinned={isPinned || undefined} data-capture-exclude="true" onMouseEnter={keep} onMouseLeave={later}>
         {content}
       </div>
     ),
