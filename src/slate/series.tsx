@@ -7,7 +7,7 @@
 // starts no timer at rest (only the short close delay after the pointer leaves).
 
 import { dateFormat, finalScore, overtime, type CalendarData } from '../data/model';
-import { leagueSeries, seriesChip, seriesStatus, type SeriesGame } from '../data/series';
+import { leagueRematches, leagueSeries, rematchesShown, seriesChip, seriesStatus, type Rematch, type SeriesGame } from '../data/series';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from './links';
@@ -17,11 +17,22 @@ import { TeamLink } from './teamLink';
 const fmtDate = (date: string, opts: Intl.DateTimeFormatOptions) => dateFormat('en-US', { ...opts, timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 const tri = (id: number) => TEAM_BY_ID.get(id)?.tricode ?? '?';
 
-/** The chip for a game (leagueSeries(data).get(gameId)), or nothing when it isn't in a series. */
-export function SeriesChip({ s, gameId }: { s?: SeriesGame; gameId: string }) {
+const dayShort = (date: string) => fmtDate(date, { weekday: 'short', month: 'short', day: 'numeric' });
+
+/** "BOS: back-to-back meeting, also played Tue, Nov 18" (and / or "plays again Fri, Nov 21"). */
+export const rematchLine = (r: Rematch) =>
+  `${tri(r.teamId)}: back-to-back meeting, ${[r.prev && `also played ${dayShort(r.prev.dateEt)}`, r.next && `plays again ${dayShort(r.next.dateEt)}`].filter(Boolean).join(', ')}`;
+
+/**
+ * The chip for a game (leagueSeries(data).get(gameId)), or nothing when it isn't in a series. `rematch`: the game's
+ * back-to-back meetings (leagueRematches); the chip is marked (its look only, never its size) when a team counted has
+ * one — `focus`: a team's own views, where only that team counts.
+ */
+export function SeriesChip({ s, gameId, rematch, focus }: { s?: SeriesGame; gameId: string; rematch?: Rematch[]; focus?: number }) {
   if (!s) return null;
+  const marked = rematchesShown(rematch, focus);
   return (
-    <span className="ck-series" data-series-game={gameId} data-testid="series-chip" tabIndex={0} aria-label={`Meeting ${s.n} of ${s.series.games.length} this season. ${seriesStatus(s.series, tri)}`}>
+    <span className={`ck-series${marked.length ? ' ck-series-rematch' : ''}`} data-series-game={gameId} data-testid="series-chip" data-rematch={marked.length ? marked.map((r) => tri(r.teamId)).join(' ') : undefined} tabIndex={0} aria-label={`Meeting ${s.n} of ${s.series.games.length} this season. ${seriesStatus(s.series, tri)}${marked.map((r) => `. ${rematchLine(r)}`).join('')}`}>
       {seriesChip(s)}
     </span>
   );
@@ -82,7 +93,7 @@ function Square({ g, current, gameLink }: { g: ScheduleGame; current: boolean; g
   );
 }
 
-function Popup({ s, current, gameLink }: { s: SeriesGame; current: string; gameLink?: GameLink }) {
+function Popup({ s, current, gameLink, rematch }: { s: SeriesGame; current: string; gameLink?: GameLink; rematch?: Rematch[] }) {
   const [a, b] = s.series.teams;
   return (
     <>
@@ -94,6 +105,11 @@ function Popup({ s, current, gameLink }: { s: SeriesGame; current: string; gameL
           {seriesStatus(s.series, tri)}
         </span>
       </div>
+      {rematch?.map((r) => (
+        <div key={r.teamId} className="ck-series-rematch-line" data-testid="rematch-line">
+          {rematchLine(r)}
+        </div>
+      ))}
       <div className="ck-series-row">
         {s.series.games.map((g) => (
           <Square key={g.gameId} g={g} current={g.gameId === current} gameLink={gameLink} />
@@ -109,7 +125,7 @@ export function useSeriesPopup(data: CalendarData | undefined, opts: { gameLink?
     'data-series-game',
     (gameId) => {
       const s = data ? leagueSeries(data).get(gameId) : undefined;
-      return s ? <Popup s={s} current={gameId} gameLink={opts.gameLink} /> : null;
+      return s ? <Popup s={s} current={gameId} gameLink={opts.gameLink} rematch={leagueRematches(data!).get(gameId)} /> : null;
     },
     { className: 'ck-series-pop', label: 'Season series', testId: 'series-popup' },
   );

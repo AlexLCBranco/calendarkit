@@ -284,6 +284,24 @@
   border-color: var(--ck-accent);
   outline: none;
 }
+/* A back-to-back meeting (the same opponent in consecutive games): the chip inverted — light fill, dark text. No
+   other chip is drawn that way, so it reads apart from the B2B yellow, the purples and the TV green, also in copies;
+   the same box, so nothing moves. */
+.ck-series.ck-series-rematch {
+  background: var(--ck-text);
+  border-color: var(--ck-text);
+  color: var(--ck-bg);
+}
+.ck-series.ck-series-rematch:hover,
+.ck-series.ck-series-rematch:focus-visible {
+  color: var(--ck-bg);
+  border-color: var(--ck-accent);
+}
+.ck-series-rematch-line {
+  margin: -2px 0 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
 .ck-series-pop {
   position: fixed;
   z-index: 60;

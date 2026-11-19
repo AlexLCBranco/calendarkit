@@ -25,7 +25,7 @@ import type { GameLink } from './links';
 import { NoteBox, NoteCopy, NoteLive } from './NoteBox';
 import type { SlateNotes } from './notes';
 import { SeriesChip } from './series';
-import { leagueSeries } from '../data/series';
+import { leagueRematches, leagueSeries } from '../data/series';
 import { fmtOdds, gameOdds, withFinals, type DayOdds, type GameOdds, type SlateOdds } from './odds';
 import { GameLinkIcon, ScoreLink, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
@@ -185,7 +185,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
             {url && (
               <GameLinkIcon url={url} />
             )}
-            <SeriesChip s={leagueSeries(data).get(game.gameId)} gameId={game.gameId} />
+            <SeriesChip s={leagueSeries(data).get(game.gameId)} gameId={game.gameId} rematch={leagueRematches(data).get(game.gameId)} />
             {tv.length > 0 && (
               <span className="ck-slate-tv-pill" data-tip={tv.join(' · ')} aria-label={`National TV: ${tv.join(', ')}`} title={tv.join(' · ')} data-testid="tv-badge">
                 TV

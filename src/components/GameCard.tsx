@@ -3,7 +3,7 @@
 
 import { Fragment, type ReactNode } from 'react';
 import { SeriesChip } from '../slate/series';
-import type { SeriesGame } from '../data/series';
+import type { Rematch, SeriesGame } from '../data/series';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { ConfPosition } from '../data/standings';
 import { finalScore, isOver, markers, nationalTv, overtime, perspective, teamLabel, tipoff, type B2BPair, type SeasonLine, type TeamRecord } from '../data/model';
@@ -113,6 +113,8 @@ export interface GameCardProps {
   cupTag?: string;
   /** The game's season series — the "G2/4" chip first among the tags (League List, Team List). */
   series?: SeriesGame;
+  /** The game's back-to-back meetings (leagueRematches): they mark the series chip (in a team view, the open team's only). */
+  rematch?: Rematch[];
   /** Views too tight for the chip (Team Calendar cells) — the series as the card's tooltip. */
   seriesTip?: string;
   /** Team List: the row's part of a road trip / homestand band (RunMark), with the game's label. */
@@ -213,7 +215,7 @@ export const TV_NAMES_MAX = 2;
 
 export const B2BDot =({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, positions, lines, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, seriesTip, run }: GameCardProps) {
+export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, positions, lines, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, rematch, seriesTip, run }: GameCardProps) {
   const iconUrl = linkIcon ? gameLinkProp?.(game) : undefined;
   // the matchup is the game link only without the icon (calendar cells; week lines use MatchLink themselves)
   const gameLink = linkIcon ? undefined : gameLinkProp;
@@ -373,7 +375,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
       <span className="ck-tags">
         {iconUrl && <GameLinkIcon url={iconUrl} />}
         {side && lines && !season && lines.get(side.team.teamId)?.streak && <StreakChip base="ck-streak ck-cstreak" teamId={side.team.teamId} gameId={game.gameId} streak={lines.get(side.team.teamId)?.streak} testId="cell-streak" />}
-        <SeriesChip s={series} gameId={game.gameId} />
+        <SeriesChip s={series} gameId={game.gameId} rematch={rematch} focus={side ? teamId : undefined} />
         {!cols && b2bLabels}
         {!cols && tifChip}
         {marks.map((m) => (

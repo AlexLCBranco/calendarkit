@@ -1,6 +1,6 @@
 // Team → List: every game of one team, one row each, opened at the next game.
 
-import { leagueSeries } from '../data/series';
+import { leagueRematches, leagueSeries } from '../data/series';
 import { memo, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import { addMonths, hasNationalTv, isOver, monthOf, opponentSecondNight, teamGames, teamRestDays, teamSeason, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -307,6 +307,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
                 }
                 opponentB2B={opponentSecondNight(data, g, teamId)}
                 series={!series ? undefined : leagueSeries(data).get(g.gameId)}
+                rematch={!series ? undefined : leagueRematches(data).get(g.gameId)}
                 teamFatigue={cols ? fatigue.get(g.gameId) : undefined}
                 fatigueColumns={cols}
                 now={now}

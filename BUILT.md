@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-18
+- CK-8 — Mark back-to-back meetings with the same opponent (v1.80.0)
+  The season-series chip ("G2/4") is drawn inverted (light fill) when a team plays the same opponent in consecutive games, both games of the pair; its popup names the team and the other date.
 - CK-13 — Short names: Wolves and Blazers (v1.79.0)
   Minnesota and Portland show as "Wolves" and "Blazers" everywhere a team name shows.
 - The gauntlet's Slate popups show each day's opponent, as here (v1.78.1, for the gauntlet's GT-13)

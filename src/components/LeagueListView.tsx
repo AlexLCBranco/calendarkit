@@ -1,6 +1,6 @@
 // League → List: one game day at a time, with a week strip; the day changes only by navigation.
 
-import { leagueSeries } from '../data/series';
+import { leagueRematches, leagueSeries } from '../data/series';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { leagueFatigue } from '../data/fatigue';
@@ -168,7 +168,7 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} scoreSlots={scoreSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} positions={positions} lines={lines && (lines.get(g.gameId) ?? NO_LINES)} gameLink={gameLink} linkIcon cupTag={cupTag?.(g)} series={series ? leagueSeries(data).get(g.gameId) : undefined} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} scoreSlots={scoreSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} positions={positions} lines={lines && (lines.get(g.gameId) ?? NO_LINES)} gameLink={gameLink} linkIcon cupTag={cupTag?.(g)} series={series ? leagueSeries(data).get(g.gameId) : undefined} rematch={series ? leagueRematches(data).get(g.gameId) : undefined} copyable />
         ))}
       </div>
     </section>
