@@ -8,7 +8,9 @@
 
 import { dateFormat, finalScore, overtime, type CalendarData } from '../data/model';
 import { leagueRematches, leagueSeries, rematchesShown, seriesChip, seriesStatus, type Rematch, type SeriesGame } from '../data/series';
-import { TEAM_BY_ID, teamLogo } from '../data/teams';
+import { TEAM_BY_ID, TEAMS, teamLogo } from '../data/teams';
+import { useEffect, useState } from 'react';
+import { loadPastSeasons, pastMeetings, pastStatus, PAST_SEASONS_BACK, seasonBefore, type PastGame, type PastSeasons } from '../data/pastSeries';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from './links';
 import { useHoverPopup } from './hoverPopup';
@@ -93,27 +95,77 @@ function Square({ g, current, gameLink }: { g: ScheduleGame; current: boolean; g
   );
 }
 
-function Popup({ s, current, gameLink, rematch }: { s: SeriesGame; current: string; gameLink?: GameLink; rematch?: Rematch[] }) {
+/** An earlier season's meeting (CK-17): "BOS @ DEN", the winner, the score, the date; no link (ESPN's data has no NBA game id). */
+function PastSquare({ g }: { g: PastGame }) {
+  const [date, away, home, as, hs, ot] = g;
+  const homeId = TEAMS.find((t) => t.tricode === home)?.id;
+  const logo = homeId ? teamLogo(homeId) : undefined;
+  const day = fmtDate(date, { month: 'short', day: 'numeric', year: 'numeric' });
+  return (
+    <div className="ck-series-sq ck-series-played ck-series-past" data-testid="series-square" data-date={date}>
+      <span className="ck-series-pick ck-series-plain" aria-label={`${day}, ${away} @ ${home}: ${as > hs ? away : home} won ${Math.max(as, hs)}–${Math.min(as, hs)}${ot ? ` (${ot})` : ''}`}>
+        <span className="ck-series-match" data-testid="series-match">
+          {logo && (
+            <span className="ck-sq-logo">
+              <img src={logo} alt="" width={16} height={16} />
+            </span>
+          )}
+          {away} @ {home}
+        </span>
+        <span className="ck-series-win">{as > hs ? away : home}</span>
+        <span className="ck-series-score">
+          {Math.max(as, hs)}–{Math.min(as, hs)}
+          {ot ? ` ${ot}` : ''}
+        </span>
+        <span className="ck-series-date">{day}</span>
+      </span>
+    </div>
+  );
+}
+
+function Popup({ s, current, gameLink, rematch, season }: { s: SeriesGame; current: string; gameLink?: GameLink; rematch?: Rematch[]; /** This season ("2026-27") */ season: string }) {
   const [a, b] = s.series.teams;
+  // ◀ season ▶: 0 = this season, up to PAST_SEASONS_BACK back (loaded on the first switch)
+  const [back, setBack] = useState(0);
+  const [past, setPast] = useState<PastSeasons | 'failed'>();
+  useEffect(() => {
+    if (back > 0 && !past) loadPastSeasons().then(setPast, () => setPast('failed'));
+  }, [back, past]);
+  const shown = back ? seasonBefore(season, back) : season;
+  const old = back && past && past !== 'failed' ? pastMeetings(past, shown, tri(a), tri(b)) : undefined;
+  const count = back ? old?.length : s.series.games.length;
   return (
     <>
       <div className="ck-series-head">
         <span className="ck-series-title">
-          <TeamLink teamId={a}>{tri(a)}</TeamLink> – <TeamLink teamId={b}>{tri(b)}</TeamLink> · {s.series.games.length} meeting{s.series.games.length === 1 ? '' : 's'}
+          <TeamLink teamId={a}>{tri(a)}</TeamLink> – <TeamLink teamId={b}>{tri(b)}</TeamLink>
+          <span data-testid="series-count">{count === undefined ? '' : ` · ${count} meeting${count === 1 ? '' : 's'}`}</span>
+        </span>
+        <span className="ck-series-seasons" role="group" aria-label="Season">
+          <button type="button" className="ck-series-season-step" disabled={back >= PAST_SEASONS_BACK} onClick={() => setBack(back + 1)} aria-label="Earlier season" data-testid="series-prev-season">
+            ◀
+          </button>
+          <span className="ck-series-season" data-testid="series-season">
+            {shown}
+          </span>
+          <button type="button" className="ck-series-season-step" disabled={back === 0} onClick={() => setBack(back - 1)} aria-label="Later season" data-testid="series-next-season">
+            ▶
+          </button>
         </span>
         <span className="ck-series-status" data-testid="series-status">
-          {seriesStatus(s.series, tri)}
+          {!back ? seriesStatus(s.series, tri) : old ? pastStatus(old, tri(a), tri(b)) : past === 'failed' ? 'Not available' : 'Loading…'}
         </span>
       </div>
-      {rematch?.map((r) => (
-        <div key={r.teamId} className="ck-series-rematch-line" data-testid="rematch-line">
-          {rematchLine(r)}
-        </div>
-      ))}
-      <div className="ck-series-row">
-        {s.series.games.map((g) => (
-          <Square key={g.gameId} g={g} current={g.gameId === current} gameLink={gameLink} />
+      {!back &&
+        rematch?.map((r) => (
+          <div key={r.teamId} className="ck-series-rematch-line" data-testid="rematch-line">
+            {rematchLine(r)}
+          </div>
         ))}
+      <div className="ck-series-row">
+        {!back
+          ? s.series.games.map((g) => <Square key={g.gameId} g={g} current={g.gameId === current} gameLink={gameLink} />)
+          : old?.map((g) => <PastSquare key={g[0] + g[1]} g={g} />)}
       </div>
     </>
   );
@@ -125,7 +177,7 @@ export function useSeriesPopup(data: CalendarData | undefined, opts: { gameLink?
     'data-series-game',
     (gameId) => {
       const s = data ? leagueSeries(data).get(gameId) : undefined;
-      return s ? <Popup s={s} current={gameId} gameLink={opts.gameLink} rematch={leagueRematches(data!).get(gameId)} /> : null;
+      return s ? <Popup key={gameId} s={s} current={gameId} gameLink={opts.gameLink} rematch={leagueRematches(data!).get(gameId)} season={data!.seasonYear} /> : null;
     },
     { className: 'ck-series-pop', label: 'Season series', testId: 'series-popup' },
   );

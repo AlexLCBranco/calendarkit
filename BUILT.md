@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-18
+- CK-17 — Season-series popup: other seasons (v1.86.0)
+  The season-series popup has ◀ season ▶ to show the same two teams' meetings in the two previous seasons (2025-26, 2024-25: dates, winners, scores, from ESPN), with that season's count and result.
 - CK-16 — Cold-weather flag on games (v1.85.0)
   A Slate game whose arena city feels −10 °C or colder at tip-off shows "❄" on its game button (and in copies); the button's pop-up gives the temperature, with "Weather data by Open-Meteo.com".
 - CK-15 — Slate game button: player props and injury reports (v1.84.0)

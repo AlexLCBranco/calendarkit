@@ -705,3 +705,34 @@ a.ck-streak-game:hover {
   font-size: 11px;
   font-weight: 400;
 }
+/* The series popup's ◀ season ▶ (CK-17): this season and up to two before */
+.ck-series-seasons {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.ck-series-season {
+  min-width: 52px;
+  text-align: center;
+  font-weight: 600;
+}
+.ck-series-season-step {
+  padding: 0 4px;
+  border: 1px solid var(--ck-border);
+  border-radius: 4px;
+  background: var(--ck-surface-2);
+  color: var(--ck-text);
+  font: inherit;
+  font-size: 10px;
+  line-height: 16px;
+  cursor: pointer;
+}
+.ck-series-season-step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.ck-series-season-step:hover:not(:disabled),
+.ck-series-season-step:focus-visible {
+  border-color: var(--ck-accent);
+}
