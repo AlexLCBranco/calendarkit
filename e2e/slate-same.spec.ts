@@ -11,7 +11,7 @@ import { APP } from './app';
 import { serveRef } from './refbuild';
 import { copySlate } from './slatecopy';
 
-const REF = { commit: 'bba78f688718ec4520bd295d31ae9c2b6630d27f', version: '1.78.0' }; // moved on purpose: the gauntlet's GT-11, notes box always 3 lines (was 3bfd288, v1.74.0)
+const REF = { commit: 'bed0a48f8aef50bbe45a35140c8eb75f0aa3ff7a', version: '1.85.0' }; // moved on purpose: CK-8/9/10/12/15/16 change the Slate (was bba78f6, v1.78.0)
 const NOW = new Date('2026-11-15T15:00:00Z');
 const SIZES = [1, 5, 12, 15];
 

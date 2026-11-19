@@ -26,6 +26,7 @@ spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Featu
 - Slate notes box: always 3 lines, scrolls inside (v1.78.0, for the gauntlet's GT-11)
   Every note box on a Slate is 3 lines tall, empty or not, so all cards are the same height; a longer note scrolls inside its box; a copied picture still shows each note whole.
 ### Internal
+- test: the Slate pixel reference moved to v1.85.0 (CK-8, 9, 10, 12, 15, 16 change the Slate on purpose); e2e and unit tests never ask Open-Meteo for real weather
 - test: the Slate pixel reference moved to v1.78.0 (the 3-line notes box changes the Slate on purpose)
 
 ## 2026-11-17
