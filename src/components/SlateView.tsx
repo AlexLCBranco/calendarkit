@@ -82,7 +82,7 @@ export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840
         </p>
       )}
       <div className="ck-slate-scroll" data-testid="slate" data-select-scroller ref={scroll}>
-        <SlateDay data={data} date={date} tvOnly={tvOnly} timeZone={timeZone} gameLink={gameLink} width={width} notes={hideNotes ? undefined : notes} odds={odds} />
+        <SlateDay data={data} date={date} tvOnly={tvOnly} timeZone={timeZone} gameLink={gameLink} width={width} notes={hideNotes ? undefined : notes} odds={odds} gameMenu />
       </div>
     </section>
   );

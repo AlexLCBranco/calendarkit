@@ -5,6 +5,7 @@ import type { ConfPosition } from '../data/standings';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { fullName } from './widget';
 import { TeamLink } from '../slate/teamLink';
+import { injuryUrl } from '../slate/gameLinks';
 
 /** Big team logo on its light disc (a team link when `link`). */
 function BigLogo({ teamId, px, link }: { teamId: number; px: number; link: boolean }) {
@@ -33,6 +34,11 @@ export function TeamHeader({ teamId, compact = false, period, link = false, posi
         <span className="ck-team-pos" data-testid="team-pos" title="Current conference standings">
           {`${position.ordinal} in the ${position.conference}`}
         </span>
+      )}
+      {injuryUrl(teamId) && (
+        <a className="ck-team-injuries" href={injuryUrl(teamId)} target="_blank" rel="noopener noreferrer" data-testid="team-injuries" data-capture-exclude="true" title="The team's injury report on ESPN">
+          Injuries ↗
+        </a>
       )}
       {period && (
         <span className="ck-team-period" data-testid="team-month">

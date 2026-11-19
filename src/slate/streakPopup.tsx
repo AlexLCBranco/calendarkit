@@ -11,6 +11,7 @@ import type { GameLink } from './links';
 import { useHoverPopup } from './hoverPopup';
 import { TeamLogo } from './parts';
 import { TeamLink } from './teamLink';
+import { injuryUrl } from './gameLinks';
 
 const fmtDay = (date: string) => dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 
@@ -41,6 +42,11 @@ export function StreakList({ data, teamId, gameId, gameLink }: { data: CalendarD
         <span className="ck-series-title">
           <TeamLink teamId={teamId}>{tri}</TeamLink> · {games.length}-game {kind === 'W' ? 'winning' : 'losing'} streak
         </span>
+        {injuryUrl(teamId) && (
+          <a className="ck-pop-injuries" href={injuryUrl(teamId)} target="_blank" rel="noopener noreferrer" data-testid="popup-injuries">
+            Injuries ↗
+          </a>
+        )}
       </div>
       <div className="ck-streak-rows" data-testid="streak-rows">
         {games.map((s) => {

@@ -34,4 +34,6 @@ export { TeamLinkContext, teamLinkTarget, teamCalendarUrl, type TeamLinks } from
 // The streak popup and the series popup, for a host that wants them on its cards
 export { useStreakPopup } from './streakPopup';
 export { useSeriesPopup } from './series';
+// A card's game button (SlateDay gameMenu) and its pop-up: player props, the teams' ESPN injury pages, the official report
+export { gameLinks, injuryUrl, useGameLinksPopup } from './gameLinks';
 export { createOddsStore, fmtOdds, liveOddsStore, oddsKey, ODDS_URL, withFinal, withFinals, type DayOdds, type GameFinal, type GameOdds, type SlateOdds } from './odds';

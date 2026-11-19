@@ -105,7 +105,9 @@ test('cards: full team names, "@" before the home team, time or final score with
     const rows = card.locator('.ck-slate-row');
     await expect(rows.nth(0).locator('.ck-slate-name')).toHaveText(FEED_TEAMS[g.awayTeam.teamId]!.name);
     await expect(rows.nth(1).locator('.ck-slate-name')).toHaveText(FEED_TEAMS[g.homeTeam.teamId]!.name);
-    await expect(rows.nth(0).locator('.ck-slate-at')).toHaveText('');
+    // the away row's "@" cell holds only the game button (CK-15)
+    await expect(rows.nth(0).locator('.ck-slate-at')).toHaveText('⋯');
+    await expect(rows.nth(0).locator('.ck-slate-at [data-testid="game-menu"]')).toHaveCount(1);
     await expect(rows.nth(1).locator('.ck-slate-at')).toHaveText('@');
     await expect(rows.nth(0).locator('.ck-slate-score')).toHaveText(String(g.awayTeam.score));
     await expect(rows.nth(1).locator('.ck-slate-score')).toHaveText(String(g.homeTeam.score));

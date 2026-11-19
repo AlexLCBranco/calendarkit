@@ -10,6 +10,7 @@ import { localDate, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import type { SlateOdds } from '../slate/odds';
 import { useSeriesPopup } from '../slate/series';
+import { useGameLinksPopup } from '../slate/gameLinks';
 import { useStreakPopup } from '../slate/streakPopup';
 import { stripGamesOf } from '../slate/stripGames';
 import { TeamLinkContext, teamLinkTarget, type TeamLinks } from '../slate/teamLink';
@@ -120,6 +121,8 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
   // A square of the season-series popup is its game's hoopsjunkie page
   const streakPop = useStreakPopup(data, { gameLink });
   const series = useSeriesPopup(data, { gameLink });
+  // A Slate card's game button: player props and injury links
+  const gameLinksPop = useGameLinksPopup(data);
 
   const update = useCallback(
     (patch: Partial<CalendarState>) => {
@@ -327,9 +330,9 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
           if (apiOf().selKind) onMarquee(e);
         }}
         style={{ maxWidth: outerSize.width, height: fill ? size.height : undefined, minHeight: fill || compact ? undefined : size.height, paddingLeft: rail ? RAIL_WIDTH : undefined }}
-        onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e), streakPop.handlers.onMouseOver(e))}
-        onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e), streakPop.handlers.onFocus(e))}
-        onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave(), streakPop.handlers.onMouseLeave())}
+        onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e), streakPop.handlers.onMouseOver(e), gameLinksPop.handlers.onMouseOver(e))}
+        onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e), streakPop.handlers.onFocus(e), gameLinksPop.handlers.onFocus(e))}
+        onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave(), streakPop.handlers.onMouseLeave(), gameLinksPop.handlers.onMouseLeave())}
         onBlur={tooltip.handlers.onBlur}
         onScrollCapture={onScrollCapture}
       >
@@ -379,6 +382,7 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
         {tooltip.node}
         {series.node}
         {streakPop.node}
+        {gameLinksPop.node}
         <div ref={marquee} className="ck-marquee" aria-hidden="true" data-testid="marquee" />
         <SelectionStyle store={selection} scope=".ck-select-area" />
       </div>

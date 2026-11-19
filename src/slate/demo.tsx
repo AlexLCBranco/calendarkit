@@ -6,7 +6,7 @@
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { hoopsjunkieLink, loadCalendarData, localNotesStore, SlateDay, useTooltip, type CalendarData } from './index';
+import { hoopsjunkieLink, loadCalendarData, localNotesStore, SlateDay, useGameLinksPopup, useTooltip, type CalendarData } from './index';
 import './slate.css';
 
 const q = new URLSearchParams(location.search);
@@ -18,10 +18,12 @@ const count = Math.max(1, Number(q.get('n') ?? 1));
 
 function Widget({ data }: { data: CalendarData }) {
   const tooltip = useTooltip();
+  const links = useGameLinksPopup(data);
   return (
-    <div className="ck-root ck-slate-widget" data-testid="slate-widget" style={{ width }} {...tooltip.handlers}>
-      <SlateDay data={data} date={date} timeZone={timeZone} notes={notes} width={width} gameLink={hoopsjunkieLink} />
+    <div className="ck-root ck-slate-widget" data-testid="slate-widget" style={{ width }} {...tooltip.handlers} onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), links.handlers.onMouseOver(e))} onFocus={(e) => (tooltip.handlers.onFocus(e), links.handlers.onFocus(e))} onMouseLeave={() => (tooltip.handlers.onMouseLeave(), links.handlers.onMouseLeave())}>
+      <SlateDay data={data} date={date} timeZone={timeZone} notes={notes} width={width} gameLink={hoopsjunkieLink} gameMenu />
       {tooltip.node}
+      {links.node}
     </div>
   );
 }

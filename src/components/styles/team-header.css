@@ -32,3 +32,15 @@
 .ck-compact .ck-team-name {
   font-size: 20px;
 }
+/* the team's ESPN injury page, small and muted after its name (CK-15) */
+.ck-team-injuries {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ck-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ck-team-injuries:hover,
+.ck-team-injuries:focus-visible {
+  color: var(--ck-accent);
+}

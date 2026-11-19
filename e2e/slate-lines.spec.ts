@@ -98,3 +98,22 @@ test('CK-14: no countdown once the night has started', async ({ page }) => {
   await expect(page.locator('.ck-slate-card').first()).toBeVisible();
   await expect(page.getByTestId('first-tip')).toHaveCount(0);
 });
+
+test('CK-15: the game button opens the pop-up with the 4 links; cards keep their size', async ({ page }) => {
+  await open(page, '2026-11-16');
+  const sizes = () => page.locator('.ck-slate-card').evaluateAll((cs) => cs.map((c) => [Math.round(c.getBoundingClientRect().width), Math.round(c.getBoundingClientRect().height)]));
+  const withButton = await sizes();
+  for (const [w] of withButton) expect(w).toBe(SLATE_CARD_WIDTH);
+  const card = page.locator('.ck-slate-card').first();
+  await card.getByTestId('game-menu').click();
+  const pop = page.getByTestId('game-links-popup');
+  await expect(pop).toBeVisible();
+  await expect(pop.locator('a')).toHaveCount(4);
+  await expect(pop.locator('a').nth(0)).toHaveText(/Player props/);
+  await expect(pop.locator('a').nth(0)).toHaveAttribute('href', /^https:\/\/sportsbook\.fanduel\.com\//);
+  await expect(pop.locator('a').nth(1)).toHaveAttribute('href', /^https:\/\/www\.espn\.com\/nba\/team\/injuries\/_\/name\//);
+  await expect(pop.locator('a').nth(3)).toHaveAttribute('href', /^https:\/\/official\.nba\.com\/nba-injury-report/);
+  // the button takes no room: without it the cards are the same size
+  await page.evaluate(() => document.querySelectorAll('[data-testid="game-menu"]').forEach((b) => b.remove()));
+  expect(await sizes()).toEqual(withButton);
+});

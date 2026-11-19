@@ -51,12 +51,12 @@ const partsOf = (page: Page) =>
 
 /**
  * Parts in a fixed order, with what changed on purpose since BEFORE left out: CK-12 put the score right after the name
- * (one wrapper, the score's place in the order), CK-8 marks some series chips (a class), CK-13 shortened two names.
+ * (one wrapper, the score's place in the order), CK-8 marks some series chips (a class), CK-13 shortened two names, CK-15 put the game button in the away row's empty "@" cell.
  */
 type Part = [string, string, number, number];
 const same = (parts: Part[]) =>
   parts
-    .filter((p) => p[0] !== 'span.ck-slate-namecell')
+    .filter((p) => p[0] !== 'span.ck-slate-namecell' && p[0] !== 'button.ck-game-menu')
     .map((p): Part => [p[0].replace('.ck-series-rematch', ''), p[1] === 'Timberwolves' ? 'Wolves' : p[1] === 'Trail Blazers' ? 'Blazers' : p[1], p[2], p[3]])
     .sort((x, y) => (x[0] + x[1]).localeCompare(y[0] + y[1]) || x[2] - y[2] || x[3] - y[3]);
 
