@@ -11,8 +11,16 @@ import { test as base } from '@playwright/test';
 
 export { expect, type Browser, type BrowserContext, type Locator, type Page } from '@playwright/test';
 
+/** Open-Meteo (the Slate's cold-weather flags) answers nothing here: real weather would change cards from run to run.
+    A spec testing the flags routes it itself (its route wins). */
+export const NO_WEATHER = 'https://api.open-meteo.com/**';
+
 export const test = base.extend<{ autoHide: boolean }>({
   autoHide: [false, { option: true }],
+  context: async ({ context }, use) => {
+    await context.route(NO_WEATHER, (r) => r.fulfill({ status: 404, body: '' }));
+    await use(context);
+  },
   page: async ({ page, autoHide }, use) => {
     await page.addInitScript((autoHide) => {
       const date = new URLSearchParams(location.search).get('date');

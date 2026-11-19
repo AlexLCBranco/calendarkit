@@ -9,6 +9,9 @@ import type { ReactNode } from 'react';
 import { TEAM_BY_ID } from '../data/teams';
 import type { CalendarData } from '../data/model';
 import { useHoverPopup } from './hoverPopup';
+import { COLD_ATTRIBUTION, COLD_ATTRIBUTION_URL, fmtTemp, isCold } from '../data/cold';
+import { arenaOf } from '../data/geo';
+import type { SlateCold } from './weather';
 
 /** Tricode → [ESPN abbreviation, ESPN page slug]. */
 const ESPN: Record<string, [string, string]> = {
@@ -63,11 +66,22 @@ export function gameLinks(away: number, home: number): { label: string; url: str
 }
 
 /** The card's game button: a control (never in a copy); it sits in the away row's empty "@" cell, so no width is added. */
-export function GameMenuButton({ gameId, label }: { gameId: string; label: string }) {
+export function GameMenuButton({ gameId, label, cold }: { gameId: string; label: string; /** feels-like °C at tip-off: "❄" instead of "⋯" when it is cold (CK-16) */ cold?: number }) {
+  const c = isCold(cold);
   return (
-    <button type="button" className="ck-game-menu" data-game-links={gameId} data-testid="game-menu" data-capture-exclude="true" aria-label={`Links for ${label}: player props, injuries`} title="Player props · injuries">
-      ⋯
+    <button type="button" className={`ck-game-menu${c ? ' ck-cold' : ''}`} data-game-links={gameId} data-testid="game-menu" data-cold={c ? Math.round(cold!) : undefined} data-capture-exclude="true" aria-label={`Links for ${label}: player props, injuries${c ? `. Very cold at tip-off: feels like ${fmtTemp(cold!)}` : ''}`} title={c ? `Very cold at tip-off (feels like ${fmtTemp(cold!)}) · player props · injuries` : 'Player props · injuries'}>
+      {c ? '❄' : '⋯'}
     </button>
+  );
+}
+
+/** The cold-weather mark where there is no button (copies): "❄", its temperature in the tooltip; nothing when not cold. */
+export function ColdMark({ cold }: { cold?: number }) {
+  if (!isCold(cold)) return null;
+  return (
+    <span className="ck-cold-mark" data-testid="cold-mark" data-tip={`Very cold at tip-off: feels like ${fmtTemp(cold!)}. ${COLD_ATTRIBUTION}`}>
+      ❄
+    </span>
   );
 }
 
@@ -79,22 +93,33 @@ export const OutLink = ({ url, children, className }: { url: string; children: R
 );
 
 /** The widget's game-links pop-up (on useHoverPopup): spread `handlers` on the wrapper, render `node` inside it. */
-export function useGameLinksPopup(data: CalendarData | undefined) {
+export function useGameLinksPopup(data: CalendarData | undefined, opts: { cold?: SlateCold } = {}) {
   return useHoverPopup(
     'data-game-links',
     (gameId) => {
       const g = data?.games.find((x) => x.gameId === gameId);
       if (!g) return null;
+      const t = opts.cold?.get(g.dateEt)?.get(gameId);
       return (
-        <ul className="ck-game-links">
-          {gameLinks(g.awayTeam.teamId, g.homeTeam.teamId).map((l) => (
-            <li key={l.label}>
-              <OutLink url={l.url} className="ck-game-link">
-                {l.label} ↗
-              </OutLink>
-            </li>
-          ))}
-        </ul>
+        <>
+          {isCold(t) && (
+            <div className="ck-cold-line" data-testid="cold-line">
+              ❄ Feels like {fmtTemp(t!)} at tip-off in {arenaOf(g)?.city ?? g.arenaCity} ·{' '}
+              <a className="ck-cold-credit" href={COLD_ATTRIBUTION_URL} target="_blank" rel="noopener noreferrer">
+                {COLD_ATTRIBUTION}
+              </a>
+            </div>
+          )}
+          <ul className="ck-game-links">
+            {gameLinks(g.awayTeam.teamId, g.homeTeam.teamId).map((l) => (
+              <li key={l.label}>
+                <OutLink url={l.url} className="ck-game-link">
+                  {l.label} ↗
+                </OutLink>
+              </li>
+            ))}
+          </ul>
+        </>
       );
     },
     { className: 'ck-series-pop ck-game-links-pop', label: 'Game links', testId: 'game-links-popup' },

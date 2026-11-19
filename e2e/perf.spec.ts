@@ -97,6 +97,7 @@ test('load → first view rendered', async ({ browser }) => {
     const times: number[] = [];
     for (let i = 0; i < RUNS; i++) {
       const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 }, timezoneId: 'America/Sao_Paulo' });
+      await ctx.route('https://api.open-meteo.com/**', (r) => r.fulfill({ status: 404, body: '' }));
       const page = await ctx.newPage();
       times.push(await loadTime(page, search));
       await ctx.close();

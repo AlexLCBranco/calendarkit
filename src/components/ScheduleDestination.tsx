@@ -7,6 +7,7 @@ import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { slateCopyCardWidth, slateCopyColumns, slateCopyZoom, slateImageSize, slatePixelRatio } from '../slate/layout';
 import { localNotesStore } from '../slate/notes';
 import type { SlateOdds } from '../slate/odds';
+import type { SlateCold } from '../slate/weather';
 import { slateCopyCup } from '../slate/SlateCard';
 import { fmtShortMonth, fmtMonthSpan, seasonDay, teamDefaultDate, teamListTarget, type CalendarLayout, type CalendarState, type TeamLayout, type TeamSpan, type ViewSnapshot } from './calendarState';
 import { CaptureStage, CAPTURE_PAD } from './CaptureStage';
@@ -71,6 +72,7 @@ export interface ScheduleApi extends DestinationApi {
 
 export interface ScheduleProps extends DestinationProps {
   odds?: SlateOdds;
+  cold?: SlateCold;
   /** A team link opened in a new tab: the Team view opens on this date instead of the next game. */
   teamDate?: string;
   /** A reloaded tab: its months, weeks and Team List row as they were (the shell sets the state). */
@@ -83,7 +85,7 @@ export interface ScheduleProps extends DestinationProps {
 }
 
 export function ScheduleDestination(p: ScheduleProps) {
-  const { active, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, selection, jump, odds, openTeam } = p;
+  const { active, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, selection, jump, odds, cold, openTeam } = p;
   const { team, slate, list, teamMap } = scheduleShape(state, size);
   const snap0 = p.initialSnap;
   const [leagueMonth, setLeagueMonth] = useState(() => snap0?.leagueMonth ?? monthOf(state.date));
@@ -537,7 +539,7 @@ export function ScheduleDestination(p: ScheduleProps) {
       <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} runs={!compact} />
     );
   } else if (slate) {
-    body = <SlateView focusTeam={slateFocusTeam} today={today} data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} width={size.width} notes={notes} odds={odds} hideNotes={hideNotes} onHideNotes={setHideNotes} />;
+    body = <SlateView focusTeam={slateFocusTeam} today={today} data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} width={size.width} notes={notes} odds={odds} cold={cold} hideNotes={hideNotes} onHideNotes={setHideNotes} />;
   } else if (list && leagueSideBySide(size.width)) {
     // The map beside the list (desktop); it stays put while a busy night scrolls
     body = (
@@ -564,7 +566,7 @@ export function ScheduleDestination(p: ScheduleProps) {
       {selKind && <SelectionBar store={selection} copy={copySelection} />}
       {slateCapture && (
         <CaptureStage key={slateCapture.cols} onReady={slateCapture.onReady} width={slateImageSize(slateCapture.games.length, slateCapture.cols, slateCapture.card).width} className=" ck-slate-capture">
-          <SlateCopy data={data} games={slateCapture.games} cols={slateCapture.cols} cardWidth={slateCapture.card.width} timeZone={timeZone} notes={hideNotes ? undefined : notes} odds={odds?.get(slateCapture.games[0]!.dateEt)} />
+          <SlateCopy data={data} games={slateCapture.games} cols={slateCapture.cols} cardWidth={slateCapture.card.width} timeZone={timeZone} notes={hideNotes ? undefined : notes} odds={odds?.get(slateCapture.games[0]!.dateEt)} cold={cold?.get(slateCapture.games[0]!.dateEt)} />
         </CaptureStage>
       )}
       {selCapture && selKind && selKind !== 'league-slate' && <SelectionCopyStage capture={selCapture} kind={selKind} list={list} team={team} teamId={state.teamId} period={nav?.title} p={p} />}

@@ -31,7 +31,9 @@ import { GameLinkIcon, ScoreLink, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
 import { StreakChip } from './streakPopup';
 import { slateHeaderLabel } from './header';
-import { GameMenuButton } from './gameLinks';
+import { isCold } from '../data/cold';
+import { ColdMark, GameMenuButton } from './gameLinks';
+import type { NightCold, SlateCold } from './weather';
 
 /** The day's games (TV games only when filtered), in tip-off order; [] on a day without games. */
 export const slateGames = (data: CalendarData, date: string, tvOnly = false) => {
@@ -57,6 +59,8 @@ export interface SlateDayProps {
   odds?: SlateOdds;
   /** Each card's game button (player props, injuries); the host renders useGameLinksPopup. None: no button. */
   gameMenu?: boolean;
+  /** The cold-weather store (liveColdStore()); none: no request, no flags. */
+  cold?: SlateCold;
 }
 
 /**
@@ -78,7 +82,8 @@ function useDayOdds(odds: SlateOdds | undefined, date: string, raw: ScheduleGame
   return { day, games };
 }
 
-export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = false, gameLink, odds, gameMenu = false }: SlateDayProps) {
+export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = false, gameLink, odds, gameMenu = false, cold }: SlateDayProps) {
+  const nightCold = useNightCold(cold, date, data.byDate.get(date) ?? NO_GAMES);
   // The whole night decides when the refresh stops (tvOnly or not), as before; the cards are the games shown.
   const { day } = useDayOdds(odds, date, data.byDate.get(date) ?? NO_GAMES);
   const shown = useMemo(() => slateGames(data, date, tvOnly), [data, date, tvOnly]);
@@ -100,7 +105,7 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
       <div className={`ck-slate-grid${notes ? ' ck-slate-wide' : ''}`} data-cols={cols} data-cup={cup || undefined} style={slateVars(cols, cup)}>
         {games.length > 0 && <SlateHeader date={date} />}
         {games.map((g) => (
-          <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, g)} cupNight={cup} fates={fates} chips={chips} gameMenu={gameMenu} />
+          <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, g)} cupNight={cup} fates={fates} chips={chips} gameMenu={gameMenu} cold={nightCold?.get(g.gameId)} />
         ))}
       </div>
     </>
@@ -111,6 +116,13 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
 export const isCupNight = (games: readonly ScheduleGame[]) => games.some((g) => g.isCupGroupGame || isKnockout(g));
 /** A Cup knockout game (quarterfinal, semifinal, Championship). */
 export const isKnockout = (g: ScheduleGame) => g.isCupKnockout || g.gameType === 'cup-final';
+/** The night's feels-like temperatures from the store (undefined until they come, or without one); asks once shown. */
+function useNightCold(cold: SlateCold | undefined, date: string, games: ScheduleGame[]): NightCold | undefined {
+  const night = useSyncExternalStore(cold ? (fn) => cold.subscribe(date, fn) : NO_SUB, cold ? () => cold.get(date) : NONE);
+  useEffect(() => cold?.show(date, games), [cold, date, games]);
+  return night;
+}
+
 /** The night's Cup track: none, the squares, or the squares and the IN / OUT column (a Cup team on show is decided). */
 export const cupKind = (games: readonly ScheduleGame[], fates?: Decided, chips?: Map<number, StakeChip[]>): 0 | 1 | 2 | 3 => {
   if (!isCupNight(games)) return 0;
@@ -141,7 +153,7 @@ const slateVars = (cols: number, cup: CupTrackKind = false) => ({ ...varsOf(cup)
 /** The Cup track kind of a copied night (as SlateCopy draws it). */
 export const slateCopyCup = (data: CalendarData, games: readonly ScheduleGame[]) => cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt));
 
-export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, odds, gameLink, editNotes = false }: { data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds; /** A host showing the copy layout live (the gauntlet's Slate widget): each card's "↗" and score links; none in images. */ gameLink?: GameLink; /** A host showing the copy layout live: a click on a note opens it for typing (NoteLive); never in images. */ editNotes?: boolean }) {
+export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, odds, gameLink, editNotes = false, cold }: { /** feels-like °C per game (CK-16) */ cold?: NightCold; data: CalendarData; games: ScheduleGame[]; cols: number; cardWidth: number; timeZone?: string; notes?: SlateNotes; odds?: DayOdds; /** A host showing the copy layout live (the gauntlet's Slate widget): each card's "↗" and score links; none in images. */ gameLink?: GameLink; /** A host showing the copy layout live: a click on a note opens it for typing (NoteLive); never in images. */ editNotes?: boolean }) {
   // The finals ESPN already has (gauntlet GT-5): a game over tonight shows its score before the morning snapshot.
   const games = useMemo(() => withFinals(raw, odds), [raw, odds]);
   const cup = slateCopyCup(data, games);
@@ -151,7 +163,7 @@ export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, 
     <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-margin': `${SLATE_COPY_MARGIN}px` } as CSSProperties} data-zoom={zoom}>
       {games[0] && <SlateHeader date={games[0].dateEt} />}
       {games.map((g) => (
-        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy editNotes={editNotes} />
+        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy editNotes={editNotes} cold={cold?.get(g.gameId)} />
       ))}
     </div>
   );
@@ -167,7 +179,7 @@ function SlateHeader({ date }: { date: string }) {
 }
 
 /** One game as a card. */
-export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, copy = false, editNotes = false, cupNight = false, fates, chips, gameMenu = false }: { data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; copy?: boolean; /** The game button (SlateDayProps.gameMenu); never in a copy */ gameMenu?: boolean; /** In the copy layout, notes open for typing on a click (SlateCopy editNotes) */ editNotes?: boolean; /** The night's Cup track (cupKind; true = 1) */ cupNight?: CupTrackKind; /** IN / OUT */ fates?: Decided; /** Tonight's stakes chips */ chips?: Map<number, StakeChip[]> }) {
+export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, copy = false, editNotes = false, cupNight = false, fates, chips, gameMenu = false, cold }: { /** Feels-like °C at tip-off (CK-16), when known */ cold?: number; data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; copy?: boolean; /** The game button (SlateDayProps.gameMenu); never in a copy */ gameMenu?: boolean; /** In the copy layout, notes open for typing on a click (SlateCopy editNotes) */ editNotes?: boolean; /** The night's Cup track (cupKind; true = 1) */ cupNight?: CupTrackKind; /** IN / OUT */ fates?: Decided; /** Tonight's stakes chips */ chips?: Map<number, StakeChip[]> }) {
   const fx = leagueFatigue(data).get(game.gameId);
   const lines = leagueSeasonLines(data).get(game.gameId);
   const result = finalScore(game, game.awayTeam.teamId);
@@ -215,7 +227,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
           </span>
         </div>
         <div className="ck-slate-teams">
-          <TeamRow menu={gameMenu && !copy ? `${away} at ${home}` : undefined} cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.awayTeam} gameId={game.gameId} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} url={url} score={result && { n: result.score, win: result.win }} odds={odds?.away} provider={odds?.provider} />
+          <TeamRow menu={gameMenu && !copy ? `${away} at ${home}` : undefined} cold={cold} cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.awayTeam} gameId={game.gameId} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} url={url} score={result && { n: result.score, win: result.win }} odds={odds?.away} provider={odds?.provider} />
           <TeamRow cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.homeTeam} gameId={game.gameId} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} url={url} score={result && { n: result.oppScore, win: !result.win }} odds={odds?.home} provider={odds?.provider} home />
         </div>
       </div>
@@ -228,7 +240,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
  * "[@] [logo] Wizards 113 3-1 W2 [fatigue]": one team; the home team's row starts with the "@" (the away row keeps its
  * room). Record and streak going in: the Team List season line's rule, colours and tooltip.
  */
-function TeamRow({ menu, cup, team, gameId, f, line, score, url, odds, provider, home = false }: { /** The away row: the game button in its empty "@" cell (its label) */ menu?: string; url?: string; cup?: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fates?: Decided; chips?: Map<number, StakeChip[]> }; team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
+function TeamRow({ menu, cold, cup, team, gameId, f, line, score, url, odds, provider, home = false }: { /** The away row: the game button in its empty "@" cell (its label) */ menu?: string; /** feels-like °C at tip-off (the away row shows the mark) */ cold?: number; url?: string; cup?: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fates?: Decided; chips?: Map<number, StakeChip[]> }; team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
   const t = TEAM_BY_ID.get(team.teamId);
   const rec = line?.record;
   const streak = line?.streak;
@@ -237,8 +249,8 @@ function TeamRow({ menu, cup, team, gameId, f, line, score, url, odds, provider,
   const out = cup?.game.isCupGroupGame && cup.fates?.fate.get(team.teamId) === 'out' ? ' ck-cup-out-row' : '';
   return (
     <span className={`ck-slate-row${loss}${out}`} data-side={home ? 'home' : 'away'}>
-      <span className="ck-slate-at" aria-hidden={!home && !menu}>
-        {home ? '@' : menu ? <GameMenuButton gameId={gameId} label={menu} /> : ''}
+      <span className="ck-slate-at" aria-hidden={!home && !menu && !isCold(cold)}>
+        {home ? '@' : menu ? <GameMenuButton gameId={gameId} label={menu} cold={cold} /> : <ColdMark cold={cold} />}
       </span>
       <TeamLogo team={team} />
       {/* The name and, right after it, the final score (the game's page) */}

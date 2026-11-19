@@ -63,6 +63,7 @@ type Variant = 'notes' | 'empty' | 'hidden';
 
 async function open(browser: Browser, base: string, date: string, variant: Variant, viewport: { width: number; height: number }): Promise<Page> {
   const ctx = await browser.newContext({ viewport, timezoneId: 'America/Sao_Paulo' });
+  await ctx.route('https://api.open-meteo.com/**', (r) => r.fulfill({ status: 404, body: '' })); // no real weather in pixels
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write']);
   const page = await ctx.newPage();
   await page.addInitScript(

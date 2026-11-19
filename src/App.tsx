@@ -2,6 +2,7 @@
 // handles onOpenGame by opening rotationkit and gives the widgets the game-page URL rule (gameLink: hoopsjunkie). Everything else lives in the self-contained components.
 
 import { liveOddsStore } from './slate/odds';
+import { liveColdStore } from './slate/weather';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { isViewSnapshot } from './components/calendarState';
 import { CalendarView, type CalendarHandle, type CalendarState, type CupState, type PageHistory, type PageHistoryLabels, type TeamTarget, type ViewSnapshot } from './components/CalendarView';
@@ -280,6 +281,7 @@ export function App() {
         {data && (
           <CalendarView
             odds={liveOddsStore()}
+            cold={liveColdStore()}
             data={data}
             size={size}
             initial={initial}

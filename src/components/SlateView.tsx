@@ -13,6 +13,7 @@ import type { GameLink } from '../slate/links';
 import { exportFile, parseExport, SLOT_LABEL, SLOTS, type NotesStore, type Slot } from '../slate/notes';
 import { SlateDay, slateGames } from '../slate/SlateCard';
 import type { SlateOdds } from '../slate/odds';
+import type { SlateCold } from '../slate/weather';
 import { LIST_MAX_WIDTH } from './widget';
 import { firstTipText, useMinuteTick } from './clock';
 
@@ -35,6 +36,8 @@ export interface SlateViewProps {
   width?: number;
   /** The games' notes; none: info-only cards, no notes toolbar. */
   notes?: NotesStore;
+  /** The cold-weather store (liveColdStore()); none: no flags. */
+  cold?: SlateCold;
   /** The moneyline odds store (liveOddsStore()); none: no odds. */
   odds?: SlateOdds;
   /** "Hide all notes": info-only cards (a view toggle, never stored). */
@@ -52,7 +55,7 @@ export interface SlateViewProps {
 /** Slate on desktop only: from the lists' column width (960 px; the grid is that wide), so not on tablets or phones. */
 export const SLATE_MIN_WIDTH = LIST_MAX_WIDTH;
 
-export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840, notes, odds, hideNotes = false, onHideNotes, focusTeam, today }: SlateViewProps) {
+export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840, notes, odds, cold, hideNotes = false, onHideNotes, focusTeam, today }: SlateViewProps) {
   const games = slateGames(data, date, tvOnly);
   const focusGame = focusTeam ? games.find((g) => g.homeTeam.teamId === focusTeam || g.awayTeam.teamId === focusTeam) : undefined;
   const scroll = useRef<HTMLDivElement>(null);
@@ -82,7 +85,7 @@ export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840
         </p>
       )}
       <div className="ck-slate-scroll" data-testid="slate" data-select-scroller ref={scroll}>
-        <SlateDay data={data} date={date} tvOnly={tvOnly} timeZone={timeZone} gameLink={gameLink} width={width} notes={hideNotes ? undefined : notes} odds={odds} gameMenu />
+        <SlateDay data={data} date={date} tvOnly={tvOnly} timeZone={timeZone} gameLink={gameLink} width={width} notes={hideNotes ? undefined : notes} odds={odds} cold={cold} gameMenu />
       </div>
     </section>
   );

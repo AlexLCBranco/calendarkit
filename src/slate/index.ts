@@ -36,4 +36,7 @@ export { useStreakPopup } from './streakPopup';
 export { useSeriesPopup } from './series';
 // A card's game button (SlateDay gameMenu) and its pop-up: player props, the teams' ESPN injury pages, the official report
 export { gameLinks, injuryUrl, useGameLinksPopup } from './gameLinks';
+// Cold-weather flags (Open-Meteo): pass liveColdStore() to SlateDay cold and useGameLinksPopup
+export { createColdStore, liveColdStore, type NightCold, type SlateCold } from './weather';
+export { COLD_ATTRIBUTION, COLD_FEELS_LIKE_C } from '../data/cold';
 export { createOddsStore, fmtOdds, liveOddsStore, oddsKey, ODDS_URL, withFinal, withFinals, type DayOdds, type GameFinal, type GameOdds, type SlateOdds } from './odds';

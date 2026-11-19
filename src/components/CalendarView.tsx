@@ -9,6 +9,7 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { localDate, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import type { SlateOdds } from '../slate/odds';
+import type { SlateCold } from '../slate/weather';
 import { useSeriesPopup } from '../slate/series';
 import { useGameLinksPopup } from '../slate/gameLinks';
 import { useStreakPopup } from '../slate/streakPopup';
@@ -48,6 +49,8 @@ export interface CalendarViewProps {
   data: CalendarData;
   /** The Slate's moneyline odds (the app shell passes liveOddsStore()); none: no odds, no request. */
   odds?: SlateOdds;
+  /** The Slate's cold-weather flags (the app shell passes liveColdStore()); none: no flags, no request. */
+  cold?: SlateCold;
   size: WidgetSize;
   /**
    * Initial state; anything missing gets a default (League → List, default day). `teamDate` (a team link
@@ -92,7 +95,7 @@ export const TEAM_LINK_LAYOUT: TeamLayout = 'calendar';
 /** The condensed standings popup, in the Standings destination's chunk, loaded on first use. */
 const StandingsPopup = lazy(() => import('./Standings').then((m) => ({ default: m.StandingsPopup })));
 
-export function CalendarView({ data, odds, size: outerSize, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
+export function CalendarView({ data, odds, cold, size: outerSize, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
   // The clock (moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
   // `now` (the default day, the next game, games over) is the time the widget opened.
   const clock = useClock(fixedNow, timeZone, localDate);
@@ -122,7 +125,7 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
   const streakPop = useStreakPopup(data, { gameLink });
   const series = useSeriesPopup(data, { gameLink });
   // A Slate card's game button: player props and injury links
-  const gameLinksPop = useGameLinksPopup(data);
+  const gameLinksPop = useGameLinksPopup(data, { cold });
 
   const update = useCallback(
     (patch: Partial<CalendarState>) => {
@@ -370,7 +373,7 @@ export function CalendarView({ data, odds, size: outerSize, initial, now: fixedN
         </div>
         {rail && <Rail value={destination} options={destinations} onChange={goDestination} pageHistory={pageHistory} />}
         {/* every destination stays mounted, so its state lasts as long as the page; only the active one renders */}
-        <ScheduleDestination {...shared} active={destination === 'schedule'} odds={odds} teamDate={initial?.teamDate} initialSnap={initial?.snap} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
+        <ScheduleDestination {...shared} active={destination === 'schedule'} odds={odds} cold={cold} teamDate={initial?.teamDate} initialSnap={initial?.snap} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
         <CupDestination {...shared} active={cup} initial={initial?.cup} api={cupApi} />
         <StandingsDestination {...shared} active={standings} api={standingsApi} />
         {stPop && slateFits && (

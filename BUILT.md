@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-18
+- CK-16 — Cold-weather flag on games (v1.85.0)
+  A Slate game whose arena city feels −10 °C or colder at tip-off shows "❄" on its game button (and in copies); the button's pop-up gives the temperature, with "Weather data by Open-Meteo.com".
 - CK-15 — Slate game button: player props and injury reports (v1.84.0)
   Each Slate card has a small "⋯" button (in the away row's empty "@" cell, no extra width) opening links to FanDuel's NBA player props, both teams' ESPN injury pages and the official NBA injury report; the team header and the streak pop-up link the team's injury page too.
 - CK-14 — Countdown to the first tip-off on the Slate page (v1.83.0)

@@ -682,3 +682,26 @@ a.ck-streak-game:hover {
   color: var(--ck-muted);
   font-size: 11px;
 }
+/* Cold-weather flag (CK-16): the game button shows "❄" in an icy blue; in copies the same mark, no button */
+.ck-game-menu.ck-cold,
+.ck-cold-mark {
+  color: #9fd8ff;
+}
+.ck-cold-mark {
+  display: inline-block;
+  width: 13px;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  cursor: default;
+}
+.ck-cold-line {
+  margin: 0 0 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ck-cold-credit {
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
