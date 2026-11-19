@@ -109,7 +109,7 @@ export interface GameCardProps {
    * of the matchup; the teams are then team links only.
    */
   linkIcon?: boolean;
-  /** Cup schedule: the Cup tag's text instead of "NBA Cup · West Group A" ("West A", "Quarterfinal"). */
+  /** Cup schedule: the Cup tag's text instead of "NBA Cup" ("West A", "Quarterfinal"). */
   cupTag?: string;
   /** The game's season series — the "G2/4" chip first among the tags (League List, Team List). */
   series?: SeriesGame;
@@ -380,7 +380,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
         {!cols && tifChip}
         {marks.map((m) => (
           <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
-            {size === 'compact' ? m.short : cupTag && (m.kind === 'cup' || m.kind === 'cup-final') ? cupTag : cols && m.kind === 'cup' ? m.long.replace(' Group ', ' ') : m.long}
+            {size === 'compact' ? m.short : cupTag && (m.kind === 'cup' || m.kind === 'cup-final') ? cupTag : m.long}
           </span>
         ))}
         {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}

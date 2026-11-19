@@ -5,12 +5,6 @@ Specs are written here from Claude chat. Item IDs are CK-1, CK-2, ... (never reu
 
 ## Ready
 
-### CK-20 — "NBA Cup" tag without the group outside the Cup section
-**In short:** Outside the Cup page, a Cup game's tag just says "NBA Cup", without the group name.
-**What:** everywhere outside the Cup section (League and Team schedules, lists, calendars, Slate, copies, the gauntlet Slate widget), a Cup game's tag reads just "NBA Cup", not "NBA Cup · West Group A". Inside the Cup section nothing changes: it keeps showing the group exactly as today ("West A", "Group play · West A", knockout round names).
-**Tests:** unit for the label function per context; e2e: a Cup game shows "NBA Cup" in the League list and Slate, and the group in the Cup schedule.
-
-
 ### CK-21 — Live scores with a red LIVE label
 **In short:** While an NBA game is being played, every place that shows that matchup shows the current score and a red "LIVE" label with the quarter and clock, updating by itself about once a minute.
 **What:**

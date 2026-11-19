@@ -227,7 +227,7 @@ export function markers(g: ScheduleGame): Marker[] {
     const sub = g.gameSubLabel?.trim();
     const short = /quarter/i.test(sub) ? 'Cup QF' : /semi/i.test(sub) ? 'Cup SF' : 'Cup';
     out.push({ kind: 'cup', short, long: sub ? `NBA Cup ${sub}` : 'NBA Cup' });
-  } else if (g.isCupGroupGame) out.push({ kind: 'cup', short: 'Cup', long: g.gameSubLabel ? `NBA Cup · ${g.gameSubLabel}` : 'NBA Cup' });
+  } else if (g.isCupGroupGame) out.push({ kind: 'cup', short: 'Cup', long: 'NBA Cup' }); // the group shows only inside the Cup section (cupTag)
   if (g.gameType === 'play-in') out.push({ kind: 'play-in', short: 'Play-In', long: 'Play-In Tournament' });
   if (g.gameType === 'playoffs') {
     const r = playoffRound(g);

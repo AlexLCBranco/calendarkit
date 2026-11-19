@@ -50,7 +50,7 @@ describe('GameCard', () => {
 
   it('markers: Cup group, Cup knockout round, Cup final labeled as the final, Play-In, Playoffs with round', () => {
     const cases: [ReturnType<typeof game>, RegExp][] = [
-      [game({ date: '2026-11-14', utc: '2026-11-15T00:00:00Z', subtype: 'in-season', subLabel: 'East Group A', raw: { gameLabel: 'Emirates NBA Cup' } }), /NBA Cup · East Group A/],
+      [game({ date: '2026-11-14', utc: '2026-11-15T00:00:00Z', subtype: 'in-season', subLabel: 'East Group A', raw: { gameLabel: 'Emirates NBA Cup' } }), /NBA Cup(?! ·)/],
       [game({ date: '2026-12-09', utc: '2026-12-10T00:00:00Z', subtype: 'in-season-knockout', subLabel: 'Semifinal' }), /NBA Cup Semifinal/],
       [game({ id: '0062600001', date: '2026-12-11', utc: '2026-12-12T01:00:00Z', subtype: 'in-season-knockout', subLabel: 'Championship' }), /NBA Cup Final/],
       [game({ id: '0052600101', date: '2027-04-14', utc: '2027-04-14T23:30:00Z' }), /Play-In Tournament/],
@@ -66,6 +66,20 @@ describe('GameCard', () => {
     }
     const plain = render(<GameCard game={future} now={NOW} timeZone="UTC" />);
     expect(plain.container.querySelectorAll('.ck-cup, .ck-cup-final, .ck-play-in, .ck-playoffs')).toHaveLength(0);
+  });
+
+  it('a Cup group game’s tag is just "NBA Cup" outside the Cup section (no group, tooltip too); the Cup schedule keeps the group', () => {
+    const g = game({ date: '2026-11-14', utc: '2026-11-15T00:00:00Z', subtype: 'in-season', subLabel: 'West Group A', raw: { gameLabel: 'Emirates NBA Cup' } });
+    const tag = (el: ReturnType<typeof render>) => el.container.querySelector('.ck-tag.ck-cup')!;
+    for (const props of [{}, { teamId: g.homeTeam.teamId, fatigueColumns: true }]) {
+      const el = render(<GameCard game={g} now={NOW} timeZone="UTC" {...props} />);
+      expect(tag(el).textContent).toBe('NBA Cup');
+      expect(tag(el).getAttribute('title')).toBe('NBA Cup');
+      expect(el.container.textContent).not.toMatch(/Group|West A/);
+      cleanup();
+    }
+    const cup = render(<GameCard game={g} now={NOW} timeZone="UTC" cupTag="West A" />);
+    expect(tag(cup).textContent).toBe('West A');
   });
 
   it('national TV badge lists the national broadcasters only (no local/regional networks)', () => {

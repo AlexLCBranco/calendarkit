@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-19
+- CK-20 — "NBA Cup" tag without the group outside the Cup section (v1.89.0)
+  Outside the Cup page a Cup group game's tag reads just "NBA Cup" (also in its tooltip); the Cup schedule still shows "West A" and the round names.
 - CK-11 — Slate: notes switch always available, never over the odds (v1.88.1)
   In the gauntlet's Slate, each card's ⇄ switch is always there, under the PRE/LIVE/POST label, clear of the odds.
 - CK-19 — Standings: offensive and defensive rating (v1.88.0)

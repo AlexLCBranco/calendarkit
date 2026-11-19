@@ -93,18 +93,18 @@ describe('widgets: a real <a> to the game page (round 5: the matchup; round 16: 
 });
 
 describe('round 16: room for the "↗" in the desktop Team List (fatigue columns)', () => {
-  it('a Cup group tag drops "Group" there ("NBA Cup · West A", full name in its tooltip); the League List keeps it', () => {
+  it('a Cup group tag is just "NBA Cup" there and in the League List (the group shows only in the Cup section)', () => {
     const cup = game({ date: '2026-11-10', utc: '2026-11-11T02:00:00Z', away: TEAM.LAL, home: TEAM.DEN, subtype: 'in-season', subLabel: 'West Group A', raw: { gameLabel: 'Emirates NBA Cup' } });
     const d = dataOf([cup]);
     const team = render(<CalendarView data={d} size={XL} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.LAL }} gameLink={appGameLink} />).container;
     const row = team.querySelector(`.ck-card[data-game-id="${cup.gameId}"]`)!;
     expect(row.querySelector('[data-testid="fatigue-team"]')).not.toBeNull(); // the desktop columns
     const tag = row.querySelector<HTMLElement>('.ck-tag.ck-cup')!;
-    expect(tag.textContent).toBe('NBA Cup · West A');
-    expect(tag.title).toBe('NBA Cup · West Group A');
+    expect(tag.textContent).toBe('NBA Cup');
+    expect(tag.title).toBe('NBA Cup');
     expect(row.querySelector('.ck-tags')!.firstElementChild!.textContent).toBe('↗');
     cleanup();
     const league = render(<CalendarView data={d} size={XL} now={NOW} timeZone="UTC" initial={{ date: '2026-11-10' }} gameLink={appGameLink} />).container;
-    expect(league.querySelector('.ck-tag.ck-cup')!.textContent).toBe('NBA Cup · West Group A');
+    expect(league.querySelector('.ck-tag.ck-cup')!.textContent).toBe('NBA Cup');
   });
 });
