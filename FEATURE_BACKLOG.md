@@ -46,10 +46,6 @@ style and no card changes size.
 **What:** on a Slate card the final score sits right after the team's name instead of in its own track near the odds (same change footykit made in FK-31). Live (gauntlet) and copied images.
 **Tests:** e2e: score's left edge is within a few px of the name's right edge on a finished game; card width unchanged.
 
-### CK-13 — Short names: Wolves and Blazers
-**What:** display "Wolves" instead of "Timberwolves" and "Blazers" instead of "Trail Blazers" everywhere names show (`src/data/teams.ts`). The space this frees is not reused yet; the owner will decide later.
-**Tests:** unit on the team table; existing e2e updated.
-
 ### CK-14 — Countdown to the first tip-off on the Slate page
 **What:** on the Slate *page* (/slate, not inside the Slate itself, so never in copied images), a countdown to the first game's tip-off of that night ("First tip-off in 2h 14m"); once it's started, hide it. Reuse the one-minute clock (`src/components/clock.ts`).
 **Tests:** unit for the text at fixed times; e2e that it's on the page and not in the copied image.

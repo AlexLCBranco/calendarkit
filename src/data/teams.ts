@@ -1,4 +1,5 @@
-// Static 30-team table keyed by the schedule feed's teamId.
+// Static 30-team table keyed by the schedule feed's teamId. Names are the ones the app shows: the owner's short
+// forms where the feed's are long ("Wolves", not "Timberwolves"; "Blazers", not "Trail Blazers").
 
 import { CALENDARKIT_BASE } from './address';
 
@@ -40,9 +41,9 @@ export const TEAMS: Team[] = [
   T(53, 'ORL', 'Orlando', 'Magic', 'East', 'Southeast'),
   T(64, 'WAS', 'Washington', 'Wizards', 'East', 'Southeast'),
   T(43, 'DEN', 'Denver', 'Nuggets', 'West', 'Northwest'),
-  T(50, 'MIN', 'Minnesota', 'Timberwolves', 'West', 'Northwest'),
+  T(50, 'MIN', 'Minnesota', 'Wolves', 'West', 'Northwest'),
   T(60, 'OKC', 'Oklahoma City', 'Thunder', 'West', 'Northwest'),
-  T(57, 'POR', 'Portland', 'Trail Blazers', 'West', 'Northwest'),
+  T(57, 'POR', 'Portland', 'Blazers', 'West', 'Northwest'),
   T(62, 'UTA', 'Utah', 'Jazz', 'West', 'Northwest'),
   T(44, 'GSW', 'Golden State', 'Warriors', 'West', 'Pacific'),
   T(46, 'LAC', 'LA', 'Clippers', 'West', 'Pacific'),

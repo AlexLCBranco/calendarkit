@@ -53,8 +53,8 @@ for (const view of ['list', 'calendar'] as const)
     expect(m.logo).toBeGreaterThanOrEqual(24);
     expect(m.barH).toBeLessThanOrEqual(44);
     expect(m.clipped).toBe(false);
-    // the longest name in full where the window is wide enough, the tricode below 1440 px
-    expect(m.shown).toEqual([page.viewportSize()!.width >= 1440 ? 'Minnesota Timberwolves' : 'MIN']);
+    // a long name in full where the window is wide enough, the tricode below 1440 px
+    expect(m.shown).toEqual([page.viewportSize()!.width >= 1440 ? 'Minnesota Wolves' : 'MIN']);
   });
 
 test('League: "All teams", same prominence, bar 44 px', async ({ page }) => {

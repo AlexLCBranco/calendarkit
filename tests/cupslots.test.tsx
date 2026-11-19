@@ -178,7 +178,7 @@ describe('Cup standings rows: the slots on screen', () => {
       wins.MIN = old;
     }
     const pill = rowOf('MIN');
-    expect(pill.querySelector('.ck-cup-name')!.textContent).toBe('Minnesota Timberwolves');
+    expect(pill.querySelector('.ck-cup-name')!.textContent).toBe('Minnesota Wolves');
     expect(pill.querySelector('.ck-cup-markcell .ck-cup-tied')!.textContent).toBe('tied');
   });
 
