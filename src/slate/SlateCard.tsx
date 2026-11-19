@@ -123,7 +123,7 @@ const layoutVars = (cup: CupTrackKind) => ({
   '--ck-slate-strip': `${SLATE_STRIP}px`,
   '--ck-slate-strip-gap': `${SLATE_STRIP_GAP}px`,
   '--ck-slate-row-gap': `${SLATE_ROW_GAP}px`,
-  '--ck-slate-tracks': `${T.at}px ${T.logo}px ${T.name}px ${T.rec}px ${T.streak}px ${cup ? `${SLATE_CUP_TRACK + cupExtra(cup)}px ` : ''}${T.fx}px ${T.score}px ${T.odds}px`,
+  '--ck-slate-tracks': `${T.at}px ${T.logo}px ${T.name}px ${T.rec}px ${T.streak}px ${cup ? `${SLATE_CUP_TRACK + cupExtra(cup)}px ` : ''}${T.fx}px ${T.odds}px`,
 });
 const VARS = [layoutVars(0), layoutVars(1), layoutVars(2), layoutVars(3)] as const;
 const varsOf = (cup: CupTrackKind) => VARS[cup === true ? 1 : cup === false ? 0 : cup];
@@ -210,7 +210,7 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
 });
 
 /**
- * "[@] [logo] Wizards 3-1 W2 [fatigue] 113": one team; the home team's row starts with the "@" (the away row keeps its
+ * "[@] [logo] Wizards 113 3-1 W2 [fatigue]": one team; the home team's row starts with the "@" (the away row keeps its
  * room). Record and streak going in: the Team List season line's rule, colours and tooltip.
  */
 function TeamRow({ cup, team, gameId, f, line, score, url, odds, provider, home = false }: { url?: string; cup?: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fates?: Decided; chips?: Map<number, StakeChip[]> }; team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
@@ -226,19 +226,21 @@ function TeamRow({ cup, team, gameId, f, line, score, url, odds, provider, home 
         {home ? '@' : ''}
       </span>
       <TeamLogo team={team} />
-      <TeamLink teamId={team.teamId} className="ck-slate-name" data-tricode={teamLabel(team)}>
-        {t?.name ?? teamLabel(team)}
-      </TeamLink>
+      {/* The name and, right after it, the final score (the game's page) */}
+      <span className="ck-slate-namecell">
+        <TeamLink teamId={team.teamId} className="ck-slate-name" data-tricode={teamLabel(team)}>
+          {t?.name ?? teamLabel(team)}
+        </TeamLink>
+        <ScoreLink url={score ? url : undefined} className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>
+          {score?.n ?? ''}
+        </ScoreLink>
+      </span>
       <span className="ck-slate-rec" data-tip={rec ? tip : undefined}>
         {rec ? `${rec.wins}-${rec.losses}` : ''}
       </span>
       <StreakChip teamId={team.teamId} gameId={gameId} streak={streak} base="ck-slate-streak" testId="slate-streak" label={tip} />
       {cup && (isKnockout(cup.game) ? <KoTrack data={cup.data} game={cup.game} teamId={team.teamId} home={home} /> : <CupTrack {...cup} teamId={team.teamId} />)}
       <Fatigue f={f} team={teamLabel(team)} shortChip />
-      {/* A final score is the game's page */}
-      <ScoreLink url={score ? url : undefined} className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>
-        {score?.n ?? ''}
-      </ScoreLink>
       {/* The moneyline, decimal; its column is reserved, empty until (unless) the odds come */}
       <span className="ck-slate-odds" data-testid="slate-odds" data-tip={odds ? `${teamLabel(team)} moneyline ${fmtOdds(odds)} (decimal${provider ? `, ${provider}` : ''}; the last line before tip-off once the game has started)` : undefined}>
         {odds ? fmtOdds(odds) : ''}

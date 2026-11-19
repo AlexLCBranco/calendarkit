@@ -92,3 +92,10 @@ describe('cards', () => {
     expect(chips).toBeGreaterThan(40);
   }, 15_000);
 });
+
+describe('CK-12: score beside the name', () => {
+  it('the info block keeps its width (491 px) with the score inside the name track', () => {
+    expect(SLATE_INFO_WIDTH).toBe(491);
+    expect(Object.keys(SLATE_ROW_TRACKS)).not.toContain('score');
+  });
+});

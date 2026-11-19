@@ -49,6 +49,17 @@ const partsOf = (page: Page) =>
     }),
   );
 
+/**
+ * Parts in a fixed order, with what changed on purpose since BEFORE left out: CK-12 put the score right after the name
+ * (one wrapper, the score's place in the order), CK-8 marks some series chips (a class), CK-13 shortened two names.
+ */
+type Part = [string, string, number, number];
+const same = (parts: Part[]) =>
+  parts
+    .filter((p) => p[0] !== 'span.ck-slate-namecell')
+    .map((p): Part => [p[0].replace('.ck-series-rematch', ''), p[1] === 'Timberwolves' ? 'Wolves' : p[1] === 'Trail Blazers' ? 'Blazers' : p[1], p[2], p[3]])
+    .sort((x, y) => (x[0] + x[1]).localeCompare(y[0] + y[1]) || x[2] - y[2] || x[3] - y[3]);
+
 test('every part of every card is still there, no smaller, inside its card (notes hidden and shown)', async ({ page }) => {
   test.setTimeout(240_000); // the first run builds BEFORE
   ref ??= await serveRef(BEFORE);
@@ -61,14 +72,16 @@ test('every part of every card is still there, no smaller, inside its card (note
       const cards = await partsOf(page);
       expect(before.length, key).toBeGreaterThan(0);
       expect(cards.map((c) => c.id), key).toEqual(before.map((c) => c.id));
-      for (const [i, c] of cards.entries()) {
-        const was = before[i]!;
+      for (const [i, now] of cards.entries()) {
+        const was = { ...before[i]!, parts: same(before[i]!.parts) };
+        const c = { ...now, parts: same(now.parts) };
         const where = `${key}, ${c.id}`;
         expect(c.out, `${where}: parts outside the card`).toEqual([]);
         expect(c.parts.map((p) => [p[0], p[1]]), `${where}: parts and text`).toEqual(was.parts.map((p) => [p[0], p[1]]));
         for (const [j, p] of c.parts.entries()) {
           const [, , w, h] = was.parts[j]!;
-          expect(p[2], `${where}: ${p[0]} "${p[1]}" width`).toBeGreaterThanOrEqual(w - 0.5);
+          // the name's and the score's boxes are their text since CK-12 (the score follows the name), no longer whole tracks
+          if (!/^a.ck-slate-(name|score)/.test(p[0])) expect(p[2], `${where}: ${p[0]} "${p[1]}" width`).toBeGreaterThanOrEqual(w - 0.5);
           expect(p[3], `${where}: ${p[0]} "${p[1]}" height`).toBeGreaterThanOrEqual(h - 0.5);
         }
       }

@@ -5,6 +5,10 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-18
+- CK-12 — Slate: score right beside the team name (v1.81.0)
+  A finished game's score follows the team's name on Slate cards; the cards keep their width.
+- CK-9 — Slate: clearer lines between cards, never under the TV pill (v1.81.0)
+  The lines between Slate cards are clearly visible (on screen, in copies and in the gauntlet's widget); the TV pill already sat clear of every line on every night of the season, now tested.
 - CK-8 — Mark back-to-back meetings with the same opponent (v1.80.0)
   The season-series chip ("G2/4") is drawn inverted (light fill) when a team plays the same opponent in consecutive games, both games of the pair; its popup names the team and the other date.
 - CK-13 — Short names: Wolves and Blazers (v1.79.0)

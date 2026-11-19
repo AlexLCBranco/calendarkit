@@ -36,7 +36,8 @@
   flex-direction: column;
   padding: var(--ck-slate-pad);
   background: var(--ck-surface-2);
-  border: 1px solid var(--ck-border);
+  /* the divider lines between the cards: clearly visible (2.6:1 on the card's grey), not the app's faint border */
+  border: 1px solid var(--ck-slate-line, #5b6476);
   border-radius: 0;
   margin: 0 -1px -1px 0;
   color: var(--ck-text);
@@ -138,7 +139,16 @@
   width: var(--ck-logo);
   height: var(--ck-logo);
 }
+/* the name, then the final score right after it (layout.ts SLATE_NAME / SLATE_SCORE; the name gives way first) */
+.ck-slate-namecell {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
 .ck-slate-name {
+  flex: 0 1 auto;
+  min-width: 0;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -160,10 +170,10 @@
   white-space: nowrap;
 }
 .ck-slate-score {
+  flex: none;
   font-size: 18px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  text-align: right;
   color: var(--ck-muted);
 }
 .ck-slate-score.ck-score-win {

@@ -5,10 +5,6 @@ Specs are written here from Claude chat. Item IDs are CK-1, CK-2, ... (never reu
 
 ## Ready
 
-### CK-9 — Slate: clearer lines between cards, never under the TV pill
-**What:** on the Slate (the /slate page and the gauntlet's Slate widget) the dividing lines between cards are too faint. Make them clearly visible, and make sure no line runs under the national-TV pill (`ck-slate-tv-pill`). If the pill has to be toned down (smaller, lighter, moved) for that, do it.
-**Tests:** e2e: the line between two cards has visible contrast; the TV pill's box doesn't overlap any divider; no card changes size.
-
 ### CK-10 — Slate header line
 **What:** a header line at the top of every Slate, e.g. "SLATE · 18-11 · NBA" (date as day-month). Shows in the gauntlet widget and in copied images. Use the same pattern footykit will use (FK-35) so a combined Slate can say "SLATE · 18-11 · NBA + Football".
 **Tests:** unit for the label; e2e that the header shows on /slate and in a copied image.
@@ -16,10 +12,7 @@ Specs are written here from Claude chat. Item IDs are CK-1, CK-2, ... (never reu
 ### CK-11 — Slate: notes switch always available, never over the odds
 **What:** the button that shows/hides the game descriptions (notes) on the Slate is always visible (not only on hover or in some states) and never sits on top of the odds column.
 **Tests:** e2e: button visible with notes on and off; its box doesn't overlap any odds cell.
-
-### CK-12 — Slate: score right beside the team name
-**What:** on a Slate card the final score sits right after the team's name instead of in its own track near the odds (same change footykit made in FK-31). Live (gauntlet) and copied images.
-**Tests:** e2e: score's left edge is within a few px of the name's right edge on a finished game; card width unchanged.
+**Blocked:** which button is meant? calendarkit's own one ("Show notes" / "Hide all notes" in the toolbar above the cards on /slate) is already always visible and far from the odds. The one that shows only in some states is the gauntlet's: its date bar (`DateBar` / `toggleSlateNotes` in gauntlet `src/slate/SlateWidget.tsx`) appears only while the widget is selected, so it belongs in the gauntlet's backlog. (Also seen: in the gauntlet's live copy each card's ⇄ switch shows only while a note is being typed in, and the room kept for it, `SLATE_COPY_HEAD` 56 px, fits the PRE/LIVE/POST label only, so the ⇄ then covers the odds. If that is the one meant, say so and it is a calendarkit fix.)
 
 ### CK-14 — Countdown to the first tip-off on the Slate page
 **What:** on the Slate *page* (/slate, not inside the Slate itself, so never in copied images), a countdown to the first game's tip-off of that night ("First tip-off in 2h 14m"); once it's started, hide it. Reuse the one-minute clock (`src/components/clock.ts`).

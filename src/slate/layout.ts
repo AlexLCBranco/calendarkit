@@ -55,13 +55,18 @@ export const slatePixelRatio = (img: { width: number; height: number }, page = S
  * The tight info block. A narrow strip on the left (tip-off time or "Final", then a wrapping row of the
  * ↗ link, the season-series chip, the TV pill and the Cup / play-off tags) beside the two team rows, whose tracks are
  * fixed and sized to their widest content at the app's text sizes (nothing shrunk): "@" 13, logo 28,
- * name 110 ("Timberwolves" is 109.7 px at 16 px semibold), record 39 ("41-41" at 12 px), streak 28 ("W12"), Fatigue 102
- * (B2B badge, two nights, the "7in11" chip — the stretch, tonight's place is in its tooltip), score 35 ("128" at 18 px),
+ * name + score 149 — the final score right after the name, not in a track of its own: the name 110 ("Timberwolves"
+ * was 109.7 px at 16 px semibold, the longest the feed has), the score 35 ("128" at 18 px) and the 4 px between them, so
+ * the card kept its width —, record 39 ("41-41" at 12 px), streak 28 ("W12"), Fatigue 102
+ * (B2B badge, two nights, the "7in11" chip — the stretch, tonight's place is in its tooltip),
  * odds 34 ("10.50" at 12 px semibold, 34.3 px; reserved whether or not odds came), 4 px apart. All CSS px; the CSS reads them as variables (slateVars), so this is the one source.
  */
 export const SLATE_STRIP = 68; // "00:30 (+1)" is 66 px; the widest chip 56.8 px (Cup tags), chips ≤ 2 lines from 60 px (measured over the season)
 export const SLATE_STRIP_GAP = 6;
-export const SLATE_ROW_TRACKS = { at: 13, logo: 28, name: 110, rec: 39, streak: 28, fx: 102, score: 35, odds: 34 } as const;
+/** The name's and the score's parts of the `name` track, 4 px apart (.ck-slate-namecell). */
+export const SLATE_NAME = 110;
+export const SLATE_SCORE = 35;
+export const SLATE_ROW_TRACKS = { at: 13, logo: 28, name: SLATE_NAME + 4 + SLATE_SCORE, rec: 39, streak: 28, fx: 102, odds: 34 } as const;
 export const SLATE_ROW_GAP = 4;
 const trackSum = (t: Record<string, number>) => Object.values(t).reduce((a, b) => a + b, 0) + (Object.keys(t).length - 1) * SLATE_ROW_GAP;
 /** The info block's width: strip, its gap, the team rows. */
