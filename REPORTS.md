@@ -2,6 +2,17 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-19 — CK-19 built
+
+**Built (v1.88.0):**
+- CK-19: Standings has a sixth column set, "Ratings": ORtg, DRtg and Net, each with the team's league rank in small text ("115.8 4th"). DRtg sorts lowest first. Possessions and points scored come from ESPN's public team statistics, fetched by the daily data job into `public/data/ratings.json` (scripts/update-ratings.ts). Points allowed come from the schedule the app already has, over the same games. ESPN's games played and points matched the app's schedule for all 30 teams. If ESPN is down, the job keeps yesterday's file and the schedule update still goes through.
+
+**Blocked:** CK-11 (unchanged, see below).
+
+**Ideas added:** none.
+
+**To check by hand:** nothing new; the numbers and the sort are tested.
+
 ## 2026-11-18 — CK-8, CK-9, CK-10, CK-12, CK-13, CK-14, CK-15, CK-16, CK-17, CK-18 built; CK-11, CK-19 blocked
 
 **Built (v1.79.0 → v1.87.0):**

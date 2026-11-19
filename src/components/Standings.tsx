@@ -9,6 +9,8 @@ import type { CalendarData } from '../data/model';
 import { dateFormat } from '../data/model';
 import { cellGames, CLINCH_TEXT, fmtPct, fmtRec, leagueStandings, PLAY_IN_SEEDS, PLAYOFF_SEEDS, tieText, type CellGamesKey, type Rec, type SeededTeam } from '../data/standings';
 import { CellGamesList, CELL_ATTR } from './StandingsGames';
+import { leagueRatings, loadRatings, type RatingsFile, type TeamRating } from '../data/ratings';
+import { ordinal } from '../data/scheduleTags';
 import { useHoverPopup } from '../slate/hoverPopup';
 import type { GameLink } from '../slate/links';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
@@ -29,6 +31,9 @@ const name = (id: number) => {
   return t ? `${t.city} ${t.name}` : String(id);
 };
 
+/** A standings line plus its ratings (CK-19), once ratings.json has loaded. */
+type Team = SeededTeam & { rating?: TeamRating };
+
 interface Column {
   key: string;
   label: string;
@@ -36,9 +41,9 @@ interface Column {
   tip: string;
   /** Group header above it. */
   group: string;
-  cell: (t: SeededTeam) => ReactNode;
+  cell: (t: Team) => ReactNode;
   /** Sort value, higher = better. */
-  sort: (t: SeededTeam) => number;
+  sort: (t: Team) => number;
   /** Lower is better (GB, L, points against): the first click sorts ascending. */
   asc?: boolean;
   className?: string;
@@ -46,6 +51,20 @@ interface Column {
 
 const rec = (key: string, label: string, group: string, tip: string, get: (t: SeededTeam) => Rec): Column => ({ key, label, group, tip, cell: (t) => fmtRec(get(t)), sort: (t) => recPct(get(t)) * 1000 + get(t).w });
 const num = (key: string, label: string, group: string, tip: string, get: (t: SeededTeam) => number, opts: Partial<Column> = {}): Column => ({ key, label, group, tip, cell: (t) => get(t), sort: get, ...opts });
+
+/** A rating with its league rank in small text (CK-19); "—" until ratings.json has loaded. */
+const rating = (key: 'ortg' | 'drtg' | 'net', label: string, tip: string, asc = false): Column => ({
+  key, label, group: 'Ratings', tip, asc,
+  cell: (t) => {
+    const r = t.rating;
+    if (!r) return '—';
+    const v = r[key];
+    const text = key === 'net' ? <span className={v > 0 ? 'ck-st-good' : v < 0 ? 'ck-st-bad' : ''}>{signed1(v)}</span> : fmt1(v);
+    return <>{text}<span className="ck-st-rank" data-tip={`${ordinal(r[`${key}Rank`])} in the league`}>{ordinal(r[`${key}Rank`])}</span></>;
+  },
+  // no rating: last either way
+  sort: (t) => (t.rating ? t.rating[key] : asc ? Infinity : -Infinity),
+});
 
 /** Every column after the team; `group` heads a run of adjacent columns in a set. */
 const COLUMNS: Column[] = [
@@ -79,6 +98,9 @@ const COLUMNS: Column[] = [
   num('leftB2b', 'B2B', 'Remaining', 'Back-to-backs left (2nd night still to come)', (t) => t.left.b2b, { asc: true }),
   rec('b2b1', '1st', 'B2B legs', 'Record on the 1st night of back-to-backs', (t) => t.b2bFirst),
   rec('b2b2', '2nd', 'B2B legs', 'Record on the 2nd night of back-to-backs', (t) => t.b2bSecond),
+  rating('ortg', 'ORtg', 'Offensive rating: points scored per 100 possessions'),
+  rating('drtg', 'DRtg', 'Defensive rating: points allowed per 100 possessions (lower is better)', true),
+  rating('net', 'Net', 'Net rating: ORtg − DRtg'),
 ];
 const COLUMN_BY_KEY = new Map(COLUMNS.map((c) => [c.key, c]));
 
@@ -156,6 +178,12 @@ export default function StandingsView({ data, set, gameLink, timeZone }: Standin
   const s = leagueStandings(data);
   const cols = useMemo(() => COLUMN_SETS[set].keys.map((k) => COLUMN_BY_KEY.get(k)!), [set]);
   const [sort, setSort] = useState<Sort>(SEED_SORT);
+  // ratings.json (CK-19), fetched the first time the Ratings set is shown
+  const [ratingsFile, setRatingsFile] = useState<RatingsFile>();
+  useEffect(() => {
+    if (set === 'ratings' && !ratingsFile) loadRatings().then(setRatingsFile, () => {});
+  }, [set, ratingsFile]);
+  const ratings = useMemo(() => (ratingsFile ? leagueRatings(data, ratingsFile) : undefined), [data, ratingsFile]);
   // a sort by a column the new set doesn't show goes back to seeds
   useEffect(() => setSort((cur) => (cur.key === 'seed' || COLUMN_SETS[set].keys.includes(cur.key) ? cur : SEED_SORT)), [set]);
   const lines = sort.key === 'seed' && sort.asc;
@@ -169,7 +197,8 @@ export default function StandingsView({ data, set, gameLink, timeZone }: Standin
   const click = (key: string, asc: boolean) => setSort((cur) => (cur.key === key ? { key, asc: !cur.asc } : { key, asc }));
   const aria = (key: string) => (sort.key === key ? (sort.asc ? 'ascending' : 'descending') : undefined);
   const arrow = (key: string) => (sort.key === key ? (sort.asc ? ' ▲' : ' ▼') : '');
-  const sorted = (teams: SeededTeam[]) => {
+  const sorted = (conf: SeededTeam[]) => {
+    const teams: Team[] = ratings ? conf.map((t) => ({ ...t, rating: ratings.get(t.teamId) })) : conf;
     if (sort.key === 'seed') return sort.asc ? teams : [...teams].reverse();
     const col = COLUMN_BY_KEY.get(sort.key)!;
     return [...teams].sort((a, b) => (sort.asc ? col.sort(a) - col.sort(b) : col.sort(b) - col.sort(a)) || a.seed - b.seed);
@@ -241,19 +270,20 @@ export default function StandingsView({ data, set, gameLink, timeZone }: Standin
             </table>
           ))}
         </div>
-        <Legend />
+        <Legend ratings={set === 'ratings'} />
       </div>
       {gamesPop.node}
     </section>
   );
 }
 
-function Legend() {
+function Legend({ ratings }: { ratings: boolean }) {
   return (
     <p className="ck-st-legend" data-testid="standings-legend">
       <span className="ck-st-key ck-st-key-playoffs" /> Playoffs (1–6) <span className="ck-st-key ck-st-key-playin" /> Play-in (7–10) ·{' '}
       x playoffs · pi play-in · o eliminated · w / e conference · a c se nw p sw division · Underlined seed: tied, hover for the tiebreakers (NBA
       rules, L.2) · Cup games count, the Cup Championship doesn’t
+      {ratings && ' · Ratings: points per 100 possessions, possessions from ESPN’s team statistics (updated daily); small text: league rank'}
     </p>
   );
 }

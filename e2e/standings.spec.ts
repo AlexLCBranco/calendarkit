@@ -26,8 +26,8 @@ const snapshotRecords = (page: Page) =>
     return t;
   }, APP);
 
-type SetKey = 'main' | 'splits' | 'extended' | 'form' | 'schedule';
-const SET_LABEL: Record<SetKey, string> = { main: 'Main', splits: 'Splits', extended: 'Extended', form: 'Form & scoring', schedule: 'Schedule & B2B' };
+type SetKey = 'main' | 'splits' | 'extended' | 'form' | 'schedule' | 'ratings';
+const SET_LABEL: Record<SetKey, string> = { main: 'Main', splits: 'Splits', extended: 'Extended', form: 'Form & scoring', schedule: 'Schedule & B2B', ratings: 'Ratings' };
 /** What each column set shows after seed and team: header labels, the cells' column keys, the group row (after the conference title). */
 const SETS: Record<SetKey, { heads: string[]; keys: string[]; groups: string[] }> = {
   main: { heads: ['W', 'L', 'Pct', 'GB', 'Conf', 'Home', 'Road', 'L10', 'Strk', 'Diff'], keys: ['w', 'l', 'pct', 'gb', 'conf', 'home', 'road', 'l10', 'streak', 'diff'], groups: ['', 'Splits', 'Form', 'Per game'] },
@@ -35,6 +35,7 @@ const SETS: Record<SetKey, { heads: string[]; keys: string[]; groups: string[] }
   extended: { heads: ['W-L', '3-pt', '10-pt', '.500+', '<.500', 'OT', 'Close'], keys: ['wl', 'close3', 'ten', 'over500', 'under500', 'ot', 'close'], groups: ['', 'Games'] },
   form: { heads: ['W-L', 'L10', 'Strk', 'PF', 'PA', 'Diff'], keys: ['wl', 'l10', 'streak', 'ppg', 'oppg', 'diff'], groups: ['', 'Form', 'Per game'] },
   schedule: { heads: ['W-L', 'Left', 'Home', 'Road', 'B2B', '1st', '2nd'], keys: ['wl', 'left', 'leftHome', 'leftRoad', 'leftB2b', 'b2b1', 'b2b2'], groups: ['', 'Remaining', 'B2B legs'] },
+  ratings: { heads: ['W-L', 'ORtg', 'DRtg', 'Net'], keys: ['wl', 'ortg', 'drtg', 'net'], groups: ['', 'Ratings'] },
 };
 const CONFS = ['West', 'East'] as const;
 const table = (page: Page, conf: 'West' | 'East') => page.locator(`[data-testid="standings-table"][data-conference="${conf}"]`);
@@ -103,7 +104,7 @@ test.describe('Standings view', () => {
   test('no West / East / League toggle and no League view any more', async ({ page }) => {
     await openStandings(page);
     await expect(page.getByRole('tablist', { name: 'Standings table' })).toHaveCount(0);
-    await expect(page.getByRole('tablist', { name: 'Standings columns' }).getByRole('tab')).toHaveText(['Main', 'Splits', 'Extended', 'Form & scoring', 'Schedule & B2B']);
+    await expect(page.getByRole('tablist', { name: 'Standings columns' }).getByRole('tab')).toHaveText(['Main', 'Splits', 'Extended', 'Form & scoring', 'Schedule & B2B', 'Ratings']);
     await expect(page.locator('[data-testid="standings"]').getByRole('tab')).toHaveCount(0);
     await expect(page.locator('[data-table]')).toHaveCount(0);
     expect(await page.getByTestId('standings-table').evaluateAll((ts) => ts.map((t) => t.getAttribute('data-conference')))).toEqual(['West', 'East']);

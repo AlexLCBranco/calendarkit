@@ -134,6 +134,11 @@
   text-underline-offset: 3px;
   cursor: help;
 }
+.ck-st-rank {
+  margin-left: 4px;
+  font-size: 0.75em;
+  color: var(--ck-muted);
+}
 .ck-st-good {
   color: #4cc38a;
 }

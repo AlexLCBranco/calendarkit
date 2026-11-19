@@ -17,6 +17,7 @@ on:
     paths:
       - '.github/workflows/schedule-update.yml'
       - 'scripts/update-schedule.ts'
+      - 'scripts/update-ratings.ts'
       - 'src/shared/nba-schedule/**'
 
 permissions:
@@ -39,6 +40,10 @@ jobs:
       - run: npm ci
       - name: Download feed
         run: npx tsx scripts/update-schedule.ts
+      # CK-19: possessions and points per team from ESPN; a failure keeps yesterday's file and doesn't stop the schedule
+      - name: Download ratings
+        continue-on-error: true
+        run: npx tsx scripts/update-ratings.ts
       - run: npm test
       - name: Commit snapshot
         id: commit
@@ -49,10 +54,10 @@ jobs:
           GIT_COMMITTER_NAME: ${{ vars.DATA_COMMIT_NAME || 'github-actions[bot]' }}
           GIT_COMMITTER_EMAIL: ${{ vars.DATA_COMMIT_EMAIL || '41898282+github-actions[bot]@users.noreply.github.com' }}
         run: |
-          if git diff --quiet -- public/data/schedule.json; then
-            echo "Schedule unchanged; nothing to commit."
+          if git diff --quiet -- public/data/schedule.json public/data/ratings.json; then
+            echo "Schedule and ratings unchanged; nothing to commit."
           else
-            git add public/data/schedule.json
+            git add public/data/schedule.json public/data/ratings.json
             git commit -m "data: schedule snapshot $(date -u +%Y-%m-%d)"
             git pull --rebase
             git push

@@ -2,7 +2,7 @@
 // switched together. Every set shows seed and team first. Kept out of the Standings chunk: the top bar's toggle needs
 // the labels before that chunk loads.
 
-export type StandingsSet = 'main' | 'splits' | 'extended' | 'form' | 'schedule';
+export type StandingsSet = 'main' | 'splits' | 'extended' | 'form' | 'schedule' | 'ratings';
 
 /** Label and column keys (`Standings.tsx`'s columns), left to right, in toggle order. */
 export const COLUMN_SETS: Record<StandingsSet, { label: string; keys: string[] }> = {
@@ -11,6 +11,7 @@ export const COLUMN_SETS: Record<StandingsSet, { label: string; keys: string[] }
   extended: { label: 'Extended', keys: ['wl', 'close3', 'ten', 'over500', 'under500', 'ot', 'close'] },
   form: { label: 'Form & scoring', keys: ['wl', 'l10', 'streak', 'ppg', 'oppg', 'diff'] },
   schedule: { label: 'Schedule & B2B', keys: ['wl', 'left', 'leftHome', 'leftRoad', 'leftB2b', 'b2b1', 'b2b2'] },
+  ratings: { label: 'Ratings', keys: ['wl', 'ortg', 'drtg', 'net'] },
 };
 
 export const SET_OPTIONS = Object.entries(COLUMN_SETS).map(([k, v]) => [k, v.label]) as [StandingsSet, string][];
