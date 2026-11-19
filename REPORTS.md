@@ -2,12 +2,21 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-19 — CK-11 built
+
+**Built (v1.88.1):**
+- CK-11: the ⇄ note switch in the copy layout shown live (the gauntlet's Slate widget). **Cause:** the corner right of the odds (`SLATE_COPY_HEAD`, 56 px) was sized for the PRE/LIVE/POST label alone; once a note was opened, the label and ⇄ sat side by side (63 px) and slid 7 px left over the odds column. And ⇄ only existed while a note was being typed in. **Fix:** in the copy layout ⇄ sits under the label (right-aligned, 35 px wide), and the live copy shows it on every card at all times; a press switches the space without opening the note. Copied images are unchanged (no ⇄, pixel-identical). The kit's demo page has a `&copy=1` mode that renders the gauntlet's layout, which the new e2e test measures.
+
+**Blocked:** none. **Ideas added:** none.
+
+**To check by hand:** whether ⇄ under the label looks right to you on the whiteboard; the placement is tested.
+
 ## 2026-11-19 — CK-19 built
 
 **Built (v1.88.0):**
 - CK-19: Standings has a sixth column set, "Ratings": ORtg, DRtg and Net, each with the team's league rank in small text ("115.8 4th"). DRtg sorts lowest first. Possessions and points scored come from ESPN's public team statistics, fetched by the daily data job into `public/data/ratings.json` (scripts/update-ratings.ts). Points allowed come from the schedule the app already has, over the same games. ESPN's games played and points matched the app's schedule for all 30 teams. If ESPN is down, the job keeps yesterday's file and the schedule update still goes through.
 
-**Blocked:** CK-11 (unchanged, see below).
+**Blocked:** CK-11 (unchanged at the time; built later that day, above).
 
 **Ideas added:** none.
 

@@ -33,10 +33,10 @@ export function wheelPastNote(e: WheelEvent) {
 }
 
 /** The space label and its switch — the card's top-right corner (`slot` only: the copy's label, no switch). */
-function NoteHead({ slot, onSwitch, keepFocus = false }: { slot: GameNote['shown']; onSwitch?: () => void; /** A press on ⇄ leaves the focus in the note (NoteLive: it stays open) */ keepFocus?: boolean }) {
+function NoteHead({ slot, onSwitch, keepFocus = false, stack = false }: { slot: GameNote['shown']; onSwitch?: () => void; /** A press on ⇄ leaves the focus in the note (NoteLive: it stays open) */ keepFocus?: boolean; /** ⇄ under the label, not beside it: the copy layout, whose corner (SLATE_COPY_HEAD) is the label's width only (CK-11) */ stack?: boolean }) {
   const next = nextSlot(slot);
   return (
-    <span className="ck-gnote-head" data-testid="note-head">
+    <span className={`ck-gnote-head${stack ? ' ck-gnote-head-stack' : ''}`} data-testid="note-head">
       <span className="ck-gnote-slot" data-testid="note-slot" data-slot={slot}>
         {SLOT_LABEL[slot]}
       </span>
@@ -86,10 +86,10 @@ export function NoteBox({ store, gameId, label }: { store: SlateNotes; gameId: s
 /** The note box as it is copied: the shown space's label (no switch) and its whole text — never capped, no scrollbar.
     With `onEdit` (NoteLive, a host showing the copy live) the box is 3 lines, scrolling inside (GT-11), and a click on
     it opens it for typing. */
-export function NoteCopy({ note, onEdit }: { note: GameNote; onEdit?: () => void }) {
+export function NoteCopy({ note, onEdit, onSwitch }: { note: GameNote; onEdit?: () => void; /** NoteLive: ⇄ under the label, always (CK-11); never in images */ onSwitch?: () => void }) {
   return (
     <>
-      <NoteHead slot={note.shown} />
+      <NoteHead slot={note.shown} onSwitch={onSwitch} stack />
       <div className="ck-gnote ck-gnote-copy" data-testid="note" data-slot={note.shown} data-editable={onEdit ? 'true' : undefined} onClick={onEdit}>
         <span className="ck-gnote-grow">
           <span className="ck-gnote-text ck-gnote-static" data-testid="note-text">
@@ -103,7 +103,7 @@ export function NoteCopy({ note, onEdit }: { note: GameNote; onEdit?: () => void
 
 /**
  * A note in the copy layout shown live by a host (the gauntlet's Slate widget, `SlateCopy editNotes`): exactly the copy
- * (NoteCopy) until clicked; then calendarkit's field in the same box, the space label with its ⇄, the box 3 lines tall
+ * (NoteCopy, plus the ⇄ under the label: always there, CK-11) until clicked; then calendarkit's field in the same box, the box 3 lines tall
  * like calendarkit's own (the field scrolls inside: gauntlet GT-11). Enter adds a line; the note is saved as typed (the store's delay); leaving
  * the field (a click elsewhere, Escape, Tab) saves it at once and shows the copy again. It follows its own game only, so
  * a note typed elsewhere (another tab) shows here as it is saved.
@@ -121,11 +121,12 @@ export function NoteLive({ store, gameId, label }: { store: SlateNotes; gameId: 
     t.focus({ preventScroll: true });
     t.setSelectionRange(t.value.length, t.value.length);
   }, [editing]);
-  if (!editing) return <NoteCopy note={note} onEdit={() => setEditing(true)} />;
   const slot = note.shown;
+  const onSwitch = () => store.set(gameId, { shown: nextSlot(slot) }, true);
+  if (!editing) return <NoteCopy note={note} onEdit={() => setEditing(true)} onSwitch={onSwitch} />;
   return (
     <>
-      <NoteHead slot={slot} onSwitch={() => store.set(gameId, { shown: nextSlot(slot) }, true)} keepFocus />
+      <NoteHead slot={slot} onSwitch={onSwitch} keepFocus stack />
       <div className="ck-gnote ck-gnote-copy" data-testid="note" data-slot={slot} data-editable="true" data-editing="true">
         <span className="ck-gnote-grow ck-gnote-live" data-text={`${note[slot]} `}>
           <textarea

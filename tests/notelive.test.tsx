@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Notes typed in the copy layout shown live (SlateCopy editNotes: the gauntlet's Slate widget, its GT-4): a note looks
-// exactly like the copy until clicked; a click opens calendarkit's field in that box (with ⇄); typing saves to the
+// exactly like the copy (plus ⇄ under the label, CK-11) until clicked; a click opens calendarkit's field in that box (with ⇄); typing saves to the
 // game's note (the store), Enter adds a line, leaving the field saves at once and shows the copy again; a note saved
 // elsewhere shows at once. Without editNotes the copy stays static (images).
 
@@ -19,18 +19,22 @@ const field = (c: HTMLElement, i: number) => card(c, i).querySelector<HTMLTextAr
 afterEach(cleanup);
 
 describe('SlateCopy editNotes (NoteLive)', () => {
-  it('at rest: the copy itself (static text, the label, no ⇄, no field), on every card', () => {
+  it('at rest: the copy itself (static text, the label, no field) plus ⇄ under the label, on every card (CK-11)', () => {
     const store = memory();
     store.set(games[0]!.gameId, { pre: 'Watch the starters' }, true);
     const live = render(<SlateCopy data={data} games={games} cols={2} cardWidth={944} timeZone="UTC" notes={store} editNotes />).container;
     const still = render(<SlateCopy data={data} games={games} cols={2} cardWidth={944} timeZone="UTC" notes={store} />).container;
-    const strip = (c: HTMLElement) => c.innerHTML.replace(/ data-editable="true"/g, '');
+    const strip = (c: HTMLElement) => c.innerHTML.replace(/ data-editable="true"/g, '').replace(/<button[^>]*data-testid="note-switch"[^>]*>⇄<\/button>/g, '');
     expect(strip(live)).toBe(still.innerHTML);
-    expect(live.querySelectorAll('textarea, [data-testid="note-switch"]')).toHaveLength(0);
+    expect(live.querySelectorAll('textarea')).toHaveLength(0);
+    // CK-11: the switch is always there in the live copy, stacked under the label; never in images
+    expect(live.querySelectorAll('[data-testid="note-switch"]')).toHaveLength(games.length);
+    expect(live.querySelectorAll('.ck-gnote-head-stack [data-testid="note-switch"]')).toHaveLength(games.length);
+    expect(still.querySelectorAll('[data-testid="note-switch"]')).toHaveLength(0);
     expect(still.querySelectorAll('[data-editable]')).toHaveLength(0);
   });
 
-  it('a click opens the field (focused, the text in it, ⇄ beside the label); typing saves to the game; Enter adds a line', () => {
+  it('a click opens the field (focused, the text in it, ⇄ under the label); typing saves to the game; Enter adds a line', () => {
     const store = memory();
     const id = games[1]!.gameId;
     store.set(id, { pre: 'First line' }, true);
