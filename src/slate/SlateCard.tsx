@@ -30,6 +30,7 @@ import { fmtOdds, gameOdds, withFinals, type DayOdds, type GameOdds, type SlateO
 import { GameLinkIcon, ScoreLink, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
 import { StreakChip } from './streakPopup';
+import { slateHeaderLabel } from './header';
 
 /** The day's games (TV games only when filtered), in tip-off order; [] on a day without games. */
 export const slateGames = (data: CalendarData, date: string, tvOnly = false) => {
@@ -94,6 +95,7 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
         </p>
       )}
       <div className={`ck-slate-grid${notes ? ' ck-slate-wide' : ''}`} data-cols={cols} data-cup={cup || undefined} style={slateVars(cols, cup)}>
+        {games.length > 0 && <SlateHeader date={date} />}
         {games.map((g) => (
           <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, g)} cupNight={cup} fates={fates} chips={chips} />
         ))}
@@ -144,9 +146,19 @@ export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, 
   const zoom = slateCopyZoom(cardWidth, cup, !!notes);
   return (
     <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-margin': `${SLATE_COPY_MARGIN}px` } as CSSProperties} data-zoom={zoom}>
+      {games[0] && <SlateHeader date={games[0].dateEt} />}
       {games.map((g) => (
         <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy editNotes={editNotes} />
       ))}
+    </div>
+  );
+}
+
+/** The header line across the top of the grid ("SLATE · 18-11 · NBA"), on screen, in copies and in host widgets. */
+function SlateHeader({ date }: { date: string }) {
+  return (
+    <div className="ck-slate-header" data-testid="slate-header">
+      {slateHeaderLabel(date)}
     </div>
   );
 }

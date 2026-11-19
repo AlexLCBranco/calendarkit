@@ -24,6 +24,21 @@
   grid-template-columns: repeat(var(--ck-slate-cols), calc(var(--ck-slate-card-w) - 1px));
   gap: 0;
 }
+/* The header line ("SLATE · 18-11 · NBA") across the grid's top, on screen and in copies; opaque like the cards, so
+   it reads on the copies' transparent page */
+.ck-slate-header {
+  grid-column: 1 / -1;
+  margin: 0 -1px -1px 0;
+  padding: 4px var(--ck-slate-pad, 8px);
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-slate-line, #5b6476);
+  color: var(--ck-text);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 18px;
+  white-space: nowrap;
+}
 /* With the note boxes, the grid fills the widget in 1 or 2 columns (slateColumns) */
 .ck-slate-grid.ck-slate-wide {
   max-width: none;

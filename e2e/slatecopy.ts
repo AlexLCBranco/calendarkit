@@ -26,6 +26,12 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
           nameFont: parseFloat(getComputedStyle(card).fontSize),
           // Links (the ↗ icons) in the copied node; the strip's chips reflow without them
           links: root.querySelectorAll('a').length,
+          // the header line ("SLATE · 18-11 · NBA") in the copied node
+          header: root.querySelector('[data-testid="slate-header"]')?.textContent ?? null,
+          headerBox: (() => {
+            const h = root.querySelector('[data-testid="slate-header"]')?.getBoundingClientRect();
+            return h ? { x: h.left - r0.left, y: h.top - r0.top, w: h.width, h: h.height } : null;
+          })(),
           cards: [...root.querySelectorAll('.ck-slate-card')].map((c) => {
             const r = c.getBoundingClientRect();
             // The note box (its rect in the image, its text, the text's overflow), the space label in the card's corner (its
@@ -52,7 +58,7 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
   await expect(button).toHaveAttribute('data-state', 'copied', { timeout: 60_000 });
   const ms = Date.now() - t0;
   await page.evaluate(() => (window as unknown as { __slateObs?: MutationObserver }).__slateObs?.disconnect());
-  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; links: number; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number; cut: number; scrollbar: number; label: { x: number; y: number; w: number; h: number } | null; infoRight: number; infoBottom: number } | null }[] };
+  const stage = (await page.evaluate(() => (window as unknown as { __slate: unknown }).__slate)) as { width: number; height: number; cols: number; nameFont: number; links: number; header: string | null; headerBox: { x: number; y: number; w: number; h: number } | null; cards: { id: string; x: number; y: number; w: number; h: number; note: { x: number; y: number; w: number; h: number; slot: string; text: string; controls: number; cut: number; scrollbar: number; label: { x: number; y: number; w: number; h: number } | null; infoRight: number; infoBottom: number } | null }[] };
   const ratio = Number((await button.getAttribute('data-captured'))!.split('@')[1]);
   const png = await page.evaluate(async () => {
     const item = (await navigator.clipboard.read()).find((i) => i.types.includes('image/png'))!;
@@ -64,7 +70,7 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
   // made here: a CI shard may run no copy.spec.ts, which used to be the only spec creating it
   mkdirSync(OUT, { recursive: true });
   writeFileSync(`${OUT}/${name}.png`, Buffer.from(png, 'base64'));
-  // pixels: alpha 0 everywhere outside the cards (2 px margin for antialiased edges and rounded corners), opaque inside
+  // pixels: alpha 0 everywhere outside the cards and the header line (2 px margin for antialiased edges and rounded corners), opaque inside
   const px = await page.evaluate(
     async ({ png, stage, ratio }) => {
       const bmp = await createImageBitmap(await (await fetch(`data:image/png;base64,${png}`)).blob());
@@ -72,7 +78,9 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
       const ctx = c.getContext('2d')!;
       ctx.drawImage(bmp, 0, 0);
       const { data, width, height } = ctx.getImageData(0, 0, bmp.width, bmp.height);
-      const inCard = (x: number, y: number, m: number) => stage.cards.some((k) => x >= (k.x - m) * ratio && x < (k.x + k.w + m) * ratio && y >= (k.y - m) * ratio && y < (k.y + k.h + m) * ratio);
+      // the header line is opaque like the cards
+      const boxes = stage.headerBox ? [...stage.cards, stage.headerBox] : stage.cards;
+      const inCard = (x: number, y: number, m: number) => boxes.some((k) => x >= (k.x - m) * ratio && x < (k.x + k.w + m) * ratio && y >= (k.y - m) * ratio && y < (k.y + k.h + m) * ratio);
       let outside = 0;
       let outsideOpaque = 0;
       let inside = 0;

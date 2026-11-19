@@ -8,6 +8,8 @@ export type { CalendarData } from '../data/model';
 export { SCHEDULE_DATA_URL } from '../data/address';
 export { SlateCard, SlateCopy, SlateDay, slateGames, type SlateDayProps } from './SlateCard';
 export { gameLinkUrl, hoopsjunkieLink, type GameLink } from './links';
+// "SLATE · 18-11 · NBA" — the header line's text; a combined Slate passes every sport ("NBA + Football")
+export { slateHeaderLabel } from './header';
 export {
   createNotesStore,
   EMPTY_NOTE,

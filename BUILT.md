@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-18
+- CK-10 — Slate header line (v1.82.0)
+  Every Slate starts with "SLATE · 18-11 · NBA" across its top, on screen, in copied images and in the gauntlet's widget; the kit exports `slateHeaderLabel` so a combined Slate can say "NBA + Football".
 - CK-12 — Slate: score right beside the team name (v1.81.0)
   A finished game's score follows the team's name on Slate cards; the cards keep their width.
 - CK-9 — Slate: clearer lines between cards, never under the TV pill (v1.81.0)

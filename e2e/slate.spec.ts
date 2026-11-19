@@ -173,6 +173,8 @@ test('copy: 1, 5, 12 and 15 games — transparent around the cards, page-shaped,
     const s = fit(r.stage);
     console.log(`[slate] ${n} games (${date}): ${r.stage.cols} columns, ${r.stage.width}×${r.stage.height} CSS px × ${r.ratio} = ${r.px.width}×${r.px.height} px, fitted ×${s.toFixed(2)} (names ${(r.stage.nameFont * s).toFixed(1)} px), copied in ${r.ms} ms`);
     expect(r.stage.cards).toHaveLength(n);
+    // CK-10: the header line is in the image
+    expect(r.stage.header).toBe(`SLATE · ${date!.slice(8, 10)}-${date!.slice(5, 7)} · NBA`);
     expect([r.px.width, r.px.height]).toEqual([Math.floor(r.stage.width * r.ratio), Math.floor(r.stage.height * r.ratio)]);
     // transparent outside the cards (alpha 0), opaque cards
     expect(r.px.outside).toBeGreaterThan(0);

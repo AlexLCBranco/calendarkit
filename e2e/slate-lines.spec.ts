@@ -3,6 +3,7 @@
 
 import { expect, test, type Page } from './fixtures';
 import { SLATE_CARD_WIDTH } from '../src/slate/layout';
+import { APP } from './app';
 
 const NOW = new Date('2026-11-17T15:00:00Z');
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'one desktop size'));
@@ -62,4 +63,17 @@ test('CK-12: a final score starts right after the name; cards keep their width',
   }
   const widths = await page.locator('.ck-slate-card').evaluateAll((cs) => cs.map((c) => Math.round(c.getBoundingClientRect().width)));
   for (const w of widths) expect(w).toBe(SLATE_CARD_WIDTH);
+});
+
+test('CK-10: the header line tops the Slate on /calendar and in the gauntlet-style widget page', async ({ page }) => {
+  await open(page, '2026-11-16');
+  await expect(page.locator('[data-testid="slate"] [data-testid="slate-header"]')).toHaveText('SLATE · 16-11 · NBA');
+  const top = await page.evaluate(() => {
+    const h = document.querySelector('[data-testid="slate-header"]')!.getBoundingClientRect();
+    const c = document.querySelector('.ck-slate-card')!.getBoundingClientRect();
+    return h.bottom <= c.top + 1;
+  });
+  expect(top).toBe(true);
+  await page.goto(`${APP}slate.html?date=2026-11-16&notes=0`);
+  await expect(page.getByTestId('slate-header')).toHaveText('SLATE · 16-11 · NBA');
 });

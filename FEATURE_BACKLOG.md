@@ -5,10 +5,6 @@ Specs are written here from Claude chat. Item IDs are CK-1, CK-2, ... (never reu
 
 ## Ready
 
-### CK-10 — Slate header line
-**What:** a header line at the top of every Slate, e.g. "SLATE · 18-11 · NBA" (date as day-month). Shows in the gauntlet widget and in copied images. Use the same pattern footykit will use (FK-35) so a combined Slate can say "SLATE · 18-11 · NBA + Football".
-**Tests:** unit for the label; e2e that the header shows on /slate and in a copied image.
-
 ### CK-11 — Slate: notes switch always available, never over the odds
 **What:** the button that shows/hides the game descriptions (notes) on the Slate is always visible (not only on hover or in some states) and never sits on top of the odds column.
 **Tests:** e2e: button visible with notes on and off; its box doesn't overlap any odds cell.
