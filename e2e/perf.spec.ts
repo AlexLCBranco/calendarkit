@@ -346,9 +346,12 @@ test('switching views: click → next frame', async ({ page }) => {
 // Not against a baseline (new): must stay smooth — p95 frame within two refreshes, no long task over 100 ms in total.
 test('marquee drag across busy views: frame times and long tasks', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
-  const gesture = async (search: string, from: [number, number], to: [number, number], hold = 0) => {
+  const gesture = async (search: string, start: [number, number] | 'view', to: [number, number], hold = 0) => {
     await page.goto(`/calendar/${search}`);
     await page.waitForFunction(() => [...document.images].every((i) => i.complete) && !!document.querySelector('[data-game-id]'));
+    // 'view': from the view's top-left corner, just under the page rows — a box never starts on the header or the
+    // rows (a fixed point there, (60, 150), stopped being in the view when the header grew)
+    const from: [number, number] = start === 'view' ? [60, Math.ceil(await page.getByTestId('page-rows').evaluate((el) => el.getBoundingClientRect().bottom)) + 10] : start;
     await page.evaluate(() => {
       const w = window as unknown as { __ck: { frames: number[]; long: number; stop: boolean } };
       w.__ck = { frames: [], long: 0, stop: false };
@@ -377,7 +380,7 @@ test('marquee drag across busy views: frame times and long tasks', async ({ page
     expect.soft(r.p95, 'p95 frame within two refreshes').toBeLessThanOrEqual(34);
     expect.soft(r.long, 'long tasks during the drag').toBeLessThanOrEqual(100);
   };
-  await gesture('?view=league&layout=calendar&date=2026-12-27&weeks=2', [60, 150], [1860, 1040]);
+  await gesture('?view=league&layout=calendar&date=2026-12-27&weeks=2', 'view', [1860, 1040]);
   await gesture('?view=team&layout=list&team=LAL', [900, 300], [905, 1060], 1500);
 });
 

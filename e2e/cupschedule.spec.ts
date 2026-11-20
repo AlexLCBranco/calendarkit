@@ -476,6 +476,16 @@ test.describe('Cup schedule fits the window', () => {
           const r = await measure(page, '[data-testid="cup-league"]', '.ck-cg');
           await page.screenshot({ path: `test-output/cupschedule-by${by}-${size.width}x${size.height}-${data.replace(' ', '-')}.png` });
           console.log(`[cup schedule fit] by ${by} ${size.width}×${size.height} ${data}: ${r.rows} games, view bottom ${r.bottom} / window ${r.win}, row text ${r.font} × ${r.zoom}, row heights ${r.heights.join('/')}`);
+          if (by === 'date')
+            console.log(
+              `[cup schedule fit] by date parts: ${JSON.stringify(
+                await page.evaluate(() => {
+                  const h = (e: Element | null) => (e ? Math.round(e.getBoundingClientRect().height * 10) / 10 : null);
+                  const q = (s: string) => document.querySelector(s);
+                  return { doc: document.documentElement.scrollHeight, header: h(q('[data-testid="top-bar"]')), rows: h(q('[data-testid="page-rows"]')), strip: h(q('.ck-cup-strip')), nights: h(q('.ck-cup-nights')), cards: [...document.querySelectorAll('.ck-cup-nights > .ck-cg-card')].map(h), heads: [...new Set([...document.querySelectorAll('.ck-cup-nights .ck-cg-head')].map(h))], viewTop: Math.round(q('[data-testid="cup-league"]')!.getBoundingClientRect().top + scrollY) };
+                }),
+              )}`,
+            );
           expect(r.rows).toBe(67);
           expect(r.scroll, `by ${by}: page scrolls by more than the page rows`).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
           expect(r.out, `by ${by}`).toEqual([]);
