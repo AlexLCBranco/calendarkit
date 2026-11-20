@@ -6,4 +6,3 @@ Ideas the owner mentioned that are not planned (maybe later, maybe never). Never
 
 - I-1 — NBA injury report: games missed together with the expected return date, plus an always-available "players available" list for days with many absences; the place isn't decided (here or a widget of its own) (2026-10-30, chat; 2026-11-18: owner wants it as a full widget of its own, "insane"; until then the Slate links to ESPN and the official report, CK-15) [why: decision]
 - I-2 — Floating live window grows into player scores: the pop-out (CK-23) also shows live player lines (points, rebounds, assists, minutes) for chosen players or for each game; "eventually" (2026-11-19, chat) [why: later]
-- I-3 — One floating window for the whole night (Claude's suggestion): it opens as the countdown to the first game and turns into live scores at tip-off, so one pop-out replaces halftime-timer + CK-23 for game nights (2026-11-19, chat) [why: decision]

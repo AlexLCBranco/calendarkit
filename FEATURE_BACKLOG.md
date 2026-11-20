@@ -20,5 +20,15 @@ Blocked: waits for halftime-timer HT-1 (its link format and live URL); the owner
 - Same technique as halftime-timer's pop-out (Document Picture-in-Picture; Chrome/Edge desktop; button hidden where not supported).
 - Button in the Slate header. Window: one compact line per game of the Slate's day: start time or "LIVE Q3 4:12" in red, `BOS 58 @ 61 DET`, finals as finals. Uses CK-21's live data and its polling rules (nothing polls when nothing is live). Hide scores (when shipped) applies here too.
 - Small and resizable; a normal night fits without a scrollbar.
+- Before the first game starts (owner, 2026-11-19, from I-3): the window opens as a countdown to the first game of the Slate's day (like halftime-timer's), and turns into the live scores list by itself at kickoff/tip-off. One click on the pop-out button, one window for the whole night.
 - Needs CK-21 first.
 **Tests:** unit: the window's list (order, live/final/upcoming, hidden scores); e2e: the pop-out content renders from mocked live data.
+
+### CK-24 — NBA history: past seasons' standings, play-in and playoffs
+**In short:** Like the Cup history, you can pick any past NBA season and see its final standings (East and West side by side), the play-in and the full playoff bracket.
+**What:**
+- Season picker (newest first) in Standings, with the same columns as today's standings where the data exists for that season.
+- Play-in (2020-21 on) and the full playoff bracket with series results; hover a series for its games (scores, links to each game page as the app's click rules say: hoopsjunkie where it has the game, NBA.com otherwise).
+- A small summary like the Cup history: champions and conference winners by season.
+- Free sources only (NBA's own data feeds, Basketball-Reference pages for links); go back as far as free data is reliable and say in the report how far that is. Must not slow down today's pages: history loads only when opened.
+**Tests:** unit: final standings and bracket for a few past seasons equal the real ones (checked against a second source); e2e: pick 2015-16, standings and bracket render, a series hover shows its games.
