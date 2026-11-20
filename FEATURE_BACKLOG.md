@@ -5,6 +5,14 @@ Specs are written here from Claude chat. Item IDs are CK-1, CK-2, ... (never reu
 
 ## Ready
 
+### CK-25 — Shared layout: pinned header menu, chips instead of dropdowns
+**In short:** calendarkit gets the shared layout every app now uses: a header always at the top (back/forward, breadcrumb, main places, "Go anywhere" search), and under it "What" chips and a "How" switch, so nothing is hidden in dropdowns.
+**What:**
+- Follow [NAV_PATTERN.md](https://github.com/AlexLCBranco/backlogkit/blob/main/NAV_PATTERN.md) exactly (read it first; it is the spec). Same look as footykit FK-65 so the apps read as one site; if FK-65 has shipped, copy its header styles rather than re-designing.
+- Where tabs: the existing Schedule · Cup · Standings destinations (plus Tools if it has small tools); the team picker becomes What chips (teams grouped by conference/division, never a dropdown). Keep the current two-row nav decisions as far as they fit the pattern; flag conflicts.
+- Replace every `<select>` used to pick what's shown with chips/strips. Every state in the URL; old URLs keep working.
+**Tests:** as in NAV_PATTERN.md section 6.
+
 ### CK-22 — Countdown to the Slate's first game (halftime-timer)
 **In short:** The Slate gets a "⏱ Countdown" button that opens halftime-timer with a timer counting down to the day's first tip-off.
 **What:**
