@@ -115,8 +115,9 @@ measurement; open it only when a question needs the backstory.
   Travel worked out once per game (`travel.ts`, cached per data set); labels placed once per game and width (`view.ts`).
 - **Copy as image** on every view (html-to-image, `src/components/copyAsImage.ts`).
 - **Data**: `public/data/schedule.json`, a daily snapshot of the NBA's schedule feed (cdn.nba.com blocks browsers by
-  CORS and headless clients by bot detection, so the site never fetches the feed itself). Schedule first: no live
-  status; scores appear the morning after.
+  CORS and headless clients by bot detection, so the site never fetches the feed itself). Live scores and the night's
+  finals come from ESPN through `api/odds.ts` (CK-21, `src/slate/live.tsx`): polled every minute only while a game on
+  screen is live or within 15 min of tip-off and the tab is visible.
 
 ## Where things live
 - `src/App.tsx` — app shell, URL state (`?view=&layout=&team=&weeks=&span=&tv=&cup=…`; `date=` is written but never

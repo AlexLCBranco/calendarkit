@@ -180,10 +180,10 @@ describe('final scores from ESPN', () => {
     expect(anyLive(finished.events)).toBe(false);
   });
 
-  it('cache: 2 minutes while a game is on (the final shows soon after the end)', () => {
+  it('cache: 1 minute while a game is on (CK-21: the live scores’ pace)', () => {
     const [a, ...rest] = finished.events;
     const playing = { ...a!, competitions: [{ ...a!.competitions[0]!, status: { type: { state: 'in' } } }], status: { type: { state: 'in' } } };
-    expect(oddsCacheSeconds([playing, ...rest])).toBe(120);
+    expect(oddsCacheSeconds([playing, ...rest])).toBe(60);
     expect(oddsCacheSeconds(finished.events)).toBe(86_400);
   });
 

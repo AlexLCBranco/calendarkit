@@ -3,6 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type SyntheticEvent } from 'react';
 import { teamLogo } from '../data/teams';
 import { claimPopup, POPUP_GRACE_MS, releasePopup } from './popupGate';
+import type { ScheduleGame } from '../shared/nba-schedule/parse';
+import { useLive } from './live';
 
 /** A left edge for a box `w` px wide near `x`, kept 8 px inside the viewport. */
 export const clampX = (x: number, w: number) => Math.max(8, Math.min(x, document.documentElement.clientWidth - w - 8));
@@ -16,6 +18,20 @@ export interface StripGame {
   opponentId: number;
   opponent: string;
   url?: string;
+  /** The game itself, for its live score (CK-21). */
+  game?: ScheduleGame;
+}
+
+/** A strip square's red LIVE tag and the score so far from the team's side, while the game is being played (CK-21). */
+function StripLive({ game, at }: { game: ScheduleGame; at: 'vs' | '@' }) {
+  const { live } = useLive(game);
+  if (!live) return null;
+  const [mine, theirs] = at === 'vs' ? [live.home, live.away] : [live.away, live.home];
+  return (
+    <span className="ck-tip-live" data-testid="tip-live">
+      <span className="ck-live-tag">LIVE</span> {mine}–{theirs}
+    </span>
+  );
 }
 /**
  * The host's lookup for a strip's games: the stretch's game ids (`data-tip-games`) → ET date → that game from the
@@ -50,6 +66,7 @@ function DayStrip({ days, games }: { days: string; games?: ReadonlyMap<string, S
             <span className="ck-tip-match">
               {g.at === '@' ? '@' : 'vs'} {g.opponent}
             </span>
+            {g.game && <StripLive game={g.game} at={g.at} />}
           </>
         ) : null;
         return (

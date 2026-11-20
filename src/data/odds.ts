@@ -34,20 +34,34 @@ export interface GameFinal {
   /** "Final", "Final/OT", "Final/2OT": as the snapshot writes it. */
   statusText: string;
 }
+/** A game being played as ESPN has it (CK-21): the score so far, the period and the clock. */
+export interface GameLive {
+  away: number;
+  home: number;
+  /** 1–4 quarters, 5 = OT, 6 = 2OT … */
+  period: number;
+  /** "4:12", "0.0" (ESPN's displayClock) */
+  clock: string;
+  /** ESPN's status name: STATUS_IN_PROGRESS, STATUS_HALFTIME, STATUS_END_PERIOD … */
+  status: string;
+}
 /** The odds of one ET date, keyed "AWAY@HOME" by NBA tricodes; with the games ESPN has as finished (`finals`, same
-    keys) and whether any game is being played (`live`: the store then asks more often). */
+    keys), the games being played (`inPlay`, same keys) and whether any game is being played (`live`). */
 export interface DayOdds {
   date: string;
   games: Record<string, GameOdds>;
   finals?: Record<string, GameFinal>;
+  inPlay?: Record<string, GameLive>;
   live?: boolean;
 }
 
 type Moneyline = { home?: { close?: { odds?: string }; open?: { odds?: string } }; away?: { close?: { odds?: string }; open?: { odds?: string } } };
 type EspnOdds = { provider?: { name?: string }; moneyline?: Moneyline };
-type EspnStatus = { period?: number; type?: { state?: string; completed?: boolean } };
+type EspnStatus = { period?: number; displayClock?: string; type?: { name?: string; state?: string; completed?: boolean } };
 export type EspnEvent = {
   id: string;
+  /** tip-off, ISO ("2026-11-19T00:00Z") */
+  date?: string;
   competitions: { competitors: { homeAway: 'home' | 'away'; team: { abbreviation: string }; score?: string }[]; odds?: EspnOdds[]; status?: EspnStatus }[];
   status?: EspnStatus;
 };
@@ -115,17 +129,60 @@ export function dayFinals(scoreboard: { events?: EspnEvent[] }): Record<string, 
   return out;
 }
 
+/**
+ * The games being played (state "in": quarters, halftime, breaks between periods), with the score so far, keyed like
+ * the odds (CK-21). A game without both scores is left out (its row keeps what it shows).
+ */
+export function dayInPlay(scoreboard: { events?: EspnEvent[] }): Record<string, GameLive> {
+  const out: Record<string, GameLive> = {};
+  for (const e of scoreboard.events ?? []) {
+    const key = eventKey(e);
+    const c = e.competitions[0];
+    if (!key || !c || eventState(e) !== 'in') continue;
+    const status = c.status ?? e.status;
+    const score = (side: 'home' | 'away') => Number(c.competitors.find((x) => x.homeAway === side)?.score);
+    const away = score('away');
+    const home = score('home');
+    if (!Number.isFinite(away) || !Number.isFinite(home)) continue;
+    out[key] = { away, home, period: status?.period ?? 1, clock: status?.displayClock ?? '', status: status?.type?.name ?? '' };
+  }
+  return out;
+}
+
+/** "Q1" … "Q4", "OT", "2OT" … */
+export const periodName = (period: number) => (period <= 4 ? `Q${Math.max(1, period)}` : period === 5 ? 'OT' : `${period - 4}OT`);
+
+/**
+ * The period and clock beside the red LIVE label: "Q3 4:12", "Half", "End Q3", "OT 1:30", "2OT 0:12". A clock at zero
+ * is the break after that period (ESPN's STATUS_END_PERIOD, or a status name it hasn't used before).
+ */
+export function liveDetail(l: Pick<GameLive, 'period' | 'clock' | 'status'>): string {
+  if (/HALFTIME/i.test(l.status)) return 'Half';
+  const p = periodName(l.period);
+  const clock = l.clock.trim();
+  if (/END/i.test(l.status) || !/[1-9]/.test(clock)) return `End ${p}`;
+  return `${p} ${clock}`;
+}
+
 /** Any game of the scoreboard being played. */
 export const anyLive = (events: EspnEvent[] | undefined) => (events ?? []).some((e) => eventState(e) === 'in');
 
+/** How close to tip-off the live scores start being asked for every minute (CK-21). */
+export const LIVE_LEAD_MS = 15 * 60_000;
+
 /**
  * How long the CDN keeps a day's answer (s-maxage, seconds). Every game over: the line can't change any more → a day.
- * A game being played: 2 minutes, so a final score shows soon after the game ends (gauntlet GT-5; at most 30 scoreboard
- * requests per hour per date reach ESPN, and only while games are on). Otherwise 10 minutes (lines move during the day; at
- * most 6 requests per hour per date, however many people open the Slate).
+ * A game being played, or one within LIVE_LEAD_MS of tip-off: 1 minute, the live scores' pace (CK-21; at most 60
+ * scoreboard requests per hour per date reach ESPN however many people watch, and only while games are on). Otherwise
+ * 10 minutes (lines move during the day; at most 6 requests per hour per date).
  */
-export const oddsCacheSeconds = (events: EspnEvent[] | undefined) =>
-  (events ?? []).length > 0 && (events ?? []).every((e) => eventState(e) === 'post') ? 86_400 : anyLive(events) ? 120 : 600;
+export const oddsCacheSeconds = (events: EspnEvent[] | undefined, now = Date.now()) => {
+  const ev = events ?? [];
+  if (ev.length > 0 && ev.every((e) => eventState(e) === 'post')) return 86_400;
+  // a game still "pre" a little past its tip-off (a late start) counts; one days past (a postponed game) doesn't
+  const soon = ev.some((e) => eventState(e) === 'pre' && !!e.date && Date.parse(e.date) - now <= LIVE_LEAD_MS && now - Date.parse(e.date) < 4 * 3_600_000);
+  return anyLive(ev) || soon ? 60 : 600;
+};
 
 /** YYYY-MM-DD → ESPN's `dates` (YYYYMMDD), or undefined for anything else. */
 export const espnDate = (date: string | null) => (date && /^\d{4}-\d{2}-\d{2}$/.test(date) && !Number.isNaN(Date.parse(`${date}T00:00:00Z`)) ? date.replaceAll('-', '') : undefined);

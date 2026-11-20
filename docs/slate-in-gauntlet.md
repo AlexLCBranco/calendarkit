@@ -28,7 +28,9 @@ rewrites (`/calendar`, `/calendar/`, `/calendar/:path+` → calendarkit-brown.ve
 - `odds?: SlateOdds` — moneyline odds per team (decimal). Pass `liveOddsStore()` (fetches
   `/calendar/api/odds?date=` once a Slate shows a date, refreshes every 10 min while shown unless the night is over, one
   store per page); leave it out for no odds — then the part makes no request and starts no timer for odds (the odds
-  column stays reserved and empty).
+  column stays reserved and empty). The same answer carries live scores (CK-21): a game being played shows the score so far
+  and a red "LIVE Q3 4:12" in its status, then its final. The store asks every minute while a game is live; call
+  `odds.show(date, allOver, games)` with the night's games (SlateDay does) to start that 15 min before each tip-off.
 
 **The notes store** (`SlateNotes`, what a note box needs):
 `get(gameId) → { pre, live, post, shown }` (must return the same object until that game's note changes — React's

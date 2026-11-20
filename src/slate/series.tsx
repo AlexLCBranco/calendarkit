@@ -15,6 +15,7 @@ import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from './links';
 import { useHoverPopup } from './hoverPopup';
 import { TeamLink } from './teamLink';
+import { useLive } from './live';
 
 const fmtDate = (date: string, opts: Intl.DateTimeFormatOptions) => dateFormat('en-US', { ...opts, timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
 const tri = (id: number) => TEAM_BY_ID.get(id)?.tricode ?? '?';
@@ -51,13 +52,15 @@ export const seriesLine = (data: CalendarData, game: ScheduleGame) => {
  * square is the game's hoopsjunkie page (a new tab); it was a button that showed that day in the League List, with a
  * small "↗" beside it for the page. Without a URL (undecided teams, no host link) it is plain, not clickable-looking.
  */
-function Square({ g, current, gameLink }: { g: ScheduleGame; current: boolean; gameLink?: GameLink }) {
+function Square({ g: snapshotGame, current, gameLink }: { g: ScheduleGame; current: boolean; gameLink?: GameLink }) {
+  // live scores (CK-21): final once ESPN has it finished; LIVE and the score so far while it is being played
+  const { game: g, live } = useLive(snapshotGame);
   const r = finalScore(g, g.awayTeam.teamId);
   const ot = r && overtime(g);
   const url = gameLink?.(g);
   const date = fmtDate(g.dateEt, { month: 'short', day: 'numeric' });
   const where = `${tri(g.awayTeam.teamId)} @ ${tri(g.homeTeam.teamId)}`;
-  const label = r ? `${date}, ${where}: ${r.win ? tri(g.awayTeam.teamId) : tri(g.homeTeam.teamId)} won ${Math.max(r.score, r.oppScore)}–${Math.min(r.score, r.oppScore)}${ot ? ` (${ot})` : ''}` : `${date}, ${where}: to come`;
+  const label = r ? `${date}, ${where}: ${r.win ? tri(g.awayTeam.teamId) : tri(g.homeTeam.teamId)} won ${Math.max(r.score, r.oppScore)}–${Math.min(r.score, r.oppScore)}${ot ? ` (${ot})` : ''}` : live ? `${date}, ${where}: live ${live.away}–${live.home}` : `${date}, ${where}: to come`;
   const logo = teamLogo(g.homeTeam.teamId);
   // where it is played, as the day strips say it: the home team's logo, "BOS @ DEN"
   const body = (
@@ -75,6 +78,11 @@ function Square({ g, current, gameLink }: { g: ScheduleGame; current: boolean; g
         <span className="ck-series-score">
           {Math.max(r.score, r.oppScore)}–{Math.min(r.score, r.oppScore)}
           {ot ? ` ${ot}` : ''}
+        </span>
+      )}
+      {live && (
+        <span className="ck-series-score ck-series-live" data-testid="series-live">
+          <span className="ck-live-tag">LIVE</span> {live.away}–{live.home}
         </span>
       )}
       <span className="ck-series-date">{date}</span>

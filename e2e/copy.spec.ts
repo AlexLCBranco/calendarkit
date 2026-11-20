@@ -290,7 +290,8 @@ test('whole view: league list copies the day on show, at its on-screen size', as
 
 test('a single day: week view cell, team calendar cell, league list day', async ({ page }) => {
   await open(page, '?view=league&layout=calendar&date=2026-11-15');
-  const cell = page.locator('.ck-month-cell[data-date="2026-11-18"]');
+  // a day with a TV pill still on show (a final line drops its pill, so a fixed date stops having one once played)
+  const cell = page.locator('.ck-month-cell:has(.ck-tv-pill)').first();
   await check(page, 'day-league-week', await copyPart(page, cell, 'copy-day'), ['logo', 'text', 'tv']);
 
   await open(page, '?view=team&layout=calendar&team=ORL');

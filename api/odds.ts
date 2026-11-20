@@ -3,9 +3,10 @@
 // the browser makes one small same-origin request and the CDN caches it (src/data/odds.ts: oddsCacheSeconds); ESPN
 // needs no key, so nothing secret lives here. Any failure answers 502 with no odds: the Slate then shows none.
 // The same answer carries the night's final scores as ESPN has them (`finals`, gauntlet GT-5): the Slate shows a score
-// once the game ends, not only the morning after with the daily snapshot.
+// once the game ends, not only the morning after with the daily snapshot. And the games being played with their score,
+// period and clock (`inPlay`, CK-21: live scores everywhere a matchup shows), cached 1 minute while a game is on.
 
-import { anyLive, dayFinals, dayOdds, espnDate, oddsCacheSeconds, type EspnEvent } from '../src/data/odds.js';
+import { anyLive, dayFinals, dayInPlay, dayOdds, espnDate, oddsCacheSeconds, type EspnEvent } from '../src/data/odds.js';
 
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba';
 
@@ -15,15 +16,25 @@ async function json<T>(url: string): Promise<T> {
   return (await r.json()) as T;
 }
 
+// A started game's pre-game line never changes: kept for as long as this instance lives, so a refresh every minute
+// while games are on asks ESPN for the scoreboard only, not for every started game's summary again.
+const summaries = new Map<string, unknown>();
+async function summaryOnce(id: string) {
+  if (summaries.has(id)) return summaries.get(id) as { pickcenter?: never[] };
+  const j = await json<{ pickcenter?: never[] }>(`${BASE}/summary?event=${encodeURIComponent(id)}`);
+  if (j?.pickcenter?.length) summaries.set(id, { pickcenter: j.pickcenter });
+  return j;
+}
+
 export async function GET(request: Request): Promise<Response> {
   const date = new URL(request.url).searchParams.get('date');
   const day = espnDate(date);
   if (!day) return Response.json({ error: 'date=YYYY-MM-DD' }, { status: 400 });
   try {
     const board = await json<{ events?: EspnEvent[] }>(`${BASE}/scoreboard?dates=${day}`);
-    const odds = await dayOdds(date!, board, (id) => json(`${BASE}/summary?event=${encodeURIComponent(id)}`));
+    const odds = await dayOdds(date!, board, summaryOnce);
     // The night's finished games with their scores, and whether any is on (gauntlet GT-5).
-    Object.assign(odds, { finals: dayFinals(board), live: anyLive(board.events) });
+    Object.assign(odds, { finals: dayFinals(board), inPlay: dayInPlay(board), live: anyLive(board.events) });
     const age = oddsCacheSeconds(board.events);
     return Response.json(odds, { headers: { 'cache-control': `public, max-age=60, s-maxage=${age}, stale-while-revalidate=${age}` } });
   } catch (e) {

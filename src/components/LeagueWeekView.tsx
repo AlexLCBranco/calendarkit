@@ -11,6 +11,7 @@ import { Fatigue } from './Fatigue';
 import { FATIGUE_LEGEND_H, FatigueLegend, FatigueMark } from './FatigueMark';
 import { MatchLink, TeamLogo, type GameLink } from './GameCard';
 import { TeamLink } from '../slate/teamLink';
+import { LiveLabel, useLive } from '../slate/live';
 import { fmtDate, plural, type WidgetSize } from './widget';
 
 export type WeekCount = 1 | 2;
@@ -44,11 +45,13 @@ function MonthTri({ team, fatigue, score, component }: { team: ScheduleGame['hom
   );
 }
 
-/** A score in its own slot (empty before the game, so the "@" stays put). */
-const MonthScore = ({ score }: { score?: { n: number; win: boolean } }) => <span className={`ck-mscore${score?.win ? ' ck-score-win' : ''}`}>{score?.n}</span>;
+/** A score in its own slot (empty before the game, so the "@" stays put); `live`: a score so far (no winner yet). */
+const MonthScore = ({ score, live }: { score?: { n: number; win: boolean }; live?: number }) => <span className={`ck-mscore${score?.win ? ' ck-score-win' : ''}${live !== undefined ? ' ck-score-live' : ''}`}>{score?.n ?? live}</span>;
 
 /** `fxRow` (1-week mode): a second row with each team's compact Fatigue component under its side, when either has any. */
-export function MonthGameLine({ data, game, gameLink, fxRow = false }: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fxRow?: boolean }) {
+export function MonthGameLine({ data, game: snapshotGame, gameLink, fxRow = false }: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fxRow?: boolean }) {
+  // live scores (CK-21): final once ESPN has it finished; the score so far and LIVE while it is being played
+  const { game, live } = useLive(snapshotGame);
   const tv = nationalTv(game);
   const fat = leagueFatigue(data).get(game.gameId); // once per data set
   // final: the scores fill their slots and the TV pill is dropped (its column stays: OT goes there)
@@ -60,30 +63,32 @@ export function MonthGameLine({ data, game, gameLink, fxRow = false }: { data: C
   const fx = fxRow && (hasFatigue(away) || hasFatigue(home));
   return (
     <li
-      className={`ck-month-game${fin ? ' ck-month-final' : ''}${fx ? ' ck-month-fx' : ''}`}
+      className={`ck-month-game${fin ? ' ck-month-final' : ''}${live ? ' ck-month-live' : ''}${fx ? ' ck-month-fx' : ''}`}
       data-game-id={game.gameId}
       // No room for the series chip on a line; the series is the line's tooltip (its marks and TV
       // pill keep their own)
       data-tip={seriesLine(data, game)}
-      aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}${ot ? ` (${ot})` : ''}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
+      aria-label={`${teamLabel(game.awayTeam)} at ${teamLabel(game.homeTeam)}${fin ? `, final ${fin.score}–${fin.oppScore}${ot ? ` (${ot})` : ''}` : live ? `, live ${live.away}–${live.home}` : tv.length ? `, national TV: ${tv.join(', ')}` : ''}`}
     >
       {/* logos, tricodes, scores and "@": the link to the game page (a subgrid on the line's columns) */}
       <MatchLink game={game} gameLink={gameLink} className="ck-mline">
         <TeamLogo team={game.awayTeam} />
         <MonthTri team={game.awayTeam} fatigue={away} component={fxRow} score={fin && { n: fin.score, win: fin.win }} />
-        <MonthScore score={fin && { n: fin.score, win: fin.win }} />
+        <MonthScore score={fin && { n: fin.score, win: fin.win }} live={live?.away} />
         <span className="ck-at">@</span>
-        <MonthScore score={fin && { n: fin.oppScore, win: !fin.win }} />
+        <MonthScore score={fin && { n: fin.oppScore, win: !fin.win }} live={live?.home} />
         <MonthTri team={game.homeTeam} fatigue={home} component={fxRow} score={fin && { n: fin.oppScore, win: !fin.win }} />
         <TeamLogo team={game.homeTeam} />
       </MatchLink>
       <span className="ck-tv-slot">
+        {/* a game being played: the red LIVE label in the TV pill's place (the line keeps its width) */}
+        {live && <LiveLabel live={live} detail={false} />}
         {ot && (
           <span className="ck-ot" title="Overtime">
             {ot}
           </span>
         )}
-        {!fin && tv.length > 0 && (
+        {!fin && !live && tv.length > 0 && (
           <span className="ck-tv-pill" data-tip={tv.join(', ')} aria-label={`National TV: ${tv.join(', ')}`} tabIndex={0}>
             TV
           </span>

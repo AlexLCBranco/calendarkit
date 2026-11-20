@@ -2,6 +2,24 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-19 — CK-20, CK-21 built
+
+**Built:**
+- CK-20 (v1.89.0): outside the Cup section a Cup group game's tag (and its tooltip) is just "NBA Cup": League and Team lists, calendars, the Slate, copies and the gauntlet widget. Inside the Cup section nothing changed ("West A", "Group play · West A", round names). Knockout games keep their round outside the Cup too ("NBA Cup Quarterfinal"), since the spec only takes the group off.
+- CK-21 (v1.90.0): live scores. The existing `/calendar/api/odds` answer now also carries the games being played (score, period, clock) from ESPN's scoreboard, so the browser still makes one small same-origin request that the CDN shares (cached 60 s while a game is on or within 15 min of tip-off). The page's odds store asks every minute only while a game **on screen** is live or within 15 min of tip-off and the tab is visible; otherwise nothing polls (one timer waits for the next tip-off). A failed answer keeps what's on screen. Where it shows:
+  - League / Team List rows: the red LIVE label with period and clock in the tip-off's column (the row keeps its columns); the score in the final score's places, no winner yet.
+  - Team Calendar cells: LIVE, period/clock and the score. League Calendar (1/2 weeks): LIVE in the TV pill's slot, the score in the score slots.
+  - Slate (site, copies, gauntlet widget): LIVE + period/clock in the status where the tip-off was, scores by the names. The strip only has room for "Q3 4:12": a longer clock ("Q1 11:48", "2OT 10:59") shows the period alone ("LIVE Q1"), with the full clock in its tooltip; letting it wrap made the card taller than its neighbours.
+  - Cup schedule rows, Cup standings squares and the Slate's Cup squares (red edge, LIVE), the season-series popup and the 3-in-4 / B2B / road-trip day strips (LIVE and the score).
+  - When the game ends: LIVE goes away and the normal final shows (with OT), no reload.
+  Choices I made without asking: LIVE sits in the tip-off column rather than after the score (keeps every row's columns lined up); the Slate's long-clock rule above; the streak popup lists finished games only, so it never shows a live one.
+
+**Blocked:** none. **Ideas added:** none.
+
+**Not done yet:** the gauntlet's pinned calendarkit commit isn't bumped (separate repo). For the minute refresh to start 15 min before tip-off there, the widget should pass the night's games as the third argument of `odds.show(date, allOver, games)`; without it the widget still turns live once ESPN says a game is on (within 10 min), then refreshes every minute. "Hide scores" hasn't shipped, so its rule isn't wired.
+
+**To check by hand:** how the red LIVE label looks during a real game tonight; everything else is tested with a mocked ESPN answer (e2e/live.spec.ts).
+
 ## 2026-11-19 — CK-11 built
 
 **Built (v1.88.1):**

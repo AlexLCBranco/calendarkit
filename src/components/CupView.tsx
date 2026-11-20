@@ -12,7 +12,8 @@ import { cupStandings, type CupSlot, type CupTeamLine, type Tiebreak, type WildC
 import { dateFormat, type CalendarData } from '../data/model';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { TeamLink } from '../slate/teamLink';
-import { CupSquare } from '../slate/CupSquare';
+import { CupSquare, cupSquareNow } from '../slate/CupSquare';
+import { useLive } from '../slate/live';
 import type { GameLink } from '../slate/links';
 import CupSchedule, { type CupScheduleProps } from './CupSchedule';
 import CupSimulator, { type CupSimulatorProps } from './CupSimulator';
@@ -178,10 +179,16 @@ function Slots({ slots, gameLink }: { slots: readonly CupSlot[]; gameLink?: Game
   return (
     <span className="ck-cup-slots" data-testid="cup-slots">
       {slots.map((s) => (
-        <CupSquare key={s.gameId} g={s} url={gameLink?.(s.game)} />
+        <LiveSquare key={s.gameId} s={s} url={gameLink?.(s.game)} />
       ))}
     </span>
   );
+}
+
+/** A square as it stands now (CK-21): LIVE with the score so far while being played, W / L once ESPN has it final. */
+function LiveSquare({ s, url }: { s: CupSlot; url?: string }) {
+  const { game, live } = useLive(s.game);
+  return <CupSquare g={cupSquareNow(s, game, live)} url={url} />;
 }
 
 function Rules({ otPending }: { otPending: number }) {

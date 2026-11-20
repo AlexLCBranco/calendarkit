@@ -18,7 +18,7 @@ import { cupStandingsOf } from '../data/cup';
 import { useCupFates, useCupStakes } from './cupFates';
 import { cupStakesNow, type StakeChip } from '../data/cupStakes';
 import { cupFatesNow, type Decided } from '../data/cupDecide';
-import { CupSquare } from './CupSquare';
+import { CupSquare, cupSquareNow } from './CupSquare';
 import { HostTag, VenueBadge } from './VenueMarker';
 import { knockoutVenue, prepFor, venueArena } from '../data/knockout';
 import type { GameLink } from './links';
@@ -26,7 +26,8 @@ import { NoteBox, NoteCopy, NoteLive } from './NoteBox';
 import type { SlateNotes } from './notes';
 import { SeriesChip } from './series';
 import { leagueRematches, leagueSeries } from '../data/series';
-import { fmtOdds, gameOdds, withFinals, type DayOdds, type GameOdds, type SlateOdds } from './odds';
+import { fmtOdds, gameLive, gameOdds, withFinals, type DayOdds, type GameLive, type GameOdds, type SlateOdds } from './odds';
+import { LiveLabel } from './live';
 import { GameLinkIcon, ScoreLink, seasonTip, TeamLogo, TipTime } from './parts';
 import { TeamLink } from './teamLink';
 import { StreakChip } from './streakPopup';
@@ -78,7 +79,8 @@ function useDayOdds(odds: SlateOdds | undefined, date: string, raw: ScheduleGame
   const games = useMemo(() => withFinals(raw, day), [raw, day]);
   const allOver = games.every((g) => g.status === 'final');
   // after the cards are on screen (an effect): load, and refresh while shown
-  useEffect(() => odds?.show(date, allOver), [odds, date, allOver]);
+  // live scores (CK-21): the night's games are watched, so the refresh goes every minute from 15 min before a tip-off
+  useEffect(() => odds?.show(date, allOver, raw), [odds, date, allOver, raw]);
   return { day, games };
 }
 
@@ -105,7 +107,7 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
       <div className={`ck-slate-grid${notes ? ' ck-slate-wide' : ''}`} data-cols={cols} data-cup={cup || undefined} style={slateVars(cols, cup)}>
         {games.length > 0 && <SlateHeader date={date} />}
         {games.map((g) => (
-          <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, g)} cupNight={cup} fates={fates} chips={chips} gameMenu={gameMenu} cold={nightCold?.get(g.gameId)} />
+          <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, g)} live={gameLive(g, day)} cupNight={cup} fates={fates} chips={chips} gameMenu={gameMenu} cold={nightCold?.get(g.gameId)} />
         ))}
       </div>
     </>
@@ -163,7 +165,7 @@ export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, 
     <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-margin': `${SLATE_COPY_MARGIN}px` } as CSSProperties} data-zoom={zoom}>
       {games[0] && <SlateHeader date={games[0].dateEt} />}
       {games.map((g) => (
-        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy editNotes={editNotes} cold={cold?.get(g.gameId)} />
+        <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} live={gameLive(g, odds)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy editNotes={editNotes} cold={cold?.get(g.gameId)} />
       ))}
     </div>
   );
@@ -179,7 +181,7 @@ function SlateHeader({ date }: { date: string }) {
 }
 
 /** One game as a card. */
-export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, copy = false, editNotes = false, cupNight = false, fates, chips, gameMenu = false, cold }: { /** Feels-like °C at tip-off (CK-16), when known */ cold?: number; data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; copy?: boolean; /** The game button (SlateDayProps.gameMenu); never in a copy */ gameMenu?: boolean; /** In the copy layout, notes open for typing on a click (SlateCopy editNotes) */ editNotes?: boolean; /** The night's Cup track (cupKind; true = 1) */ cupNight?: CupTrackKind; /** IN / OUT */ fates?: Decided; /** Tonight's stakes chips */ chips?: Map<number, StakeChip[]> }) {
+export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLink, notes, odds, live, copy = false, editNotes = false, cupNight = false, fates, chips, gameMenu = false, cold }: { /** Feels-like °C at tip-off (CK-16), when known */ cold?: number; data: CalendarData; game: ScheduleGame; timeZone?: string; gameLink?: GameLink; notes?: SlateNotes; odds?: GameOdds; /** The game being played (CK-21): score so far, period, clock */ live?: GameLive; copy?: boolean; /** The game button (SlateDayProps.gameMenu); never in a copy */ gameMenu?: boolean; /** In the copy layout, notes open for typing on a click (SlateCopy editNotes) */ editNotes?: boolean; /** The night's Cup track (cupKind; true = 1) */ cupNight?: CupTrackKind; /** IN / OUT */ fates?: Decided; /** Tonight's stakes chips */ chips?: Map<number, StakeChip[]> }) {
   const fx = leagueFatigue(data).get(game.gameId);
   const lines = leagueSeasonLines(data).get(game.gameId);
   const result = finalScore(game, game.awayTeam.teamId);
@@ -190,10 +192,10 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
   const away = teamLabel(game.awayTeam);
   const home = teamLabel(game.homeTeam);
   const url = gameLink?.(game);
-  const label = `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}`;
+  const label = `${away} at ${home}, ${tip.label}${live ? `, live ${away} ${live.away}, ${home} ${live.home}` : ''}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}`;
   return (
     // A national TV game's card is outlined and tinted in the TV badge's green (nothing else uses it)
-    <article className={`ck-slate-card${result ? ' ck-slate-final' : ''}${tv.length ? ' ck-slate-tv' : ''}${notes ? ' ck-with-note' : ''}`} data-game-id={game.gameId} aria-label={label}>
+    <article className={`ck-slate-card${result ? ' ck-slate-final' : ''}${live ? ' ck-slate-live' : ''}${tv.length ? ' ck-slate-tv' : ''}${notes ? ' ck-with-note' : ''}`} data-game-id={game.gameId} aria-label={label}>
       <div className="ck-slate-info">
         {/* The strip — tip-off time (or "Final" + OT) on top, then the ↗ link, the TV pill and the
             Cup / play-off tags, wrapping inside the strip; beside the two team rows instead of a line of its own */}
@@ -201,6 +203,11 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
           {result ? (
             <span className="ck-slate-status" data-testid="slate-status">
               Final{ot && <span className="ck-ot"> {ot}</span>}
+            </span>
+          ) : live ? (
+            <span className="ck-slate-status ck-slate-livestatus" data-testid="slate-status">
+              {/* the strip has room for "Q3 4:12" after the tag; a longer clock shows the period (the full clock in the tooltip) */}
+              <LiveLabel live={live} maxChars={7} />
             </span>
           ) : (
             <span className={`ck-slate-status ck-slate-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
@@ -227,8 +234,8 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
           </span>
         </div>
         <div className="ck-slate-teams">
-          <TeamRow menu={gameMenu && !copy ? `${away} at ${home}` : undefined} cold={cold} cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.awayTeam} gameId={game.gameId} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} url={url} score={result && { n: result.score, win: result.win }} odds={odds?.away} provider={odds?.provider} />
-          <TeamRow cup={cupNight ? { data, game, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.homeTeam} gameId={game.gameId} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} url={url} score={result && { n: result.oppScore, win: !result.win }} odds={odds?.home} provider={odds?.provider} home />
+          <TeamRow menu={gameMenu && !copy ? `${away} at ${home}` : undefined} cold={cold} cup={cupNight ? { data, game, live, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.awayTeam} gameId={game.gameId} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} url={url} score={result ? { n: result.score, win: result.win } : live && { n: live.away, win: false, live: true }} odds={odds?.away} provider={odds?.provider} />
+          <TeamRow cup={cupNight ? { data, game, live, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.homeTeam} gameId={game.gameId} f={fx?.get(game.homeTeam.teamId)} line={lines?.get(game.homeTeam.teamId)} url={url} score={result ? { n: result.oppScore, win: !result.win } : live && { n: live.home, win: false, live: true }} odds={odds?.home} provider={odds?.provider} home />
         </div>
       </div>
       {notes && (copy ? editNotes ? <NoteLive store={notes} gameId={game.gameId} label={`${away} at ${home}`} /> : <NoteCopy note={notes.get(game.gameId)} /> : <NoteBox store={notes} gameId={game.gameId} label={`${away} at ${home}`} />)}
@@ -240,12 +247,12 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
  * "[@] [logo] Wizards 113 3-1 W2 [fatigue]": one team; the home team's row starts with the "@" (the away row keeps its
  * room). Record and streak going in: the Team List season line's rule, colours and tooltip.
  */
-function TeamRow({ menu, cold, cup, team, gameId, f, line, score, url, odds, provider, home = false }: { /** The away row: the game button in its empty "@" cell (its label) */ menu?: string; /** feels-like °C at tip-off (the away row shows the mark) */ cold?: number; url?: string; cup?: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; fates?: Decided; chips?: Map<number, StakeChip[]> }; team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean }; odds?: number; provider?: string; home?: boolean }) {
+function TeamRow({ menu, cold, cup, team, gameId, f, line, score, url, odds, provider, home = false }: { /** The away row: the game button in its empty "@" cell (its label) */ menu?: string; /** feels-like °C at tip-off (the away row shows the mark) */ cold?: number; url?: string; cup?: { data: CalendarData; game: ScheduleGame; live?: GameLive; gameLink?: GameLink; fates?: Decided; chips?: Map<number, StakeChip[]> }; team: ScheduleGame['homeTeam']; gameId: string; f?: TeamFatigue; line?: SeasonLine; score?: { n: number; win: boolean; /** a score so far (CK-21): no winner, not dimmed */ live?: boolean }; odds?: number; provider?: string; home?: boolean }) {
   const t = TEAM_BY_ID.get(team.teamId);
   const rec = line?.record;
   const streak = line?.streak;
   const tip = line && seasonTip(line) ? `${teamLabel(team)}: ${seasonTip(line)}` : undefined;
-  const loss = score && !score.win ? ' ck-loss' : '';
+  const loss = score && !score.win && !score.live ? ' ck-loss' : '';
   const out = cup?.game.isCupGroupGame && cup.fates?.fate.get(team.teamId) === 'out' ? ' ck-cup-out-row' : '';
   return (
     <span className={`ck-slate-row${loss}${out}`} data-side={home ? 'home' : 'away'}>
@@ -258,7 +265,7 @@ function TeamRow({ menu, cold, cup, team, gameId, f, line, score, url, odds, pro
         <TeamLink teamId={team.teamId} className="ck-slate-name" data-tricode={teamLabel(team)}>
           {t?.name ?? teamLabel(team)}
         </TeamLink>
-        <ScoreLink url={score ? url : undefined} className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}`}>
+        <ScoreLink url={score ? url : undefined} className={`ck-slate-score${score?.win ? ' ck-score-win' : ''}${score?.live ? ' ck-score-live' : ''}`}>
           {score?.n ?? ''}
         </ScoreLink>
       </span>
@@ -281,7 +288,7 @@ function TeamRow({ menu, cold, cup, team, gameId, f, line, score, url, odds, pro
  * to come: the opponent; tonight's ringed), each its game page; then its group record over its differential. A card
  * that isn't a Cup game keeps the track empty (the night's cards stay one size).
  */
-function CupTrack({ data, game, gameLink, teamId, fates, chips }: { data: CalendarData; game: ScheduleGame; gameLink?: GameLink; teamId: number; fates?: Decided; chips?: Map<number, StakeChip[]> }) {
+function CupTrack({ data, game, live, gameLink, teamId, fates, chips }: { data: CalendarData; game: ScheduleGame; /** tonight's game being played (CK-21) */ live?: GameLive; gameLink?: GameLink; teamId: number; fates?: Decided; chips?: Map<number, StakeChip[]> }) {
   const t = game.isCupGroupGame && teamId ? cupStandingsOf(data).byTeam.get(teamId) : undefined;
   if (!t) return <span className="ck-slate-cup" data-testid="slate-cup" />;
   const diff = t.diff > 0 ? `+${t.diff}` : t.diff < 0 ? `−${-t.diff}` : '0';
@@ -289,7 +296,7 @@ function CupTrack({ data, game, gameLink, teamId, fates, chips }: { data: Calend
     <span className="ck-slate-cup" data-testid="slate-cup" data-team={t.tricode}>
       <span className="ck-slate-cup-squares">
         {t.slots.map((s) => (
-          <CupSquare key={s.gameId} g={s} margin tonight={s.gameId === game.gameId} url={gameLink?.(s.game)} />
+          <CupSquare key={s.gameId} g={s.gameId === game.gameId ? cupSquareNow(s, game, live) : s} margin tonight={s.gameId === game.gameId} url={gameLink?.(s.game)} />
         ))}
       </span>
       {chips ? <StakeChips chips={game.isCupGroupGame ? chips.get(teamId) : undefined} fate={fates?.fate.get(teamId)} /> : fates && <CupFateTag fate={fates.fate.get(teamId)} />}

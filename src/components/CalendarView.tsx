@@ -9,6 +9,7 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { localDate, type CalendarData } from '../data/model';
 import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import type { SlateOdds } from '../slate/odds';
+import { LiveScores } from '../slate/live';
 import type { SlateCold } from '../slate/weather';
 import { useSeriesPopup } from '../slate/series';
 import { useGameLinksPopup } from '../slate/gameLinks';
@@ -47,7 +48,7 @@ export { BAR_SHORT_BELOW, fmtMonthSpan, seasonDay, STALE_AFTER_MS, teamListTarge
 
 export interface CalendarViewProps {
   data: CalendarData;
-  /** The Slate's moneyline odds (the app shell passes liveOddsStore()); none: no odds, no request. */
+  /** The Slate's moneyline odds and every view's live scores (the app shell passes liveOddsStore()); none: no odds, no live scores, no request. */
   odds?: SlateOdds;
   /** The Slate's cold-weather flags (the app shell passes liveColdStore()); none: no flags, no request. */
   cold?: SlateCold;
@@ -323,6 +324,8 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
 
   return (
     <TeamLinkContext.Provider value={teamHref ? teamLinks : undefined}>
+    {/* live scores (CK-21) from the odds store: every view reads them through useLive */}
+    <LiveScores.Provider value={odds}>
     <ClockProvider clock={clock}>
       <div
         ref={root}
@@ -390,6 +393,7 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
         <SelectionStyle store={selection} scope=".ck-select-area" />
       </div>
     </ClockProvider>
+    </LiveScores.Provider>
     </TeamLinkContext.Provider>
   );
 }

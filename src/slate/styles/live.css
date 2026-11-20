@@ -1,0 +1,74 @@
+/* The live label (src/slate/live.tsx, CK-21): a solid red "LIVE" tag, readable at a glance on the dark and the light
+   theme alike (white on red), then the period and clock in red. Never wraps inside itself. */
+.ck-live {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ck-live-tag {
+  background: #e0282e;
+  color: #fff;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  padding: 0 0.35em;
+  border-radius: 3px;
+}
+.ck-live-clock {
+  color: #ff5a5f;
+  font-weight: 700;
+  font-size: 12px;
+}
+.ck-live-score {
+  font-weight: 700;
+  font-size: 0.9em;
+}
+/* a live score: as bright as a final one, no winner yet */
+.ck-score-live {
+  font-weight: 700;
+}
+/* the Cup square of a game being played: red edge, "LIVE" (and the score so far on the Slate) under the opponent */
+.ck-cup-slot.ck-cup-slot-live {
+  border-color: #e0282e;
+}
+.ck-cup-slot-livescore {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+  white-space: nowrap;
+}
+/* a day-strip square and a season-series square: the tag and the score so far */
+.ck-tip-live,
+.ck-series-live {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+/* list rows: the label sits in the tip-off's column; it may run a little past the column, never wraps */
+.ck-time-live {
+  white-space: nowrap;
+  overflow: visible;
+  max-width: 5.5em; /* the column keeps its width: the label may reach into the gap after it */
+}
+.ck-time-live .ck-live {
+  gap: 0.25em;
+}
+.ck-slate-livestatus {
+  white-space: nowrap;
+}
+/* the strip is narrow (the game button sits right after it): a little smaller; "Q3 4:12" is the longest that fits */
+.ck-slate-livestatus .ck-live {
+  gap: 3px;
+}
+.ck-slate-livestatus .ck-live-tag {
+  font-size: 10px;
+  padding: 0 3px;
+}
+.ck-slate-livestatus .ck-live-clock {
+  font-size: 10.5px;
+  letter-spacing: -0.01em;
+}

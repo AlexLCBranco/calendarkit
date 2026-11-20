@@ -5,12 +5,17 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-19
+- CK-21 — Live scores with a red LIVE label (v1.90.0)
+  While a game is being played, every view showing it has the score so far and a red "LIVE Q3 4:12" label, updated about once a minute, and the final score as soon as it ends, with no reload.
 - CK-20 — "NBA Cup" tag without the group outside the Cup section (v1.89.0)
   Outside the Cup page a Cup group game's tag reads just "NBA Cup" (also in its tooltip); the Cup schedule still shows "West A" and the round names.
 - CK-11 — Slate: notes switch always available, never over the odds (v1.88.1)
   In the gauntlet's Slate, each card's ⇄ switch is always there, under the PRE/LIVE/POST label, clear of the odds.
 - CK-19 — Standings: offensive and defensive rating (v1.88.0)
   A Ratings set in Standings shows ORtg, DRtg and Net with each team's league rank, from ESPN's possessions (updated daily).
+
+### Internal
+- e2e copy test: the single-day copy picks a day that still shows a TV pill (Nov 18 lost its pills once played) (v1.90.0)
 
 ## 2026-11-18
 - CK-18 — Standings: hover and click to reach the games (v1.87.0)

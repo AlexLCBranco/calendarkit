@@ -28,9 +28,9 @@ describe('stripGamesOf', () => {
   it('each game day from the shared team’s side, with its page', () => {
     const m = stripGamesOf(data, link)(G.map((g) => g.gameId))!;
     expect([...m]).toEqual([
-      ['2026-11-01', { at: 'vs', opponentId: TEAM.NYK, opponent: 'NYK', url: link(G[0]!) }],
-      ['2026-11-02', { at: '@', opponentId: TEAM.LAL, opponent: 'LAL', url: link(G[1]!) }],
-      ['2026-11-04', { at: 'vs', opponentId: TEAM.DEN, opponent: 'DEN', url: link(G[2]!) }],
+      ['2026-11-01', { at: 'vs', opponentId: TEAM.NYK, opponent: 'NYK', url: link(G[0]!), game: G[0] }],
+      ['2026-11-02', { at: '@', opponentId: TEAM.LAL, opponent: 'LAL', url: link(G[1]!), game: G[1] }],
+      ['2026-11-04', { at: 'vs', opponentId: TEAM.DEN, opponent: 'DEN', url: link(G[2]!), game: G[2] }],
     ]);
     expect(stripGamesOf(data, link)([G[0]!.gameId])).toBeUndefined(); // one game: whose side is unknown
   });

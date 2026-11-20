@@ -30,6 +30,7 @@ import { TeamHeader } from './TeamHeader';
 import { rowDate, TeamListView } from './TeamListView';
 import { WeekStrip } from './WeekStrip';
 import { fmtDate, leagueZoom, plural, type WidgetSize } from './widget';
+import { LiveLabel, useLive } from '../slate/live';
 
 export type CupLayout = 'group' | 'date';
 
@@ -84,7 +85,9 @@ function rowTip(data: CalendarData, g: ScheduleGame, timeZone?: string) {
  * One game on one line. By group: date · matchup · score or time · ↗. By date: time or score · matchup · group pill · ↗.
  * The cells sit in the list's grid columns (subgrid), so every row of a list lines up.
  */
-function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: { g: ScheduleGame; data: CalendarData; fatigue: Fatigue; by: CupLayout; pill?: string; timeZone?: string; gameLink?: GameLink; groupStart?: boolean }) {
+function CupRow({ g: snapshotGame, data, fatigue, by, pill, timeZone, gameLink, groupStart }: { g: ScheduleGame; data: CalendarData; fatigue: Fatigue; by: CupLayout; pill?: string; timeZone?: string; gameLink?: GameLink; groupStart?: boolean }) {
+  // live scores (CK-21): final once ESPN has it finished; LIVE and the score so far while it is being played
+  const { game: g, live } = useLive(snapshotGame);
   // Tonight's stakes (worked out after the first render, cached): a compact mark on the row (the
   // view must keep its one-line rows and fit the window), the chips themselves in the row's tooltip
   const chips = cupStakesNow(data, g.dateEt);
@@ -105,8 +108,15 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
     </TeamLink>
   );
   const result = (
-    <span className={`ck-cg-res${r ? '' : ' ck-cg-time'}${!r && tip.tbd ? ' ck-tbd' : ''}`} data-testid="cup-result">
-      {r ? (
+    <span className={`ck-cg-res${r || live ? '' : ' ck-cg-time'}${!r && !live && tip.tbd ? ' ck-tbd' : ''}`} data-testid="cup-result">
+      {live ? (
+        <>
+          <LiveLabel live={live} detail={false} />{' '}
+          <ScoreLink url={url}>
+            <span className="ck-score-live">{live.away}</span>–<span className="ck-score-live">{live.home}</span>
+          </ScoreLink>
+        </>
+      ) : r ? (
         <>
           <ScoreLink url={url}>
             <span className={r.win ? 'ck-score-win' : undefined}>{r.score}</span>–<span className={r.win ? undefined : 'ck-score-win'}>{r.oppScore}</span>
@@ -118,7 +128,7 @@ function CupRow({ g, data, fatigue, by, pill, timeZone, gameLink, groupStart }: 
       )}
     </span>
   );
-  const label = `${teamLabel(g.awayTeam)} at ${teamLabel(g.homeTeam)}, ${fmtDate(g.dateEt, { month: 'short', day: 'numeric' })}, ${r ? `final ${r.score}–${r.oppScore}${ot ? ` (${ot})` : ''}` : tip.label}`;
+  const label = `${teamLabel(g.awayTeam)} at ${teamLabel(g.homeTeam)}, ${fmtDate(g.dateEt, { month: 'short', day: 'numeric' })}, ${r ? `final ${r.score}–${r.oppScore}${ot ? ` (${ot})` : ''}` : live ? `live ${live.away}–${live.home}` : tip.label}`;
   return (
     <article className={`ck-cg${r ? ' ck-cg-final' : ''}${groupStart ? ' ck-cg-newgroup' : ''}`} data-game-id={g.gameId} data-tip={[rowTip(data, g, timeZone), ...(stakes.length ? [`Stakes tonight — ${stakes.join(' · ')}`] : []), ...preps].join(' · ')} aria-label={label}>
       {by === 'group' ? <span className="ck-cg-date">{rowDate(g.dateEt)}</span> : result}

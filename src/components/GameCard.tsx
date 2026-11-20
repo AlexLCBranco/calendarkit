@@ -17,6 +17,7 @@ import type { TeamFatigue } from '../data/fatigue';
 import './calendar.css';
 import { StreakChip } from '../slate/streakPopup';
 import type { RunKind } from '../data/runs';
+import { LiveLabel, liveFrom, useLive } from '../slate/live';
 
 /** A road trip / homestand game's label ("Road trip · 3/5"); its tooltip names that game's place, the dates and the cities. */
 export function RunLabel({ kind, text, tip, days, games }: { kind: RunKind; text: string; tip: string; days: string; /** the run's game ids (the strip's matchups) */ games?: string }) {
@@ -215,7 +216,9 @@ export const TV_NAMES_MAX = 2;
 
 export const B2BDot =({ tip }: { tip: string }) => <span className="ck-b2b-mark" data-tip={tip} aria-label={tip} role="img" tabIndex={0} />;
 
-export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, positions, lines, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, rematch, seriesTip, run }: GameCardProps) {
+export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, positions, lines, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, rematch, seriesTip, run }: GameCardProps) {
+  // live scores (CK-21): the game final once ESPN has it finished; `live` while it is being played
+  const { game, live } = useLive(snapshotGame, now);
   const iconUrl = linkIcon ? gameLinkProp?.(game) : undefined;
   // the matchup is the game link only without the icon (calendar cells; week lines use MatchLink themselves)
   const gameLink = linkIcon ? undefined : gameLinkProp;
@@ -228,6 +231,9 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   const home = teamLabel(game.homeTeam);
   // final score from the shown side: the selected team (team views) or the away team (league views)
   const result = scores ? finalScore(game, teamId ?? game.awayTeam.teamId) : undefined;
+  // a game being played: its score so far in the final score's places (no winner yet)
+  const liveScore = live && liveFrom(game, live, teamId ?? game.awayTeam.teamId);
+  const shown = result ?? (scores ? liveScore : undefined);
   // Fixed slots (desktop/tablet League List, desktop Team List with its fatigue columns): every tricode, score and
   // "@"/"vs" in a fixed-width slot, so the tricodes, logos and "@" sit at one x on every row. A deliberate
   // trade-off: a row without a score has no score slots — "CHA @ WAS", the tricodes against the "@" — so on a day mixing
@@ -237,11 +243,11 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
   // the spaces keep textContent readable ("BOS 113 @ 121 DET"); inline-flex drops them
   const score = (n: number | undefined, win: boolean) =>
     n !== undefined ? (
-      <ScoreLink url={iconUrl} className={`ck-score${win ? ' ck-score-win' : ''}`}>
+      <ScoreLink url={iconUrl} className={`ck-score${win ? ' ck-score-win' : ''}${result ? '' : ' ck-score-live'}`}>
         {n}
       </ScoreLink>
     ) : (
-      slots && (!!result || scoreSlots) && <span className="ck-score-slot" aria-hidden="true" />
+      slots && (!!shown || scoreSlots) && <span className="ck-score-slot" aria-hidden="true" />
     );
   const ot = result && overtime(game);
   const otMark = ot && (
@@ -288,13 +294,13 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
             {teamLabel(side.opponent)}
             {oppDot && <B2BDot tip={oppDot} />}
           </TeamLink>
-          {result && ' '}
-          {result && score(result.oppScore, !result.win)}
+          {shown && ' '}
+          {shown && score(shown.oppScore, !!result && !result.win)}
           {otMark}
         </MatchLink>
       </span>
     ) : (
-      <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}${slots && !result && !scoreSlots ? ' ck-noscore' : ''}${fx ? ' ck-fx-cols' : ''}`}>
+      <span className={`ck-matchup ck-mirror${side ? '' : ' ck-league'}${slots ? ' ck-slots' : ''}${slots && !shown && !scoreSlots ? ' ck-noscore' : ''}${fx ? ' ck-fx-cols' : ''}`}>
         {/* League List with the Fatigue components: [tags] [record] matchup [record] [tags] — the tags in fixed-width
             columns on the outside, the records against the logos, so names, "@" and records line up down the list */}
         {fx && <Fatigue f={fatigue!.get(first.teamId)} team={teamLabel(first)} badge="right" />}
@@ -307,13 +313,13 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
           <span className="ck-side">
             {logos && <TeamLogo team={first} />}
             <TeamLink teamId={first.teamId} className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} component={fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</TeamLink>
-            {(result || scoreSlots) && ' '}
-            {score(result?.score, !!result?.win)}
+            {(shown || scoreSlots) && ' '}
+            {score(shown?.score, !!result?.win)}
           </span>{' '}
           <span className="ck-side">
             <span className="ck-vsat">{side ? (side.home ? 'vs' : '@') : '@'}</span>{' '}
-            {score(result?.oppScore, !!result && !result.win)}
-            {(result || scoreSlots) && ' '}
+            {score(shown?.oppScore, !!result && !result.win)}
+            {(shown || scoreSlots) && ' '}
             <TeamLink teamId={second.teamId} className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
               {fatigue ? <FatigueMark f={fatigue.get(second.teamId)} component={fx}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
               {side && oppDot && <B2BDot tip={oppDot} />}
@@ -333,9 +339,10 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
 
   const streak = season?.streak;
   const seasonText = season ? seasonTip(season) : '';
+  const liveText = liveScore ? `, live ${liveScore.score}–${liveScore.oppScore}` : '';
   const label = side
-    ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${seasonText ? `, ${seasonText}` : ''}`
-    : `${away} at ${home}, ${tip.label}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${recOf(game.awayTeam) && recOf(game.homeTeam) ? `, records ${result ? 'after the game' : 'going in'} ${away} ${recText(recOf(game.awayTeam))}, ${home} ${recText(recOf(game.homeTeam))}` : ''}`;
+    ? `${teamFirst ? `${teamLabel(side.team)} ` : ''}${side.home ? 'vs' : 'at'} ${teamLabel(side.opponent)}, ${tip.label}${result ? `, ${result.win ? 'won' : 'lost'} ${result.score}–${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${liveText}${seasonText ? `, ${seasonText}` : ''}`
+    : `${away} at ${home}, ${tip.label}${liveText}${result ? `, final ${away} ${result.score}, ${home} ${result.oppScore}${ot ? ` (${ot})` : ''}` : ''}${recOf(game.awayTeam) && recOf(game.homeTeam) ? `, records ${result ? 'after the game' : 'going in'} ${away} ${recText(recOf(game.awayTeam))}, ${home} ${recText(recOf(game.homeTeam))}` : ''}`;
   const nights = bracketNights ?? b2b.map((n) => n.night);
   const bracket = side && nights.length ? nights.join(' ') : undefined;
   const cols = fatigueColumns && !!side;
@@ -344,7 +351,7 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
 
   return (
     <article
-      className={`ck-card ck-card-${size}${cols ? ' ck-card-cols' : ''}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}${result ? ' ck-card-final' : ''}`}
+      className={`ck-card ck-card-${size}${cols ? ' ck-card-cols' : ''}${logos ? ' ck-card-logos' : ''}${next ? ' ck-card-next' : ''}${result ? ' ck-card-final' : ''}${live ? ' ck-card-live' : ''}`}
       data-game-id={game.gameId}
       data-row-date={rowDate}
       data-next={next || undefined}
@@ -358,9 +365,16 @@ export function GameCard({ game, teamId, teamFirst, fatigue, fatigueSlots = fals
       {copyable && <CopyButton hover label="Copy game as image" of=".ck-card" testId="copy-game" />}
       {run?.label && <RunLabel kind={run.kind} {...run.label} />}
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
-      <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
-        <TipTime tip={tip} />
-      </span>
+      {/* a game being played: the red LIVE label in the tip-off's place (the time no longer matters, the row keeps its columns) */}
+      {live ? (
+        <span className="ck-time ck-time-live" data-testid="tipoff">
+          <LiveLabel live={live} detail={size !== 'compact' || !!logos} score={!scores && liveScore ? `${liveScore.score}–${liveScore.oppScore}` : undefined} />
+        </span>
+      ) : (
+        <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
+          <TipTime tip={tip} />
+        </span>
+      )}
       {cols && (
         <span className="ck-fat ck-fat-team" data-testid="fatigue-team">
           <Fatigue f={teamFatigue?.get(side.team.teamId)} team={teamLabel(side.team)} badge="right" focusable />

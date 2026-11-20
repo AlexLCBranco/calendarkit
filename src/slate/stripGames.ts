@@ -22,7 +22,7 @@ export function stripGamesOf(data: CalendarData, gameLink?: GameLink): StripGame
     for (const g of games) {
       const home = g.homeTeam.teamId === team;
       const opp = home ? g.awayTeam : g.homeTeam;
-      out.set(g.dateEt, { at: home ? 'vs' : '@', opponentId: opp.teamId, opponent: opp.teamTricode || 'TBD', url: gameLink?.(g) });
+      out.set(g.dateEt, { at: home ? 'vs' : '@', opponentId: opp.teamId, opponent: opp.teamTricode || 'TBD', url: gameLink?.(g), game: g });
     }
     return out;
   };
