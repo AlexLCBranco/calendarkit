@@ -5,6 +5,21 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-20
+- CK-26 — Cup label on a card opens the Cup page (v1.92.0)
+  Clicking a game's "Cup" label anywhere opens the Cup page with that game's group outlined; a knockout game opens the bracket.
+- CK-27 — Hovering the Cup label shows the group (v1.92.0)
+  Hovering a "Cup" label pops up that game's group table (place, Cup record, point difference, who goes through) with the two teams highlighted.
+- CK-28 — Team record opens that team's games list (v1.92.0)
+  Clicking a team's record on a Slate card or a League List row opens that team's List with the rest days, on the day you were looking at.
+- CK-29 — Team Calendar cells show the opponent's situation (v1.92.0)
+  Each game cell of a team's calendar has a second line for the opponent: its record, streak and whether it is on a back-to-back, in a 3-in-4 or rested.
+- CK-30 — One menu layer: view controls beside the team menu (v1.92.0)
+  List / Calendar / Slate and the date controls sit to the right of the team chips, so a team's month fits a full-size window with no scrolling.
+- CK-31 — Season-series popup: playoff games in past seasons (v1.92.0)
+  In a past season, the season-series popup also lists the two teams' playoff and play-in games in their own colour, with "View series" opening that series in the season's bracket.
+- CK-32 — US holidays and big dates marked (v1.92.0)
+  Holidays and big NBA dates (opening night, Christmas, MLK Day, Cup knockout nights, trade deadline, All-Star break, last day, play-in, playoffs start) have a small label on the day and a star on that day's games, with a one-sentence reason on hover.
+- Cup Team schedule: the West teams' chips no longer run off the right edge (v1.92.0)
 - CK-25 — Shared layout: pinned header menu, chips instead of dropdowns (v1.91.0)
   A header pinned at the top of every page (back / forward, a breadcrumb whose parts jump to their neighbours, "Go anywhere" on Ctrl+K, the icon buttons, the Schedule · Cup · Standings tabs), and under it the teams as chips and a How switch instead of the team picker; the two trial menus are gone.
 - CK-23 — Floating live scores window (v1.91.0)

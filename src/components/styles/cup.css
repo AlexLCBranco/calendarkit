@@ -1151,3 +1151,13 @@ button.ck-kb-team:hover {
   align-items: flex-start;
   line-height: 15px;
 }
+
+/* the group a Cup label led to (CupLabel): outlined in the Cup's colour */
+.ck-cup-card-focus {
+  border-color: var(--ck-cup);
+  box-shadow: 0 0 0 2px var(--ck-cup);
+}
+.ck-sim[data-focus='bracket'] .ck-kb-panel {
+  border-color: var(--ck-cup);
+  box-shadow: 0 0 0 2px var(--ck-cup);
+}

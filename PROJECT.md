@@ -73,6 +73,27 @@ measurement; open it only when a question needs the backstory.
   `src/data/nbaHistory.ts`, data in `public/data/history/` from `scripts/make-nba-history.ts`, run once per new season:
   ESPN's free feeds; 2001-02 on, since before that ESPN's playoff games have gaps; game links open NBA.com's scores of
   that day — hoopsjunkie's past coverage couldn't be checked, its bot check blocks scripts). `?view=standings&season=2016`.
+- **v1.92.0** (2026-11-20, CK-26 … CK-32):
+  - **Cup label** (`src/slate/cupLink.tsx`, `src/data/cupPopup.ts`): every "Cup" label is a link to the Cup page — a
+    group game to Groups with its group outlined (`CupState.focus`, `cg=` in the address), a knockout game to the
+    Simulator's bracket — and on hover the group table (or a knockout game's two teams' way through the Cup); a click
+    inside the popup pins it (`useHoverPopup` `pinInside`). Narrower than the Cup's own minimum the labels stay plain.
+  - **Record link**: a team's record (Slate cards, League List rows) is a team link with `view="list"`: that team's
+    List, rest days on, on the date looked at. Names, logos and tricodes still open the Calendar.
+  - **Opponent line** in Team Calendar cells (`src/data/opponent.ts`, GameCard `OpponentLine`): tricode, record,
+    streak, back-to-back night, 3-in-4, days off (2+); month cells the short forms. Its marks have their own classes
+    (`ck-opp-b2b`, `ck-opp-tif`): `.ck-b2b-label` and `data-testid="tif"` stay the calendar's team's. A game further
+    ahead than the opponent's next one shows its record as of now. The scale probe holds the line (month text 1.2 → 0.95
+    at 1920 × 1080).
+  - **One menu layer** (`.ck-one-layer`, content ≥ `ONE_LAYER_MIN_WIDTH` 1800 px, Schedule only): How on the first line
+    and the dates on the second, right of the team chips; the page rows are 64 px (were 100). There the calendars no
+    longer stretch by what scrolls away: they fit the window with the rows on screen (no page scroll). Narrower, as before.
+  - **Playoff games in the season-series popup** (`series.tsx`, `nbaHistory.ts` `pastPlayoffs` / `playoffLine`): a past
+    season's play-in and series games from `public/data/history/<year>.json`, under the regular-season squares in the
+    playoffs' colour; "View series" opens Standings on that season with the series outlined (`showSeries`, `series=`).
+  - **Holidays and big dates** (`src/data/holidays.ts` — the one list; `src/slate/bigDay.tsx`): federal holidays by
+    rule, NBA dates from the feed, and `EXTRA_DAYS` by hand per season (2026-27: trade deadline, play-in, playoffs
+    start; **add the Finals dates when the NBA publishes them**, and next season's block).
 - **Waiting on Alex**: whether the League List rows look right (then they can leave "in flux").
 
 ## What the app is

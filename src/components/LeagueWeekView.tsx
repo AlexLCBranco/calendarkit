@@ -1,5 +1,6 @@
 // League → Calendar on desktop: 7 day columns, 1 or 2 week rows, every game of each day as a line.
 
+import { BigDayLabel } from '../slate/bigDay';
 import { seriesLine } from '../slate/series';
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -186,6 +187,7 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
                 <span className="ck-wday-name">{fmtDate(date, { weekday: 'short' })}</span>
                 <span className="ck-wday-num">{first ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
                 {games.length > 0 && <span className="ck-wday-count">{plural(games.length)}</span>}
+                <BigDayLabel data={data} date={date} className=" ck-bigday-wday" />
               </button>
               {games.length > 0 && <CopyButton hover label="Copy day as image" of=".ck-month-cell" testId="copy-day" />}
               {games.length > 0 && measured && (

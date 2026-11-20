@@ -13,6 +13,7 @@
 // view's chunk; nothing here runs until the Schedule tab is opened.
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { CupLabel } from '../slate/cupLink';
 import { cupTag, finalScore, nationalTv, overtime, teamLabel, tipoff, type CalendarData } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { cupStakesNow } from '../data/cupStakes';
@@ -138,7 +139,7 @@ function CupRow({ g: snapshotGame, data, fatigue, by, pill, timeZone, gameLink, 
         <TeamLogo team={g.homeTeam} />
         {venue?.kind === 'host' && <HostTag />}
       </span>
-      {by === 'group' ? result : pill ? <span className="ck-tag ck-cup ck-cg-pill">{pill}</span> : venue?.kind === 'tbd' ? <VenueBadge venue={venue} /> : <span />}
+      {by === 'group' ? result : pill ? <CupLabel game={g} className="ck-tag ck-cup ck-cg-pill" long={`NBA Cup · ${pill}`}>{pill}</CupLabel> : venue?.kind === 'tbd' ? <VenueBadge venue={venue} /> : <span />}
       <span className="ck-cg-link">
         {stakes.length > 0 && (
           <span className="ck-stake" data-testid="cg-stakes" title={stakes.join(' · ')}>

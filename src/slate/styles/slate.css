@@ -736,3 +736,44 @@ a.ck-streak-game:hover {
 .ck-series-season-step:focus-visible {
   border-color: var(--ck-accent);
 }
+
+/* The season-series popup's playoff games (CK-31): under the regular-season squares, in the playoffs' own colour, so
+   they are never counted with them */
+.ck-series-po {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ck-border);
+}
+.ck-series-po-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 5px;
+  font-weight: 700;
+  color: var(--ck-playoff, #c792ea);
+  white-space: nowrap;
+}
+.ck-series-po .ck-series-row + .ck-series-po-line {
+  margin-top: 8px;
+}
+.ck-series-po .ck-series-sq {
+  border-color: var(--ck-playoff, #c792ea);
+  background: rgb(199 146 234 / 0.12);
+}
+.ck-series-po-tag {
+  display: block;
+  padding-top: 2px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ck-playoff, #c792ea);
+}
+a.ck-series-view {
+  color: var(--ck-accent);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+a.ck-series-view:hover {
+  text-decoration: underline;
+}

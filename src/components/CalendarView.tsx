@@ -18,6 +18,8 @@ import { useGameLinksPopup } from '../slate/gameLinks';
 import { useStreakPopup } from '../slate/streakPopup';
 import { stripGamesOf } from '../slate/stripGames';
 import { TeamLinkContext, teamLinkTarget, type TeamLinks } from '../slate/teamLink';
+import { CupLinkContext, cupLinkTarget, useCupPopup, type CupLinks } from '../slate/cupLink';
+import { cupFocusOf, cupFocusParam, type CupFocus } from '../data/cupPopup';
 import { useTooltip } from '../slate/tooltip';
 import { BAR_SHORT_BELOW, seasonDay, type CalendarHandle, type CalendarState, type CupState, type Destination, type PageHistory, type TeamLayout, type TeamTarget, type ViewSnapshot } from './calendarState';
 import { ClockProvider, useClock } from './clock';
@@ -63,12 +65,16 @@ export interface CalendarViewProps {
    * opened in a new tab): the Team view opens on this date instead of the next game. `snap` (a reloaded tab): the page
    * as it was — its months, weeks, the Team List's row at the top and the scroll position (the state comes in the rest).
    */
-  initial?: Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState>; st?: StandingsSet; sy?: number; snap?: ViewSnapshot };
+  initial?: Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState>; st?: StandingsSet; sy?: number; /** Standings, a past season: the playoff series outlined */ ss?: string; snap?: ViewSnapshot };
   /**
    * The URL of a team's Team view (team links: Ctrl / middle-click → new tab). Given → every team name, logo
    * and tricode is a link (a plain click switches to that Team view here); none → no team links.
    */
   teamHref?: (to: TeamTarget) => string;
+  /** The URL of the Cup page on a group or the bracket (Cup labels: Ctrl / middle-click → new tab). None → the labels aren't links. */
+  cupHref?: (focus: CupFocus) => string;
+  /** The URL of a past season's page in Standings, on one of its playoff series ("View series": Ctrl / middle-click → new tab). */
+  seasonHref?: (year: number, series: string) => string;
   /** Fixed clock (ms) for tests or replays; default: live clock. */
   now?: number;
   timeZone?: string;
@@ -96,12 +102,17 @@ export interface CalendarViewProps {
 }
 
 const DEFAULT_TEAM = TEAMS[0]!.id;
+/**
+ * The content width from which the page rows are one layer: the team chips (two lines, ~1130 px) with How over the
+ * dates beside them (the widest date block, the Team Calendar's with its span switch: ~610 px).
+ */
+export const ONE_LAYER_MIN_WIDTH = 1800;
 /** The Team mode a team link opens (names, logos, tricodes anywhere: game cards, standings, the Cup, popups). */
 export const TEAM_LINK_LAYOUT: TeamLayout = 'calendar';
 /** The condensed standings popup, in the Standings destination's chunk, loaded on first use. */
 const StandingsPopup = lazy(() => import('./Standings').then((m) => ({ default: m.StandingsPopup })));
 
-export function CalendarView({ data, odds, cold, size: outerSize, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
+export function CalendarView({ data, odds, cold, size: outerSize, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, cupHref, seasonHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
   // The clock (moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
   // `now` (the default day, the next game, games over) is the time the widget opened.
   const clock = useClock(fixedNow, timeZone, localDate);
@@ -126,9 +137,15 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
   const tooltip = useTooltip(stripGames);
   // A square of the season-series popup is its game's hoopsjunkie page
   const streakPop = useStreakPopup(data, { gameLink });
-  const series = useSeriesPopup(data, { gameLink });
+  const seasonHrefRef = useRef(seasonHref);
+  seasonHrefRef.current = seasonHref;
+  const viewSeriesRef = useRef<(year: number, key: string) => void>(undefined);
+  const [viewSeries] = useState(() => ({ href: (year: number, key: string) => seasonHrefRef.current?.(year, key) ?? '', open: (year: number, key: string) => viewSeriesRef.current?.(year, key) }));
+  const series = useSeriesPopup(data, { gameLink, viewSeries });
   // A Slate card's game button: player props and injury links
   const gameLinksPop = useGameLinksPopup(data, { cold });
+  // A Cup label's group table (or the two teams' way through the Cup)
+  const cupPop = useCupPopup(data, { linked: !!cupHref });
 
   const update = useCallback(
     (patch: Partial<CalendarState>) => {
@@ -192,39 +209,71 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
   const teamHrefRef = useRef(teamHref);
   teamHrefRef.current = teamHref;
   const [teamLinks] = useState<TeamLinks>(() => ({
-    href: (teamId) => teamHrefRef.current?.({ teamId, layout: TEAM_LINK_LAYOUT, date: lookingAt(), state: stateRef.current }) ?? '',
+    href: (teamId, view) => teamHrefRef.current?.({ teamId, layout: view ?? TEAM_LINK_LAYOUT, date: lookingAt(), state: stateRef.current }) ?? '',
   }));
   /** A team link's plain click (or the scope picker's team, in its own mode): that team's Team view here, on the date being looked at. */
-  const openTeam = (teamId: number, view?: TeamLayout) => {
+  const openTeam = (teamId: number, view?: TeamLayout, fromRecord = false) => {
     const date = lookingAt();
     const layout = view ?? TEAM_LINK_LAYOUT;
     const s = stateRef.current;
     // League's Slate stays League's layout (Team shows its List meanwhile), so League comes back to the Slate
-    update({ mode: 'team', teamId, layout: layout === 'list' && s.layout === 'slate' ? 'slate' : layout });
-    scheduleApi.current!.showTeam(teamId, layout, date, s);
+    // a record's link (the team's List): every game with the rest days between them
+    const rest = fromRecord ? { showRest: true } : {};
+    update({ mode: 'team', teamId, layout: layout === 'list' && s.layout === 'slate' ? 'slate' : layout, ...rest });
+    scheduleApi.current!.showTeam(teamId, layout, date, { ...s, ...rest });
     setStPop(false); // a team link in the standings popup: the popup closes on the new view
   };
   const openTeamRef = useRef(openTeam);
   openTeamRef.current = openTeam;
   const openTeamStable = useCallback((teamId: number, view?: TeamLayout) => openTeamRef.current(teamId, view), []);
+  // Cup labels: the Cup page on the game's group (Groups) or on the bracket (Simulator)
+  const cupHrefRef = useRef(cupHref);
+  cupHrefRef.current = cupHref;
+  const [cupLinks] = useState<CupLinks>(() => ({ href: (focus) => cupHrefRef.current?.(focus) ?? '' }));
+  const openCup = (gameId: string) => {
+    const g = data.games.find((x) => x.gameId === gameId);
+    const focus = g && cupFocusOf(g);
+    if (!focus) return;
+    cupPop.close();
+    setStPop(false);
+    update({ mode: 'cup' });
+    cupApi.current!.go({ tab: focus.kind === 'bracket' ? 'simulator' : 'standings', focus: cupFocusParam(focus) });
+  };
+  // "View series" (the season-series popup's playoff line): Standings on that past season, the series outlined
+  viewSeriesRef.current = (year, key) => {
+    series.close();
+    setStPop(false);
+    update({ mode: 'standings' });
+    standingsApi.current!.showSeries(year, key);
+  };
+  const openCupRef = useRef(openCup);
+  openCupRef.current = openCup;
   // One handler pair for every team link of the widget (popups included: they render inside it), capture phase so it
   // runs before the game link around a team (MatchLink) or a calendar cell's own click.
   const teamPress = useCallback(
     (e: ReactPointerEvent) => {
       const hit = teamLinkTarget(e.target);
-      if (hit) hit.a.href = teamLinks.href(hit.teamId); // fresh for the click, middle-click or context menu that follows
+      if (hit) hit.a.href = teamLinks.href(hit.teamId, hit.view); // fresh for the click, middle-click or context menu that follows
     },
     [teamLinks],
   );
   const teamClick = useCallback(
     (e: ReactMouseEvent) => {
+      const cupHit = cupLinkTarget(e.target);
+      if (cupHit) {
+        e.stopPropagation();
+        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        openCupRef.current(cupHit.gameId);
+        return;
+      }
       const hit = teamLinkTarget(e.target);
       if (!hit) return;
       e.stopPropagation();
-      hit.a.href = teamLinks.href(hit.teamId);
+      hit.a.href = teamLinks.href(hit.teamId, hit.view);
       if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; // the browser's new tab / window
       e.preventDefault();
-      openTeamRef.current(hit.teamId);
+      openTeamRef.current(hit.teamId, hit.view === 'list' ? 'list' : undefined, hit.view === 'list');
     },
     [teamLinks],
   );
@@ -367,7 +416,11 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
     ro.observe(bar.current);
     return () => ro.disconnect();
   }, []);
-  const stretch = destination === 'schedule' && !fill && !compact ? scrollAway : 0;
+  // One menu layer (a full-size window): How and the dates sit beside the team chips, in their two lines' height, so a
+  // team's calendar fits the window with the rows on screen — no stretch, no page scroll. The League calendars keep
+  // filling the window under the header (their lines would shrink otherwise).
+  const oneLayer = !compact && size.width >= ONE_LAYER_MIN_WIDTH;
+  const stretch = destination === 'schedule' && !fill && !compact && !(oneLayer && state.mode === 'team') ? scrollAway : 0;
   const scheduleSize = useMemo(() => (stretch ? { width: size.width, height: size.height + stretch } : size), [size, stretch]);
   const onScrollCapture = (e: { target: EventTarget }) => {
     const el = e.target as HTMLElement;
@@ -379,21 +432,23 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
 
   return (
     <TeamLinkContext.Provider value={teamHref ? teamLinks : undefined}>
+    {/* the Cup is a desktop page: narrower, its labels stay plain */}
+    <CupLinkContext.Provider value={cupHref && slateFits ? cupLinks : undefined}>
     {/* live scores (CK-21) from the odds store: every view reads them through useLive */}
     <LiveScores.Provider value={odds}>
     <ClockProvider clock={clock}>
       <div
         ref={root}
         onPointerDownCapture={teamHref ? teamPress : undefined}
-        onClickCapture={teamHref ? teamClick : undefined}
-        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${barShort ? ' ck-bar-short' : ''}${compact || size.width < 1200 ? ' ck-bar-wrap' : ''}${teamMap ? ' ck-team-side' : ''}${fill ? ' ck-root-fill' : ' ck-root-grow'}`}
+        onClickCapture={teamHref || cupHref ? teamClick : undefined}
+        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${barShort ? ' ck-bar-short' : ''}${compact || size.width < 1200 ? ' ck-bar-wrap' : ''}${teamMap ? ' ck-team-side' : ''}${oneLayer ? ' ck-one-layer' : ''}${fill ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={(e) => {
           if (apiOf().selKind) onMarquee(e);
         }}
         style={{ maxWidth: outerSize.width, height: fill ? size.height : undefined, minHeight: fill || compact ? undefined : size.height + stretch }}
-        onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e), streakPop.handlers.onMouseOver(e), gameLinksPop.handlers.onMouseOver(e))}
-        onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e), streakPop.handlers.onFocus(e), gameLinksPop.handlers.onFocus(e))}
-        onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave(), streakPop.handlers.onMouseLeave(), gameLinksPop.handlers.onMouseLeave())}
+        onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), series.handlers.onMouseOver(e), streakPop.handlers.onMouseOver(e), gameLinksPop.handlers.onMouseOver(e), cupPop.handlers.onMouseOver(e))}
+        onFocus={(e) => (tooltip.handlers.onFocus(e), series.handlers.onFocus(e), streakPop.handlers.onFocus(e), gameLinksPop.handlers.onFocus(e), cupPop.handlers.onFocus(e))}
+        onMouseLeave={() => (tooltip.handlers.onMouseLeave(), series.handlers.onMouseLeave(), streakPop.handlers.onMouseLeave(), gameLinksPop.handlers.onMouseLeave(), cupPop.handlers.onMouseLeave())}
         onBlur={tooltip.handlers.onBlur}
         onScrollCapture={onScrollCapture}
       >
@@ -439,7 +494,7 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
         {/* every destination stays mounted, so its state lasts as long as the page; only the active one renders */}
         <ScheduleDestination {...shared} size={scheduleSize} active={destination === 'schedule'} odds={odds} cold={cold} teamDate={initial?.teamDate} initialSnap={initial?.snap} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
         <CupDestination {...shared} active={cup} initial={initial?.cup} api={cupApi} />
-        <StandingsDestination {...shared} active={standings} initial={initial?.st ?? initial?.snap?.st} initialSeason={initial?.sy ?? initial?.snap?.sy} api={standingsApi} />
+        <StandingsDestination {...shared} active={standings} initial={initial?.st ?? initial?.snap?.st} initialSeason={initial?.sy ?? initial?.snap?.sy} initialSeries={initial?.ss} api={standingsApi} />
         {stPop && slateFits && (
           <Suspense fallback={null}>
             <StandingsPopup data={data} onClose={closeStPop} />
@@ -452,11 +507,13 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
         {series.node}
         {streakPop.node}
         {gameLinksPop.node}
+        {cupPop.node}
         <div ref={marquee} className="ck-marquee" aria-hidden="true" data-testid="marquee" />
         <SelectionStyle store={selection} scope=".ck-select-area" />
       </div>
     </ClockProvider>
     </LiveScores.Provider>
+    </CupLinkContext.Provider>
     </TeamLinkContext.Provider>
   );
 }

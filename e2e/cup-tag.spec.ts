@@ -12,12 +12,13 @@ test('"NBA Cup" without the group in the League List and the Slate; the group in
   const listTags = page.locator('.ck-tag.ck-cup');
   await expect(listTags.first()).toBeVisible();
   for (const t of await listTags.allTextContents()) expect(t).toBe('NBA Cup');
-  for (const t of await listTags.evaluateAll((els) => els.map((e) => e.getAttribute('title')))) expect(t).toBe('NBA Cup');
+  // the label is a link to the Cup page (CK-26): its name says both
+  for (const t of await listTags.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))) expect(t).toBe('NBA Cup. Open the NBA Cup page');
 
   await page.goto(`${APP}?view=league&layout=slate&date=2026-11-06`);
   const slateTags = page.locator('[data-testid="slate"] .ck-tag.ck-cup');
   await expect(slateTags.first()).toBeVisible();
-  for (const t of await slateTags.evaluateAll((els) => els.map((e) => e.getAttribute('data-tip')))) expect(t).toBe('NBA Cup');
+  for (const t of await slateTags.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label')))) expect(t).toBe('NBA Cup. Open the NBA Cup page');
   await expect(page.getByTestId('slate')).not.toContainText(/Group [ABC]|(West|East) [ABC]/);
 
   await page.goto(`${APP}?view=cup`);

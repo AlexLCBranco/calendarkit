@@ -57,6 +57,8 @@ type Part = [string, string, number, number];
 const same = (parts: Part[]) =>
   parts
     .filter((p) => p[0] !== 'span.ck-slate-namecell' && p[0] !== 'button.ck-game-menu')
+    // the record and the Cup label became links (CK-28, CK-26): the same parts, as an <a>
+    .map((p): Part => [p[0] === 'a.ck-slate-rec.ck-tlink' ? 'span.ck-slate-rec' : p[0] === 'a.ck-tag.ck-cup.ck-cuplink' ? 'span.ck-tag.ck-cup' : p[0], p[1], p[2], p[3]])
     .map((p): Part => [p[0].replace('.ck-series-rematch', ''), p[1] === 'Timberwolves' ? 'Wolves' : p[1] === 'Trail Blazers' ? 'Blazers' : p[1], p[2], p[3]])
     .sort((x, y) => (x[0] + x[1]).localeCompare(y[0] + y[1]) || x[2] - y[2] || x[3] - y[3]);
 

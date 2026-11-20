@@ -28,7 +28,8 @@
 
 /* Selected team's back-to-back: "1/2 · HA" outlined on night 1, "2/2 · HA" solid on night 2, plane on a city
    change; a thin yellow bar links the two cells (calendar), a bracket the two rows (list). */
-.ck-b2b-label {
+.ck-b2b-label,
+.ck-opp-b2b {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -42,7 +43,8 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.ck-b2b-n2 {
+.ck-b2b-n2,
+.ck-opp-b2b-n2 {
   background: var(--ck-b2b);
   color: #1f1a02;
 }
@@ -167,7 +169,8 @@
 }
 
 /* 3-in-4 chip (ported from rotationkit .chip-tag.tif): purple, the 3rd game of a set stronger. */
-.ck-tif {
+.ck-tif,
+.ck-opp-tif {
   font-size: 11px;
   line-height: 1.5;
   padding: 0 6px;
@@ -178,7 +181,8 @@
   white-space: nowrap;
   font-weight: 600;
 }
-.ck-tif-pos-3 {
+.ck-tif-pos-3,
+.ck-opp-tif-3 {
   background: #3a2160;
   color: #e9d5ff;
   border-color: #7c4dcc;
@@ -218,4 +222,57 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+/* The opponent's line in a Team Calendar cell (GameCard OpponentLine): its tricode first, on a tinted strip with a
+   green edge (the maps' colour for "the opponent"), so its labels can't be read as the calendar's team's. */
+.ck-oppline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1px 4px;
+  align-self: stretch;
+  padding: 0 4px;
+  border-left: 2px solid var(--ck-opp-edge, #3fb27f);
+  border-radius: 0 4px 4px 0;
+  background: rgb(255 255 255 / 0.04);
+  font-size: 0.85em;
+  line-height: 1.3;
+}
+/* month cells: one line (record, then the tired / rested marks) */
+.ck-oppline-short {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.ck-oppline .ck-opp-b2b,
+.ck-oppline .ck-opp-tif {
+  font-size: 0.9em;
+}
+.ck-oppline-team {
+  font-weight: 700;
+  color: var(--ck-muted);
+  letter-spacing: 0.02em;
+}
+.ck-oppline-rec {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.ck-cell-past .ck-oppline {
+  opacity: 0.7;
+}
+.ck-opp-rest {
+  padding: 0 0.35em;
+  border: 1px solid var(--ck-rest);
+  border-radius: 3px;
+  background: var(--ck-rest);
+  color: #062a30;
+  font-weight: 700;
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+.ck-opp-rest-short {
+  border-color: rgb(63 200 216 / 0.35);
+  background: rgb(63 200 216 / 0.1);
+  color: rgb(63 200 216 / 0.7);
+  font-weight: 600;
 }

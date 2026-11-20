@@ -49,3 +49,24 @@ export function playInLabel(games: HistGame[], g: HistGame): string {
 
 /** A past game's page: NBA.com's scores of that day (hoopsjunkie's coverage of past seasons couldn't be checked). */
 export const pastGameUrl = (g: HistGame) => `https://www.nba.com/games?date=${g.date}`;
+
+/** A series' key in a season: its round and its two teams (the bracket's boxes carry it). */
+export const seriesKey = (s: HistSeries) => `${s.round}|${s.a}|${s.b}`;
+
+/** Two teams' playoff meetings in a past season: their series (one at most) and their play-in games. */
+export interface PastPlayoffs {
+  year: number;
+  series?: HistSeries;
+  playIn: HistGame[];
+}
+export function pastPlayoffs(season: HistSeason, a: string, b: string): PastPlayoffs {
+  const both = (x: string, y: string) => (x === a && y === b) || (x === b && y === a);
+  return { year: season.year, series: season.series.find((s) => both(s.a, s.b)), playIn: season.playIn.filter((g) => both(g.away, g.home)) };
+}
+
+const ROUND_SHORT: Record<number, string> = { 1: '1st round', 2: 'semis', 3: 'finals' };
+/** "Playoffs · West semis · DEN won 4-2" / "Playoffs · NBA Finals · BOS won 4-1": never mixed up with the regular season's count. */
+export function playoffLine(s: HistSeries): string {
+  const round = s.round === 4 ? 'NBA Finals' : `${s.conf ?? ''} ${ROUND_SHORT[s.round]}`.trim();
+  return `Playoffs · ${round} · ${s.winner} won ${Math.max(...s.wins)}-${Math.min(...s.wins)}`;
+}

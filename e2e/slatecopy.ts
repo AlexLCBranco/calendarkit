@@ -27,7 +27,8 @@ export async function copySlate(page: Page, testId: 'copy-view' | 'copy-selectio
           // Links (the ↗ icons) in the copied node; the strip's chips reflow without them
           links: root.querySelectorAll('a').length,
           // the header line ("SLATE · 18-11 · NBA") in the copied node
-          header: root.querySelector('[data-testid="slate-header"]')?.textContent ?? null,
+          // the line's own text (a holiday's label after it, CK-32, is its own element)
+          header: root.querySelector('[data-testid="slate-header"]')?.firstChild?.textContent ?? null,
           // the Slate page's countdown (CK-14) is never in the copied node
           firstTip: !!root.closest('.ck-capture')?.querySelector('[data-testid="first-tip"]'),
           headerBox: (() => {

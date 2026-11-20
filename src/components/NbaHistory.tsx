@@ -3,7 +3,7 @@
 // hover a series for its games, each a link to that day on NBA.com) and, like the Cup history, the champions and
 // conference winners of every season (a click opens that season). Its own chunk; the data loads only when opened.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { bracketOf, loadIndex, loadSeason, pastGameUrl, playInLabel, ROUND_NAMES, seasonLabel, type HistGame, type HistIndexRow, type HistRow, type HistSeason, type HistSeries } from '../data/nbaHistory';
 import { TEAMS, type Team } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -47,7 +47,7 @@ function GameLine({ g, label }: { g: HistGame; label?: string }) {
   );
 }
 
-function SeriesBox({ s, x }: { s: HistSeason; x: HistSeries }) {
+function SeriesBox({ s, x, focus = false }: { s: HistSeason; x: HistSeries; focus?: boolean }) {
   const side = (tri: string, seed: number, wins: number) => (
     <span className={`ck-nh-side${x.winner === tri ? ' ck-nh-won' : ''}`}>
       <span className="ck-nh-seed">{seed || ''}</span>
@@ -56,7 +56,7 @@ function SeriesBox({ s, x }: { s: HistSeason; x: HistSeries }) {
     </span>
   );
   return (
-    <div className="ck-nh-series" tabIndex={0} role="button" aria-label={`${ROUND_NAMES[x.round]}: ${x.a} ${x.wins[0]}, ${x.b} ${x.wins[1]}. Show the games`} {...{ [SERIES_ATTR]: `${x.round}|${x.a}|${x.b}` }} data-testid="hist-series" data-round={x.round}>
+    <div className={`ck-nh-series${focus ? ' ck-nh-series-focus' : ''}`} data-focus={focus || undefined} tabIndex={0} role="button" aria-label={`${ROUND_NAMES[x.round]}: ${x.a} ${x.wins[0]}, ${x.b} ${x.wins[1]}. Show the games`} {...{ [SERIES_ATTR]: `${x.round}|${x.a}|${x.b}` }} data-testid="hist-series" data-round={x.round}>
       {side(x.a, x.aSeed, x.wins[0])}
       {side(x.b, x.bSeed, x.wins[1])}
     </div>
@@ -100,7 +100,8 @@ function Table({ s, conf }: { s: HistSeason; conf: 'East' | 'West' }) {
   );
 }
 
-export default function NbaHistory({ year, onSeason }: { year: number; onSeason: (year: number) => void }) {
+export default function NbaHistory({ year, onSeason, focus }: { year: number; onSeason: (year: number) => void; /** A playoff series to outline and bring into view (seriesKey) */ focus?: string }) {
+  const box = useRef<HTMLElement>(null);
   const [season, setSeason] = useState<HistSeason>();
   const [index, setIndex] = useState<HistIndexRow[]>();
   const [error, setError] = useState<string>();
@@ -131,12 +132,16 @@ export default function NbaHistory({ year, onSeason }: { year: number; onSeason:
     },
     { className: 'ck-series-pop ck-nh-popup', label: 'Series games', testId: 'hist-series-popup', pin: true },
   );
+  const loaded = !!s;
+  useEffect(() => {
+    if (focus && loaded) box.current?.querySelector('[data-focus]')?.scrollIntoView?.({ block: 'center' });
+  }, [focus, loaded]);
   if (error) return <p className="ck-empty">Couldn’t load {seasonLabel(year)}: {error}</p>;
   if (!s) return <p className="ck-empty">Loading {seasonLabel(year)}…</p>;
   const finals = s.series.find((x) => x.round === 4)!;
   const champ = index?.find((r) => r.year === year);
   return (
-    <section className="ck-nh" aria-label={`NBA ${s.label}`} data-testid="nba-history" data-year={year} {...pop.handlers}>
+    <section ref={box} className="ck-nh" aria-label={`NBA ${s.label}`} data-testid="nba-history" data-year={year} {...pop.handlers}>
       <header className="ck-st-head">
         <h2 className="ck-st-title">{s.label}</h2>
         <span className="ck-st-through" data-testid="hist-champion">
@@ -180,7 +185,7 @@ export default function NbaHistory({ year, onSeason }: { year: number; onSeason:
                 <span className="ck-nh-sub">{ROUND_NAMES[round]}</span>
                 <div className="ck-nh-col-body">
                   {list.map((x) => (
-                    <SeriesBox key={`${x.a}|${x.b}`} s={s} x={x} />
+                    <SeriesBox key={`${x.a}|${x.b}`} s={s} x={x} focus={`${x.round}|${x.a}|${x.b}` === focus} />
                   ))}
                 </div>
               </div>

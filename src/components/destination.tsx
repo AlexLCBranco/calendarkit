@@ -138,7 +138,7 @@ export function SelectionCopyStage({ capture, kind, list, team, teamId, cup = fa
         {note && <span className="ck-note">{note}</span>}
       </div>
       {team && <TeamHeader teamId={teamId} compact={compact} />}
-      <SelectionCapture kind={kind} data={data} ids={capture.ids} teamId={teamId} tvOnly={state.tvOnly && !cup} cup={cup} size={size} now={now} timeZone={timeZone} cellWidth={capture.cellWidth} teamScale={capture.teamScale} weekStyle={capture.weekStyle} weeks={state.weeks} />
+      <SelectionCapture kind={kind} data={data} ids={capture.ids} teamId={teamId} tvOnly={state.tvOnly && !cup} cup={cup} size={size} now={now} timeZone={timeZone} cellWidth={capture.cellWidth} teamScale={capture.teamScale} teamMonth={state.teamSpan === 'month'} weekStyle={capture.weekStyle} weeks={state.weeks} />
     </CaptureStage>
   );
 }

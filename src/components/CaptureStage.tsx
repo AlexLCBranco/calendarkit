@@ -3,6 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { TeamLinkContext } from '../slate/teamLink';
+import { CupLinkContext } from '../slate/cupLink';
 
 /** Padding around the view in a whole-view image (.ck-capture); the stage is this much wider so the view keeps its width. */
 export const CAPTURE_PAD = 12;
@@ -34,7 +35,9 @@ export function CaptureStage({ onReady, width, minHeight, className, children }:
     <div className="ck-capture-stage" aria-hidden="true">
       <div ref={ref} className={`ck-root ck-capture${className}`} style={{ width, minHeight }}>
         {/* An image has no links — the team names render as the plain text they were */}
-        <TeamLinkContext.Provider value={undefined}>{children}</TeamLinkContext.Provider>
+        <TeamLinkContext.Provider value={undefined}>
+          <CupLinkContext.Provider value={undefined}>{children}</CupLinkContext.Provider>
+        </TeamLinkContext.Provider>
       </div>
     </div>,
     document.body,

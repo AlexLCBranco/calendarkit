@@ -2,6 +2,30 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-20 — CK-26 … CK-32 built (CK-22 blocked)
+
+**Built (all v1.92.0):**
+- CK-26: every "Cup" label (Slate cards, League List, Team List, calendar cells, the Cup schedule) is a link. A group game opens Cup › Groups with its group outlined; a knockout game opens the Simulator's bracket, outlined. Ctrl / middle-click opens a new tab (`?view=cup&cg=West+Group+A`). The gauntlet gets it once it provides `CupLinkContext` (docs/slate-in-gauntlet.md).
+- CK-27: hovering a "Cup" label (anywhere, not only the Slate) shows the group table: place, team, Cup W-L, point difference, ★ / WC / IN / OUT, the game's two teams highlighted. Knockout games show each team's way through the Cup. A click inside the popup pins it; the label's own click still goes to the Cup page.
+- CK-28: a team's record on a Slate card or a League List row opens that team's List, rest days on, on the day you were looking at. Tooltip "All BOS games". Name and logo still open the Calendar.
+- CK-29: each Team Calendar game cell has a second, tinted line that starts with the opponent's tricode: record, streak, back-to-back night ("2/2 · HA" with the plane), 3-in-4, days off (2+). Month cells: record and the marks in short form, the rest on hover. It replaces the yellow dot on the opponent's tricode.
+- CK-30: at a full-size window List / Calendar / Slate sit on the first line and the date controls on the second, right of the team chips. The page rows are 64 px (were 100). A Team Calendar month and the 1- and 2-week views fit 1920 × 1080 with no page scroll.
+- CK-31: in a past season, the season-series popup lists the two teams' play-in and playoff games under the regular-season ones, in purple, labelled G1…, with a line like "Playoffs · East 1st round · DET won 4-3". The header count stays regular season. "View series" opens Standings on that season with the series outlined. This season's playoff games will show the same way once the feed has them.
+- CK-32: a small label on the day (Team and League calendars, League List heading, Slate header) and a ★ on that day's game rows and Slate cards, with one plain sentence on hover. Holidays by rule; opening night, Christmas and MLK games, Cup knockout nights, All-Star break and the last day from the schedule; trade deadline (Feb 11), play-in (Apr 13–16) and playoffs start (Apr 17) by hand from NBA.com's key dates. The list is `src/data/holidays.ts`.
+- Fix found on the way: on the Cup's Team schedule the West teams' chips ran off the right edge of the page (since v1.91.0). Cause: without the "All teams" chip the two conferences landed side by side. Now East over West; a test covers it.
+
+**Choices I made (tell me if you want otherwise):**
+- CK-29 costs text size in the month view: every cell needs room for one more line, so the month's text is drawn at 0.95 instead of 1.2 at 1920 × 1080 (week views are unchanged in practice: 1.9). The test that held 1.2 now holds 0.95.
+- CK-29: for a game further ahead than the opponent's next one, the line shows the opponent's record as of now (its tooltip says "now"); the record going in isn't knowable yet.
+- CK-30 applies to the Schedule from 1800 px of content (a 1920 window). The League calendars still fill the window under the pinned header after a small scroll, as since v1.91.0: making them fit without it shrank the 1-week view's text from 1.25 to 1.1. Only the team calendars lost the scroll, as the item asks.
+- CK-26: the bracket lives in the Simulator, so knockout labels open that tab.
+- CK-32: the NBA Finals are not marked: the NBA has not published the 2027 dates. NBA.com lists the playoffs' start under a "2026" typo; I took Apr 17, 2027. The star on Slate cards sits in the corner of the time strip (as a chip it made the strip taller than the card).
+- CK-31: "View series" needs the season's page, so it exists for past seasons only.
+
+**Blocked:** CK-22 (waits on halftime-timer HT-1), unchanged. **Ideas added:** none.
+
+**To check by hand:** only the looks: whether the opponent line reads clearly at the smaller month text, and the purple of the playoff games.
+
 ## 2026-11-20 — CK-25, CK-23, CK-24 built (CK-22 blocked)
 
 **Built (all v1.91.0):**

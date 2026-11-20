@@ -38,9 +38,9 @@ test('B2B yellow everywhere; stale stamp still orange', async ({ page }) => {
   expect(await css('.ck-card[data-b2b]', 'border-left-color', '::before')).toBe(YELLOW);
   // No opponent dot beside its component on desktop; the Team Calendar cells keep it
   expect(await page.locator('.ck-team-rows .ck-matchup .ck-b2b-mark').count()).toBe(0);
-  // Team Calendar: the opponent dot; the nights are labelled on their cells, with no bar between the cells
+  // Team Calendar: the opponent's 2nd-night mark on its own line (CK-29; it was a dot on its tricode); the nights are labelled on their cells, with no bar between the cells
   await page.goto('/calendar/?view=team&layout=calendar&team=ORL');
-  expect(await css('.ck-day-cell .ck-opp .ck-b2b-mark', 'background-color')).toBe(YELLOW);
+  expect(await css('.ck-day-cell [data-testid="opp-b2b"][data-night="2"]', 'background-color')).toBe(YELLOW);
   await expect(page.locator('.ck-day-cell[data-b2b] .ck-b2b-label').first()).toBeVisible();
   expect(await page.locator('.ck-b2b-bar, [data-b2b-bar]').count()).toBe(0);
 });

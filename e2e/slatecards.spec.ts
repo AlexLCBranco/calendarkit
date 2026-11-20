@@ -185,7 +185,7 @@ test('the link is a "↗" after the time: tooltip, no underline (brightens), cli
   }, id);
   // no game link around the names anywhere (the only anchors there are team links, to the Team view —
   // e2e/teamlinks.spec.ts); never underlined
-  expect(await page.locator('[data-testid="slate"] .ck-slate-teams a:not([data-team-link]), [data-testid="slate"] a:not([data-team-link]):has(.ck-slate-name)').count()).toBe(0);
+  expect(await page.locator('[data-testid="slate"] .ck-slate-teams a:not([data-team-link]):not([data-testid="cup-square"]), [data-testid="slate"] a:not([data-team-link]):has(.ck-slate-name)').count()).toBe(0);
   const name = card.locator('.ck-slate-name').first();
   await name.hover();
   expect(await name.evaluate((n) => [getComputedStyle(n).cursor, getComputedStyle(n).textDecorationLine])).toEqual(['pointer', 'none']);

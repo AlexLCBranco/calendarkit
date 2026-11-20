@@ -11,6 +11,8 @@ import { leagueRematches, leagueSeries, rematchesShown, seriesChip, seriesStatus
 import { TEAM_BY_ID, TEAMS, teamLogo } from '../data/teams';
 import { useEffect, useState } from 'react';
 import { loadPastSeasons, pastMeetings, pastStatus, PAST_SEASONS_BACK, seasonBefore, type PastGame, type PastSeasons } from '../data/pastSeries';
+import { loadSeason, pastPlayoffs, playInLabel, playoffLine, seriesKey, type HistGame, type HistSeason, type PastPlayoffs } from '../data/nbaHistory';
+import { playoffRound } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from './links';
 import { useHoverPopup } from './hoverPopup';
@@ -104,13 +106,14 @@ function Square({ g: snapshotGame, current, gameLink }: { g: ScheduleGame; curre
 }
 
 /** An earlier season's meeting (CK-17): "BOS @ DEN", the winner, the score, the date; no link (ESPN's data has no NBA game id). */
-function PastSquare({ g }: { g: PastGame }) {
+function PastSquare({ g, tag, playoff = false }: { g: PastGame; /** "G1" (a series game), "Play-in" */ tag?: string; playoff?: boolean }) {
   const [date, away, home, as, hs, ot] = g;
   const homeId = TEAMS.find((t) => t.tricode === home)?.id;
   const logo = homeId ? teamLogo(homeId) : undefined;
   const day = fmtDate(date, { month: 'short', day: 'numeric', year: 'numeric' });
   return (
-    <div className="ck-series-sq ck-series-played ck-series-past" data-testid="series-square" data-date={date}>
+    <div className={`ck-series-sq ck-series-played ck-series-past${playoff ? ' ck-series-po-sq' : ''}`} data-testid={playoff ? 'series-po-square' : 'series-square'} data-date={date}>
+      {tag && <span className="ck-series-po-tag">{tag}</span>}
       <span className="ck-series-pick ck-series-plain" aria-label={`${day}, ${away} @ ${home}: ${as > hs ? away : home} won ${Math.max(as, hs)}–${Math.min(as, hs)}${ot ? ` (${ot})` : ''}`}>
         <span className="ck-series-match" data-testid="series-match">
           {logo && (
@@ -131,7 +134,89 @@ function PastSquare({ g }: { g: PastGame }) {
   );
 }
 
-function Popup({ s, current, gameLink, rematch, season }: { s: SeriesGame; current: string; gameLink?: GameLink; rematch?: Rematch[]; /** This season ("2026-27") */ season: string }) {
+/** A history game as the popup's square data. */
+const asPast = (g: HistGame): PastGame => [g.date, g.away, g.home, g.as, g.hs, g.ot];
+
+/** Where "View series" goes: the season's bracket on that series (the host's page, or a URL for a new tab). */
+export interface ViewSeries {
+  href?: (year: number, series: string) => string;
+  open?: (year: number, series: string) => void;
+}
+
+/**
+ * Two teams' playoff games of a past season (CK-31), under the regular-season squares and in their own colour: the
+ * play-in game, then the series with its line ("Playoffs · West semis · DEN won 4-2") and "View series".
+ */
+function PastPlayoffRows({ po, games, view }: { po: PastPlayoffs; games: HistGame[]; view?: ViewSeries }) {
+  if (!po.series && !po.playIn.length) return null;
+  const key = po.series && seriesKey(po.series);
+  const href = key && view?.href?.(po.year, key);
+  return (
+    <div className="ck-series-po" data-testid="series-playoffs">
+      {po.playIn.length > 0 && (
+        <>
+          <div className="ck-series-po-line">
+            <span data-testid="series-playin-line">Play-in · {playInLabel(games, po.playIn[0]!)}</span>
+          </div>
+          <div className="ck-series-row">
+            {po.playIn.map((g) => (
+              <PastSquare key={g.id} g={asPast(g)} tag="Play-in" playoff />
+            ))}
+          </div>
+        </>
+      )}
+      {po.series && (
+        <>
+          <div className="ck-series-po-line">
+            <span data-testid="series-po-line">{playoffLine(po.series)}</span>
+            {(href || view?.open) && (
+              <a
+                className="ck-series-view"
+                href={href || undefined}
+                role={href ? undefined : 'button'}
+                tabIndex={0}
+                data-testid="series-view"
+                title="Open this series in the season's bracket"
+                onClick={(e) => {
+                  if (!view?.open || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+                  e.preventDefault();
+                  view.open(po.year, key!);
+                }}
+              >
+                View series
+              </a>
+            )}
+          </div>
+          <div className="ck-series-row">
+            {po.series.games.map((g, i) => (
+              <PastSquare key={g.id} g={asPast(g)} tag={`G${i + 1}`} playoff />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** This season's play-in and playoff games between the two teams (once the feed has them), in their own colour. */
+function PlayoffRows({ games, current, gameLink }: { games: ScheduleGame[]; current: string; gameLink?: GameLink }) {
+  if (!games.length) return null;
+  const round = games.map(playoffRound).find(Boolean);
+  return (
+    <div className="ck-series-po" data-testid="series-playoffs">
+      <div className="ck-series-po-line">
+        <span data-testid="series-po-line">{round ? `Playoffs · ${round.long}` : 'Play-in'}</span>
+      </div>
+      <div className="ck-series-row ck-series-po-now">
+        {games.map((g) => (
+          <Square key={g.gameId} g={g} current={g.gameId === current} gameLink={gameLink} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Popup({ s, current, gameLink, rematch, season, playoffs, view }: { s: SeriesGame; current: string; gameLink?: GameLink; rematch?: Rematch[]; /** This season ("2026-27") */ season: string; /** This season's play-in / playoff games between the two */ playoffs: ScheduleGame[]; view?: ViewSeries }) {
   const [a, b] = s.series.teams;
   // ◀ season ▶: 0 = this season, up to PAST_SEASONS_BACK back (loaded on the first switch)
   const [back, setBack] = useState(0);
@@ -140,6 +225,16 @@ function Popup({ s, current, gameLink, rematch, season }: { s: SeriesGame; curre
     if (back > 0 && !past) loadPastSeasons().then(setPast, () => setPast('failed'));
   }, [back, past]);
   const shown = back ? seasonBefore(season, back) : season;
+  // that season's playoffs (the history file of the year it ended), loaded with the first look at it
+  const endYear = Number(shown.slice(0, 4)) + 1;
+  const [hist, setHist] = useState<HistSeason>();
+  useEffect(() => {
+    if (!back) return;
+    let live = true;
+    loadSeason(endYear).then((x) => live && setHist(x), () => {});
+    return () => void (live = false);
+  }, [back, endYear]);
+  const po = back && hist?.year === endYear ? pastPlayoffs(hist, tri(a), tri(b)) : undefined;
   const old = back && past && past !== 'failed' ? pastMeetings(past, shown, tri(a), tri(b)) : undefined;
   const count = back ? old?.length : s.series.games.length;
   return (
@@ -175,17 +270,22 @@ function Popup({ s, current, gameLink, rematch, season }: { s: SeriesGame; curre
           ? s.series.games.map((g) => <Square key={g.gameId} g={g} current={g.gameId === current} gameLink={gameLink} />)
           : old?.map((g) => <PastSquare key={g[0] + g[1]} g={g} />)}
       </div>
+      {!back && <PlayoffRows games={playoffs} current={current} gameLink={gameLink} />}
+      {po && hist && <PastPlayoffRows po={po} games={hist.playIn} view={view} />}
     </>
   );
 }
 
 /** The widget's one series popup: spread `handlers` on the wrapper, render `node` inside it (on useHoverPopup). */
-export function useSeriesPopup(data: CalendarData | undefined, opts: { gameLink?: GameLink } = {}) {
+export function useSeriesPopup(data: CalendarData | undefined, opts: { gameLink?: GameLink; /** "View series" on a past season's playoff line */ viewSeries?: ViewSeries } = {}) {
   return useHoverPopup(
     'data-series-game',
     (gameId) => {
       const s = data ? leagueSeries(data).get(gameId) : undefined;
-      return s ? <Popup key={gameId} s={s} current={gameId} gameLink={opts.gameLink} rematch={leagueRematches(data!).get(gameId)} season={data!.seasonYear} /> : null;
+      if (!s) return null;
+      const [a, b] = s.series.teams;
+      const playoffs = data!.games.filter((g) => (g.gameType === 'playoffs' || g.gameType === 'play-in') && [g.homeTeam.teamId, g.awayTeam.teamId].includes(a) && [g.homeTeam.teamId, g.awayTeam.teamId].includes(b));
+      return <Popup key={gameId} s={s} current={gameId} gameLink={opts.gameLink} rematch={leagueRematches(data!).get(gameId)} season={data!.seasonYear} playoffs={playoffs} view={opts.viewSeries} />;
     },
     { className: 'ck-series-pop', label: 'Season series', testId: 'series-popup' },
   );

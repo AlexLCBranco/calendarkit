@@ -32,7 +32,7 @@ export interface CalendarState {
 
 /** The top bar's destinations; Schedule is League or Team by the scope picker. */
 export type Destination = 'schedule' | 'cup' | 'standings';
-export type CupState = { tab: 'standings' | 'schedule' | 'simulator' | 'history'; /** The History season */ hs?: number; list: 'league' | 'team'; by: 'group' | 'date'; teamId?: number; night?: string };
+export type CupState = { tab: 'standings' | 'schedule' | 'simulator' | 'history'; /** The History season */ hs?: number; list: 'league' | 'team'; by: 'group' | 'date'; teamId?: number; night?: string; /** A Cup label's target: the group brought into view ("West Group A") or "bracket" */ focus?: string };
 export const CUP_START: CupState = { tab: 'standings', list: 'league', by: 'group' };
 
 /** Everything a page of the widget is — enough to put it back as it was. */

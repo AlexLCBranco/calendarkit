@@ -1,5 +1,6 @@
 // League → List: one game day at a time, with a week strip; the day changes only by navigation.
 
+import { BigDayLabel, BigDayMark } from '../slate/bigDay';
 import { leagueRematches, leagueSeries } from '../data/series';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
@@ -164,11 +165,12 @@ export const ListDaySection = memo(function ListDaySection({ day, data, compact,
     <section className="ck-lday" data-day={day.date} aria-label={head}>
       <h3 className="ck-lday-head">
         {head}
+        <BigDayLabel data={data} date={day.date} className=" ck-bigday-head" />
       </h3>
       <CopyButton hover label="Copy day as image" of=".ck-lday" testId="copy-day" />
       <div className="ck-daylist">
         {day.games.map((g) => (
-          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} scoreSlots={scoreSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} positions={positions} lines={lines && (lines.get(g.gameId) ?? NO_LINES)} gameLink={gameLink} linkIcon cupTag={cupTag?.(g)} series={series ? leagueSeries(data).get(g.gameId) : undefined} rematch={series ? leagueRematches(data).get(g.gameId) : undefined} copyable />
+          <GameCard key={g.gameId} game={g} fatigue={fatigue.get(g.gameId)} fatigueSlots={fatigueSlots} scoreSlots={scoreSlots} now={now} timeZone={timeZone} size={compact ? 'compact' : 'regular'} onOpenGame={onOpenGame} logos scores={!compact} records={records && (records.get(g.gameId) ?? NO_RECORDS)} positions={positions} lines={lines && (lines.get(g.gameId) ?? NO_LINES)} gameLink={gameLink} linkIcon bigDay={<BigDayMark data={data} date={g.dateEt} />} cupTag={cupTag?.(g)} series={series ? leagueSeries(data).get(g.gameId) : undefined} rematch={series ? leagueRematches(data).get(g.gameId) : undefined} copyable />
         ))}
       </div>
     </section>

@@ -22,6 +22,8 @@ export interface StandingsApi extends DestinationApi {
   /** The past season on show (its end year), or undefined for this season. */
   season?: number;
   setSeason(year: number | undefined): void;
+  /** A past season on one of its playoff series ("View series"): the series outlined and in view. */
+  showSeries(year: number, series: string): void;
 }
 
 export const isHistoryYear = (y: unknown): y is number => typeof y === 'number' && HISTORY_YEARS.includes(y);
@@ -48,11 +50,13 @@ function SeasonStrip({ value, onChange }: { value?: number; onChange: (y: number
 
 export const isStandingsSet = (x: unknown): x is StandingsSet => typeof x === 'string' && Object.hasOwn(COLUMN_SETS, x);
 
-export function StandingsDestination(p: DestinationProps & { initial?: StandingsSet; initialSeason?: number; api: RefObject<StandingsApi | undefined> }) {
+export function StandingsDestination(p: DestinationProps & { initial?: StandingsSet; initialSeason?: number; initialSeries?: string; api: RefObject<StandingsApi | undefined> }) {
   const { active, data, today, root, slots, gameLink, timeZone } = p;
   // The column set both conference tables show — in the address and the page history, never stored
   const [stSet, setStSet] = useState<StandingsSet>(p.initial ?? 'main');
   const [season, setSeason] = useState<number | undefined>(isHistoryYear(p.initialSeason) ? p.initialSeason : undefined);
+  // the playoff series a "View series" link asked for, for the season it belongs to
+  const [focus, setFocus] = useState<{ year: number; series: string } | undefined>(() => (isHistoryYear(p.initialSeason) && p.initialSeries ? { year: p.initialSeason, series: p.initialSeries } : undefined));
   // a new column set is a new page (its address, back / forward)
   useEffect(() => p.rendered());
 
@@ -61,6 +65,11 @@ export function StandingsDestination(p: DestinationProps & { initial?: Standings
     setSet: setStSet,
     season,
     setSeason,
+    showSeries: (year, series) => {
+      if (!isHistoryYear(year)) return;
+      setSeason(year);
+      setFocus({ year, series });
+    },
     lookingAt: () => seasonDay(data, today),
     label: () => (season ? `NBA ${seasonLabel(season)}` : stSet === 'main' ? 'Standings' : `Standings · ${COLUMN_SETS[stSet].label}`),
     // the heading, both conference tables in the current column set and the legend, as on screen
@@ -100,7 +109,7 @@ export function StandingsDestination(p: DestinationProps & { initial?: Standings
     >
       {season ? (
         <Suspense fallback={<p className="ck-empty">Loading {seasonLabel(season)}…</p>}>
-          <NbaHistory year={season} onSeason={setSeason} />
+          <NbaHistory year={season} onSeason={setSeason} focus={focus?.year === season ? focus.series : undefined} />
         </Suspense>
       ) : (
         <Suspense fallback={<p className="ck-empty">Loading the standings…</p>}>

@@ -5,7 +5,7 @@
 // into a guess: a spot that depends on one says "depends on margin" and points at the games. Nothing is fetched; picks
 // live in the page (they survive leaving the Cup and coming back, not a reload) and never touch real data.
 
-import { useEffect, useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { CUP_GROUP_END, cupGroupsOf, isCountedCupGame, LAST_SEASON_WINS, realResults } from '../data/cup';
 import { computeCup, type GroupResult, type RankedLine, type Tiebreak } from '../data/cupEngine';
 import { dateFormat, finalStatusText, type CalendarData } from '../data/model';
@@ -60,6 +60,8 @@ export const simulate = (data: CalendarData, picks: SimPicks) => computeCup(cupG
 export interface CupSimulatorProps {
   data: CalendarData;
   gameLink?: GameLink;
+  /** A knockout game's Cup label led here: the bracket is brought into view. */
+  focusBracket?: boolean;
   picks: SimPicks;
   onPicks: (picks: SimPicks) => void;
   mode: SimMode;
@@ -69,7 +71,11 @@ export interface CupSimulatorProps {
   onBracket: (picks: BracketPicks) => void;
 }
 
-export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onMode, bracket: bracketPicks, onBracket }: CupSimulatorProps) {
+export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onMode, bracket: bracketPicks, onBracket, focusBracket = false }: CupSimulatorProps) {
+  const top = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (focusBracket) top.current?.querySelector('[data-testid="sim-bracket"]')?.scrollIntoView?.({ block: 'nearest' });
+  }, [focusBracket]);
   const res = useMemo(() => simulate(data, picks), [data, picks]);
   const knockout = useMemo(() => { const b = cupBoard(data); return [...b.qf, ...b.sf, ...b.final]; }, [data]);
   const bracket = useMemo(() => bracketOf(res, bracketPicks, knockout), [res, bracketPicks, knockout]);
@@ -108,7 +114,7 @@ export default function CupSimulator({ data, gameLink, picks, onPicks, mode, onM
   const final = data.games.find((g) => g.gameType === 'cup-final');
   const finalVenue: Venue = final?.arenaName ? { kind: 'neutral', arena: final.arenaName, city: final.arenaCity || undefined } : { kind: 'tbd' };
   return (
-    <section className="ck-sim" aria-label="NBA Cup simulator" data-testid="cup-sim" data-mode={mode}>
+    <section ref={top} className="ck-sim" aria-label="NBA Cup simulator" data-testid="cup-sim" data-mode={mode} data-focus={focusBracket ? 'bracket' : undefined}>
       <header className="ck-sim-head">
         <span className="ck-sim-banner" data-testid="sim-banner">
           SIMULATION

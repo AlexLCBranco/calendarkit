@@ -5,8 +5,10 @@ import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from '
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { addDays, hasNationalTv, isOver, leagueSeasonLines, monthCells, nationalTv, opponentSecondNight, seasonMonths, teamGames, type B2BPair, type CalendarData } from '../data/model';
 import { teamThreeInFour, type ThreeInFour } from '../data/scheduleTags';
+import { opponentSituation, type OpponentSituation } from '../data/opponent';
 import { TEAM_BY_ID } from '../data/teams';
 import { CopyButton } from './CopyButton';
+import { BigDayLabel } from '../slate/bigDay';
 import { GameCard, RunLabel, type GameLink } from './GameCard';
 import { runLabel, runTip, runTipDays, teamRuns } from '../data/runs';
 import { monthNav, PeriodNav } from './PeriodNav';
@@ -32,7 +34,7 @@ const WIDEST_TRICODE = 'MEM';
 /**
  * The fullest cell the season can have, for sizing the team calendar: a national TV game (one "TV" pill in cells), as a Cup Final, on night 1 of a travelling back-to-back, with the opponent on its 2nd night.
  */
-export function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | undefined {
+export function probeCard(data: CalendarData, weekView = false): Parameters<typeof GameCard>[0] | undefined {
   const tvText = (g: ScheduleGame) => nationalTv(g).join(' · ').length;
   const g = data.games.reduce<ScheduleGame | undefined>((best, x) => (x.homeTeam.teamId && (!best || tvText(x) > tvText(best)) ? x : best), undefined);
   if (!g) return undefined;
@@ -46,7 +48,9 @@ export function probeCard(data: CalendarData): Parameters<typeof GameCard>[0] | 
   const tif: ThreeInFour = { position: 3, sets: [], merged: { ids: Array(7).fill(''), dates: Array(7).fill('2026-11-01'), days: 11, position: 2 } };
   // and the widest streak ("W10")
   const lines = new Map([[widest.teamId, { streak: { kind: 'W' as const, n: 10 } }]]);
-  return { game, teamId: widest.teamId, b2b: [{ pair, night: 1 }], tif, lines, opponentB2B: ' ', now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, tvPill: true, size: 'compact' };
+  // and the opponent's fullest line: a record, the widest streak, a travelling back-to-back night, the widest chip, days off
+  const opp: OpponentSituation = { teamId: widest.teamId, tricode: WIDEST_TRICODE, record: { wins: 41, losses: 41 }, streak: { kind: 'W', n: 10 }, b2b: { pair, night: 2 }, tif, rest: { days: 10, tier: 'long', tip: '' } };
+  return { game, teamId: widest.teamId, b2b: [{ pair, night: 1 }], tif, lines, opp, oppShort: !weekView, now: 0, timeZone: 'UTC', teamFirst: true, logos: true, scores: true, tvPill: true, size: 'compact' };
 }
 
 export interface TeamMonthGridProps {
@@ -105,6 +109,9 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
     b2b: b2b.byGame.get(g.gameId),
     tif: compact ? undefined : tif.get(g.gameId),
     opponentB2B: opponentSecondNight(data, g, teamId),
+    // the opponent's own line (desktop cells): its record, streak and how tired or rested it is
+    opp: compact ? undefined : opponentSituation(data, g, teamId),
+    oppShort: !weekView,
     now,
     timeZone,
   });
@@ -114,7 +121,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
   // TEAM_SCALE_MAX down to TEAM_SCALE_MIN) at which the fullest possible cell (probeCard) fits a cell of a 6-week month — the smallest
   // cells — so it doesn't change from month to month. Week views: the shown cells (all the same size), up to
   // TEAM_WEEK_SCALE_MAX. The probe is rendered only while measuring, before paint.
-  const probe = useMemo(() => probeCard(data), [data]);
+  const probe = useMemo(() => probeCard(data, weekView), [data, weekView]);
   const [scale, setScale] = useState({ key: '', s: 1 });
   const key = `${size.width}x${size.height}${weekView ? `w${weekRows}` : ''}`;
   const measuring = !compact && !!probe && scale.key !== key;
@@ -173,6 +180,7 @@ export function TeamMonthGrid({ data, teamId, month, onMonthChange, size, now, t
               {/* week views can cross a month: the 1st says which */}
               <span className="ck-daynum">{weekView && date.endsWith('-01') ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
               {g && <GameCard {...cardProps(g)} teamFirst={!compact} logos={!compact} scores={!compact} shortB2B={compact} tvPill={!compact} size="compact" onOpenGame={compact ? undefined : onOpenGame} gameLink={compact ? undefined : gameLink} seriesTip={seriesLine(data, g)} lines={compact ? undefined : leagueSeasonLines(data).get(g.gameId)} />}
+              <BigDayLabel data={data} date={date} className=" ck-bigday-cell" />
               {g && <CopyButton hover label="Copy day as image" of=".ck-day-cell" testId="copy-day" />}
             </div>
           );

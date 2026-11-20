@@ -1,0 +1,108 @@
+/* The Cup label as a link to the Cup page (cupLink.tsx), and its popup: the game's group table, or a knockout game's
+   two teams with their way through the Cup. The label keeps its look; only the pointer and a hover ring say "link". */
+a.ck-cuplink {
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-user-drag: none;
+}
+a.ck-cuplink:hover {
+  box-shadow: 0 0 0 1px currentColor;
+}
+.ck-capturing a.ck-cuplink {
+  box-shadow: none !important;
+}
+
+.ck-cuppop-tables {
+  display: flex;
+  gap: 14px;
+}
+.ck-cuppop-table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.ck-cuppop-table th {
+  padding: 0 6px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ck-muted);
+  text-align: right;
+  white-space: nowrap;
+}
+.ck-cuppop-table th.ck-cuppop-name {
+  padding-left: 4px;
+  text-align: left;
+  font-weight: 700;
+  color: var(--ck-text);
+}
+.ck-cuppop-table td {
+  padding: 3px 6px;
+  text-align: right;
+  white-space: nowrap;
+}
+.ck-cuppop-table td.ck-cuppop-rank {
+  padding-left: 4px;
+  color: var(--ck-muted);
+  text-align: left;
+}
+.ck-cuppop-table td.ck-cuppop-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+  font-weight: 600;
+}
+.ck-cuppop-rec {
+  font-weight: 700;
+}
+/* the two teams of the game hovered */
+.ck-cuppop-on td {
+  background: rgb(78 161 255 / 0.18);
+}
+.ck-cuppop-on td:first-child {
+  border-radius: 5px 0 0 5px;
+}
+.ck-cuppop-on td:last-child {
+  border-radius: 0 5px 5px 0;
+}
+.ck-cuppop-through {
+  min-width: 26px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ck-cup, #e6b450);
+}
+.ck-cuppop-out {
+  color: var(--ck-muted);
+}
+.ck-cuppop-foot {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--ck-muted);
+}
+.ck-cuppop-paths {
+  display: flex;
+  gap: 18px;
+}
+.ck-cuppop-path-team {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.ck-cuppop-step {
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.ck-cuppop-round {
+  color: var(--ck-muted);
+}
+.ck-cuppop-lost {
+  color: var(--ck-muted);
+}
+.ck-cuppop-none {
+  color: var(--ck-muted);
+}
+/* a pinned popup (a click inside it) says so with a stronger edge */
+.ck-cuppop[data-pinned] {
+  border-color: var(--ck-accent, #4ea1ff);
+}

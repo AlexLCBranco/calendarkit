@@ -1,0 +1,52 @@
+/* Holidays and big NBA dates (bigDay.tsx): a small label on the day, a star on that day's game cards. */
+.ck-bigday {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0 6px;
+  border: 1px solid var(--ck-bigday, #e0a458);
+  border-radius: 999px;
+  color: var(--ck-bigday, #e0a458);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  cursor: help;
+}
+/* Team Calendar cells: in the cell's bottom-right corner (the top has the day number, the run label and the copy button) */
+.ck-bigday-cell {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  max-width: calc(100% - 10px);
+  z-index: 1;
+}
+.ck-bigday-count {
+  align-self: flex-start;
+  font-size: 10px;
+}
+.ck-bigday-wday,
+.ck-bigday-head,
+.ck-bigday-slate {
+  margin-left: 8px;
+}
+.ck-bigday-mark {
+  color: var(--ck-bigday, #e0a458);
+  font-size: 12px;
+  line-height: 1;
+  cursor: help;
+}
+/* Slate cards: in the strip's top-right corner, out of the flow */
+.ck-slate-strip {
+  position: relative;
+}
+.ck-slate-strip > .ck-bigday-mark {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 10px;
+}

@@ -4,7 +4,7 @@
 // Standings | Schedule (the switch is in the top bar); the Schedule (CupSchedule.tsx) is worked out only once
 // its tab is opened.
 
-import { lazy, Suspense, useMemo, type CSSProperties, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
 /** The history and its data file, their own chunk, loaded when the tab is opened. */
 const CupHistory = lazy(() => import('./CupHistory'));
 import { CupTonight } from './CupTonight';
@@ -50,10 +50,12 @@ export interface CupViewProps {
   /** The history instead (its season, and the season picked). */
   history?: { season?: number; onSeason: (year: number) => void };
   /** The simulator instead. */
-  sim?: Omit<CupSimulatorProps, 'data' | 'gameLink'>;
+  sim?: Omit<CupSimulatorProps, 'data' | 'gameLink' | 'focusBracket'>;
+  /** A Cup label's target, brought into view: a group ("West Group A") or "bracket" (the simulator's). */
+  focus?: string;
 }
 
-export default function CupView({ data, schedule, gameLink, sim, today, history }: CupViewProps) {
+export default function CupView({ data, schedule, gameLink, sim, today, history, focus }: CupViewProps) {
   if (history)
     return (
       <Suspense fallback={<p className="ck-empty">Loading the Cup history…</p>}>
@@ -61,12 +63,17 @@ export default function CupView({ data, schedule, gameLink, sim, today, history 
       </Suspense>
     );
   // the simulator's "Tonight in the Cup" is in the page rows (CupDestination): the simulator fills the window
-  if (sim) return <CupSimulator data={data} gameLink={gameLink} {...sim} />;
-  return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} gameLink={gameLink} tonight={today ? <CupTonight data={data} today={today} gameLink={gameLink} inline /> : null} />;
+  if (sim) return <CupSimulator data={data} gameLink={gameLink} focusBracket={focus === 'bracket'} {...sim} />;
+  return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} gameLink={gameLink} focus={focus} tonight={today ? <CupTonight data={data} today={today} gameLink={gameLink} inline /> : null} />;
 }
 
-function CupStandingsView({ data, gameLink, tonight }: { data: CalendarData; gameLink?: GameLink; tonight?: ReactNode }) {
+function CupStandingsView({ data, gameLink, tonight, focus }: { data: CalendarData; gameLink?: GameLink; tonight?: ReactNode; focus?: string }) {
   const s = useMemo(() => cupStandings(data.games, data.regulation), [data]);
+  // a Cup label's group: in view (it already is on a full-size window) and outlined
+  const grid = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (focus) grid.current?.querySelector('[data-focus]')?.scrollIntoView?.({ block: 'nearest' });
+  }, [focus]);
   return (
     <section className="ck-cupview" aria-label="NBA Cup standings" data-testid="cup">
       <div className="ck-cup-capture" data-testid="cup-grid">
@@ -78,9 +85,9 @@ function CupStandingsView({ data, gameLink, tonight }: { data: CalendarData; gam
           <span className="ck-cup-ifended">If group play ended today</span>
           {tonight}
         </header>
-        <div className="ck-cup-grid">
+        <div className="ck-cup-grid" ref={grid}>
           {s.groups.map((g) => (
-            <div key={g.group} className="ck-cup-card" data-group={g.group} data-testid="cup-group">
+            <div key={g.group} className={`ck-cup-card${g.group === focus ? ' ck-cup-card-focus' : ''}`} data-group={g.group} data-focus={g.group === focus || undefined} data-testid="cup-group">
               <div className="ck-cup-row ck-cup-cols">
                 <span className="ck-cup-group-name">{g.short}</span>
                 <span className="ck-cup-num">W</span>

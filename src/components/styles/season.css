@@ -58,3 +58,8 @@
 .ck-daylist .ck-card-compact.ck-card-final .ck-time {
   display: none;
 }
+
+/* the series a "View series" link led to */
+.ck-nh-series-focus {
+  box-shadow: 0 0 0 2px var(--ck-accent);
+}

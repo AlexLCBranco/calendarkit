@@ -17,6 +17,8 @@ import type { CalendarData } from './data/model';
 import { TEAMS, TEAM_BY_ID } from './data/teams';
 import { rotationkitUrl } from './rotationkit';
 import { pageTitle } from './pageTitle';
+import { cupPageUrl } from './slate/cupLink';
+import type { CupFocus } from './data/cupPopup';
 
 /** Shell's handling of GameCard's "open game" action: the rotationkit deep link in a new tab. */
 export function openGameInRotationkit(gameId: string, open: (url: string) => void = (url) => window.open(url, '_blank', 'noopener')) {
@@ -32,7 +34,7 @@ export const appGameLink = isGameLinkConfigured() ? (g: Parameters<typeof gameLi
  * team month grid (→ Calendar), ?view=league the day list (→ List). "Show rest days" is not in it (on at
  * every load, unchecking lasts until a reload; an old link's `rest=` is ignored).
  */
-export function readUrlState(search = window.location.search): Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState>; st?: StandingsSet; sy?: number } {
+export function readUrlState(search = window.location.search): Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState>; st?: StandingsSet; sy?: number; ss?: string } {
   const p = new URLSearchParams(search);
   const cupTeam = TEAMS.find((t) => t.tricode === p.get('ct')?.toUpperCase());
   const team = TEAMS.find((t) => t.tricode === p.get('team')?.toUpperCase());
@@ -51,8 +53,10 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     st: view === 'standings' && isStandingsSet(p.get('set')) ? (p.get('set') as StandingsSet) : undefined,
     // Standings: a past season (CK-24)
     sy: view === 'standings' && isHistoryYear(Number(p.get('season'))) ? Number(p.get('season')) : undefined,
+    // Standings, a past season: the playoff series a "View series" link asked for
+    ss: view === 'standings' ? p.get('series') ?? undefined : undefined,
     // The Cup's sub-view
-    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : p.get('cup') === 'simulator' ? 'simulator' : p.get('cup') === 'history' ? 'history' : 'standings', hs: /^\d{4}$/.test(p.get('hs') ?? '') ? Number(p.get('hs')) : undefined, list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id } : undefined,
+    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : p.get('cup') === 'simulator' ? 'simulator' : p.get('cup') === 'history' ? 'history' : 'standings', hs: /^\d{4}$/.test(p.get('hs') ?? '') ? Number(p.get('hs')) : undefined, list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id, focus: p.get('cg') ?? undefined } : undefined,
   };
 }
 
@@ -72,6 +76,14 @@ export function teamLinkUrl({ teamId, layout, date, state }: TeamTarget, pathnam
   p.set('on', date);
   return `${pathname}?${p}`;
 }
+
+/** "View series": a past season's page in Standings, on one of its playoff series. */
+export function seasonLinkUrl(year: number, series: string, pathname = window.location.pathname): string {
+  return `${pathname}?${new URLSearchParams({ view: 'standings', season: String(year), series })}`;
+}
+
+/** A Cup label's URL: the Cup page on a game's group (Groups) or on the bracket (Simulator). */
+export const cupLinkUrl = (focus: CupFocus, pathname = window.location.pathname) => cupPageUrl(focus, pathname);
 
 /**
  * End-to-end tests only: the day to open on, set by e2e/fixtures.ts before the page loads (`window.__ckOpenDate`), so a
@@ -99,6 +111,7 @@ export function urlOf(snap: ViewSnapshot, pathname = window.location.pathname): 
   if (s.mode === 'cup') {
     p.set('cup', snap.cup.tab);
     if (snap.cup.tab === 'history' && snap.cup.hs) p.set('hs', String(snap.cup.hs));
+    if (snap.cup.focus && (snap.cup.tab === 'standings' || snap.cup.tab === 'simulator')) p.set('cg', snap.cup.focus);
     if (snap.cup.tab === 'schedule') {
       p.set('cl', snap.cup.list);
       if (snap.cup.list === 'league') p.set('by', snap.cup.by);
@@ -298,6 +311,8 @@ export function App() {
             onOpenGame={onOpenGame}
             gameLink={appGameLink}
             teamHref={teamLinkUrl}
+            cupHref={cupLinkUrl}
+            seasonHref={seasonLinkUrl}
             onNavigate={onNavigate}
             handle={view}
             pageHistory={pageHistory}

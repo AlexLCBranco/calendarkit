@@ -13,10 +13,10 @@ import { clampX } from './tooltip';
 export const POPUP_CLOSE_MS = POPUP_GRACE_MS;
 
 /**
- * `box.pin`: a click on the element pins the popup — it stays when the pointer leaves, until Escape, a click outside it
+ * `box.pin`: a click on the element pins the popup (`box.pinInside`: a click inside the popup does) — it stays when the pointer leaves, until Escape, a click outside it
  * or another click on the element (the Standings cells' game lists, CK-18).
  */
-export function useHoverPopup(attr: string, render: (value: string, close: () => void) => ReactNode, box: { className: string; label: string; testId: string; pin?: boolean }) {
+export function useHoverPopup(attr: string, render: (value: string, close: () => void) => ReactNode, box: { className: string; label: string; testId: string; pin?: boolean; /** a click inside the popup pins it (its element's own click does something else) */ pinInside?: boolean }) {
   const [open, setOpen] = useState<{ value: string; x: number; top: number; bottom: number }>();
   const ref = useRef<HTMLDivElement>(null);
   const closer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -88,9 +88,15 @@ export function useHoverPopup(attr: string, render: (value: string, close: () =>
     pinned.current = true;
     setPinned(true);
   };
+  const pinHere = () => {
+    keep();
+    pinned.current = true;
+    setPinned(true);
+  };
   useEffect(() => close, [close]);
   const content = open ? render(open.value, close) : null;
   return {
+    close,
     handlers: {
       onMouseOver: over,
       onFocus: (e: SyntheticEvent) => ((e.target as Element).closest?.(`[${attr}]`) || ref.current?.contains(e.target as Node) ? over(e) : undefined),
@@ -98,7 +104,7 @@ export function useHoverPopup(attr: string, render: (value: string, close: () =>
       onClick: click,
     },
     node: content && (
-      <div ref={ref} className={box.className} role="dialog" aria-label={box.label} data-testid={box.testId} data-pinned={isPinned || undefined} data-capture-exclude="true" onMouseEnter={keep} onMouseLeave={later}>
+      <div ref={ref} className={box.className} role="dialog" aria-label={box.label} data-testid={box.testId} data-pinned={isPinned || undefined} data-capture-exclude="true" onMouseEnter={keep} onMouseLeave={later} onClick={box.pinInside ? pinHere : undefined}>
         {content}
       </div>
     ),

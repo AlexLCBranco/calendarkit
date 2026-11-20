@@ -385,6 +385,11 @@
   .ck-chip-all {
     grid-row: 1 / span 2;
   }
+  /* without the All teams chip (the Cup's Team schedule) the two conferences are the grid's only cells: one column,
+     or West ran off the page beside East */
+  .ck-team-chips:not(:has(.ck-chip-all)) {
+    grid-template-columns: auto;
+  }
 }
 @media (max-width: 1599px) {
   /* the logo alone (the team's name in its tooltip), both conferences on one line */
@@ -485,4 +490,25 @@
 .ck-prows .ck-tonight {
   min-width: 0;
   margin-bottom: 0;
+}
+
+/* ---------- one menu layer (a full-size window, .ck-one-layer): How on the first line and the dates on the second,
+   to the right of the team chips, in the chips' two lines' height — no row under them ---------- */
+.ck-one-layer .ck-toolbar.ck-prows:has(.ck-bar-local[data-destination='schedule']) {
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+.ck-one-layer .ck-prows:has(.ck-bar-local[data-destination='schedule']) .ck-team-chips {
+  row-gap: 8px; /* two 28 px lines + 8 = the two 32 px lines beside them */
+}
+.ck-one-layer .ck-prows:has(.ck-bar-local[data-destination='schedule']) .ck-bar-local {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0;
+  min-height: 0;
+}
+.ck-one-layer .ck-prows:has(.ck-bar-local[data-destination='schedule']) .ck-bar-date {
+  flex-wrap: nowrap;
 }

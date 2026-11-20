@@ -1,5 +1,6 @@
 // League → Calendar at narrow widths (and the week and date picker popups): a month of game counts per day.
 
+import { BigDayLabel } from '../slate/bigDay';
 import { useEffect, useMemo, useRef, type KeyboardEvent } from 'react';
 import { addDays, countsByDate, monthCells, monthOf, seasonMonths, type CalendarData } from '../data/model';
 import { monthNav, PeriodNav } from './PeriodNav';
@@ -91,6 +92,7 @@ export function MonthNavigator({ data, month, onMonthChange, selectedDate, selec
               aria-label={`${fmtDate(date, { month: 'long', day: 'numeric' })}: ${cell ? label || 'no game' : plural(n)}`}
             >
               <span className="ck-daynum">{Number(date.slice(8))}</span>
+              <BigDayLabel data={data} date={date} className=" ck-bigday-count" />
               {label && <span className={`ck-count${cell ? " ck-count-label" : ""}`}>{label}</span>}
             </button>
           );

@@ -29,7 +29,9 @@ import { leagueRematches, leagueSeries } from '../data/series';
 import { fmtOdds, gameLive, gameOdds, withFinals, type DayOdds, type GameLive, type GameOdds, type SlateOdds } from './odds';
 import { LiveLabel } from './live';
 import { GameLinkIcon, ScoreLink, seasonTip, TeamLogo, TipTime } from './parts';
-import { TeamLink } from './teamLink';
+import { TeamLink, teamListTip } from './teamLink';
+import { CupLabel } from './cupLink';
+import { BigDayLabel, BigDayMark } from './bigDay';
 import { StreakChip } from './streakPopup';
 import { slateHeaderLabel } from './header';
 import { isCold } from '../data/cold';
@@ -105,7 +107,7 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
         </p>
       )}
       <div className={`ck-slate-grid${notes ? ' ck-slate-wide' : ''}`} data-cols={cols} data-cup={cup || undefined} style={slateVars(cols, cup)}>
-        {games.length > 0 && <SlateHeader date={date} />}
+        {games.length > 0 && <SlateHeader date={date} data={data} />}
         {games.map((g) => (
           <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, g)} live={gameLive(g, day)} cupNight={cup} fates={fates} chips={chips} gameMenu={gameMenu} cold={nightCold?.get(g.gameId)} />
         ))}
@@ -163,7 +165,7 @@ export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, 
   const zoom = slateCopyZoom(cardWidth, cup, !!notes);
   return (
     <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-margin': `${SLATE_COPY_MARGIN}px` } as CSSProperties} data-zoom={zoom}>
-      {games[0] && <SlateHeader date={games[0].dateEt} />}
+      {games[0] && <SlateHeader date={games[0].dateEt} data={data} />}
       {games.map((g) => (
         <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} live={gameLive(g, odds)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy editNotes={editNotes} cold={cold?.get(g.gameId)} />
       ))}
@@ -172,10 +174,11 @@ export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, 
 }
 
 /** The header line across the top of the grid ("SLATE · 18-11 · NBA"), on screen, in copies and in host widgets. */
-function SlateHeader({ date }: { date: string }) {
+function SlateHeader({ date, data }: { date: string; data: CalendarData }) {
   return (
     <div className="ck-slate-header" data-testid="slate-header">
       {slateHeaderLabel(date)}
+      <BigDayLabel data={data} date={date} className=" ck-bigday-slate" />
     </div>
   );
 }
@@ -225,13 +228,21 @@ export const SlateCard = memo(function SlateCard({ data, game, timeZone, gameLin
                 TV
               </span>
             )}
-            {marks.map((m) => (
-              <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long} data-tip={m.long}>
-                {m.short}
-              </span>
-            ))}
+            {marks.map((m) =>
+              m.kind === 'cup' || m.kind === 'cup-final' ? (
+                <CupLabel key={m.kind + m.short} game={game} className={`ck-tag ck-${m.kind}`} long={m.long}>
+                  {m.short}
+                </CupLabel>
+              ) : (
+                <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long} data-tip={m.long}>
+                  {m.short}
+                </span>
+              ),
+            )}
             {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}
           </span>
+          {/* a holiday or a big NBA date: a star in the strip's corner (it takes no room from the chips) */}
+          <BigDayMark data={data} date={game.dateEt} />
         </div>
         <div className="ck-slate-teams">
           <TeamRow menu={gameMenu && !copy ? `${away} at ${home}` : undefined} cold={cold} cup={cupNight ? { data, game, live, gameLink, fates: cupNight === 2 || cupNight === 3 ? fates : undefined, chips: cupNight === 3 ? chips : undefined } : undefined} team={game.awayTeam} gameId={game.gameId} f={fx?.get(game.awayTeam.teamId)} line={lines?.get(game.awayTeam.teamId)} url={url} score={result ? { n: result.score, win: result.win } : live && { n: live.away, win: false, live: true }} odds={odds?.away} provider={odds?.provider} />
@@ -269,9 +280,11 @@ function TeamRow({ menu, cold, cup, team, gameId, f, line, score, url, odds, pro
           {score?.n ?? ''}
         </ScoreLink>
       </span>
-      <span className="ck-slate-rec" data-tip={rec ? tip : undefined}>
+      {/* the record is the team's List (every game, the rest days); the name and logo stay its Calendar */}
+      <TeamLink teamId={rec ? team.teamId : 0} view="list" className="ck-slate-rec" data-tip={rec ? `${teamListTip(teamLabel(team))}${tip ? `
+${tip}` : ''}` : undefined} data-testid="slate-rec">
         {rec ? `${rec.wins}-${rec.losses}` : ''}
-      </span>
+      </TeamLink>
       <StreakChip teamId={team.teamId} gameId={gameId} streak={streak} base="ck-slate-streak" testId="slate-streak" label={tip} />
       {cup && (isKnockout(cup.game) ? <KoTrack data={cup.data} game={cup.game} teamId={team.teamId} home={home} /> : <CupTrack {...cup} teamId={team.teamId} />)}
       <Fatigue f={f} team={teamLabel(team)} shortChip />

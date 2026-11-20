@@ -69,7 +69,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
 
   p.api.current = {
     state: cupView,
-    pageKey: () => [cupView.tab, cupView.list, cupView.by, cupView.teamId, cupView.hs],
+    pageKey: () => [cupView.tab, cupView.list, cupView.by, cupView.teamId, cupView.hs, cupView.focus],
     teamScoped: cupView.list === 'team',
     night: cupView.night,
     restore: setCupView,
@@ -116,7 +116,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
       }
       sub={
         <PageRow label="How">
-          <Segmented label="Cup view" value={cupView.tab} options={CUP_TABS} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />
+          <Segmented label="Cup view" value={cupView.tab} options={CUP_TABS} onChange={(tab) => setCupView((v) => ({ ...v, tab, focus: undefined }))} />
           {cupSchedule && <Segmented label="Cup list" value={cupView.list} options={[['league', 'League'], ['team', 'Team']]} onChange={(list) => setCupView((v) => ({ ...v, list }))} />}
           {cupSchedule && !cupTeam && <Segmented label="Cup layout" value={cupView.by} options={[['group', 'By group'], ['date', 'By date']]} onChange={(by) => setCupView((v) => ({ ...v, by }))} />}
         </PageRow>
@@ -128,7 +128,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
       }
     >
       <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>
-        <CupView data={data} today={today} gameLink={gameLink} history={cupHist ? { season: cupView.hs, onSeason: (hs) => setCupView((v) => ({ ...v, hs })) } : undefined} sim={cupSim ? { picks: simPicks, onPicks: setSimPicks, mode: simMode, onMode: setSimMode, bracket: koPicks, onBracket: setKoPicks } : undefined} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
+        <CupView data={data} today={today} gameLink={gameLink} focus={cupView.focus} history={cupHist ? { season: cupView.hs, onSeason: (hs) => setCupView((v) => ({ ...v, hs })) } : undefined} sim={cupSim ? { picks: simPicks, onPicks: setSimPicks, mode: simMode, onMode: setSimMode, bracket: koPicks, onBracket: setKoPicks } : undefined} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
       </Suspense>
       {selKind && <SelectionBar store={selection} copy={copySelection} />}
       {selCapture && selKind && <SelectionCopyStage capture={selCapture} kind={selKind} list team={cupTeam} teamId={selTeamId} cup p={p} />}
@@ -139,7 +139,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
 /** The Cup's breadcrumb parts after "Cup": its view, then the schedule's list (and team) or the History's season. */
 function cupCrumbs(v: CupState, set: (f: (v: CupState) => CupState) => void): Crumb[] {
   const go = (patch: Partial<CupState>) => () => set((x) => ({ ...x, ...patch }));
-  const out: Crumb[] = [{ id: 'cup-view', label: CUP_TABS.find(([t]) => t === v.tab)![1], items: CUP_TABS.map(([t, label]) => ({ label, on: t === v.tab, go: go({ tab: t }) })) }];
+  const out: Crumb[] = [{ id: 'cup-view', label: CUP_TABS.find(([t]) => t === v.tab)![1], items: CUP_TABS.map(([t, label]) => ({ label, on: t === v.tab, go: go({ tab: t, focus: undefined }) })) }];
   if (v.tab === 'schedule') {
     out.push({ id: 'cup-list', label: v.list === 'team' ? 'Team' : v.by === 'date' ? 'By date' : 'By group', items: [
       { label: 'By group', on: v.list === 'league' && v.by === 'group', go: go({ list: 'league', by: 'group' }) },

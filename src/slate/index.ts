@@ -30,7 +30,10 @@ export { useTooltip, type StripGame, type StripGames } from './tooltip';
 // The day strips' matchups for useTooltip (opponent, vs / @, its page), as CalendarView gives them
 export { stripGamesOf } from './stripGames';
 // Team links: a host provides TeamLinkContext (calendarkit's CalendarView; the gauntlet's widget with teamCalendarUrl)
-export { TeamLinkContext, teamLinkTarget, teamCalendarUrl, type TeamLinks } from './teamLink';
+export { TeamLinkContext, teamLinkTarget, teamCalendarUrl, teamListTip, type TeamLinks, type TeamLinkView } from './teamLink';
+// The Cup label: a host provides CupLinkContext (with cupPageUrl) and renders useCupPopup's node; cupLinkTarget finds a clicked label
+export { CupLinkContext, cupLinkTarget, cupPageUrl, useCupPopup, CUP_LINK_TIP, type CupLinks } from './cupLink';
+export { cupFocusOf, type CupFocus } from '../data/cupPopup';
 // The streak popup and the series popup, for a host that wants them on its cards
 export { useStreakPopup } from './streakPopup';
 export { useSeriesPopup } from './series';

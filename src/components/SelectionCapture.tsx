@@ -6,6 +6,7 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { cupTag, hasNationalTv, leagueSeasonLines, opponentSecondNight, type CalendarData } from '../data/model';
+import { opponentSituation } from '../data/opponent';
 import { cupNightHeading, cupNights, cupTeamTag } from '../data/cupSchedule';
 import { teamThreeInFour } from '../data/scheduleTags';
 import { timeGroups } from './dayflow';
@@ -32,6 +33,8 @@ export interface SelectionCaptureProps {
   cellWidth?: number;
   /** Team Calendar: the on-screen content scale. */
   teamScale?: number;
+  /** Team Calendar: the month view (the opponent's line in its short form, as on screen). */
+  teamMonth?: boolean;
   /** League week view: the on-screen line variables (`style` of .ck-week-view), so lines are drawn at the same size. */
   weekStyle?: string;
   /** League week view: 1 week (the lines get their Fatigue row, as on screen). */
@@ -75,7 +78,7 @@ export function SelectionCapture(p: SelectionCaptureProps) {
 }
 
 /** Team Calendar: each day with selected games as its cell (same card), header instead of the day number. */
-function TeamDays({ data, teamId, now, timeZone, games, cellWidth, teamScale = 1 }: SelectionCaptureProps & { games: ScheduleGame[] }) {
+function TeamDays({ data, teamId, now, timeZone, games, cellWidth, teamScale = 1, teamMonth = false }: SelectionCaptureProps & { games: ScheduleGame[] }) {
   const b2b = useTeamB2B(data, teamId);
   const tif = teamThreeInFour(data, teamId);
   return (
@@ -84,7 +87,7 @@ function TeamDays({ data, teamId, now, timeZone, games, cellWidth, teamScale = 1
         <div key={date} className="ck-cell ck-day-cell ck-sel-day" data-date={date} style={{ width: cellWidth }}>
           <span className="ck-sel-dayhead">{dayHead(date, gs.length)}</span>
           {gs.map((g) => (
-            <GameCard key={g.gameId} game={g} teamId={teamId} b2b={b2b.byGame.get(g.gameId)} tif={tif.get(g.gameId)} tvPill opponentB2B={opponentSecondNight(data, g, teamId)} lines={leagueSeasonLines(data).get(g.gameId)} now={now} timeZone={timeZone} teamFirst logos scores size="compact" />
+            <GameCard key={g.gameId} game={g} teamId={teamId} b2b={b2b.byGame.get(g.gameId)} tif={tif.get(g.gameId)} tvPill opponentB2B={opponentSecondNight(data, g, teamId)} lines={leagueSeasonLines(data).get(g.gameId)} opp={opponentSituation(data, g, teamId)} oppShort={teamMonth} now={now} timeZone={timeZone} teamFirst logos scores size="compact" />
           ))}
         </div>
       ))}

@@ -214,7 +214,7 @@ test('team calendar: content scaled to the cell, nothing clipped in any cell —
       expect(r.scroll, name).toBeLessThanOrEqual(await scrollAway(page));
       expect(r.connectors, name).toBe(0);
       if (p === 'desktop-xl') {
-        expect(r.scale, name).toBeGreaterThanOrEqual(1.2); // the short chip + TV pill: 1.2
+        expect(r.scale, name).toBeGreaterThanOrEqual(0.95); // was 1.2; the opponent's line (CK-29) takes a line of every cell
         if (r.logo) expect(r.logo, name).toBeCloseTo(16 * r.scale, 1);
       } else expect(r.scale, name).toBeGreaterThanOrEqual(0.8); // TEAM_SCALE_MIN: 1280 × 900 (a 2-line score line, see TeamMonthGrid)
       const prev = seen.get(r.weeks);
@@ -453,16 +453,14 @@ test('back-to-back pairs: labels on both cells and no line between them, plane, 
   await page.locator(`[data-date="${dateOf(same.a)}"] .ck-b2b-label`).focus();
   await expect(tooltip).toHaveText(`Back-to-back: ${side(same.a)} → ${side(same.b)}`);
 
-  // opponent on its 2/2: yellow dot on its tricode, tooltip
-  const dot = page.locator('.ck-team-grid .ck-opp .ck-b2b-mark').first();
+  // opponent on its 2/2: the mark on the opponent's own line (CK-29; it was a yellow dot on its tricode), tooltip
+  const dot = page.locator('.ck-team-grid [data-testid="opp-b2b"][data-night="2"]').first();
   await expect(dot).toBeVisible();
-  // 5 px, scaled with the rest of the cell content (Team Calendar scale)
-  const teamScale = Number(await page.locator('.ck-team-grid').getAttribute('data-scale'));
-  expect((await dot.boundingBox())!.width).toBeCloseTo(5 * teamScale, 1);
+  await expect(dot).toHaveText(/^2\/2/);
   await dot.scrollIntoViewIfNeeded(); // the tooltip closes on scroll: scroll first, then hover
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   await dot.hover();
-  await expect(tooltip).toHaveText(/^[A-Z]{3} on 2nd night of a back-to-back · played (vs|@) [A-Z]{3} yesterday$/);
+  await expect(tooltip).toHaveText(/^[A-Z]{3}: Back-to-back: (vs|@) [A-Z]{3} \((home|away)\) → (vs|@) [A-Z]{3} \((home|away)\)/);
 
   // team list: bracket on the left edge of both rows, joined across the gap; same labels and plane
   await page.getByRole('tab', { name: 'List' }).click();

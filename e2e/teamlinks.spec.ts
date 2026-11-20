@@ -93,10 +93,12 @@ async function checkLinks(page: Page, scope: string, want: { layout: 'list' | 'c
     expect(t, `link to unknown team ${l.id}`).toBeTruthy();
     expect(l.hit, `${l.text || l.label}: a link in view that no click reaches`).not.toBe(false);
     const shows = l.text || l.label;
-    expect([t!.tri, t!.name, `${t!.city} ${t!.name}`], `link text "${shows}" for ${t!.tri}`).toContain(shows);
+    // a record ("9-4") is the team's List (CK-28); names, logos and tricodes the view asked for
+    const record = /^\d+-\d+$/.test(shows);
+    if (!record) expect([t!.tri, t!.name, `${t!.city} ${t!.name}`], `link text "${shows}" for ${t!.tri}`).toContain(shows);
     const u = new URL(l.href, 'https://x');
     expect(u.pathname).toBe(APP);
-    expect(Object.fromEntries(u.searchParams)).toMatchObject({ view: 'team', team: t!.tri, layout: want.layout });
+    expect(Object.fromEntries(u.searchParams)).toMatchObject({ view: 'team', team: t!.tri, layout: record ? 'list' : want.layout });
     const on = u.searchParams.get('on')!;
     if (typeof want.date === 'string') expect(on, `date for ${t!.tri}`).toBe(want.date);
     else expect(want.date(on), `date ${on} for ${t!.tri}`).toBe(true);

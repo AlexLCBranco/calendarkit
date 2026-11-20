@@ -1,5 +1,6 @@
 // Team → List: every game of one team, one row each, opened at the next game.
 
+import { BigDayMark } from '../slate/bigDay';
 import { leagueRematches, leagueSeries } from '../data/series';
 import { memo, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
 import { addMonths, hasNationalTv, isOver, monthOf, opponentSecondNight, teamGames, teamRestDays, teamSeason, type CalendarData } from '../data/model';
@@ -320,6 +321,7 @@ export const TeamListView = memo(function TeamListView({ data, teamId, tvOnly, s
                 dateLabel={rowDate(g.dateEt)}
                 next={markNext && g.gameId === next}
                 cupTag={cupTag?.(g)}
+                bigDay={<BigDayMark data={data} date={g.dateEt} />}
                 season={season.get(g.gameId)}
                 copyable
                 rowDate={g.dateEt}

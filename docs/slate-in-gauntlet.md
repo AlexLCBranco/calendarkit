@@ -115,3 +115,18 @@ is not in the kit: it reads the page's from `globalThis.__calendarkitHost`. `SLA
 when a name the gauntlet uses is removed or changed (tests/slatekit.test.ts lists them); the gauntlet then keeps its
 pinned copy until it is updated. A page that stays open picks up a newer schedule snapshot with
 `refreshCalendarData` (every `SCHEDULE_CHECK_MS`).
+
+## Cup labels, record links and big days (v1.92.0)
+
+The Slate cards now carry three more things; each works only when the host asks for it:
+
+- **Cup label → the Cup page.** Wrap the cards in `CupLinkContext.Provider` with `{ href: (focus) => cupPageUrl(focus, calendarkitBase) }`
+  and the "Cup" labels become links (open them in a new tab from the host's click handler: `cupLinkTarget(event.target)`
+  gives the label and its game id; `cupFocusOf(game)` the target). Without a provider the label is the plain tag it was.
+- **Cup label hover → the group.** `const cup = useCupPopup(data, { linked: true })`: spread `cup.handlers` on the
+  wrapper (with the other popups' handlers) and render `cup.node`.
+- **Record → the team's List.** The record is a team link with `view === 'list'`: `TeamLinks.href(teamId, view)` gets
+  the view (`teamCalendarUrl(teamId, date, base, view)` builds the address), and `teamLinkTarget` returns it. Its
+  tooltip's first line is "All BOS games".
+- **Holidays and big NBA dates** need nothing: the header line gets the day's label and each card a star, from the
+  schedule data already passed in.
