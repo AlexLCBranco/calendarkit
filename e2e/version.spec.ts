@@ -27,7 +27,10 @@ test('v<version> in the bottom-right corner = version.json = package.json', asyn
     // in the corner, and stays there (fixed) when the page scrolls
     expect(vp.width - (box.x + box.width)).toBeLessThanOrEqual(8);
     expect(vp.height - (box.y + box.height)).toBeLessThanOrEqual(6);
-    // over no cell, game row or control
+    // over no cell, game row or control — with the page at rest at its end (a calendar fills the window under the pinned
+    // header once the page rows have scrolled away: before that its last row runs under the window's edge)
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(100);
     const covered = await page.evaluate((b) => [...document.querySelectorAll('.ck-cell, .ck-card, button, .ck-llist')].filter((e) => {
         // only the part on screen: rows scrolled out of a list are clipped by it
         const r = e.getBoundingClientRect();

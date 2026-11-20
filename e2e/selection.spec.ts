@@ -75,20 +75,21 @@ test('team list: box selects the rows it touches; Shift adds; click and Escape c
   await page.waitForTimeout(200);
   const rows = '.ck-team-rows > .ck-card';
   const r1 = await rectOf(page, rows, 1);
-  const r4 = await rectOf(page, rows, 4);
+  // (rows 1–3 and 5–6: at 1280 × 900 the list under the header and page rows shows 7 rows)
+  const r4 = await rectOf(page, rows, 3);
   // start on a row (rows aren't controls), between its tags and season line
   const a = { x: r1.left + r1.width * 0.72, y: r1.top + r1.height / 2 };
   const b = { x: a.x + 20, y: r4.top + r4.height / 2 };
   const want = await touching(page, a, b);
-  expect(want.length).toBeGreaterThanOrEqual(4); // 4 game rows (rest rows between them are never selected)
+  expect(want.length).toBeGreaterThanOrEqual(3); // 3 game rows (rest rows between them are never selected)
   await drag(page, a, b);
   expect(await highlighted(page)).toEqual(want);
   await expect(page.getByTestId('selection-bar')).toBeVisible();
   expect(await count(page)).toBe(`${want.length} games selected`);
   expect(await page.locator('.ck-rest-row').evaluateAll((rs) => rs.filter((r) => getComputedStyle(r).outlineStyle === 'solid').length)).toBe(0);
   // Shift-drag adds two more rows below
-  const r6 = await rectOf(page, rows, 6);
-  const r7 = await rectOf(page, rows, 7);
+  const r6 = await rectOf(page, rows, 5);
+  const r7 = await rectOf(page, rows, 6);
   const c = { x: a.x, y: r6.top + r6.height / 2 };
   const d = { x: a.x + 20, y: r7.top + r7.height / 2 };
   const more = await touching(page, c, d);
@@ -214,8 +215,7 @@ test('changing view, team, period, span or a toggle clears the selection', async
     await expect(page.getByTestId('selection-bar')).toHaveCount(0);
   }
   await select(cell);
-  await page.getByTestId('team-picker').click();
-  await page.getByRole('option', { name: 'Miami Heat', exact: true }).click();
+  await page.getByTestId('what-row').getByRole('radio', { name: 'Miami Heat', exact: true }).click();
   expect(await highlighted(page)).toEqual([]);
   await select(cell);
   await page.getByRole('tab', { name: 'List', exact: true }).click();

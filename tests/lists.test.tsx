@@ -10,7 +10,7 @@ import { TEAM_BY_ID } from '../src/data/teams';
 import { data } from './feed';
 import { TEAM } from './synthetic';
 import { acrossMonths, eachTeamMonth, shownMonth } from './teamMonths';
-import { clearScope, pickScope } from './nav';
+import { clearScope, pickScope, scopeTeam } from './nav';
 
 afterEach(cleanup);
 
@@ -274,12 +274,11 @@ describe('team list', () => {
     expect(teamGames(data, TEAM.LAL).some((g) => markers(g).length)).toBe(true);
   });
 
-  it('phone: rows are compact; same team picker as Team → Calendar', () => {
+  it('phone: rows are compact; same team chips as Team → Calendar', () => {
     render(<CalendarView data={data} size={PHONE} now={NOW} timeZone="UTC" initial={{ mode: 'team', teamId: TEAM.BOS }} />);
-    fireEvent.click(screen.getByTestId('team-picker'));
-    fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
+    pickScope('Miami Heat');
     expect(acrossMonths(data, TEAM.MIA, () => ids(screen.getByRole('region', { name: 'Heat games' })))).toEqual(teamGames(data, TEAM.MIA).map((g) => g.gameId));
     fireEvent.click(tab('Calendar'));
-    expect(screen.getByTestId('team-picker').getAttribute('data-team-id')).toBe(String(TEAM.MIA));
+    expect(scopeTeam()).toBe(TEAM.MIA);
   });
 });

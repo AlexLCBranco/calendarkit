@@ -1,22 +1,20 @@
-// The top bar's scope picker replaces the League | Team tabs. Helpers for tests that switched scope.
+// The page rows' team chips (What) and the header's Where tabs: helpers for tests that switch team or place.
 import { fireEvent, screen, within } from '@testing-library/react';
 
-/** The scope picker's team (undefined = All teams, the league views). */
+/** The team chip picked in the What row (undefined = All teams, the league views, or no team picked). */
 export const scopeTeam = () => {
-  const btn = screen.getByTestId('bar-local').querySelector<HTMLElement>('[data-testid="team-picker"]');
-  const id = btn?.getAttribute('data-team-id');
+  const on = screen.getByTestId('what-row').querySelector<HTMLElement>('[data-testid="team-chip"][aria-checked="true"]');
+  const id = on?.getAttribute('data-team-id');
   return id ? Number(id) : undefined;
 };
 
-/** Picks a team ("Miami Heat") or "All teams" in the scope picker. */
+/** Picks a team ("Miami Heat") or "All teams" among the What row's chips. */
 export function pickScope(name: string) {
-  const bar = screen.getByTestId('bar-local');
-  fireEvent.click(within(bar).getByTestId('team-picker'));
-  fireEvent.click(screen.getByRole('option', { name }));
+  fireEvent.click(within(screen.getByTestId('what-row')).getByRole('radio', { name }));
 }
 
-/** Back to All teams with the "×". */
-export const clearScope = () => fireEvent.click(screen.getByTestId('scope-clear'));
+/** Back to All teams. */
+export const clearScope = () => fireEvent.click(screen.getByTestId('team-chip-all'));
 
-/** A top-bar destination: Schedule, Cup or Standings. */
-export const goTo = (name: 'Schedule' | 'Cup' | 'Standings') => fireEvent.click(within(screen.getByRole('tablist', { name: 'Destination' })).getByRole('tab', { name }));
+/** A Where tab: Schedule, Cup or Standings. */
+export const goTo = (name: 'Schedule' | 'Cup' | 'Standings') => fireEvent.click(within(screen.getByTestId('where-tabs')).getByRole('button', { name }));

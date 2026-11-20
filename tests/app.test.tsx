@@ -172,8 +172,7 @@ describe('App: URL state for the List | Calendar switch', () => {
     expect(box().checked).toBe(false);
     expect(document.querySelectorAll('[data-rest]')).toHaveLength(0);
     // stays off while the page is open (another team too), and nothing is saved anywhere
-    fireEvent.click(screen.getByTestId('team-picker'));
-    fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
+    pickScope('Miami Heat');
     expect(box().checked).toBe(false);
     expect(window.location.search).not.toMatch(/rest/);
     expect([localStorage.length, sessionStorage.length, document.cookie]).toEqual([0, 0, '']);

@@ -102,7 +102,7 @@ const LIVE = !!process.env.E2E_BASE_URL;
  * builds, so the Slate fills the same box in both; the bar is put back for the copies (their button is in it).
  */
 const shoot = async (page: Page) => {
-  const off = await page.addStyleTag({ content: '[data-testid="top-bar"] { display: none !important; }' });
+  const off = await page.addStyleTag({ content: '[data-testid="top-bar"], [data-testid="page-rows"], [data-testid="live-popout"] { display: none !important; }' });
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   const png = await page.locator('.ck-slate').screenshot({ animations: 'disabled', caret: 'hide', ...(LIVE ? { mask: [page.locator('.ck-slate .ck-logo-backing')], maskColor: '#ff00ff' } : {}) });
   await off.evaluate((e) => (e as Element).remove());

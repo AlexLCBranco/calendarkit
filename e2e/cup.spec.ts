@@ -5,7 +5,7 @@
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from './fixtures';
-import { APP } from './app';
+import { APP, scrollAway } from './app';
 import { clearScope, destination, pickScope } from './nav';
 
 const OUT = 'test-output/copy-images';
@@ -319,7 +319,9 @@ test.describe('Cup view fits the window', () => {
           const played = await page.locator('.ck-cup-pill').evaluateAll((els) => els.map((e) => [...e.querySelectorAll('.ck-cup-num')].reduce((n, x) => n + Number(x.textContent), 0)));
           expect(played).toEqual(Array(30).fill(4));
         }
+        const away = await scrollAway(page);
         const r = await page.evaluate(() => {
+          window.scrollTo(0, document.documentElement.scrollHeight); // the page rows scrolled away (NAV_PATTERN.md)
           const view = document.querySelector<HTMLElement>('[data-testid="cup"]')!;
           const out: string[] = [];
           const box = (e: Element) => e.getBoundingClientRect();
@@ -377,7 +379,7 @@ test.describe('Cup view fits the window', () => {
         }
         expect(r.slotFont, 'slot text at the DIFF chips’ size, not smaller').toBe('12px');
         expect(r.pill, 'group rows keep their v1.29.0 height').toBe(38);
-        expect(r.scroll, 'page scrolls vertically').toBeLessThanOrEqual(r.win);
+        expect(r.scroll, 'page scrolls by more than the page rows').toBeLessThanOrEqual(r.win + away);
         expect(r.out).toEqual([]);
         expect(r.gaps).toHaveLength(10);
         for (const g of r.gaps) expect(g).toBeLessThanOrEqual(16);
@@ -392,7 +394,7 @@ test.describe('Cup view fits the window', () => {
 test('no Cup view on tablets and phones; a Cup link shows the League view there', async ({ page }, info) => {
   test.skip(desktop(info.project.name), 'tablet and phone only');
   await page.goto(`${APP}?view=cup`);
-  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByRole('tab', { name: 'Cup' })).toHaveCount(0);
+  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-current', 'page');
+  await expect(destination(page, 'Cup')).toHaveCount(0);
   await expect(page.getByTestId('cup')).toHaveCount(0);
 });

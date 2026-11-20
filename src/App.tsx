@@ -5,6 +5,8 @@ import { liveOddsStore } from './slate/odds';
 import { liveColdStore } from './slate/weather';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { isViewSnapshot } from './components/calendarState';
+import { isHistoryYear, isStandingsSet } from './components/StandingsDestination';
+import type { StandingsSet } from './components/standingsSets';
 import { CalendarView, type CalendarHandle, type CalendarState, type CupState, type PageHistory, type PageHistoryLabels, type TeamTarget, type ViewSnapshot } from './components/CalendarView';
 import { createValueStore } from './components/valueStore';
 import { gameLinkUrl, isGameLinkConfigured, isRotationkitConfigured } from './config';
@@ -25,12 +27,12 @@ export function openGameInRotationkit(gameId: string, open: (url: string) => voi
 export const appGameLink = isGameLinkConfigured() ? (g: Parameters<typeof gameLinkUrl>[0]) => gameLinkUrl(g) : undefined;
 
 /**
- * URL: ?view=league|team|cup|standings&layout=list|calendar|slate&team=&weeks=2&span=1w|2w&tv=1 (no date; weeks: League → Calendar rows; span:
+ * URL: ?view=league|team|cup|standings&layout=list|calendar|slate&team=&weeks=2&span=1w|2w&tv=1&set=<standings columns> (no date; weeks: League → Calendar rows; span:
  * Team → Calendar weeks, none = month). Links from before the List | Calendar switch have no layout: ?view=team opened the
  * team month grid (→ Calendar), ?view=league the day list (→ List). "Show rest days" is not in it (on at
  * every load, unchecking lasts until a reload; an old link's `rest=` is ignored).
  */
-export function readUrlState(search = window.location.search): Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState> } {
+export function readUrlState(search = window.location.search): Partial<CalendarState> & { teamDate?: string; cup?: Partial<CupState>; st?: StandingsSet; sy?: number } {
   const p = new URLSearchParams(search);
   const cupTeam = TEAMS.find((t) => t.tricode === p.get('ct')?.toUpperCase());
   const team = TEAMS.find((t) => t.tricode === p.get('team')?.toUpperCase());
@@ -45,6 +47,10 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     teamSpan: p.get('span') === '1w' ? 1 : p.get('span') === '2w' ? 2 : undefined,
     weeks: p.get('weeks') === '2' ? 2 : p.get('weeks') === '1' ? 1 : undefined,
     teamDate: /^\d{4}-\d{2}-\d{2}$/.test(p.get('on') ?? '') ? p.get('on')! : undefined,
+    // Standings: the column set
+    st: view === 'standings' && isStandingsSet(p.get('set')) ? (p.get('set') as StandingsSet) : undefined,
+    // Standings: a past season (CK-24)
+    sy: view === 'standings' && isHistoryYear(Number(p.get('season'))) ? Number(p.get('season')) : undefined,
     // The Cup's sub-view
     cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : p.get('cup') === 'simulator' ? 'simulator' : p.get('cup') === 'history' ? 'history' : 'standings', hs: /^\d{4}$/.test(p.get('hs') ?? '') ? Number(p.get('hs')) : undefined, list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id } : undefined,
   };
@@ -88,6 +94,8 @@ export function urlOf(snap: ViewSnapshot, pathname = window.location.pathname): 
   if (s.weeks === 2) p.set('weeks', '2');
   if (s.tvOnly) p.set('tv', '1');
   if (s.teamSpan !== 'month') p.set('span', `${s.teamSpan}w`);
+  if (s.mode === 'standings' && snap.sy) p.set('season', String(snap.sy));
+  else if (s.mode === 'standings' && snap.st && snap.st !== 'main') p.set('set', snap.st);
   if (s.mode === 'cup') {
     p.set('cup', snap.cup.tab);
     if (snap.cup.tab === 'history' && snap.cup.hs) p.set('hs', String(snap.cup.hs));
@@ -115,10 +123,10 @@ const isEntry = (x: unknown): x is HistEntry => !!x && (x as HistEntry).ck === 1
  * or undefined for a fresh visit (no entry of ours) or an entry this version can't read. "Show rest days" goes back to
  * its default as on every load (the defaults are never kept).
  */
-export function reloadedState(entry: unknown): (Partial<CalendarState> & { cup?: Partial<CupState>; snap: ViewSnapshot }) | undefined {
+export function reloadedState(entry: unknown): (Partial<CalendarState> & { cup?: Partial<CupState>; st?: StandingsSet; sy?: number; snap: ViewSnapshot }) | undefined {
   if (!isEntry(entry) || !isViewSnapshot(entry.snap)) return undefined;
   const snap = entry.snap;
-  return { ...snap.state, showRest: true, cup: snap.cup, snap };
+  return { ...snap.state, showRest: true, cup: snap.cup, st: snap.st, sy: snap.sy, snap };
 }
 
 /**
@@ -192,9 +200,11 @@ const MIN_WIDGET_HEIGHT = 360;
 /**
  * The widget's size = the app's real content box (not window.innerWidth, which includes the scrollbar), so the
  * month view's column maths matches the cells it renders; height = the window below the widget's top, so the list
- * layouts fill the screen and scroll inside. Measured before paint, then on every resize.
+ * layouts fill the screen and scroll inside. Measured before paint, then on every resize, and again before the paint
+ * that replaces the "Loading schedule…" line with the widget (`ready`): the widget's top moves up then, and measured
+ * later (the resize observer runs after paint) the views grew after they were on screen — a layout shift.
  */
-function useContentSize(ref: RefObject<HTMLElement | null>, widgetRef: RefObject<HTMLElement | null>) {
+function useContentSize(ref: RefObject<HTMLElement | null>, widgetRef: RefObject<HTMLElement | null>, ready: boolean) {
   const fallback = () => ({ width: Math.min(document.documentElement.clientWidth - 32, MAX_CONTENT_WIDTH), height: window.innerHeight });
   const [size, setSize] = useState(fallback);
   useLayoutEffect(() => {
@@ -215,8 +225,8 @@ function useContentSize(ref: RefObject<HTMLElement | null>, widgetRef: RefObject
       window.removeEventListener('resize', measure);
       ro?.disconnect();
     };
-    // once: the refs are stable; fallback only reads the window
-  }, [ref, widgetRef]);
+    // the refs are stable; fallback only reads the window
+  }, [ref, widgetRef, ready]);
   return size;
 }
 
@@ -225,7 +235,7 @@ export function App() {
   const [error, setError] = useState<string>();
   const appRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
-  const size = useContentSize(appRef, widgetRef);
+  const size = useContentSize(appRef, widgetRef, !!data);
   // A fresh visit (new tab, typed address, bookmark) opens on today: an address's `date=` is never read back, so a
   // bookmark doesn't pin an old day; view, layout, team, weeks and the toggles still come from it. A reload of the same
   // tab keeps the page it showed — its day, month or week — from the tab's own history entry (history.state, which a

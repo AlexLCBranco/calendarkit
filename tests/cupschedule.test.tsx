@@ -12,6 +12,7 @@ import { cupTag, finalScore, tipoff } from '../src/data/model';
 import type { ScheduleGame } from '../src/shared/nba-schedule/parse';
 import { rowDate as rowDateOf } from '../src/components/TeamListView';
 import { data as realData } from './feed';
+import { goTo, pickScope, scopeTeam } from './nav';
 import { dataOf, game, TEAM } from './synthetic';
 
 afterEach(cleanup);
@@ -303,22 +304,21 @@ describe('Cup view switches', () => {
     fireEvent.click(tabs('Cup layout').getByRole('tab', { name: 'By date' }));
     fireEvent.click(tabs('Cup list').getByRole('tab', { name: 'Team' }));
     expect(screen.queryByRole('tablist', { name: 'Cup layout' })).toBeNull(); // Team: no layout toggle
-    expect(screen.getByTestId('team-picker').textContent).toMatch(/Pick a team/);
+    expect(scopeTeam()).toBeUndefined(); // no team picked yet
     expect(screen.getByTestId('cup-pick')).toBeTruthy();
-    fireEvent.click(screen.getByTestId('team-picker'));
-    fireEvent.click(document.querySelector(`[role="option"][data-team-id="${TEAM.BOS}"]`)!);
+    pickScope('Boston Celtics');
     expect(screen.getByTestId('cup-team')).toBeTruthy();
-    expect(screen.getByTestId('team-picker').textContent).toMatch(/Boston Celtics/);
+    expect(scopeTeam()).toBe(TEAM.BOS);
     // leaving the Cup view and coming back: Standings again, and the team forgotten
-    fireEvent.click(tabs('Destination').getByRole('tab', { name: 'Schedule' }));
-    fireEvent.click(tabs('Destination').getByRole('tab', { name: 'Cup' }));
+    goTo('Schedule');
+    goTo('Cup');
     expect(await screen.findByTestId('cup')).toBeTruthy();
     expect(tabs('Cup view').getByRole('tab', { name: 'Groups' }).getAttribute('aria-selected')).toBe('true');
     fireEvent.click(tabs('Cup view').getByRole('tab', { name: 'Schedule' }));
     await screen.findByTestId('cup-league');
     expect(by()).toBe('group');
     fireEvent.click(tabs('Cup list').getByRole('tab', { name: 'Team' }));
-    expect(screen.getByTestId('team-picker').textContent).toMatch(/Pick a team/);
+    expect(scopeTeam()).toBeUndefined(); // no team picked yet
     // a reload (a new widget) opens on Standings too
     cleanup();
     open();

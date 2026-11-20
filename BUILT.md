@@ -4,6 +4,14 @@ Shipped work only, newest first. Planned work is in `FEATURE_BACKLOG.md`, never 
 Entries dated before 2026-11-16 were backfilled from the git commit messages (data, docs, test-only, merge and
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-20
+- CK-25 — Shared layout: pinned header menu, chips instead of dropdowns (v1.91.0)
+  A header pinned at the top of every page (back / forward, a breadcrumb whose parts jump to their neighbours, "Go anywhere" on Ctrl+K, the icon buttons, the Schedule · Cup · Standings tabs), and under it the teams as chips and a How switch instead of the team picker; the two trial menus are gone.
+- CK-23 — Floating live scores window (v1.91.0)
+  The Slate's "⧉ Pop out live scores" opens a small always-on-top window (Chrome / Edge) with the day's games and live scores, and a countdown to the first game until it starts.
+- CK-24 — NBA history: past seasons' standings, play-in and playoffs (v1.91.0)
+  Standings has a season strip: any season from 2001-02 shows its final standings, play-in and full bracket (hover a series for its games), plus every season's champions and conference winners.
+
 ## 2026-11-19
 - CK-21 — Live scores with a red LIVE label (v1.90.0)
   While a game is being played, every view showing it has the score so far and a red "LIVE Q3 4:12" label, updated about once a minute, and the final score as soon as it ends, with no reload.

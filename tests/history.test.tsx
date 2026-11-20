@@ -217,12 +217,12 @@ describe('the app: real history entries and the in-app ← →', () => {
     expect(window.history.length).toBe(len);
   });
 
-  it('the ← → look unlike the day arrows: their own group at the far left of row 1', async () => {
+  it('the ← → look unlike the day arrows: their own group at the far left of the header', async () => {
     const { App } = await import('../src/App');
     render(<App />);
     await screen.findByRole('tablist', { name: 'Layout' });
     const group = screen.getByTestId('page-history');
-    expect(screen.getByTestId('bar-global').firstElementChild).toBe(group);
+    expect(screen.getByTestId('top-bar').querySelector('.ck-head-row')!.firstElementChild).toBe(group);
     expect([...group.querySelectorAll('button')].map((b) => [b.textContent, b.className])).toEqual([
       ['←', 'ck-hist-btn'],
       ['→', 'ck-hist-btn'],

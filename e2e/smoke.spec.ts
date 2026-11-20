@@ -113,7 +113,7 @@ test('league week view: every game listed with local logos, no broken images, no
         domOrder,
         lineWidths: [...new Set(lines.map((l) => Math.round(box(l).width * 100) / 100))],
         font: getComputedStyle(document.querySelector('.ck-mtri')!).fontSize,
-        logo: box(document.querySelector('.ck-logo-backing')!).width,
+        logo: box(document.querySelector('.ck-week-view .ck-logo-backing')!).width,
         images: document.images.length,
         broken: [...document.images].filter((i) => i.naturalWidth === 0).map((i) => i.src),
         unbacked: imgs.filter((i) => !i.parentElement!.classList.contains('ck-logo-backing')).length,
@@ -179,7 +179,7 @@ test('Rotations action on a finished day only when ROTATIONKIT_BASE_URL is set',
 test('deep link opens the team view for a team', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('/calendar/?view=team&team=BOS');
-  await expect(page.getByTestId('team-picker')).toHaveAttribute('data-team-id', '1610612738');
+  await expect(page.getByTestId('what-row').getByRole('radio', { name: 'Boston Celtics' })).toHaveAttribute('aria-checked', 'true');
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   expect(errors).toEqual([]);
 });

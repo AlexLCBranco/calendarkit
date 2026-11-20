@@ -5,6 +5,7 @@
 // 164 px at 1280 × 900 and 115 px at 1920 × 911. Walks every stretch, prints the tightest cell. Runs once (desktop-xl).
 
 import { expect, test } from './fixtures';
+import { scrollAway } from './app';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -31,7 +32,9 @@ for (const size of [
         await page.evaluate(() => document.fonts.ready);
         opened = true;
       }
+      const away = await scrollAway(page);
       const r = await page.evaluate(() => {
+        window.scrollTo(0, document.documentElement.scrollHeight); // the page rows scrolled away (NAV_PATTERN.md)
         const se = document.scrollingElement!;
         const cells = [...document.querySelectorAll<HTMLElement>('.ck-week-view .ck-month-cell')];
         let spare = { px: Infinity, date: '' };
@@ -74,7 +77,7 @@ for (const size of [
         return { start: cells[0]!.dataset.date!, scroll: se.scrollHeight - se.clientHeight, outside, spare, font: getComputedStyle(tri).fontSize, lineH: line.height, legendIn: legend.bottom <= innerHeight, planes: planes.length, overlaps };
       });
       stretches++;
-      expect(r.scroll, `page scroll, two weeks from ${r.start}`).toBeLessThanOrEqual(0);
+      expect(r.scroll, `page scroll beyond the page rows, two weeks from ${r.start}`).toBeLessThanOrEqual(away);
       expect(r.outside, `lines outside their cell, from ${r.start}`).toBe(0);
       expect(r.legendIn, `legend in the window, from ${r.start}`).toBe(true);
       expect([r.font, r.lineH]).toEqual(['11px', 16]);

@@ -65,25 +65,33 @@ measurement; open it only when a question needs the backstory.
   - v1.70.0 — the simulator's knockout bracket is playable and big (`CupBracket.tsx`, `src/data/cupBracket.ts`).
   - v1.71.0 — tooltip day strips: 50 × 42 squares with the matchup ("vs LAL" / "@ DEN", logo), each a hoopsjunkie
     link (the tip stays while the pointer moves onto it); series popup squares say "BOS @ DEN" with the home logo.
-- **Waiting on Alex**: which menu to keep (then delete the other: `Menu.tsx` variant, `menu.css` part, the switch, the
-  `ck:menu:v1` key, the second smoke test); whether the League List rows look right (then they can leave "in flux").
+- **v1.91.0** (2026-11-20, CK-25): the shared layout of every app (backlogkit's NAV_PATTERN.md, same look as footykit
+  FK-65) replaced both trial menus (rail and packed bar, the ⓘ switch and `ck:menu:v1` are gone) and the scope picker.
+  Same version: CK-23, the Slate's "⧉ Pop out live scores" (`LivePopout.tsx`: Document Picture-in-Picture, Chrome / Edge
+  only, the button hidden elsewhere; the window belongs to the page, so another view keeps it; a countdown to the first
+  tip-off, then one line per game from CK-21's live data); CK-24, past seasons in Standings (`NbaHistory.tsx`,
+  `src/data/nbaHistory.ts`, data in `public/data/history/` from `scripts/make-nba-history.ts`, run once per new season:
+  ESPN's free feeds; 2001-02 on, since before that ESPN's playoff games have gaps; game links open NBA.com's scores of
+  that day — hoopsjunkie's past coverage couldn't be checked, its bot check blocks scripts). `?view=standings&season=2016`.
+- **Waiting on Alex**: whether the League List rows look right (then they can leave "in flux").
 
 ## What the app is
-- **Destinations**: **Schedule** (League or Team by the scope picker; views List · Calendar · Slate), **Cup** (Groups ·
+- **Destinations** (the header's Where tabs): **Schedule** (All teams or a team by the team chips; views List · Calendar · Slate), **Cup** (Groups ·
   Schedule · Simulator · History), **Standings** (West | East side by side, five column sets: Main · Splits · Extended · Form & scoring · Schedule & B2B). Page history ← → with
   real browser history entries.
-- **Scope picker** (team / All teams): the bar's most prominent control — 36 px tall in the 44 px row, 16 px bold,
-  24 px logo, accent outline and tint; the full team name in a 316 px picker from 1440 px, the tricode in 176 px below
-  (Team Calendar at 1280 has ~20 px to spare).
+- **Header** (NAV_PATTERN.md; `Header.tsx`, `nav.ts`, `styles/nav.css`): pinned at the top (`position: sticky`), 92 px on
+  every page. Row 1: page history ← →, the breadcrumb (place › team or All teams › view; Cup › view › list / team /
+  season; Standings › column set — each part opens its siblings), "Go anywhere" (Ctrl+K: places, views, every team as
+  Calendar and List, Cup views and seasons, column sets), then the icon buttons (Options — Schedule only: TV games
+  only, Rest days in the Team List —, ⓘ, Quick standings, Copy). Row 2: the Where tabs Schedule · Cup · Standings.
+- **Page rows** (under the header, scroll away): **What** = the team chips (`TeamChips.tsx`: All teams + 30 teams, East
+  | West by division; logo + tricode from 1600 px with East over West and How beside them, the logo alone below with
+  both conferences on one line; the Cup's Team schedule uses them too, without All teams); **How** = the view switch
+  (List · Calendar · Slate; the Cup's views and list switches; the standings' column sets), then the date block, weeks
+  or span. No `<select>` anywhere. The standings' column set is in the address (`set=`) and page history.
 - **Quick standings popup**: drag the header to move, the edges / corners to resize (min 360 × 200), kept in the
   window; place and size in localStorage `ck:stpop:v1`; "↺" resets. It never starts a selection marquee
   (`data-no-marquee`).
-- **Menu (trial, two variants)** — switched in the ⓘ popover ("Menu (trial)"), kept in localStorage `ck:menu:v1`
-  (absent = packed). **Packed bar**: one 44 px row packed left — ← →, destinations, the destination's sub-views, its
-  date controls. **Rail**: ← → and the destinations (icon + label) in an 84 px strip on the left; the bar holds the
-  destination's controls only. Both: icon buttons at the right end (Options — Schedule only: TV games only, Rest days
-  in the Team List —, ⓘ, Quick standings, Copy); a destination's controls always in the same place and order; the bar
-  never hides. Alex picks one after a few days; the other gets deleted (`Menu.tsx`, `menu.css`, the switch).
 - **League List**: one game day at a time, week strip, map of the night's games beside it (desktop; see Maps). Rows: time,
   [away tags] [record] logo AWAY (score) @ (score) HOME logo [record] [home tags] — the tags (Fatigue components) in
   fixed-width columns on the outside, so names, "@" and records line up down the list; its legend is in the ⓘ popover.
@@ -94,7 +102,7 @@ measurement; open it only when a question needs the backstory.
   playoff tags, final scores, back-to-backs and 3-in-4 (Fatigue component), rest badge (2 days quiet, ≥ 3 days strong),
   season-series chip and popup, streaks (`StreakChip`: one element, colours and popup everywhere), moneyline odds on the Slate.
 - **Click rule**: game things (matchup, score, Cup square, series square, ↗) open the game's hoopsjunkie page in a new
-  tab; team names / logos / tricodes open that team's **Team Calendar** here (`TEAM_LINK_LAYOUT`; the scope picker
+  tab; team names / logos / tricodes open that team's **Team Calendar** here (`TEAM_LINK_LAYOUT`; the team chips
   keeps the current layout). Nothing with a pointer cursor is dead
   (`e2e/click-audit.spec.ts`).
 - **Road trips / homestands** (Team List and Team Calendar): `RUN_MIN_GAMES` (3) or more away / home games in a row
@@ -120,17 +128,18 @@ measurement; open it only when a question needs the backstory.
   screen is live or within 15 min of tip-off and the tab is visible.
 
 ## Where things live
-- `src/App.tsx` — app shell, URL state (`?view=&layout=&team=&weeks=&span=&tv=&cup=…`; `date=` is written but never
+- `src/App.tsx` — app shell, URL state (`?view=&layout=&team=&weeks=&span=&tv=&cup=&set=&season=…`; `date=` is written but never
   read on load), page history, the reload keeping its page (`reloadedState`).
 - `src/components/` — one file per view/component. `CalendarView.tsx` is the shell: the shared `CalendarState`, the
-  top bar's frame (← →, destination switch or rail, ⓘ / Quick standings / Copy), page history, team links, sizing,
+  pinned header and the page rows' frame, "Go anywhere"'s entries, page history, team links, sizing,
   overlays; it re-exports the widgets (hosts and tests import from it). One component per destination, each owning its
-  state and filling the bar's slots (sub-views, date controls, Options, ⓘ lines) through portals:
+  state and filling the slots (breadcrumb parts, What, How, date controls, Options, ⓘ lines) through portals:
   `ScheduleDestination.tsx` (League + Team),
   `CupDestination.tsx`, `StandingsDestination.tsx`. All three stay mounted (their state lasts as long as the page);
   only the active one renders. `destination.tsx` = the shell ↔ destination contract and the shared selection copy;
-  `calendarState.ts` = state / page types and pure helpers; `TopBar.tsx` = the shell's bar parts (← →, ⓘ);
-  `Menu.tsx` = the two menu variants, the rail and the switch; `Popover.tsx` = the bar's icon-button popovers.
+  `calendarState.ts` = state / page types and pure helpers; `Header.tsx` = the header's parts (breadcrumb parts, Go anywhere, Where tabs, page-row captions);
+  `nav.ts` = the places and Go anywhere's matching; `TeamChips.tsx` = the team chips; `TopBar.tsx` = ← →, ⓘ, the
+  stale banner; `Popover.tsx` = the header's icon-button popovers.
   Styles: `calendar.css` is an ordered list of `@import`s of `styles/*.css`.
 - `src/data/` — pure derivations (`model.ts`, `cup*.ts` (`cupBracket.ts`: the simulator's playable bracket), `fatigue.ts`, `rest.ts`, `streak.ts`, `standings.ts`,
   `odds.ts`, `regulation.ts`), loading (`load.ts`).
@@ -155,9 +164,11 @@ measurement; open it only when a question needs the backstory.
   - **Settled** (everything not listed below): full e2e as before — behaviour, data and the layout checks they have.
   - **In flux**: one smoke test each in `e2e/in-flux.spec.ts` (loads, shows the right games for a fixed date, no
     console errors) and **no layout or position assertions** anywhere (e2e or unit). Unit tests of the logic behind
-    them (fatigue, Cup rules, streaks, standings) are not affected. Currently in flux: **the top bar / menu** and
-    **the League List rows** (and the legend's place). A view leaves the list when Alex says it is settled or locked;
+    them (fatigue, Cup rules, streaks, standings) are not affected. Currently in flux: **the League List rows** (and the legend's place). A view leaves the list when Alex says it is settled or locked;
     then it gets its full e2e back.
+- **The shared layout** (header, page rows) is settled by NAV_PATTERN.md: `e2e/nav.spec.ts` checks it as its §6 asks
+  (header on every main page, every Where / What / How / breadcrumb part, address round-trips, layout shift, names,
+  390 px) and saves a screenshot of every main page to `test-output/nav-shots/`; the < 100 ms click is in the perf guard.
 - **Perf guard**: `npm run perf` (alone on the machine; compares main-thread time against a reference build run in the
   same session, `scripts/perf-ref.ts`; frame baselines per OS in `e2e/perf-baseline.json`).
 - **Live**: `npm run e2e:live -- https://gauntlet-home.vercel.app` (move, smoke, version against the deployed site).

@@ -32,15 +32,11 @@ const feedDay = (page: Page, date: string) =>
   }, date);
 const shownIds = (page: Page) => page.getByTestId('league-list').locator('[data-game-id]').evaluateAll((els) => els.map((e) => e.getAttribute('data-game-id')!).sort());
 
-// Both menus while Alex tries them (Menu.tsx; the one not picked gets deleted): the same smoke for each
-for (const menu of ['packed', 'rail'] as const)
-  test(`smoke: top bar, ${menu} menu — every destination opens from it, the day controls show the right games, no console errors`, async ({ page }) => {
+test('smoke: the header — every place opens from it, the day controls show the right games, no console errors', async ({ page }) => {
     const errors = collectErrors(page);
-    await page.addInitScript((m) => localStorage.setItem('ck:menu:v1', m), menu);
     await page.clock.setFixedTime(NOW);
     await page.goto(`${APP}?view=league&layout=list&date=${DAY}`);
-    await expect(page.getByTestId('top-bar')).toHaveAttribute('data-menu', menu);
-    await expect(page.getByTestId('rail')).toHaveCount(menu === 'rail' ? 1 : 0);
+    await expect(page.getByTestId('top-bar')).toBeVisible();
     await expect(page.getByTestId('day-title')).toContainText('2, 2026');
     expect(await shownIds(page)).toEqual(await feedDay(page, DAY));
     // the day controls: next day, then back
@@ -64,23 +60,6 @@ for (const menu of ['packed', 'rail'] as const)
     await expect(page.getByTestId('standings-table').first()).toBeVisible();
     expect(errors).toEqual([]);
   });
-
-test('smoke: the menu switch in ⓘ — Rail and Packed bar, remembered across a new visit', async ({ page }) => {
-  const errors = collectErrors(page);
-  await page.clock.setFixedTime(NOW);
-  await page.goto(`${APP}?view=league&layout=list&date=${DAY}`);
-  await expect(page.getByTestId('top-bar')).toHaveAttribute('data-menu', 'packed');
-  await page.getByTestId('bar-info').click();
-  await page.getByRole('tablist', { name: 'Menu layout' }).getByRole('tab', { name: 'Rail' }).click();
-  await expect(page.getByTestId('rail')).toBeVisible();
-  await page.goto(`${APP}?view=standings`);
-  await expect(page.getByTestId('rail')).toBeVisible();
-  await page.getByTestId('bar-info').click();
-  await page.getByRole('tablist', { name: 'Menu layout' }).getByRole('tab', { name: 'Packed bar' }).click();
-  await expect(page.getByTestId('rail')).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem('ck:menu:v1'))).toBe('packed');
-  expect(errors).toEqual([]);
-});
 
 test('smoke: League List — the fixed day\'s games with teams, scores and records, no console errors', async ({ page }) => {
   const errors = collectErrors(page);

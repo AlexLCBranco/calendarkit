@@ -1,0 +1,177 @@
+/* CK-24: the Standings' season strip (What) and a past season (NbaHistory.tsx): its tables reuse the standings'
+   look (standings.css); this adds the play-in, the bracket and the champions table. */
+.ck-bar-what:has(> .ck-prow-strip) {
+  flex: 1 1 100%;
+}
+.ck-prow-strip {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.ck-season-strip {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+}
+.ck-nh {
+  --ck-logo: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 24px;
+}
+.ck-nh-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.ck-nh-block h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+.ck-nh-sub {
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ck-nh-playin {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.ck-nh-playin-conf {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ck-nh-game {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  color: var(--ck-text);
+  text-decoration: none;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ck-nh-game:hover {
+  background: var(--ck-surface);
+}
+.ck-nh-gdate {
+  width: 130px;
+  color: var(--ck-muted);
+  font-size: 12px;
+}
+.ck-nh-score {
+  min-width: 2.4ch;
+  text-align: right;
+  font-weight: 700;
+}
+.ck-nh-at {
+  color: var(--ck-muted);
+}
+.ck-nh-win {
+  font-weight: 700;
+}
+.ck-nh-ot {
+  color: var(--ck-muted);
+  font-size: 11px;
+}
+.ck-nh-bracket {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+.ck-nh-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ck-nh-col-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 10px;
+  min-height: 320px;
+}
+.ck-nh-series {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  background: var(--ck-surface);
+  cursor: pointer;
+}
+.ck-nh-series:hover,
+.ck-nh-series:focus-visible {
+  border-color: var(--ck-accent);
+  outline: none;
+}
+.ck-nh-col[data-round='4'] .ck-nh-series {
+  border-color: var(--ck-cup);
+}
+.ck-nh-side {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: var(--ck-muted);
+}
+.ck-nh-side + .ck-nh-side {
+  border-top: 1px solid var(--ck-border);
+}
+.ck-nh-won {
+  color: var(--ck-text);
+  font-weight: 700;
+}
+.ck-nh-seed {
+  width: 1.4em;
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.ck-nh-wins {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.ck-nh-confs {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ck-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.ck-nh-pop-head {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.ck-nh-summary td,
+.ck-nh-summary th {
+  padding: 3px 10px;
+  text-align: left;
+}
+.ck-nh-on td {
+  background: rgb(78 161 255 / 0.12);
+}
+.ck-nh-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: #7cb8ff;
+  cursor: pointer;
+}
+.ck-nh-note {
+  color: var(--ck-muted);
+  font-size: 12px;
+}

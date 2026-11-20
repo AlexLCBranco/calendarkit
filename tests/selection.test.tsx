@@ -9,6 +9,7 @@ import { useRef } from 'react';
 import { CalendarView } from '../src/components/CalendarView';
 import { createSelectionStore, gamesTouching, useMarqueeSelection, useSelection, type SelectionStore } from '../src/components/selection';
 import { data } from './feed';
+import { pickScope } from './nav';
 import { TEAM } from './synthetic';
 
 afterEach(() => {
@@ -222,8 +223,7 @@ describe('in CalendarView', () => {
       () => fireEvent.click(screen.getByRole('tab', { name: '1 week' })),
       () => fireEvent.click(screen.getByLabelText('TV games only')),
       () => {
-        fireEvent.click(screen.getByTestId('team-picker'));
-        fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
+        pickScope('Miami Heat');
       },
       () => fireEvent.click(screen.getByRole('tab', { name: 'List' })),
     ]) {

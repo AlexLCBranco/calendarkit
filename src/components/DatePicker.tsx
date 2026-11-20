@@ -7,7 +7,7 @@ import { MonthNavigator, type MonthNavigatorProps } from './MonthNavigator';
 
 /** The icon button: next to a date title; toggles the popup. */
 export const DatePickButton = ({ open, onClick }: { open: boolean; onClick: () => void }) => (
-  <button type="button" className="ck-date-pick" data-testid="date-pick" aria-label="Pick a date" aria-haspopup="dialog" aria-expanded={open} onClick={onClick}>
+  <button type="button" className="ck-date-pick" data-testid="date-pick" aria-label="Pick a date" title="Pick a date" aria-haspopup="dialog" aria-expanded={open} onClick={onClick}>
     <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
       <rect x="1.5" y="3" width="13" height="11.5" rx="2" fill="none" stroke="currentColor" strokeWidth="1.4" />
       <path d="M1.5 6.5h13M5 1.5v3M11 1.5v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />

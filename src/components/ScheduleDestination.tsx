@@ -2,7 +2,7 @@
 
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { addDays, addMonths, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
-import { TEAM_BY_ID } from '../data/teams';
+import { TEAMS, TEAM_BY_ID } from '../data/teams';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { slateCopyCardWidth, slateCopyColumns, slateCopyZoom, slateImageSize, slatePixelRatio } from '../slate/layout';
 import { localNotesStore } from '../slate/notes';
@@ -21,7 +21,6 @@ import { LeagueWeekView } from './LeagueWeekView';
 import { hoverHandlers, useClearHover, useHoverRow, usePinRow } from './MapHover';
 import { MonthNavigator } from './MonthNavigator';
 import { monthNav, PeriodNav, type PeriodNavProps } from './PeriodNav';
-import { OptionsIcon } from './Menu';
 import { PopoverButton } from './Popover';
 import { Segmented } from './Segmented';
 import { SelectionBar } from './SelectionBar';
@@ -30,11 +29,12 @@ import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
 import { TeamHeader } from './TeamHeader';
 import { TeamListView, type TeamListHandle, type TeamListOpen } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
-import { TeamPicker } from './TeamPicker';
+import { TeamChips } from './TeamChips';
+import { Crumbs, OptionsIcon, PageRow } from './Header';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
 import { conferencePositions } from '../data/standings';
-import { fmtRange, isCompact, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
+import { fmtRange, fullName, isCompact, LEAGUE_MAP_GAP, LEAGUE_MAP_MIN, leagueSideBySide, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 
 const NO_GAMES: readonly ScheduleGame[] = [];
 /** The League List's map, its own chunk (outline + styles), loaded after the list is on screen. */
@@ -83,6 +83,9 @@ export interface ScheduleProps extends DestinationProps {
   onTop: (top: string) => void;
   api: RefObject<ScheduleApi | undefined>;
 }
+
+/** The breadcrumb's team list: alphabetical, as people look a name up. */
+const TEAMS_BY_NAME = [...TEAMS].sort((a, b) => fullName(a).localeCompare(fullName(b)));
 
 export function ScheduleDestination(p: ScheduleProps) {
   const { active, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, selection, jump, odds, cold, openTeam } = p;
@@ -492,11 +495,29 @@ export function ScheduleDestination(p: ScheduleProps) {
     </>
   );
 
+  // What: the teams as chips (All teams = the league views); How: List · Calendar · Slate. The breadcrumb repeats both,
+  // each part opening its siblings.
+  const pickScope = (id: number | undefined) => (id === undefined ? toAllTeams() : team ? pickTeam(id) : openTeam(id, state.layout === 'calendar' && !slate ? 'calendar' : 'list'));
+  const layouts: [CalendarLayout, string][] = [['list', 'List'], ['calendar', 'Calendar'], ...(!slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))];
+  const layoutOn: CalendarLayout = slate ? 'slate' : list ? 'list' : 'calendar';
+  const what = (
+    <PageRow label="What" className=" ck-prow-what">
+      <TeamChips all teamId={team ? state.teamId : undefined} onPick={pickScope} />
+    </PageRow>
+  );
   const sub = (
-    <>
-      <Segmented label="Layout" value={slate ? 'slate' : list ? 'list' : 'calendar'} options={[['list', 'List'], ['calendar', 'Calendar'], ...(!slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))]} onChange={setLayout} />
-      <TeamPicker allTeams teamId={team ? state.teamId : undefined} onChange={team ? pickTeam : (id) => openTeam(id, state.layout === 'calendar' && !slate ? 'calendar' : 'list')} onClear={toAllTeams} compact={compact} />
-    </>
+    <PageRow label="How">
+      <Segmented label="Layout" value={layoutOn} options={layouts} onChange={setLayout} />
+    </PageRow>
+  );
+  const scopeTeam = team ? TEAM_BY_ID.get(state.teamId) : undefined;
+  const crumbs = (
+    <Crumbs
+      parts={[
+        { id: 'team', label: scopeTeam ? fullName(scopeTeam) : 'All teams', items: [{ label: 'All teams', on: !team, go: () => pickScope(undefined) }, ...TEAMS_BY_NAME.map((t) => ({ label: fullName(t), on: team && t.id === state.teamId, go: () => pickScope(t.id) }))] },
+        { id: 'view', label: layouts.find(([l]) => l === layoutOn)![1], items: layouts.map(([l, text]) => ({ label: text, on: l === layoutOn, go: () => setLayout(l) })) },
+      ]}
+    />
   );
   const options = (
     <PopoverButton label="Options" testId="options-button" buttonClass={state.tvOnly ? ' ck-opt-on' : ''} title={state.tvOnly ? 'Options — TV games only is on' : 'Options'} icon={<OptionsIcon />}>
@@ -559,7 +580,7 @@ export function ScheduleDestination(p: ScheduleProps) {
   else body = <MonthNavigator today={today} data={data} month={leagueMonth} onMonthChange={setLeagueMonth} selectedDate={state.date} onSelectDate={openDay} tvOnly={state.tvOnly} size={size} nav={false} />;
 
   return (
-    <DestinationFrame slots={slots} sub={sub} date={date} options={options} info={leagueKey}>
+    <DestinationFrame slots={slots} crumbs={crumbs} what={what} sub={sub} date={date} options={options} info={leagueKey}>
       {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? teamListPeriod : undefined} position={list ? conferencePositions(data).get(state.teamId) : undefined} />}
       {body}
       {!list && !slate && !compact && nav && <SideArrows nav={nav} />}

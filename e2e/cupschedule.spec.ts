@@ -7,7 +7,7 @@
 // game added on a quarterfinal night) stands in for the knockout games the feed hasn't filled in yet.
 
 import { expect, test, type Locator, type Page } from './fixtures';
-import { APP } from './app';
+import { APP, scrollAway } from './app';
 
 const desktop = (name: string) => ['desktop', 'desktop-xl'].includes(name);
 
@@ -118,8 +118,7 @@ async function openSchedule(page: Page, list: 'league' | 'team' | 'date' = 'leag
   await page.evaluate(() => document.fonts.ready);
 }
 const pickTeam = async (page: Page, name: string) => {
-  await page.getByTestId('team-picker').click();
-  await page.getByRole('option', { name }).click();
+  await page.getByTestId('what-row').getByRole('radio', { name: name, exact: true }).click();
   await expect(page.getByTestId('cup-team')).toBeVisible();
 };
 const rowIds = (scope: Locator) => scope.locator('[data-game-id]').evaluateAll((els) => els.map((e) => e.getAttribute('data-game-id')!));
@@ -156,15 +155,15 @@ test.describe('Cup schedule', () => {
     await layout.getByRole('tab', { name: 'By date' }).click();
     await page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' }).click();
     await expect(page.getByRole('tablist', { name: 'Cup layout' })).toHaveCount(0);
-    await expect(page.getByTestId('team-picker')).toHaveText(/Pick a team/);
+    await expect(page.getByTestId('what-row').locator('[aria-checked="true"]')).toHaveCount(0); // no team picked yet
     await expect(page.getByTestId('cup-pick')).toBeVisible();
     // The address names the sub-view, so a reload keeps it (no team picked yet: none in the address)
     await page.reload();
     await expect(page.getByTestId('cup-pick')).toBeVisible();
     await expect(page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' })).toHaveAttribute('aria-selected', 'true');
     // leaving the Cup and coming back opens on Groups (the sub-view isn't remembered past the Cup)
-    await page.getByRole('tablist', { name: 'Destination' }).getByRole('tab', { name: 'Schedule' }).click();
-    await page.getByRole('tablist', { name: 'Destination' }).getByRole('tab', { name: 'Cup' }).click();
+    await page.getByTestId('where-schedule').click();
+    await page.getByTestId('where-cup').click();
     await expect(page.getByTestId('cup-group')).toHaveCount(6);
     await expect(page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Groups' })).toHaveAttribute('aria-selected', 'true');
     await page.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
@@ -436,6 +435,7 @@ test.describe('Cup schedule fits the window', () => {
   const measure = (page: Page, sel: string, row = '.ck-card') =>
     page.evaluate(
       ([sel, row]) => {
+        window.scrollTo(0, document.documentElement.scrollHeight); // the page rows scrolled away (NAV_PATTERN.md)
         const view = document.querySelector<HTMLElement>(sel!)!;
         const out: string[] = [];
         for (const e of [view, ...view.querySelectorAll<HTMLElement>('*')]) {
@@ -477,7 +477,7 @@ test.describe('Cup schedule fits the window', () => {
           await page.screenshot({ path: `test-output/cupschedule-by${by}-${size.width}x${size.height}-${data.replace(' ', '-')}.png` });
           console.log(`[cup schedule fit] by ${by} ${size.width}×${size.height} ${data}: ${r.rows} games, view bottom ${r.bottom} / window ${r.win}, row text ${r.font} × ${r.zoom}, row heights ${r.heights.join('/')}`);
           expect(r.rows).toBe(67);
-          expect(r.scroll, `by ${by}: page scrolls vertically`).toBeLessThanOrEqual(r.win);
+          expect(r.scroll, `by ${by}: page scrolls by more than the page rows`).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
           expect(r.out, `by ${by}`).toEqual([]);
           expect(r.heights, `by ${by}: every row one line`).toHaveLength(1);
           // nothing wider than the window, and every night's heading (the Final's neutral-venue badge too) inside its card
@@ -504,8 +504,8 @@ test.describe('Cup schedule fits the window', () => {
       await page.screenshot({ path: `test-output/cupschedule-team-${size.width}x${size.height}.png` });
       console.log(`[cup schedule fit] team ${size.width}×${size.height}: ${r.rows} games, view bottom ${r.bottom} / window ${r.win}, row text ${r.font}`);
       expect(r.rows).toBe(7);
-      expect((await page.getByTestId('top-bar').boundingBox())!.height, 'top bar: its two rows (round 21), the Cup switches and the picker in row 2').toBeLessThanOrEqual(78);
-      expect(r.scroll, 'page scrolls vertically').toBeLessThanOrEqual(r.win);
+      expect((await page.getByTestId('top-bar').boundingBox())!.height, 'the pinned header: one fixed height').toBe(92);
+      expect(r.scroll, 'page scrolls by more than the page rows').toBeLessThanOrEqual(r.win + (await scrollAway(page)));
       expect(r.out).toEqual([]);
       expect([r.font, r.zoom], 'rows at the Team List’s size').toEqual([ref.font, ref.zoom]);
     });

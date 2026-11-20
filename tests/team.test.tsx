@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Team views: header (large logo + full name), team picker with logos (keyboard), selected team first on every
+// Team views: header (large logo + full name), the team chips, selected team first on every
 // game ("BOS vs CHI" / "BOS @ DET", both logos), the team's back-to-back pairs (1/2 · XY, 2/2 · XY, plane on a metro
 // change, bar / bracket, tooltips), and the opponent's 2/2 dot.
 
@@ -62,115 +62,41 @@ describe('team header', () => {
   });
 });
 
-describe('team picker', () => {
-  it('scope picker: the team logo and its full name (the tricode on narrow windows; full name as tooltip), a × back to All teams; the list starts with "All teams", then all 30 teams with logos, grouped by conference · division', () => {
+describe('team chips', () => {
+  const chip = (name: string) => within(screen.getByTestId('team-chips')).getByRole('radio', { name });
+  it('"All teams", then all 30 teams (logo + tricode, the full name and division in the tooltip), grouped by conference and division; the team on show is checked', () => {
     team(TEAM.BOS, 'list');
-    const btn = screen.getByTestId('team-picker');
-    expect([btn.querySelector('.ck-picker-full')!.textContent, btn.querySelector('.ck-picker-tri')!.textContent]).toEqual(['Boston Celtics', 'BOS']);
-    expect(btn.querySelector('[title="Boston Celtics"]')).toBeTruthy();
-    expect(screen.getByTestId('scope-clear').getAttribute('aria-label')).toBe('All teams');
-    expect(imgs(btn)).toEqual(['/calendar/logos/BOS.svg']);
-    expect(btn.getAttribute('aria-haspopup')).toBe('listbox');
-    expect(screen.getByRole('button', { name: /^Team Boston Celtics/ })).toBe(btn);
-    fireEvent.click(btn);
-    const list = screen.getByRole('listbox', { name: 'Teams' });
-    const groups = within(list).getAllByRole('group');
-    expect(groups.map((g) => g.querySelector('.ck-picker-head')!.textContent)).toEqual([
-      'East · Atlantic', 'East · Central', 'East · Southeast', 'West · Northwest', 'West · Pacific', 'West · Southwest',
-    ]);
-    const [all, ...options] = within(list).getAllByRole('option');
-    expect(all!.textContent).toBe('All teams');
-    expect(options).toHaveLength(30);
-    for (const o of options) {
-      const t = TEAM_BY_ID.get(Number(o.getAttribute('data-team-id')))!;
-      expect(o.textContent).toBe(`${t.city} ${t.name}`);
-      expect(imgs(o)).toEqual([`/calendar/logos/${t.tricode}.svg`]);
+    const chips = screen.getAllByTestId('team-chip');
+    expect(chips).toHaveLength(30);
+    expect(screen.getByTestId('team-chip-all').textContent).toBe('All teams');
+    for (const c of chips) {
+      const t = TEAM_BY_ID.get(Number(c.getAttribute('data-team-id')))!;
+      expect([c.textContent, c.getAttribute('aria-label'), c.getAttribute('title')]).toEqual([t.tricode, `${t.city} ${t.name}`, `${t.city} ${t.name} · ${t.division} division`]);
+      expect(imgs(c)).toEqual([`/calendar/logos/${t.tricode}.svg`]);
     }
-    expect(options.find((o) => o.getAttribute('aria-selected') === 'true')!.textContent).toBe('Boston Celtics');
-    cleanup();
-    team(TEAM.BOS, 'list', PHONE);
-    expect(screen.getByTestId('team-picker').textContent).toMatch(/^BOS/);
+    const divisions = [...screen.getByTestId('team-chips').querySelectorAll('[aria-label$="division"]')];
+    expect(divisions.map((d) => d.getAttribute('aria-label'))).toEqual(['Atlantic division', 'Central division', 'Southeast division', 'Northwest division', 'Pacific division', 'Southwest division']);
+    for (const d of divisions) for (const c of d.querySelectorAll('[data-team-id]')) expect(`${TEAM_BY_ID.get(Number(c.getAttribute('data-team-id')))!.division} division`).toBe(d.getAttribute('aria-label'));
+    expect(chips.filter((c) => c.getAttribute('aria-checked') === 'true').map((c) => c.textContent)).toEqual(['BOS']);
+    expect(screen.getByTestId('team-chips').tagName).not.toBe('SELECT');
   });
 
-  it('mouse: picking a team changes the views and tells the host', () => {
+  it('a click on a team changes the views and tells the host', () => {
     const onStateChange = vi.fn();
     team(TEAM.BOS, 'list', WIDE, onStateChange);
-    fireEvent.click(screen.getByTestId('team-picker'));
-    fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
-    expect(screen.queryByRole('listbox')).toBeNull();
+    fireEvent.click(chip('Miami Heat'));
     expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Miami Heat');
     expect(screen.getByRole('region', { name: 'Heat games' })).toBeTruthy();
     expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ teamId: TEAM.MIA }));
+    expect(chip('Miami Heat').getAttribute('aria-checked')).toBe('true');
   });
 
-  it('keyboard: ↓ opens on the current team, arrows/Home/End/letters move, Enter picks, Escape closes; focus returns to the button', () => {
-    team(TEAM.BOS, 'calendar');
-    const btn = screen.getByTestId('team-picker');
-    btn.focus();
-    fireEvent.keyDown(btn, { key: 'ArrowDown' });
-    const list = screen.getByRole('listbox');
-    expect(document.activeElement).toBe(list);
-    const active = () => document.getElementById(list.getAttribute('aria-activedescendant')!)!.textContent;
-    expect(active()).toBe('Boston Celtics');
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
-    expect(active()).toBe('Brooklyn Nets');
-    fireEvent.keyDown(list, { key: 'ArrowRight' }); // next division, same place
-    expect(active()).toBe('Cleveland Cavaliers');
-    fireEvent.keyDown(list, { key: 'End' });
-    expect(active()).toBe('San Antonio Spurs');
-    fireEvent.keyDown(list, { key: 'Home' });
-    expect(active()).toBe('All teams');
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
-    expect(active()).toBe('Boston Celtics');
-    fireEvent.keyDown(list, { key: 'm' }); // next team starting with M, in picker order
-    expect(active()).toBe('Milwaukee Bucks');
-    fireEvent.keyDown(list, { key: 'm' });
-    expect(active()).toBe('Miami Heat');
-    fireEvent.keyDown(list, { key: 'Escape' });
-    expect(screen.queryByRole('listbox')).toBeNull();
-    expect(document.activeElement).toBe(btn);
-    expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Boston Celtics'); // Escape doesn't pick
-    fireEvent.keyDown(btn, { key: 'ArrowDown' });
-    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'l' }); // L…: LA Clippers
-    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'l' }); // then Los Angeles Lakers
-    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Enter' });
-    expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Los Angeles Lakers');
-    expect(screen.getByRole('region', { name: 'Lakers schedule' })).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByTestId('team-picker'));
-  });
-
-  it('a pointer resting where the list opens (hover events without movement) never overrides the keyboard; a moving one highlights', () => {
-    // Chrome sends mouseover/mouseenter with no movement to the option under a resting pointer when the list
-    // appears; arriving after "o" it replaced Orlando with Miami (the flaky e2e "team header and team picker")
-    team(TEAM.MIA, 'list');
-    const btn = screen.getByTestId('team-picker');
-    btn.focus();
-    fireEvent.keyDown(btn, { key: 'ArrowDown' });
-    const list = screen.getByRole('listbox');
-    const active = () => document.getElementById(list.getAttribute('aria-activedescendant')!)!.textContent;
-    fireEvent.keyDown(list, { key: 'o' });
-    expect(active()).toBe('Orlando Magic');
-    const miami = screen.getByRole('option', { name: 'Miami Heat' });
-    fireEvent.mouseOver(miami);
-    fireEvent.mouseEnter(miami);
-    fireEvent.mouseMove(miami, { movementX: 0, movementY: 0 });
-    expect(active()).toBe('Orlando Magic');
-    fireEvent.keyDown(list, { key: 'Enter' });
-    expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Orlando Magic');
-    // a real move over an option still highlights it (and a click picks it)
-    fireEvent.keyDown(btn, { key: 'ArrowDown' });
-    const atl = screen.getByRole('option', { name: 'Atlanta Hawks' });
-    fireEvent.mouseMove(atl, { movementX: 3, movementY: 1 });
-    expect(document.getElementById(screen.getByRole('listbox').getAttribute('aria-activedescendant')!)!.textContent).toBe('Atlanta Hawks');
-  });
-
-  it('phone: same picker in Team → List and Team → Calendar, team kept', () => {
+  it('phone: same chips in Team → List and Team → Calendar, team kept', () => {
     team(TEAM.BOS, 'list', PHONE);
-    fireEvent.click(screen.getByTestId('team-picker'));
-    fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
+    fireEvent.click(chip('Miami Heat'));
     expect(screen.getByRole('region', { name: 'Heat games' })).toBeTruthy();
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
-    expect(screen.getByTestId('team-picker').getAttribute('data-team-id')).toBe(String(TEAM.MIA));
+    expect(chip('Miami Heat').getAttribute('aria-checked')).toBe('true');
   });
 });
 

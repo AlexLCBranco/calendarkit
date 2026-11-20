@@ -11,6 +11,7 @@ import { addDays, hasNationalTv, isOver, monthOf, teamGames, teamRestDays } from
 import { TEAMS } from '../src/data/teams';
 import { data } from './feed';
 import { TEAM } from './synthetic';
+import { pickScope } from './nav';
 import { eachTeamMonth, shownMonth, showTeamMonth, teamMonths } from './teamMonths';
 
 afterEach(() => {
@@ -76,8 +77,7 @@ describe('one month at a time', () => {
     expect(shownMonth()).toBe(monthOf(tvNext.dateEt));
     expect(rowDates()).toEqual(expectedRows(LAL, shownMonth(), true, true));
     showTeamMonth('2027-03');
-    fireEvent.click(screen.getByTestId('team-picker'));
-    fireEvent.click(screen.getByRole('option', { name: 'Boston Celtics' }));
+    pickScope('Boston Celtics');
     expect(shownMonth()).toBe(monthOf(teamGames(data, TEAM.BOS).filter(hasNationalTv).find((g) => !isOver(g, NOW))!.dateEt));
   });
 });

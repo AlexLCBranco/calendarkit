@@ -5,6 +5,7 @@
 // tiers — so its marks' geometry and its legend's place are not tested here.)
 
 import { expect, test, type Page } from './fixtures';
+import { scrollAway } from './app';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -86,10 +87,12 @@ for (const [name, search] of [
     const legend = page.getByTestId('fatigue-legend');
     // The view with the Fatigue component (1 week) explains it; 2 weeks keeps the tricode legend
     await expect(legend).toHaveText(name === 'week view, 2 weeks' ? '■ 2nd night · ▢ 1st night · ✈ changed cities · 3-in-4' : /^B2B back-to-back, 1st night \(again tomorrow\) · B2B 2nd night \(played yesterday\) · +home +away, earlier night first, tonight solid · 3in4 · 2nd 3 games in 4 days, tonight the 2nd · 4d since last game · 4d until next · 2d 2 days$/);
+    // inside the window once the page rows have scrolled away (NAV_PATTERN.md)
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     const lb = (await legend.boundingBox())!;
     expect(lb.y + lb.height).toBeLessThanOrEqual(page.viewportSize()!.height);
     const above = (await page.locator('.ck-week-grid').boundingBox())!;
     expect(lb.y).toBeGreaterThanOrEqual(above.y + above.height - 0.5);
-    expect(await page.evaluate(() => document.documentElement.scrollHeight - document.documentElement.clientHeight)).toBeLessThanOrEqual(0);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight - document.documentElement.clientHeight)).toBeLessThanOrEqual(await scrollAway(page));
   });
 }

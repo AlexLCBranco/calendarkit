@@ -16,6 +16,7 @@ import type { SlateOdds } from '../slate/odds';
 import type { SlateCold } from '../slate/weather';
 import { LIST_MAX_WIDTH } from './widget';
 import { firstTipText, useMinuteTick } from './clock';
+import { LivePopoutButton } from './LivePopout';
 
 /** The night's first tip-off (ms), from the games with a set time; undefined when none has one. */
 export const firstTip = (games: readonly ScheduleGame[]) => {
@@ -71,14 +72,19 @@ export function SlateView({ data, date, tvOnly, timeZone, gameLink, width = 1840
   const first = firstTip(data.byDate.get(date) ?? []);
   const live = first !== undefined && Date.now() < first;
   const countdown = firstTipText(first, useMinuteTick(live));
-  const tip = countdown && (
-    <span className="ck-slate-countdown" data-testid="first-tip" data-capture-exclude="true">
-      {countdown}
-    </span>
+  const tip = (
+    <>
+      {countdown && (
+        <span className="ck-slate-countdown" data-testid="first-tip" data-capture-exclude="true">
+          {countdown}
+        </span>
+      )}
+      <LivePopoutButton data={data} date={date} tvOnly={tvOnly} />
+    </>
   );
   return (
     <section className="ck-slate" aria-label="Games of the day" data-day={date}>
-      {notes ? <NotesTools notes={notes} games={games} hideNotes={hideNotes} onHideNotes={onHideNotes} extra={tip} /> : tip}
+      {notes ? <NotesTools notes={notes} games={games} hideNotes={hideNotes} onHideNotes={onHideNotes} extra={tip} /> : <div className="ck-slate-tools" data-capture-exclude="true">{tip}</div>}
       {tri && !focusGame && (
         <p className="ck-slate-nofocus" data-testid="slate-no-team" data-capture-exclude="true">
           {tri} doesn’t play {date === today ? 'today' : `on ${dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`))}`}

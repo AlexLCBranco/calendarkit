@@ -4,7 +4,7 @@
 // are instant (no request per click).
 
 import { expect, test } from './fixtures';
-import { APP } from './app';
+import { APP, scrollAway } from './app';
 
 test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'fixed window sizes: one desktop project'));
 
@@ -18,6 +18,7 @@ for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }]
     await page.evaluate(() => document.fonts.ready);
     const check = () =>
       page.evaluate(() => {
+        window.scrollTo(0, document.documentElement.scrollHeight); // the page rows scrolled away (NAV_PATTERN.md)
         const sim = document.querySelector<HTMLElement>('[data-testid="cup-sim"]')!;
         const out: string[] = [];
         for (const e of sim.querySelectorAll<HTMLElement>('*')) {
@@ -30,7 +31,7 @@ for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }]
       });
     let r = await check();
     expect(r.out).toEqual([]);
-    expect(r.scroll).toBeLessThanOrEqual(r.win);
+    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
     const requests: string[] = [];
     page.on('request', (q) => requests.push(q.url()));
     const games = page.locator('[data-testid="sim-game"]:not(.ck-sim-real)');
@@ -42,7 +43,7 @@ for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }]
     await page.screenshot({ path: `test-output/simulator-${size.width}x${size.height}.png` });
     r = await check();
     expect(r.out).toEqual([]);
-    expect(r.scroll).toBeLessThanOrEqual(r.win);
+    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
     expect(r.sideways).toBeLessThanOrEqual(0);
 
     // the bracket played through, with margins: QF → SF → Final → champion, every team big and whole
@@ -56,7 +57,8 @@ for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }]
     const champ = await page.locator('[data-key="F"]').getAttribute('data-winner');
     await expect(page.getByTestId('kb-champion')).toHaveAttribute('data-team', champ!);
     expect(requests).toEqual([]);
-    // both on screen at once: the six tables and the whole bracket inside the window
+    // both on screen at once: the six tables and the whole bracket inside the window (the page rows scrolled away)
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
     for (const el of [...(await page.getByTestId('sim-group').all()), page.getByTestId('sim-bracket')]) {
       const b = (await el.boundingBox())!;
       expect(b.y + b.height).toBeLessThanOrEqual(size.height);
@@ -67,6 +69,6 @@ for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }]
     await page.screenshot({ path: `test-output/simulator-bracket-${size.width}x${size.height}.png` });
     r = await check();
     expect(r.out).toEqual([]);
-    expect(r.scroll).toBeLessThanOrEqual(r.win);
+    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
     expect(r.sideways).toBeLessThanOrEqual(0);
   });

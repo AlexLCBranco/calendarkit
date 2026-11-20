@@ -11,10 +11,16 @@ import { DestinationFrame, SelectionCopyStage, useSelectionCopy, type Destinatio
 import { Segmented } from './Segmented';
 import { SelectionBar } from './SelectionBar';
 import type { SelectionKind } from './SelectionCapture';
-import { TeamPicker } from './TeamPicker';
+import { TeamChips } from './TeamChips';
+import { Crumbs, PageRow } from './Header';
+import type { Crumb } from './nav';
+import { fullName } from './widget';
+import { TEAMS } from '../data/teams';
 
 /** The Cup views, their own chunk, loaded (and worked out) only when the Cup is opened. */
 const CupView = lazy(() => import('./CupView'));
+/** The simulator's "Tonight in the Cup" line, beside the How switch in the page rows (the Cup's chunk). */
+const CupTonight = lazy(() => import('./CupTonight').then((m) => ({ default: m.CupTonight })));
 
 export interface CupApi extends DestinationApi {
   /** The Cup's state, for the page's snapshot. */
@@ -25,7 +31,17 @@ export interface CupApi extends DestinationApi {
   /** A change of night (By date) is a day step, not a new page. */
   night?: string;
   restore(cup: CupState): void;
+  /** Another Cup page ("Go anywhere"): the patch over the Cup's state. */
+  go(patch: Partial<CupState>): void;
 }
+
+const CUP_TABS: [CupState['tab'], string][] = [['standings', 'Groups'], ['schedule', 'Schedule'], ['simulator', 'Simulator'], ['history', 'History']];
+/** The Cup's How, for the breadcrumb and "Go anywhere". */
+export const cupTabs = CUP_TABS;
+/** The past Cups (History), newest first: written out, so the shell doesn't load the History's data (its own chunk);
+ * a unit test keeps it equal to cupHistory.json. */
+export const CUP_SEASONS = [2025, 2024, 2023];
+const TEAMS_BY_NAME = [...TEAMS].sort((a, b) => fullName(a).localeCompare(fullName(b)));
 
 export function CupDestination(p: DestinationProps & { initial?: Partial<CupState>; api: RefObject<CupApi | undefined> }) {
   const { active, data, size, now, today, timeZone, compact, state, root, onOpenGame, gameLink, slots, selection, initial } = p;
@@ -57,6 +73,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
     teamScoped: cupView.list === 'team',
     night: cupView.night,
     restore: setCupView,
+    go: (patch) => setCupView((v) => ({ ...v, ...patch })),
     lookingAt: () => {
       const night = cupSchedule && cupView.list === 'league' && cupView.by === 'date' ? cupView.night : undefined;
       return night ?? seasonDay(data, today);
@@ -82,13 +99,27 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
   return (
     <DestinationFrame
       slots={slots}
+      crumbs={<Crumbs parts={cupCrumbs(cupView, setCupView)} />}
+      what={
+        cupTeam ? (
+          <PageRow label="What" className=" ck-prow-what">
+            <TeamChips teamId={cupView.teamId} onPick={(teamId) => setCupView((v) => ({ ...v, teamId }))} />
+          </PageRow>
+        ) : undefined
+      }
+      date={
+        cupSim ? (
+          <Suspense fallback={null}>
+            <CupTonight data={data} today={today} gameLink={gameLink} inline />
+          </Suspense>
+        ) : undefined
+      }
       sub={
-        <>
-          <Segmented label="Cup view" value={cupView.tab} options={[['standings', 'Groups'], ['schedule', 'Schedule'], ['simulator', 'Simulator'], ['history', 'History']]} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />
+        <PageRow label="How">
+          <Segmented label="Cup view" value={cupView.tab} options={CUP_TABS} onChange={(tab) => setCupView((v) => ({ ...v, tab }))} />
           {cupSchedule && <Segmented label="Cup list" value={cupView.list} options={[['league', 'League'], ['team', 'Team']]} onChange={(list) => setCupView((v) => ({ ...v, list }))} />}
           {cupSchedule && !cupTeam && <Segmented label="Cup layout" value={cupView.by} options={[['group', 'By group'], ['date', 'By date']]} onChange={(by) => setCupView((v) => ({ ...v, by }))} />}
-          {cupTeam && <TeamPicker teamId={cupView.teamId} onChange={(teamId) => setCupView((v) => ({ ...v, teamId }))} />}
-        </>
+        </PageRow>
       }
       info={
         <span className="ck-info-cup">
@@ -103,4 +134,24 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
       {selCapture && selKind && <SelectionCopyStage capture={selCapture} kind={selKind} list team={cupTeam} teamId={selTeamId} cup p={p} />}
     </DestinationFrame>
   );
+}
+
+/** The Cup's breadcrumb parts after "Cup": its view, then the schedule's list (and team) or the History's season. */
+function cupCrumbs(v: CupState, set: (f: (v: CupState) => CupState) => void): Crumb[] {
+  const go = (patch: Partial<CupState>) => () => set((x) => ({ ...x, ...patch }));
+  const out: Crumb[] = [{ id: 'cup-view', label: CUP_TABS.find(([t]) => t === v.tab)![1], items: CUP_TABS.map(([t, label]) => ({ label, on: t === v.tab, go: go({ tab: t }) })) }];
+  if (v.tab === 'schedule') {
+    out.push({ id: 'cup-list', label: v.list === 'team' ? 'Team' : v.by === 'date' ? 'By date' : 'By group', items: [
+      { label: 'By group', on: v.list === 'league' && v.by === 'group', go: go({ list: 'league', by: 'group' }) },
+      { label: 'By date', on: v.list === 'league' && v.by === 'date', go: go({ list: 'league', by: 'date' }) },
+      { label: 'Team', on: v.list === 'team', go: go({ list: 'team' }) },
+    ] });
+    const t = v.list === 'team' && v.teamId !== undefined ? TEAMS.find((x) => x.id === v.teamId) : undefined;
+    if (t) out.push({ id: 'cup-team', label: fullName(t), items: TEAMS_BY_NAME.map((x) => ({ label: fullName(x), on: x.id === t.id, go: go({ teamId: x.id }) })) });
+  }
+  if (v.tab === 'history') {
+    const year = v.hs ?? CUP_SEASONS[0]!;
+    out.push({ id: 'cup-season', label: String(year), items: CUP_SEASONS.map((y) => ({ label: String(y), on: y === year, go: go({ hs: y }) })) });
+  }
+  return out;
 }

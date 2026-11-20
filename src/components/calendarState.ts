@@ -3,6 +3,7 @@
 
 import { dateFormat, hasNationalTv, isOver, teamGames, type CalendarData } from '../data/model';
 import type { WeekCount } from './LeagueWeekView';
+import type { StandingsSet } from './standingsSets';
 import type { ValueStore } from './valueStore';
 import { fmtMonth } from './widget';
 
@@ -44,6 +45,10 @@ export interface ViewSnapshot {
   /** The Team List's last loaded month. */
   teamListTo?: string;
   cup: CupState;
+  /** Standings: the column set (none: Main). */
+  st?: StandingsSet;
+  /** Standings: the past season on show (its end year); none: this season. */
+  sy?: number;
   /** Team List: the row at the top. */
   top?: string;
   /** The view's scroller (by its data-testid) and how far it was scrolled. */

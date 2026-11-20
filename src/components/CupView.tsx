@@ -60,14 +60,8 @@ export default function CupView({ data, schedule, gameLink, sim, today, history 
         <CupHistory data={data} {...history} />
       </Suspense>
     );
-  const tonight = today ? <CupTonight data={data} today={today} gameLink={gameLink} /> : null;
-  if (sim)
-    return (
-      <>
-        {tonight}
-        <CupSimulator data={data} gameLink={gameLink} {...sim} />
-      </>
-    );
+  // the simulator's "Tonight in the Cup" is in the page rows (CupDestination): the simulator fills the window
+  if (sim) return <CupSimulator data={data} gameLink={gameLink} {...sim} />;
   return schedule ? <CupSchedule data={data} {...schedule} /> : <CupStandingsView data={data} gameLink={gameLink} tonight={today ? <CupTonight data={data} today={today} gameLink={gameLink} inline /> : null} />;
 }
 

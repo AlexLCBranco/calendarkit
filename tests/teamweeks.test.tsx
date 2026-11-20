@@ -9,7 +9,7 @@ import { CalendarView } from '../src/components/CalendarView';
 import { hasNationalTv, teamGames } from '../src/data/model';
 import { data } from './feed';
 import { TEAM } from './synthetic';
-import { clearScope } from './nav';
+import { clearScope, pickScope } from './nav';
 
 afterEach(cleanup);
 
@@ -33,8 +33,7 @@ describe('control + URL', () => {
     expect(document.querySelector('.ck-team-month')!.getAttribute('data-span')).toBe('month');
     fireEvent.click(spanTab('2 weeks'));
     expect(document.querySelector('.ck-team-month')!.getAttribute('data-span')).toBe('2w');
-    fireEvent.click(screen.getByTestId('team-picker'));
-    fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
+    pickScope('Miami Heat');
     expect(document.querySelector('.ck-team-month')!.getAttribute('data-span')).toBe('2w');
     fireEvent.click(screen.getByRole('tab', { name: 'List' }));
     expect(screen.queryByRole('tablist', { name: 'Span' })).toBeNull();

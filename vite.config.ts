@@ -54,6 +54,8 @@ export default defineConfig({
   define: { __APP_VERSION__: JSON.stringify(BUILD.version), __APP_COMMIT__: JSON.stringify(BUILD.commit), __BUILT_AT__: JSON.stringify(BUILD.builtAt) },
   test: {
     setupFiles: ['tests/setup.ts'],
+    // whole-widget renders (header, chips, a team's season) take a few seconds each under a full parallel run
+    testTimeout: 15_000,
     projects: [
       { extends: true, test: { name: 'unit', include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx', 'src/**/*.test.ts'], exclude: TZ_TESTS, env: { TZ: 'UTC' } } },
       ...TIME_ZONES.map((tz) => ({ extends: true, test: { name: `tz:${tz}`, include: TZ_TESTS, env: { TZ: tz } } })),

@@ -1,0 +1,488 @@
+/* The shared layout (backlogkit's NAV_PATTERN.md; Header.tsx, TeamChips.tsx): the pinned header, the page rows, the
+   team chips. Same look as footykit's (FK-65), so the apps read as one site. */
+
+/* ---------- the pinned header ---------- */
+/* One fixed height on every page, so nothing under it ever jumps; it spans the page's side padding so rows scrolling
+   under it don't show at its edges. */
+.ck-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  box-sizing: border-box;
+  height: var(--ck-header-h, 92px);
+  margin: 0 -16px 6px;
+  padding: 6px 16px 0;
+  background: var(--ck-bg);
+  border-bottom: 1px solid var(--ck-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: none;
+}
+.ck-head-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 36px;
+  min-width: 0;
+}
+.ck-head-row .ck-hist {
+  height: 32px;
+  margin-right: 0;
+}
+.ck-head-row .ck-hist-btn {
+  width: 30px;
+  font-size: 16px;
+}
+.ck-head-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.ck-head-end .ck-button,
+.ck-head-end .ck-copy {
+  height: 32px;
+}
+.ck-head-end .ck-copy {
+  width: 32px;
+}
+.ck-bar-options {
+  display: inline-flex;
+}
+.ck-bar-options:empty {
+  display: none;
+}
+.ck-crumbs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+.ck-crumbs-slot {
+  display: contents;
+}
+.ck-crumb {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+.ck-crumbs > .ck-crumb:first-child .ck-crumb-sep {
+  display: none;
+}
+.ck-crumb-sep {
+  color: var(--ck-muted);
+  padding: 0 4px;
+}
+.ck-crumb-btn {
+  border: 1px solid transparent;
+  background: none;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font: inherit;
+  font-size: 15px;
+  color: #7cb8ff;
+  cursor: pointer;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.12s, border-color 0.12s;
+}
+.ck-crumb-btn:hover:not(:disabled) {
+  border-color: var(--ck-border);
+  background: var(--ck-surface);
+}
+.ck-crumb-last {
+  color: var(--ck-text);
+  font-weight: 600;
+}
+.ck-crumb-btn:disabled {
+  cursor: default;
+  color: var(--ck-text);
+}
+.ck-crumb-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 12px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+.ck-crumb-item {
+  text-align: left;
+  border: 0;
+  background: none;
+  color: var(--ck-text);
+  font: inherit;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ck-crumb-item:hover {
+  background: #1f232c;
+}
+.ck-crumb-item-on {
+  color: var(--ck-accent);
+  font-weight: 600;
+}
+.ck-where {
+  display: flex;
+  gap: 4px;
+  height: 38px;
+}
+.ck-where-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--ck-muted);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+.ck-where-tab:hover {
+  color: var(--ck-text);
+}
+.ck-where-on {
+  color: var(--ck-text);
+  border-bottom-color: var(--ck-accent);
+  font-weight: 600;
+}
+.ck-where-on svg {
+  color: var(--ck-accent);
+}
+.ck-go-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px 0 10px;
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 200px;
+}
+.ck-go-btn:hover {
+  border-color: var(--ck-accent);
+}
+.ck-go-kbd {
+  margin-left: auto;
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid var(--ck-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+.ck-go-shade {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgb(0 0 0 / 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 12vh;
+}
+.ck-go {
+  width: min(560px, calc(100vw - 32px));
+  background: var(--ck-surface);
+  border: 1px solid var(--ck-border);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.6);
+  overflow: hidden;
+}
+.ck-go-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 46px;
+  padding: 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--ck-border);
+  background: transparent;
+  color: var(--ck-text);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+.ck-go-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+.ck-go-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.ck-go-kind,
+.ck-go-none {
+  color: var(--ck-muted);
+}
+.ck-go-on {
+  background: rgb(78 161 255 / 0.16);
+}
+.ck-go-none {
+  padding: 10px;
+}
+
+/* ---------- the page rows (What chips, How switch, dates), scrolling away with the page ---------- */
+.ck-toolbar.ck-prows {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 20px;
+  min-height: 36px;
+  margin-bottom: 8px;
+  padding: 0;
+}
+.ck-bar-what {
+  display: flex;
+  min-width: 0;
+}
+.ck-bar-what:empty {
+  display: none;
+}
+.ck-prows .ck-bar-local {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 20px;
+  min-height: 32px;
+}
+.ck-prow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ck-prow-label {
+  font-size: 12px;
+  color: var(--ck-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: none;
+}
+.ck-prow-what {
+  align-items: flex-start;
+}
+.ck-prow-what > .ck-prow-label {
+  line-height: 28px;
+}
+
+/* ---------- chips (a What: every option visible, one click away) ---------- */
+.ck-chip-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 11px;
+  border: 1px solid var(--ck-border);
+  border-radius: 14px;
+  background: var(--ck-surface);
+  color: var(--ck-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex: none;
+  transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+}
+/* each chip as wide as its bold text, so picking one never shifts its neighbours */
+.ck-chip-btn::after {
+  content: attr(data-text);
+  font-weight: 600;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+}
+.ck-chip-btn:hover:not(.ck-chip-on) {
+  color: var(--ck-text);
+  border-color: var(--ck-muted);
+}
+.ck-chip-on {
+  background: var(--ck-accent);
+  border-color: var(--ck-accent);
+  color: #06121f;
+  font-weight: 600;
+}
+.ck-tab {
+  transition: background-color 0.12s, color 0.12s;
+}
+
+/* The teams: All teams, then East over West (from 1600 px), a little gap between divisions */
+.ck-team-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 12px;
+  min-width: 0;
+}
+.ck-chip-conf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.ck-chip-conf-label {
+  width: 30px;
+  font-size: 12px;
+  color: var(--ck-muted);
+  flex: none;
+}
+.ck-chip-div {
+  display: flex;
+  gap: 3px;
+}
+.ck-team-chip {
+  flex-direction: row;
+  gap: 5px;
+  width: 60px;
+  padding: 0 5px 0 3px;
+  --ck-logo: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.ck-team-chip::after {
+  content: none;
+}
+.ck-team-chip .ck-logo-backing {
+  flex: none;
+}
+@media (min-width: 1600px) {
+  /* East over West: the chips take two lines, How and the dates sit beside them */
+  .ck-team-chips {
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 12px;
+  }
+  .ck-chip-all {
+    grid-row: 1 / span 2;
+  }
+}
+@media (max-width: 1599px) {
+  /* the logo alone (the team's name in its tooltip), both conferences on one line */
+  .ck-team-chip {
+    width: 30px;
+    padding: 0;
+    justify-content: center;
+  }
+  .ck-team-chip-tri {
+    display: none;
+  }
+  .ck-chip-div {
+    gap: 2px;
+  }
+  .ck-chip-conf {
+    gap: 6px;
+  }
+  .ck-chip-conf-label {
+    width: auto;
+  }
+}
+
+/* ---------- narrow windows (phones, parked): every place still visible, nothing in a hamburger ---------- */
+@media (max-width: 700px) {
+  /* three lines: back / forward and the icon buttons, the breadcrumb, the places */
+  .ck-header {
+    --ck-header-h: 134px;
+    gap: 4px;
+  }
+  .ck-head-row {
+    flex-wrap: wrap;
+    height: auto;
+    row-gap: 4px;
+    gap: 6px;
+  }
+  .ck-crumbs {
+    order: 3;
+    flex: 1 1 100%;
+    height: 28px;
+  }
+  .ck-head-end {
+    gap: 4px;
+  }
+  .ck-where {
+    height: 52px;
+    gap: 0;
+  }
+  .ck-where-tab {
+    flex: 1 1 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 0 2px;
+    font-size: 11px;
+  }
+  /* the breadcrumb's last two parts */
+  .ck-crumbs .ck-crumb:not(:nth-last-child(-n + 2)) {
+    display: none;
+  }
+  .ck-crumb-btn {
+    max-width: 170px;
+    font-size: 14px;
+  }
+  .ck-go-btn {
+    min-width: 0;
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+  .ck-go-text,
+  .ck-go-kbd {
+    display: none;
+  }
+  /* a conference's divisions wrap under each other rather than push the page sideways */
+  .ck-bar-what,
+  .ck-prow-what,
+  .ck-team-chips {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .ck-chip-conf {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+}
+
+/* a page row's free text (the Cup simulator's "Tonight in the Cup") shrinks and wraps; the page never scrolls sideways */
+.ck-prows .ck-bar-local {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ck-prows .ck-bar-date {
+  flex: 0 1 auto;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.ck-prows .ck-tonight {
+  min-width: 0;
+  margin-bottom: 0;
+}

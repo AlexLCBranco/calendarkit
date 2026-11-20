@@ -1,7 +1,8 @@
 // The contract between the shell (CalendarView) and its destinations (Schedule, Cup, Standings), and the parts they
 // share. Every destination stays mounted while the page is open, so its state lasts as long as the page did when it all
-// lived in one component; only the active one renders. Its top-bar controls go into the bar's slots through portals:
-// its sub-views, its date controls, its options (one popover) and its lines in the ⓘ popover.
+// lived in one component; only the active one renders. Its controls go into the header's and page rows' slots through
+// portals: its breadcrumb parts, its What (the thing looked at), its How and date controls, its options (one popover)
+// and its lines in the ⓘ popover.
 
 import { useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
@@ -16,9 +17,11 @@ import { SelectionCapture, type SelectionKind } from './SelectionCapture';
 import { TeamHeader } from './TeamHeader';
 import { LEAGUE_LIST_COLUMN, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 
-/** The top bar's slots a destination fills, always in this order: sub-views, date controls; the options popover's
- * button with its popover (the Schedule's only) and the ⓘ popover's own lines. */
+/** The slots a destination fills: its breadcrumb parts (header); What, How (sub) and date controls (page rows); the
+ * options popover's button with its popover (the Schedule's only) and the ⓘ popover's own lines. */
 export interface BarSlots {
+  crumbs: HTMLElement;
+  what: HTMLElement;
   sub: HTMLElement;
   date: HTMLElement;
   options: HTMLElement;
@@ -66,10 +69,12 @@ export interface DestinationApi {
 }
 
 /** The bar controls into the bar's slots, the rest in place; nothing until the bar is there. */
-export function DestinationFrame({ slots, sub, date, options, info, children }: { slots?: BarSlots; sub: ReactNode; date?: ReactNode; options?: ReactNode; info?: ReactNode; children: ReactNode }) {
+export function DestinationFrame({ slots, crumbs, what, sub, date, options, info, children }: { slots?: BarSlots; crumbs?: ReactNode; what?: ReactNode; sub: ReactNode; date?: ReactNode; options?: ReactNode; info?: ReactNode; children: ReactNode }) {
   if (!slots) return null;
   return (
     <>
+      {crumbs && createPortal(crumbs, slots.crumbs)}
+      {what && createPortal(what, slots.what)}
       {createPortal(sub, slots.sub)}
       {date && createPortal(date, slots.date)}
       {options && createPortal(options, slots.options)}

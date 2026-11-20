@@ -164,16 +164,11 @@
 .ck-compact .ck-toolbar > .ck-check {
   order: 1;
 }
-.ck-compact .ck-toolbar > .ck-picker,
 .ck-compact .ck-toolbar > .ck-period-wrap {
   order: 2;
 }
 .ck-compact .ck-toolbar > .ck-note {
   order: 3;
-}
-.ck-compact .ck-picker-button {
-  padding: 5px 8px;
-  gap: 6px;
 }
 .ck-compact .ck-check {
   font-size: 13px;
@@ -212,89 +207,9 @@
   font-weight: 600;
 }
 
-/* the Schedule's scope picker: fixed width ("All teams" or a team + ×), so the date block after it never moves. The
-   bar's most prominent control (what is open, at a glance): taller than the bar's 32 px controls (still inside its
-   44 px row), larger bold text and logo, an accent outline and tint. */
-.ck-picker-scope {
-  display: inline-flex;
-  width: 316px;
-  flex: none;
-  gap: 4px;
-}
-.ck-picker-scope .ck-picker-button {
-  flex: 1;
-  min-width: 0;
-  height: 36px;
-  box-sizing: border-box;
-  --ck-logo: 24px;
-  gap: 8px;
-  padding: 0 10px 0 8px;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: #fff;
-  background: rgb(78 161 255 / 0.16);
-  border: 2px solid var(--ck-accent);
-}
-.ck-picker-scope .ck-picker-button:hover,
-.ck-picker-scope .ck-picker-button[aria-expanded='true'] {
-  background: rgb(78 161 255 / 0.26);
-}
-.ck-picker-scope .ck-picker-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
-}
-.ck-picker-scope .ck-caret {
-  color: var(--ck-accent);
-}
-/* the full name from 1440 px; below, the tricode in a narrower picker (Team Calendar's bar at 1280 has ~70 px to spare) */
-.ck-picker-tri {
-  display: none;
-}
-@media (max-width: 1439px) {
-  .ck-picker-scope {
-    width: 176px;
-  }
-  .ck-picker-full {
-    display: none;
-  }
-  .ck-picker-tri {
-    display: inline;
-  }
-}
-.ck-picker-scope .ck-picker-clear {
-  height: 36px;
-}
-.ck-picker-clear {
-  flex: none;
-  width: 30px;
-  height: 36px;
-  border: 1px solid var(--ck-border);
-  border-radius: 8px;
-  background: var(--ck-surface);
-  color: var(--ck-muted);
-  font: inherit;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-.ck-picker-clear:hover {
-  color: var(--ck-text);
-  border-color: var(--ck-accent);
-}
-.ck-picker-all {
-  grid-column: 1 / -1;
-  font-weight: 600;
-}
 /* the date block: fixed width whatever the view or the title (the Today button is always there) */
 .ck-date-block {
   flex: none;
-}
-.ck-compact .ck-picker-scope {
-  width: auto;
 }
 
 /* Page history ← → — long arrows in one joined, square-cornered pill at the far left; the date

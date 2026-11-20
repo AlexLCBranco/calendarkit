@@ -1,5 +1,4 @@
-// The shell's own parts of the top bar: the page history's ← →, the ⓘ with the time zone and data stamp, the Quick
-// standings icon. The destinations' controls are not here: each destination renders its own into the bar's slots
+// The shell's own parts of the top bar: the page history's ← →, the ⓘ with the time zone and data stamp,  The destinations' controls are not here: each destination renders its own into the bar's slots
 // (destination.tsx); the menu's two variants are in Menu.tsx.
 
 import { useEffect, type ReactNode } from 'react';
@@ -118,10 +117,3 @@ export function BarInfo({ note, updatedAt, now, timeZone, children }: { note: st
   );
 }
 
-/** A small table: the Quick standings button's icon. */
-export const StandingsIcon = () => (
-  <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-    <path fill="currentColor" d="M2 2.5h12v2H2zM2 6.5h12v1.6H2zM2 10h12v1.6H2zM2 13.4h12V15H2z" opacity=".95" />
-    <path fill="currentColor" d="M5.2 6.5h1.2V15H5.2z" opacity=".55" />
-  </svg>
-);

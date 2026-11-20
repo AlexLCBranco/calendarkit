@@ -1,20 +1,20 @@
-// The top bar's scope picker and destinations (League | Team tabs are gone).
+// The page rows' team chips (What) and the header's Where tabs.
 import type { Page } from '@playwright/test';
 
-/** Picks a team ("Miami Heat") or "All teams" in the Schedule's scope picker. */
-export async function pickScope(page: Page, name: string) {
-  await page.getByTestId('bar-local').getByTestId('team-picker').click();
-  await page.getByRole('option', { name, exact: true }).click();
-}
+/** The What row's team chip by full name ("Miami Heat"), or "All teams". */
+export const teamChip = (page: Page, name: string) => page.getByTestId('what-row').getByRole('radio', { name, exact: true });
 
-/** Back to All teams with the scope picker's ×. */
-export const clearScope = (page: Page) => page.getByTestId('scope-clear').click();
+/** Picks a team ("Miami Heat") or "All teams" among the What row's chips. */
+export const pickScope = (page: Page, name: string) => teamChip(page, name).click();
 
-/** A destination tab: Schedule, Cup or Standings. */
-export const destination = (page: Page, name: 'Schedule' | 'Cup' | 'Standings') => page.getByRole('tablist', { name: 'Destination' }).getByRole('tab', { name, exact: true });
+/** Back to All teams. */
+export const clearScope = (page: Page) => page.getByTestId('team-chip-all').click();
 
-/** The scope picker's team tricode, or null for All teams. */
-export const scopeTeamId = (page: Page) => page.getByTestId('bar-local').getByTestId('team-picker').getAttribute('data-team-id');
+/** A Where tab: Schedule, Cup or Standings. */
+export const destination = (page: Page, name: 'Schedule' | 'Cup' | 'Standings') => page.getByTestId('where-tabs').getByRole('button', { name, exact: true });
+
+/** The team chip picked (its team id), or null for All teams / no team. */
+export const scopeTeamId = (page: Page) => page.getByTestId('what-row').locator('[data-testid="team-chip"][aria-checked="true"]').getAttribute('data-team-id', { timeout: 1000 }).catch(() => null);
 
 const SHORT: Record<string, string> = { Monday: 'Mon', Tuesday: 'Tue', Wednesday: 'Wed', Thursday: 'Thu', Friday: 'Fri', Saturday: 'Sat', Sunday: 'Sun', January: 'Jan', February: 'Feb', March: 'Mar', April: 'Apr', May: 'May', June: 'Jun', July: 'Jul', August: 'Aug', September: 'Sep', October: 'Oct', November: 'Nov', December: 'Dec' };
 /** The date title as the bar shows it — "Sunday, November 15, 2026", or under 1560 px "Sun, Nov 15, 2026". */

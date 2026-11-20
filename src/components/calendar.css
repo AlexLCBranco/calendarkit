@@ -4,7 +4,7 @@
 @import './styles/toolbar.css';
 @import './styles/menu.css';
 @import './styles/period-nav.css';
-@import './styles/team-picker.css';
+@import './styles/nav.css';
 @import './styles/team-header.css';
 @import './styles/league-list.css';
 @import './styles/week-strip.css';
@@ -20,6 +20,8 @@
 @import './styles/season.css';
 @import './styles/copy.css';
 @import './styles/selection.css';
+@import './styles/popout.css';
+@import './styles/history.css';
 @import '../slate/styles/slate.css';
 @import '../slate/styles/notes.css';
 @import '../slate/styles/team-link.css';

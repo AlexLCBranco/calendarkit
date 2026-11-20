@@ -27,7 +27,7 @@ export interface PeriodNavProps {
 export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisabled, testId = 'period-title', onTitleClick, titleExpanded, onToday, todayDisabled, pick, titleClass = '' }: PeriodNavProps) {
   return (
     <div className="ck-nav ck-period">
-      <button type="button" className="ck-arrow" aria-label={`Previous ${unit}`} disabled={prevDisabled} onClick={onPrev}>
+      <button type="button" className="ck-arrow" aria-label={`Previous ${unit}`} title={`Previous ${unit}`} disabled={prevDisabled} onClick={onPrev}>
         ‹
       </button>
       {onTitleClick ? (
@@ -42,7 +42,7 @@ export function PeriodNav({ title, unit, onPrev, onNext, prevDisabled, nextDisab
           {title}
         </h2>
       )}
-      <button type="button" className="ck-arrow" aria-label={`Next ${unit}`} disabled={nextDisabled} onClick={onNext}>
+      <button type="button" className="ck-arrow" aria-label={`Next ${unit}`} title={`Next ${unit}`} disabled={nextDisabled} onClick={onNext}>
         ›
       </button>
       {/* The date block is always ‹ date › · calendar · Today */}

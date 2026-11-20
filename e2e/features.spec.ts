@@ -4,6 +4,7 @@
 // e2e/screenshots/<project>-f-<view>.png.
 
 import { expect, test, type Page } from './fixtures';
+import { scrollAway } from './app';
 import { setOption } from './nav';
 import { eachTeamMonth } from './teamMonths';
 
@@ -70,71 +71,27 @@ test('team header and team picker: logos, mouse and keyboard, team change', asyn
   expect(h.disc).toBe(p === 'phone' ? 40 : 48);
   expect(h.visible).toBe(true);
   expect(h.font).toBeGreaterThan(h.biggestOther); // the most prominent text above the content
-  // picker: logo on the button, "All teams" + all 30 with loaded logos in the list, inside the viewport
-  const btn = page.getByTestId('team-picker');
-  await expect(btn.locator('img')).toHaveAttribute('src', '/calendar/logos/BOS.svg');
-  await btn.click();
-  const list = page.getByRole('listbox', { name: 'Teams' });
-  await expect(list.getByRole('option')).toHaveCount(31);
-  await expect(list.getByRole('option').first()).toHaveText('All teams');
+  // the team chips: "All teams" + all 30 with loaded logos, inside the viewport
+  const chips = page.getByTestId('what-row').getByTestId('team-chip');
+  await expect(chips).toHaveCount(30);
+  await expect(page.getByTestId('team-chip-all')).toHaveText('All teams');
+  await expect(page.getByTestId('what-row').getByRole('radio', { name: 'Boston Celtics' })).toHaveAttribute('aria-checked', 'true');
   await imagesLoaded(page);
-  expect(await list.evaluate((l) => [...l.querySelectorAll('img')].filter((i) => i.naturalWidth > 0).length)).toBe(30);
-  const box = (await list.boundingBox())!;
+  expect(await page.getByTestId('team-chips').evaluate((l) => [...l.querySelectorAll('img')].filter((i) => i.naturalWidth > 0).length)).toBe(30);
+  const box = (await page.getByTestId('team-chips').boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   expect(await sideways(page)).toBeLessThanOrEqual(0);
-  await shot(page, 'team-picker', p);
-  await page.getByRole('option', { name: 'Miami Heat' }).click();
+  await shot(page, 'team-chips', p);
+  await page.getByTestId('what-row').getByRole('radio', { name: 'Miami Heat' }).click();
   await expect(header).toHaveText('Miami Heat');
   await expect(page).toHaveURL(/team=MIA/);
-  // keyboard only
-  await btn.focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(list).toBeFocused();
-  await page.keyboard.press('o'); // from Miami Heat, the next team starting with O: Orlando
+  // keyboard only: the chips are buttons
+  await page.getByTestId('what-row').getByRole('radio', { name: 'Orlando Magic' }).focus();
   await page.keyboard.press('Enter');
-  await expect(header).toHaveText('Orlando Magic');
-  await expect(btn).toBeFocused();
-  await page.keyboard.press('Enter');
-  await expect(list).toBeVisible();
-  await page.keyboard.press('Escape');
-  await expect(list).toBeHidden();
   await expect(header).toHaveText('Orlando Magic');
   await expect(page.getByRole('region', { name: 'Magic games' })).toBeVisible();
   expect(errors).toEqual([]);
-});
-
-// The cause of the flaky "Miami instead of Orlando" above. When the list opens under a pointer that isn't
-// moving, Chrome sends the option under it a mouseover/mouseenter (no movement); the picker took that as a hover and
-// replaced the keyboard's choice whenever it arrived after the key. Here the pointer rests where Atlanta will be, the
-// list opens from the keyboard, and Enter is pressed only once the browser has hovered Atlanta — on the old build that
-// picks Atlanta every time.
-test('team picker: a pointer resting where the list opens never overrides the keyboard', async ({ page }, info) => {
-  test.skip(info.project.name === 'phone', 'touch device: no hover');
-  await open(page, '?view=team&layout=list&team=MIA');
-  const btn = page.getByTestId('team-picker');
-  const header = page.getByTestId('team-header').locator('.ck-team-name'); // (the Team List adds its month)
-  const list = page.getByRole('listbox', { name: 'Teams' });
-  await btn.click();
-  const atl = (await page.getByRole('option', { name: 'Atlanta Hawks' }).boundingBox())!;
-  await page.keyboard.press('Escape');
-  await expect(list).toBeHidden();
-  await page.mouse.move(atl.x + atl.width / 2, atl.y + atl.height / 2); // the list is closed: over the page there
-  await btn.focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(list).toBeFocused();
-  await expect(page.locator('.ck-picker-option:hover')).toHaveText('Atlanta Hawks'); // the browser's hover arrived
-  await expect(page.locator('.ck-picker-active')).toHaveText('Miami Heat');
-  await page.keyboard.press('o');
-  await expect(page.locator('.ck-picker-active')).toHaveText('Orlando Magic');
-  await page.keyboard.press('Enter');
-  await expect(header).toHaveText('Orlando Magic');
-  // a pointer that moves still highlights and picks
-  await btn.click();
-  await page.getByRole('option', { name: 'Chicago Bulls' }).hover();
-  await expect(page.locator('.ck-picker-active')).toHaveText('Chicago Bulls');
-  await page.keyboard.press('Enter');
-  await expect(header).toHaveText('Chicago Bulls');
 });
 
 test('team views: selected team first, vs/@ from its side, two loaded logos per game', async ({ page }, info) => {
@@ -196,7 +153,7 @@ test('uniform cells; Team Calendar fills the window without page scroll (5- and 
     expect(s.wSpread).toBeLessThanOrEqual(0.5);
     expect(s.hSpread).toBeLessThanOrEqual(0.5);
     if (p !== 'phone') expect(s.h).toBeGreaterThanOrEqual(92);
-    if (p === 'desktop-xl' || p === 'desktop') expect(await pageScroll(page), month).toBeLessThanOrEqual(0);
+    if (p === 'desktop-xl' || p === 'desktop') expect(await pageScroll(page), month).toBeLessThanOrEqual(await scrollAway(page));
     // nothing in a cell is cut off
     expect(await page.evaluate(() => [...document.querySelectorAll('.ck-team-grid .ck-day-cell')].filter((c) => c.scrollHeight > c.clientHeight + 1).length)).toBe(0);
   }
@@ -254,7 +211,7 @@ test('team calendar: content scaled to the cell, nothing clipped in any cell —
       });
       const name = `${tri} ${r.month}`;
       expect(r.clipped, name).toEqual([]);
-      expect(r.scroll, name).toBeLessThanOrEqual(0);
+      expect(r.scroll, name).toBeLessThanOrEqual(await scrollAway(page));
       expect(r.connectors, name).toBe(0);
       if (p === 'desktop-xl') {
         expect(r.scale, name).toBeGreaterThanOrEqual(1.2); // the short chip + TV pill: 1.2
@@ -368,7 +325,7 @@ test('league week view fits without page scroll (1920×1080 and 1280×900): ever
       });
       // no page scroll anywhere (2 weeks at 1280 × 900 used to scroll by up to 164 px; e2e/two-week-fit.spec.ts)
       maxScroll = Math.max(maxScroll, r.scroll);
-      expect(r.scroll, `${weeks}w ${r.start}`).toBeLessThanOrEqual(0);
+      expect(r.scroll, `${weeks}w ${r.start}`).toBeLessThanOrEqual(await scrollAway(page));
       // the crooked check must see every line's parts (it silently checked nothing once the line got its link wrapper)
       expect(await page.locator('.ck-mline > :nth-child(1)').count()).toBe(r.games);
       expect(r.cells.reduce((n, c) => n + c.clipped, 0), `${weeks}w ${r.start}`).toBe(0);

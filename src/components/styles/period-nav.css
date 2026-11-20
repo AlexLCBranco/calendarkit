@@ -141,7 +141,7 @@
 
 /* The calendar views' side arrows (ScheduleDestination SideArrows): a large chevron on the page background, no box,
    in the page margin beside the grid (SideArrows sizes them to it: 16 px at a 1280 px window, ~30 at 1920), so they cover no day cell. A tall
-   target; the chevron brightens on hover. With the rail, the left one sits on the rail's right edge. */
+   target; the chevron brightens on hover. */
 .ck-root {
   position: relative;
 }
@@ -173,10 +173,6 @@
 }
 .ck-side-next {
   right: calc(-1 * var(--ck-side-w, 16px));
-}
-.ck-has-rail > .ck-side-prev {
-  left: 68px; /* RAIL_WIDTH − 16 */
-  width: 16px;
 }
 .ck-side-arrow:hover:not(:disabled),
 .ck-side-arrow:focus-visible {

@@ -52,8 +52,7 @@ test('every team × every month: the rows are exactly that month’s games (+ re
   expect(Object.keys(snap)).toHaveLength(30);
   let checked = 0;
   for (const tri of Object.keys(snap).sort()) {
-    await page.getByTestId('team-picker').click();
-    await page.getByRole('option').filter({ has: page.locator(`img[src="/calendar/logos/${tri}.svg"]`) }).first().click();
+    await page.getByTestId('what-row').locator('[data-testid="team-chip"]').filter({ hasText: new RegExp(`^${tri}$`) }).click();
     const { games, rest } = snap[tri]!;
     for (const m of monthsOf(games.map((g) => g.date))) {
       await showMonth(page, m);
@@ -76,7 +75,7 @@ test('opens on the month of the next game, that game at the top; the top bar sta
   await expect(monthTitle(page, compact)).toHaveText(title(next.date.slice(0, 7)));
   await expect.poll(() => topRow(page)).toBe(next.date);
   expect((await rowDates(page)).every((d) => d.startsWith(next.date.slice(0, 7)))).toBe(true);
-  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBeLessThanOrEqual(78); // never taller than two rows
+  if (info.project.name === 'desktop-xl') expect((await page.getByTestId('top-bar').boundingBox())!.height).toBe(92); // the pinned header: one fixed height (NAV_PATTERN.md)
   // the title is plain text, inside the window, not cut off
   const t = await monthTitle(page, compact).evaluate((e) => ({ w: e.scrollWidth, cw: e.clientWidth, right: e.getBoundingClientRect().right, vw: innerWidth, tag: e.tagName }));
   expect(t.w).toBeLessThanOrEqual(t.cw + 1);
@@ -179,8 +178,7 @@ test('a B2B split across a month edge: badge and chips on both nights, no bracke
   console.log(`[${info.project.name}] B2Bs split across a month edge in the snapshot: ${split.map((s) => s.join(' ')).join(', ')}`);
   expect(split.length).toBeGreaterThan(0);
   for (const [tri, first] of split.slice(0, 6)) {
-    await page.getByTestId('team-picker').click();
-    await page.getByRole('option').filter({ has: page.locator(`img[src="/calendar/logos/${tri}.svg"]`) }).first().click();
+    await page.getByTestId('what-row').locator('[data-testid="team-chip"]').filter({ hasText: new RegExp(`^${tri}$`) }).click();
     const n = new Date(`${first}T00:00:00Z`);
     n.setUTCDate(n.getUTCDate() + 1);
     for (const [date, night] of [[first, '1'], [n.toISOString().slice(0, 10), '2']] as const) {

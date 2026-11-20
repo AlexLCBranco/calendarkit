@@ -85,7 +85,7 @@ const unlinkedGameThings = (page: Page) =>
 const plainTeams = (page: Page) =>
   page.evaluate(() =>
     [...document.querySelectorAll<HTMLElement>('.ck-logo-backing, .ck-team, .ck-slate-name, .ck-cup-name, .ck-cup-tri')]
-      .filter((e) => e.offsetParent !== null && !e.closest('[data-testid="team-picker"], [role="listbox"], .ck-capture-stage'))
+      .filter((e) => e.offsetParent !== null && !e.closest('[data-testid="team-chips"], .ck-capture-stage'))
       .filter((e) => !(e.closest('[data-testid="team-header"]') && !e.closest('[data-testid="cup-team"]')))
       .filter((e) => !e.matches('a[data-team-link]') && !e.closest('a[data-team-link]'))
       .map((e) => e.outerHTML.slice(0, 160)),

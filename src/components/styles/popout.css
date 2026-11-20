@@ -1,0 +1,85 @@
+/* CK-23: the floating live scores window (LivePopout.tsx). Its document gets a copy of the page's styles; this is the
+   window's own part. One game per line, POP_LINE (26 px) tall; the title line and padding are POP_CHROME (52 px). */
+.ck-popwin {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 8px 10px;
+  background: var(--ck-bg);
+  color: var(--ck-text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.ck-popwin-head {
+  display: flex;
+  justify-content: space-between;
+  height: 22px;
+  margin-bottom: 6px;
+  color: var(--ck-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ck-popwin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ck-popwin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 26px;
+  border-top: 1px solid var(--ck-border);
+  white-space: nowrap;
+}
+.ck-popwin-status {
+  width: 104px;
+  flex: none;
+  color: var(--ck-muted);
+  font-size: 12px;
+  overflow: hidden;
+}
+.ck-popwin-final .ck-popwin-status {
+  color: var(--ck-text);
+}
+.ck-popwin-match {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 600;
+}
+.ck-popwin-score {
+  min-width: 2.2ch;
+  text-align: right;
+  font-weight: 700;
+}
+.ck-popwin-score + .ck-popwin-at + .ck-popwin-score {
+  text-align: left;
+}
+.ck-popwin-at {
+  color: var(--ck-muted);
+  font-weight: 400;
+}
+.ck-popwin-final .ck-popwin-match > span:not(.ck-popwin-win):not(.ck-popwin-at):not(.ck-popwin-score) {
+  color: var(--ck-muted);
+}
+.ck-popwin-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 16px;
+}
+.ck-popwin-first {
+  color: var(--ck-muted);
+  font-size: 13px;
+}
+.ck-popwin-clock {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.ck-popwin-none {
+  color: var(--ck-muted);
+}

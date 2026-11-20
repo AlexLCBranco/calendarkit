@@ -6,6 +6,7 @@
 // faded house left of a solid plane. Runs once (desktop-xl), sizing the window itself.
 
 import { expect, test, type Page } from './fixtures';
+import { scrollAway } from './app';
 import { eachTeamMonth } from './teamMonths';
 
 /** columns() over every month of the Team List (one month at a time): the values seen, merged. */
@@ -119,7 +120,7 @@ for (const size of SIZES) {
       expect(r.n, date).toBeGreaterThan(10);
       expect(r.bad, date).toEqual([]);
       expect(r.widths, date).toHaveLength(1);
-      expect(r.scroll, date).toBeLessThanOrEqual(0);
+      expect(r.scroll, date).toBeLessThanOrEqual(await scrollAway(page));
     }
   });
 }
@@ -273,7 +274,8 @@ for (const size of SIZES) {
     // less height); 1 — games with only a break now get the fatigue row too,
     // so the busiest day is taller; then 1.1 at 1920 × 911 again — the one-row bar gives the week 34 px back; 1.05 since
     // every game shows its rest (2-day marks too), so nearly every line has a fatigue row
-    expect(row.scale).toBe(size.width === 1920 ? '1.05' : '1');
-    expect(row.tri).toBe(size.width === 1920 ? '11.55px' : '11px');
+    // 1 at both sizes since CK-25: the pinned header leaves the week view 36 px less than the old one-row bar did
+    expect(row.scale).toBe('1');
+    expect(row.tri).toBe('11px');
   });
 }

@@ -2,6 +2,25 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-20 — CK-25, CK-23, CK-24 built (CK-22 blocked)
+
+**Built (all v1.91.0):**
+- CK-25: the shared layout (backlogkit's NAV_PATTERN.md, styles copied from footykit FK-65). A header pinned at the top of every page, 92 px everywhere: ← →, the breadcrumb (Schedule › Boston Celtics › Calendar; Cup › History › 2025; Standings › This season › Main — every part opens its neighbours), "Go anywhere" (Ctrl+K: places, views, every team as Calendar or List, Cup views and seasons, column sets, past NBA seasons), then Options / ⓘ / Quick standings / Copy; the Where tabs Schedule · Cup · Standings (no Tools tab: calendarkit has no small tools). Under it the page rows: What = the teams as chips (All teams + 30, East | West by division; logo + tricode from 1600 px, logo only below) and How = the existing switches with the date controls. No dropdowns left (the team picker is gone, also in the Cup's Team schedule). Every state in the address: the standings' column set is new there (`set=`). The <100 ms click check, layout shift, names on icon buttons and 390 px are tested (e2e/nav.spec.ts, perf.spec.ts); clicks paint in 35–78 ms.
+- CK-23: "⧉ Pop out live scores" in the Slate's tools row (Chrome / Edge; hidden elsewhere). A 320 px always-on-top window with the Slate's day: before the first game a countdown to it ("First game · BOS @ DET 20:00", 1:23:45), then one line per game — tip-off, red "LIVE Q3 4:12" with the score, or Final / Final/OT. CK-21's live data and polling rules. The window stays open when you change view or place; the button closes it.
+- CK-24: Standings has a season strip (What): This season, then 2025-26 back to 2001-02. A past season shows its final standings (West | East, the Main columns), the play-in (2020-21 on), the full bracket (hover or click a series for its games, each linking to that day's scores on NBA.com) and the champions and conference winners of every season (click one to open it). Data: ESPN's free feeds into public/data/history/, loaded only when a past season is opened. Checked against Basketball-Reference for 2001-02, 2007-08, 2010-11, 2015-16 and 2022-23.
+
+**Conflicts with earlier decisions (flagged, my choice — tell me if you want otherwise):**
+- The pinned header plus the page rows take more height than the old 44 px bar. Following the pattern ("page rows scroll away"), the Schedule calendars now fill the window *under the header* once the rows have scrolled off, so their text keeps its size; at the top of the page their last row runs under the window edge by ~60–125 px. Every "fits without page scroll" check now means "fits under the pinned header after that scroll". Cost that remains: the 1-week League Calendar at 1920×911 is drawn at scale 1 instead of 1.05 (tricodes 11 px, not 11.55).
+- The two trial menus (rail / packed bar) and their ⓘ switch are gone: the pattern replaces both, so that "which menu" question is closed.
+- A shared link still opens on today: the day isn't read from the address (your earlier rule), even though the pattern says every state is in the URL. A reload keeps the day as before.
+- The Cup simulator's "Tonight in the Cup" line moved up into the page rows beside How (it pushed the simulator 24 px past one screen).
+- CK-24 starts at 2001-02, not earlier: ESPN has standings back to 1984-85, but before 2001-02 its playoff games have gaps and misfiled games (a 1990 Finals with four games, the All-Star game listed as a playoff game), and the bracket checks fail. Going further back needs another source.
+- CK-24 game links: NBA.com's scores of that day for every past game. I couldn't check which past games hoopsjunkie has (its bot check blocks me), so none link there yet.
+
+**Blocked:** CK-22 (waits on halftime-timer HT-1), unchanged. **Ideas added:** none.
+
+**To check by hand:** the looks (screenshots of every main page attached in chat, from test-output/nav-shots/), and the pop-out window over another app in real Chrome (tests can only render it inside the page).
+
 ## 2026-11-19 — CK-20, CK-21 built
 
 **Built:**

@@ -3,6 +3,7 @@
 // served snapshot, B2B bars on the cells' bottom edge. Prints the scale per mode.
 
 import { expect, test, type Page } from './fixtures';
+import { scrollAway } from './app';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -66,7 +67,7 @@ for (const span of [1, 2] as const) {
         expect(r.withGame, name).toEqual(r.dates.filter((d) => dates.has(d)));
         expect(r.clipped, name).toEqual([]);
         expect(r.outside, name).toBe(0);
-        expect(r.scroll, `${name}: page scroll`).toBeLessThanOrEqual(0);
+        expect(r.scroll, `${name}: page scroll beyond the page rows`).toBeLessThanOrEqual(await scrollAway(page));
         expect(r.sideways, name).toBeLessThanOrEqual(0);
         expect(r.connectors, name).toBe(0);
         scales.add(r.scale);

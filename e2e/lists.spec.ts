@@ -22,10 +22,9 @@ function collectCdn(page: Page) {
 }
 const shot = (page: Page, name: string, project: string) => page.screenshot({ path: `e2e/screenshots/${project}-${name}.png` });
 const selected = (page: Page, name: string) => page.getByRole('tab', { name, exact: true });
-/** Team picker (custom listbox with logos): open it and click the team. */
+/** The team's chip in the What row. */
 async function pickTeam(page: Page, name: string) {
-  await page.getByTestId('team-picker').click();
-  await page.getByRole('option', { name, exact: true }).click();
+  await page.getByTestId('what-row').getByRole('radio', { name: name, exact: true }).click();
   await expect(page.getByTestId('team-header').locator('.ck-team-name')).toHaveText(name);
 }
 /** League → Calendar is the week view where 7 columns fit a game line (desktop widths), else the count grid. */
@@ -257,7 +256,7 @@ test('league list: left-aligned at 1280 and 1920, right side free', async ({ pag
   const r = await page.evaluate(() => {
     const root = document.querySelector('.ck-root')!.getBoundingClientRect();
     const box = (s: string) => document.querySelector(s)!.getBoundingClientRect();
-    return { root: [root.left, root.right] as [number, number], bar: box('[data-testid="top-bar"]').left, strip: box('[data-testid="week-strip"]').left, list: box('[data-testid="league-list"]').left, head: box('.ck-lday-head').left, right: box('.ck-league-list').right };
+    return { root: [root.left, root.right] as [number, number], bar: box('[data-testid="page-rows"]').left, strip: box('[data-testid="week-strip"]').left, list: box('[data-testid="league-list"]').left, head: box('.ck-lday-head').left, right: box('.ck-league-list').right };
   });
   for (const x of [r.bar, r.strip, r.list]) expect(Math.abs(x - r.root[0])).toBeLessThan(1);
   expect(Math.abs(r.head - r.root[0])).toBeLessThan(4);
@@ -343,11 +342,11 @@ test('team list: every game in order, opens at the next game, earlier games abov
   await expect(list.locator('article').first()).toBeInViewport();
   await page.waitForFunction(() => [...document.images].every((i) => i.complete));
   expect(await page.evaluate(() => [...document.images].filter((i) => i.naturalWidth === 0).length)).toBe(0);
-  // same team picker as Team → Calendar
+  // same team chips as Team → Calendar
   await pickTeam(page, 'Miami Heat');
   await expect(page.getByRole('region', { name: 'Heat games' })).toBeVisible();
   await selected(page, 'Calendar').click();
-  await expect(page.getByTestId('team-picker')).toHaveAttribute('data-team-id', '1610612748');
+  await expect(page.getByTestId('what-row').getByRole('radio', { name: 'Miami Heat' })).toHaveAttribute('aria-checked', 'true');
   expect(errors).toEqual([]);
 });
 

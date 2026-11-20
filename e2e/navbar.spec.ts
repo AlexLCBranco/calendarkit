@@ -1,4 +1,4 @@
-// The top bar is in flux (PROJECT.md, Test tiers): no layout or position assertions here, only behaviour. Slate opened from
+// Behaviour only (the layout's checks are nav.spec.ts). Slate opened from
 // a team on a day it doesn't play says so (needs the Team List's row at the top, which only a real layout gives).
 
 import { expect, test, type Page } from './fixtures';
@@ -27,5 +27,5 @@ test('Slate from a team on a day it doesn’t play: the day’s Slate with "XXX 
   await tab(page, 'Layout', 'Slate').click();
   await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   await expect(page.getByTestId('slate-no-team')).toHaveText(`${idle} doesn’t play today`);
-  await expect(page.getByTestId('bar-local').getByTestId('team-picker')).toContainText('All teams');
+  await expect(page.getByTestId('team-chip-all')).toHaveAttribute('aria-checked', 'true');
 });

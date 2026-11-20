@@ -39,7 +39,7 @@ const plainTeamElements = (page: Page, scope: string) =>
     (roots, [sel, link]) =>
       roots.flatMap((r) =>
         [...r.querySelectorAll<HTMLElement>(sel!)]
-          .filter((e) => !e.closest('[data-testid="team-picker"], [role="listbox"], .ck-capture-stage'))
+          .filter((e) => !e.closest('[data-testid="team-chips"], .ck-capture-stage'))
           .filter((e) => !(e.closest('[data-testid="team-header"]') && !e.closest('[data-testid="cup-team"]')))
           .filter((e) => e.offsetParent !== null && !e.matches(link!))
           .map((e) => e.outerHTML.slice(0, 120)),
@@ -107,8 +107,8 @@ async function checkLinks(page: Page, scope: string, want: { layout: 'list' | 'c
 /** After a team link's plain click: that Team view here, in that mode, showing `date`. */
 async function expectTeamView(page: Page, t: Team, layout: 'list' | 'calendar', date: string, title?: string) {
   await expect(page.getByTestId('team-header')).toContainText(`${t.city} ${t.name}`);
-  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByTestId('bar-local').getByTestId('team-picker')).toHaveAttribute('data-team-id', String(t.id));
+  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByTestId('what-row').locator(`[data-team-id="${t.id}"]`)).toHaveAttribute('aria-checked', 'true');
   await expect(page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: layout === 'list' ? 'List' : 'Calendar' })).toHaveAttribute('aria-selected', 'true');
   expect(new URL(page.url()).searchParams.get('team')).toBe(t.tri);
   const month = new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -174,8 +174,7 @@ const VIEWS: { name: string; search: string; scope: string; layout?: 'calendar';
     prepare: async (p) => {
       await p.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
       await p.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' }).click();
-      await p.getByTestId('team-picker').click();
-      await p.getByRole('option', { name: 'Los Angeles Lakers' }).click();
+      await p.getByTestId('what-row').getByRole('radio', { name: 'Los Angeles Lakers', exact: true }).click();
       await expect(p.getByTestId('cup-team')).toBeVisible();
     },
   },
@@ -252,7 +251,7 @@ test.describe('team links', () => {
     const [tab] = await Promise.all([context.waitForEvent('page'), slots.first().locator('.ck-cup-slot').first().click()]);
     expect(tab.url()).toMatch(/^https:\/\/hoopsjunkie\.io\/games\//);
     await tab.close();
-    await expect(destination(page, 'Cup')).toHaveAttribute('aria-selected', 'true');
+    await expect(destination(page, 'Cup')).toHaveAttribute('aria-current', 'page');
   });
 
   test('a team link always opens the Calendar: from the Team List, after List was used, from the Slate', async ({ page }) => {

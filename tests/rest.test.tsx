@@ -10,7 +10,7 @@ import { data } from './feed';
 import { TEAM } from './synthetic';
 import { TEAM_BY_ID } from '../src/data/teams';
 import { acrossMonths, shownMonth } from './teamMonths';
-import { clearScope } from './nav';
+import { clearScope, pickScope } from './nav';
 
 afterEach(cleanup);
 
@@ -100,8 +100,7 @@ describe('Team List rest rows', () => {
     render(<CalendarView data={data} size={WIDE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: TEAM.BOS, showRest: false }} />);
     fireEvent.click(screen.getByLabelText('Show rest days'));
     expect(allRest(TEAM.BOS)).toEqual(expectedRest(TEAM.BOS));
-    fireEvent.click(screen.getByTestId('team-picker'));
-    fireEvent.click(screen.getByRole('option', { name: 'Miami Heat' }));
+    pickScope('Miami Heat');
     expect(allRest(TEAM.MIA)).toEqual(expectedRest(TEAM.MIA));
     fireEvent.click(screen.getByLabelText('Show rest days'));
     expect(restRows()).toEqual([]);

@@ -267,7 +267,6 @@ test('Cup schedule: League and Team rows get the "↗" icon too, no game link ar
   await rowsOk(page.getByTestId('cup-league'));
   await page.getByRole('tablist', { name: 'Cup layout' }).getByRole('tab', { name: 'By group' }).click();
   await page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' }).click();
-  await page.getByTestId('team-picker').click();
-  await page.getByRole('option', { name: /Lakers/ }).click();
+  await page.getByTestId('what-row').getByRole('radio', { name: 'Los Angeles Lakers', exact: true }).click();
   await rowsOk(page.getByTestId('cup-team'));
 });

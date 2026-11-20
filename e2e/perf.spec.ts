@@ -311,20 +311,19 @@ test('switching views: click → next frame', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   await page.goto('/calendar/?view=league&layout=list&team=BOS');
   await expect(page.getByTestId('day-title')).toBeVisible();
-  // League List → League Calendar (week view) → Team Calendar → Team List → League List. The League | Team
-  // tabs are the scope picker — Team = BOS's option (the list opened before the timer), League = its "×".
+  // League List → League Calendar (week view) → Team Calendar → Team List → League List. Team = BOS's chip, League =
+  // the "All teams" chip.
   const steps: [string, string, string][] = [
     ['switch-league-calendar', '[role=tablist][aria-label="Layout"] [role=tab]', 'Calendar'],
-    ['switch-team-calendar', '[role=option]', 'Boston Celtics'],
+    ['switch-team-calendar', '[data-testid="team-chip"]', 'BOS'],
     ['switch-team-list', '[role=tablist][aria-label="Layout"] [role=tab]', 'List'],
-    ['switch-league-list', '[data-testid="scope-clear"]', '×'],
+    ['switch-league-list', '[data-testid="team-chip-all"]', 'All teams'],
   ];
   const times = new Map<string, number[]>();
   // round 0 warms up (first render of each view's code paths) and is not counted: the switch timings flaked on unchanged
   // code with a cold first round (2026-10-28: League Calendar 117 ms, Team Calendar 105 ms; 38–84 / 63–72 ms warm)
   for (let run = 0; run <= RUNS; run++) {
     for (const [name, group, tab] of steps) {
-      if (name === 'switch-team-calendar') await page.getByTestId('bar-local').getByTestId('team-picker').click();
       const t = await page.evaluate(
         ([group, tab]) =>
           new Promise<number>((resolve) => {
@@ -392,4 +391,45 @@ test.afterAll(() => {
     // no earlier run to merge with
   }
   writeFileSync('test-output/perf.json', JSON.stringify({ ...prev, ...measured }, null, 2));
+});
+
+// NAV_PATTERN.md §5–6 (CK-25): a click that changes the page (a chip, a How, a place) is on screen in under 100 ms
+// for data already loaded, on the heaviest page (the League Calendar, 2 weeks: ~110 game lines). Timed here, alone on
+// the machine; under parallel tests the same clicks took up to ~120 ms.
+test('the shared layout: a click on loaded data is painted in under 100 ms (League Calendar, 2 weeks)', async ({ page }) => {
+  await page.clock.setFixedTime(NOW);
+  await page.goto('/calendar/?view=league&layout=calendar&weeks=2&date=2026-11-02');
+  await expect(page.locator('.ck-week-view')).toBeVisible();
+  const clickTime = (sel: string) =>
+    page.evaluate(
+      (sel) =>
+        new Promise<number>((resolve) => {
+          const el = document.querySelector<HTMLElement>(sel)!;
+          const t0 = performance.now();
+          el.click();
+          // the update is painted at the next frame
+          requestAnimationFrame(() => setTimeout(() => resolve(performance.now() - t0), 0));
+        }),
+      sel,
+    );
+  const times: Record<string, number[]> = {};
+  const steps: [string, string][] = [
+    ['team chip', '[data-testid="team-chip"][aria-label="Miami Heat"]'],
+    ['How: List', '[role="tablist"][aria-label="Layout"] [role="tab"]:first-child'],
+    ['How: Calendar', '[role="tablist"][aria-label="Layout"] [role="tab"]:nth-child(2)'],
+    ['All teams', '[data-testid="team-chip-all"]'],
+    ['Where: Standings', '[data-testid="where-standings"]'],
+    ['Where: Schedule', '[data-testid="where-schedule"]'],
+  ];
+  // round 0 warms the views' code up (first render of each) and isn't counted
+  for (let run = 0; run <= 3; run++)
+    for (const [name, sel] of steps) {
+      const t = await clickTime(sel);
+      if (run) (times[name] ??= []).push(t);
+      await page.waitForTimeout(150);
+    }
+  const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
+  const med = Object.fromEntries(Object.entries(times).map(([k, v]) => [k, Math.round(median(v))]));
+  console.log(`click → painted, median ms: ${JSON.stringify(med)}`);
+  for (const [k, v] of Object.entries(med)) expect(v, k).toBeLessThan(100);
 });

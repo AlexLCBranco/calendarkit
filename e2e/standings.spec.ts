@@ -157,12 +157,16 @@ test.describe('Standings view', () => {
     }
   });
 
-  test('the column set is kept while the page is open, not across a reload', async ({ page }) => {
+  // every state in the address (NAV_PATTERN.md, CK-25): a reload or a shared link keeps the set; a plain visit opens on Main
+  test('the column set is kept while the page is open and in its address (a reload keeps it), never stored', async ({ page }) => {
     await openStandings(page, 'schedule');
     await destination(page, 'Schedule').click();
     await destination(page, 'Standings').click();
     await expect(page.getByTestId('standings-capture')).toHaveAttribute('data-set', 'schedule');
+    await expect(page).toHaveURL(/set=schedule/);
     await page.reload();
+    await expect(page.getByTestId('standings-capture')).toHaveAttribute('data-set', 'schedule');
+    await page.goto(`${APP}?view=standings`);
     await expect(page.getByTestId('standings-capture')).toHaveAttribute('data-set', 'main');
     expect(await page.evaluate(() => JSON.stringify(localStorage) + JSON.stringify(sessionStorage))).not.toMatch(/schedule|splits|form/);
   });
@@ -182,7 +186,7 @@ test.describe('Standings view', () => {
     const tri = await row.getAttribute('data-team');
     await expect(row.locator('a[data-team-link]')).toHaveCount(2);
     await row.locator('.ck-st-name').click();
-    await expect(destination(page, 'Schedule')).toHaveAttribute('aria-selected', 'true');
+    await expect(destination(page, 'Schedule')).toHaveAttribute('aria-current', 'page');
     await expect(page.getByTestId('team-header')).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`team=${tri}`));
   });
@@ -388,7 +392,7 @@ test.describe('Standings popup', () => {
 test('no Standings tab or button on tablets and phones; a Standings link shows the League view there', async ({ page }, info) => {
   test.skip(desktop(info.project.name), 'tablet and phone only');
   await page.goto(`${APP}?view=standings`);
-  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-selected', 'true');
+  await expect(destination(page, 'Schedule')).toHaveAttribute('aria-current', 'page');
   await expect(page.getByRole('tab', { name: 'Standings' })).toHaveCount(0);
   await expect(page.getByTestId('standings-button')).toHaveCount(0);
   await expect(page.getByTestId('standings-table')).toHaveCount(0);
