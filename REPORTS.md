@@ -2,7 +2,13 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
-## 2026-11-20 — CK-26 … CK-32 built (CK-22 blocked)
+## 2026-11-20 — CI back to green (v1.92.1)
+
+Two tests had failed on every push since v1.91.0 (the shared layout), not since today's batch:
+- **Cup schedule, By date, 1920 × 950.** Cause: the Final night's heading was allowed to wrap its "Neutral · arena" badge onto a second line. On Windows it fitted by a few pixels; on the test servers (Linux) the text runs slightly wider, the badge wrapped, the card grew 26 px and the page needed more scroll than the menu rows allow. Fix: that heading is always one line, and the Final's heading no longer says "· 1 game" (it is one game), which leaves the badge about 55 px of spare room. A test now fails if any night heading takes two lines.
+- **Performance test, selection-box drag.** Cause: the test started its drag at a fixed point that has been on the menu rows since the header grew; a selection box never starts there, so nothing was selected. The app was right; the test now starts just under the rows. No app change.
+
+ … CK-32 built (CK-22 blocked)
 
 **Built (all v1.92.0):**
 - CK-26: every "Cup" label (Slate cards, League List, Team List, calendar cells, the Cup schedule) is a link. A group game opens Cup › Groups with its group outlined; a knockout game opens the Simulator's bracket, outlined. Ctrl / middle-click opens a new tab (`?view=cup&cg=West+Group+A`). The gauntlet gets it once it provides `CupLinkContext` (docs/slate-in-gauntlet.md).

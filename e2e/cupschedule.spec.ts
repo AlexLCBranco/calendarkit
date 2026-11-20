@@ -486,6 +486,8 @@ test.describe('Cup schedule fits the window', () => {
                 }),
               )}`,
             );
+          // every night's heading is one line, the Final's with its venue badge too (a wrapped badge made the page a line taller)
+          if (by === 'date') expect(await page.evaluate(() => [...document.querySelectorAll<HTMLElement>('.ck-cup-nights .ck-cg-head')].filter((h) => h.getBoundingClientRect().height > 30).map((h) => h.textContent)), 'headings on two lines').toEqual([]);
           expect(r.rows).toBe(67);
           expect(r.scroll, `by ${by}: page scrolls by more than the page rows`).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
           expect(r.out, `by ${by}`).toEqual([]);

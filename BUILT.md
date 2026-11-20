@@ -5,6 +5,7 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-20
+- Cup schedule By date: the Final night's heading stays on one line, so the page fits one screen everywhere (v1.92.1)
 - CK-26 — Cup label on a card opens the Cup page (v1.92.0)
   Clicking a game's "Cup" label anywhere opens the Cup page with that game's group outlined; a knockout game opens the bracket.
 - CK-27 — Hovering the Cup label shows the group (v1.92.0)
@@ -26,6 +27,9 @@ spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Featu
   The Slate's "⧉ Pop out live scores" opens a small always-on-top window (Chrome / Edge) with the day's games and live scores, and a countdown to the first game until it starts.
 - CK-24 — NBA history: past seasons' standings, play-in and playoffs (v1.91.0)
   Standings has a season strip: any season from 2001-02 shows its final standings, play-in and full bracket (hover a series for its games), plus every season's champions and conference winners.
+
+### Internal
+- Perf test: the selection-box drag starts inside the view, under the menu rows (it started on the rows since v1.91.0 and selected nothing) (v1.92.1)
 
 ## 2026-11-19
 - CK-21 — Live scores with a red LIVE label (v1.90.0)

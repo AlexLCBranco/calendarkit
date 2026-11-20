@@ -263,7 +263,9 @@ function CupByDate({ data, size, today, timeZone, gameLink, onNight }: CupSchedu
               {card.map(({ night, games }) => (
                 <section key={night.date} className={`ck-cg-night${night.date === n.date ? ' ck-cg-picked' : ''}`} data-testid="cup-night" data-night={night.date} aria-label={cupNightHeading(night)} aria-current={night.date === n.date || undefined}>
                   <h3 className="ck-cg-head">
-                    {cupNightHeading(night)} · {plural(games.length)}
+                    {/* the Final's heading leaves the count out (it is one game): the room is the venue badge's, on one line */}
+                    {cupNightHeading(night)}
+                    {!(night.round === 'final' && games[0] && knockoutVenue(games[0]).kind === 'neutral') && <> · {plural(games.length)}</>}
                     {/* A neutral-court night's venue, once (the rows keep one line); the arena only — with the city it ran
                         past the last column's card and the page scrolled sideways (the city is in its tooltip) */}
                     {night.round === 'final' && games[0] && knockoutVenue(games[0]).kind === 'neutral' && (

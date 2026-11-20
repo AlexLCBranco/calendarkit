@@ -391,11 +391,22 @@
   box-shadow: -4px 0 0 -1px var(--ck-accent);
 }
 /* a heading with the venue badge may wrap under the night's name rather than run out of its card */
+/* The Final's heading with its neutral-venue badge: always one line (the heading leaves its game count out to make
+   room; a still longer arena name would be cut with "…", the full name in its tooltip) — wrapping it made that card a line taller, and By date no
+   longer fitted one screen where the text runs a little wider (Linux). */
 .ck-cg-night > .ck-cg-head:has(.ck-venue-neutral) {
-  white-space: normal;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 .ck-cg-night > .ck-cg-head .ck-venue-neutral {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 14px;
 }
 .ck-cg-night.ck-cg-picked > .ck-cg-head {
   color: var(--ck-accent);
