@@ -65,7 +65,7 @@ test('before the first game: a countdown to it in the window', async ({ page }) 
   const frame = page.frameLocator('[data-testid="pip"]');
   await expect(frame.getByTestId('popout-countdown')).toContainText(`First game · ${first.awayTeam.teamTricode} @ ${first.homeTeam.teamTricode}`);
   // the installed clock keeps running: a slow machine has spent a few of the 30 seconds by the time the window is open
-  await expect(frame.getByTestId('popout-clock')).toHaveText(/^1:00:(30|[12]d)$/);
+  await expect(frame.getByTestId('popout-clock')).toHaveText(/^1:00:(30|[12]\d)$/);
   // at tip-off it turns into the list by itself
   await page.clock.runFor(61 * 60_000);
   await expect(frame.getByTestId('popout-countdown')).toHaveCount(0);
