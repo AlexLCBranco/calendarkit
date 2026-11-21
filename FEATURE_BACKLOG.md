@@ -33,12 +33,3 @@ Blocked: waits for halftime-timer HT-1 (its link format and live URL); the owner
 - When this ships, add an entry and a screenshot to `docs/design/DESIGN_LOG.md` (rules at the top of that file).
 **Sibling:** FK-75 in footykit (same layout, keep the two looking the same).
 **Tests:** e2e at 1912×913 on the Lakers month: header is 92px tall; no team chips anywhere; nothing with controls between the header and the weekday names; a day box is at least 145px tall; the page doesn't scroll; "All teams" opens the league view and is lit there; the picker opens the six-division panel and choosing a team opens that team in Calendar.
-
-### CK-34 — Back-to-back plane readable as a plane
-**In short:** The small plane on back-to-back chips gets big and clear enough to read as a plane at a glance, instead of looking like an "x".
-**Why:** On a v1.92.1 screenshot of the Mavericks' November month (2026-11-21) the plane on chips like "1/2 · HA" read as "✕". The rule behind it is right and stays as is (plane only when the team changes metro between the two nights).
-**What:**
-- Every place the back-to-back plane is drawn (team chips, the opponent row's chips, league views, Slate): the plane is at least as tall as the chip's own letters and is recognisably a plane at 100% zoom on a 1912px-wide window.
-- The chip may get a little wider for it; it may not get taller, and day boxes may not grow.
-- No change to when the plane shows, to the HH/HA/AH/AA letters, or to the tooltip.
-**Tests:** e2e on a team month with a travelling back-to-back: the plane's rendered height is at least the chip text's height, on both the team chip and the opponent-row chip; a same-metro back-to-back (Lakers then Clippers) still shows no plane.
