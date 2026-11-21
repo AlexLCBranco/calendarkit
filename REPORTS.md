@@ -2,6 +2,33 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-21 — CK-33 built (CK-22 still blocked) — v1.93.0
+
+**Built:**
+- CK-33 — Header: team picker instead of chips, every control above the line. The 30 team chips are gone. The tabs row now holds, left to right: Schedule / Cup / Standings · "All teams" (lit on the league view) · the team box (logo, full name, ▾; its panel is the six divisions in three columns, the open team highlighted, no "All teams" entry) · "Injuries ↗" on team pages · List / Calendar / Slate · 1 week / 2 weeks / Month · the arrows with a fixed-width month name, the date picker and Today. The big team title row is gone. Same row on every page (Cup, Standings and their sub-pages).
+- Numbers on the Lakers' November at 1912 × 913: header 92px, calendar starts at 98px, day box 151px (v1.92.1: about 120; mock C: 147), no page scroll. Entry and two screenshots in `docs/design/DESIGN_LOG.md`.
+
+**Blocked:** CK-22 (waits for halftime-timer HT-1), skipped as the rules say. No page had to be left out of CK-33: every page's controls fit the row at 1912 (and at 1280 with short labels).
+
+**Choices I made (tell me if you want otherwise):**
+- The empty 16px above the header is gone: the header starts at the window's top edge. Without it the Cup schedule and the League calendars no longer fitted one screen once nothing scrolls away; with it gone they fit, and the day boxes got 3px more than mock C.
+- Left under the line, because I read them as part of each view and not as "the page's controls": the Slate's notes row (Show notes, Pop out live scores, Export / Import), the League List's week strip, the Cup schedule's nights strip. Say so if you want those in the header too (the Slate's row would not fit beside the other controls at 1912).
+- Cup Simulator: the "Tonight in the Cup" line (Cup nights only) moved from beside the view switch to the first line of the page. A busy Cup night is too long for the row. On such a night at a 1600-wide window the page scrolls by that one line.
+- Cup › Schedule › Team: the "All teams" button there opens the Cup's League list. That page keeps its own heading (logo, team name, Injuries, "NBA Cup"), since it is the list's heading and is in the copied image.
+- Team List: "1st in the West" and the month(s) loaded used to be in the title row; they are now plain text at the right end of the tabs row. Under 1560px of width the position is hidden (no room).
+- Windows narrower than about 1230px (tablet / phone, parked) keep the controls in rows under the header, with the same team box instead of chips.
+
+**Fixed on the way (tests only, no app change):** six tests had been failing since this morning's data update, on the untouched code too. Cause: they named fixed days ("Nov 20 is upcoming", "the week of Nov 15 has TV labels", "more than 30 Cup group games left") that have since been played. They now pick a day from the data.
+
+**Checks:** build, lint, 898 unit tests, the whole browser suite at 1920 and 1280 and the performance check all pass (clicks paint in 26–70 ms; picking a team, which now includes opening the list, 50 ms).
+
+**To test by hand:** only the feel: whether opening the team box for every team switch is fast enough for you compared with the chips. Nothing else needs a manual check.
+
+**Needs your attention:**
+- A warning in the browser's developer console that was there before this change: in calendar cells a team-logo link sits inside the game link. It works, but it is invalid HTML. Not fixed here.
+- `package-lock.json` still says version 1.73.0 (it has not followed package.json for a while). Harmless; not touched.
+- The first full test run cut two groups off at the 300 s limit (the machine was busy); the re-run with a longer limit finished in 240–264 s per group.
+
 ## 2026-11-20 — CI back to green (v1.92.1)
 
 Two tests had failed on every push since v1.91.0 (the shared layout), not since today's batch:

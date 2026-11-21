@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
-// Team views: header (large logo + full name), the team chips, selected team first on every
+// Team views: the team box in the header (no title row on screen; the heading stays in the copies), selected team first on every
 // game ("BOS vs CHI" / "BOS @ DET", both logos), the team's back-to-back pairs (1/2 · XY, 2/2 · XY, plane on a metro
 // change, bar / bracket, tooltips), and the opponent's 2/2 dot.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { CalendarView, TeamMonthGrid, TeamListView } from '../src/components/CalendarView';
+import { CalendarView, TeamHeader, TeamMonthGrid, TeamListView } from '../src/components/CalendarView';
+import { pickScope, scopeTeam } from './nav';
 import { addDays, isBackToBack, monthOf, teamGames, type CalendarData } from '../src/data/model';
 import type { ScheduleGame } from '../src/shared/nba-schedule/parse';
 import { TEAM_BY_ID, TEAMS } from '../src/data/teams';
@@ -43,10 +44,20 @@ function expectedPairs(d: CalendarData, teamId: number) {
   return out;
 }
 
-describe('team header', () => {
-  for (const [layout, size, px] of [['list', WIDE, 48], ['calendar', WIDE, 48], ['list', PHONE, 40], ['calendar', PHONE, 40]] as const) {
-    it(`${layout} at ${size.width} px: large logo (${px} px) + full name`, () => {
+describe('team heading', () => {
+  for (const [layout, size] of [['list', WIDE], ['calendar', WIDE], ['list', PHONE], ['calendar', PHONE]] as const) {
+    it(`${layout} at ${size.width} px: no title row on screen; the team box names the team, with its logo`, () => {
       team(TEAM.BOS, layout, size);
+      expect(screen.queryByTestId('team-header')).toBeNull();
+      const box = screen.getByTestId('team-picker');
+      expect(box.textContent).toContain(size === PHONE ? 'BOS' : 'Boston Celtics');
+      expect(imgs(box)).toEqual(['/calendar/logos/BOS.svg']);
+    });
+  }
+
+  for (const [px, compact] of [[48, false], [40, true]] as const) {
+    it(`the heading itself (copies, the Cup's team schedule): large logo (${px} px) + full name`, () => {
+      render(<TeamHeader teamId={TEAM.BOS} compact={compact} />);
       const h = screen.getByTestId('team-header');
       expect(within(h).getByRole('heading').textContent).toBe('Boston Celtics');
       const img = h.querySelector('img')!;
@@ -62,41 +73,44 @@ describe('team header', () => {
   });
 });
 
-describe('team chips', () => {
-  const chip = (name: string) => within(screen.getByTestId('team-chips')).getByRole('radio', { name });
-  it('"All teams", then all 30 teams (logo + tricode, the full name and division in the tooltip), grouped by conference and division; the team on show is checked', () => {
+describe('team box', () => {
+  it('no team chips; "All teams" beside the box; its list: all 30 teams (logo + full name) under their six divisions, the team on show selected', () => {
     team(TEAM.BOS, 'list');
-    const chips = screen.getAllByTestId('team-chip');
-    expect(chips).toHaveLength(30);
-    expect(screen.getByTestId('team-chip-all').textContent).toBe('All teams');
-    for (const c of chips) {
-      const t = TEAM_BY_ID.get(Number(c.getAttribute('data-team-id')))!;
-      expect([c.textContent, c.getAttribute('aria-label'), c.getAttribute('title')]).toEqual([t.tricode, `${t.city} ${t.name}`, `${t.city} ${t.name} · ${t.division} division`]);
-      expect(imgs(c)).toEqual([`/calendar/logos/${t.tricode}.svg`]);
+    expect(screen.queryAllByTestId('team-chip')).toHaveLength(0);
+    expect(screen.getByTestId('all-teams').textContent).toBe('All teams');
+    expect(screen.getByTestId('all-teams').getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(screen.getByTestId('team-picker'));
+    const list = screen.getByTestId('team-picker-list');
+    const options = within(list).getAllByRole('option');
+    expect(options).toHaveLength(30);
+    for (const o of options) {
+      const t = TEAM_BY_ID.get(Number(o.getAttribute('data-team-id')))!;
+      expect(o.textContent).toBe(`${t.city} ${t.name}`);
+      expect(imgs(o)).toEqual([`/calendar/logos/${t.tricode}.svg`]);
+      // under its own division's heading
+      expect(o.closest('[role="group"]')!.querySelector('.ck-picker-head')!.textContent).toBe(`${t.conference} · ${t.division}`);
     }
-    const divisions = [...screen.getByTestId('team-chips').querySelectorAll('[aria-label$="division"]')];
-    expect(divisions.map((d) => d.getAttribute('aria-label'))).toEqual(['Atlantic division', 'Central division', 'Southeast division', 'Northwest division', 'Pacific division', 'Southwest division']);
-    for (const d of divisions) for (const c of d.querySelectorAll('[data-team-id]')) expect(`${TEAM_BY_ID.get(Number(c.getAttribute('data-team-id')))!.division} division`).toBe(d.getAttribute('aria-label'));
-    expect(chips.filter((c) => c.getAttribute('aria-checked') === 'true').map((c) => c.textContent)).toEqual(['BOS']);
-    expect(screen.getByTestId('team-chips').tagName).not.toBe('SELECT');
+    expect([...list.querySelectorAll('.ck-picker-head')].map((h) => h.textContent)).toEqual(['East · Atlantic', 'East · Central', 'East · Southeast', 'West · Northwest', 'West · Pacific', 'West · Southwest']);
+    expect(options.filter((o) => o.getAttribute('aria-selected') === 'true').map((o) => o.textContent)).toEqual(['Boston Celtics']);
+    expect(within(list).queryByText('All teams')).toBeNull();
   });
 
   it('a click on a team changes the views and tells the host', () => {
     const onStateChange = vi.fn();
     team(TEAM.BOS, 'list', WIDE, onStateChange);
-    fireEvent.click(chip('Miami Heat'));
-    expect(screen.getByTestId('team-header').querySelector('.ck-team-name')!.textContent).toBe('Miami Heat');
+    pickScope('Miami Heat');
+    expect(screen.getByTestId('team-picker').textContent).toContain('Miami Heat');
     expect(screen.getByRole('region', { name: 'Heat games' })).toBeTruthy();
     expect(onStateChange).toHaveBeenLastCalledWith(expect.objectContaining({ teamId: TEAM.MIA }));
-    expect(chip('Miami Heat').getAttribute('aria-checked')).toBe('true');
+    expect(scopeTeam()).toBe(TEAM.MIA);
   });
 
-  it('phone: same chips in Team → List and Team → Calendar, team kept', () => {
+  it('phone: the same box in Team → List and Team → Calendar, team kept', () => {
     team(TEAM.BOS, 'list', PHONE);
-    fireEvent.click(chip('Miami Heat'));
+    pickScope('Miami Heat');
     expect(screen.getByRole('region', { name: 'Heat games' })).toBeTruthy();
     fireEvent.click(screen.getByRole('tab', { name: 'Calendar' }));
-    expect(chip('Miami Heat').getAttribute('aria-checked')).toBe('true');
+    expect(scopeTeam()).toBe(TEAM.MIA);
   });
 });
 

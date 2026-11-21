@@ -1,8 +1,9 @@
 // The contract between the shell (CalendarView) and its destinations (Schedule, Cup, Standings), and the parts they
 // share. Every destination stays mounted while the page is open, so its state lasts as long as the page did when it all
-// lived in one component; only the active one renders. Its controls go into the header's and page rows' slots through
-// portals: its breadcrumb parts, its What (the thing looked at), its How and date controls, its options (one popover)
-// and its lines in the ⓘ popover.
+// lived in one component; only the active one renders. Its controls go into the header's slots through portals: its
+// breadcrumb parts (first row); its What (the thing looked at), its How and date controls (the second row, after the
+// Where tabs — nothing with controls sits under the header's line; a narrow window keeps them in page rows under it);
+// its options (one popover) and its lines in the ⓘ popover.
 
 import { useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
@@ -17,7 +18,7 @@ import { SelectionCapture, type SelectionKind } from './SelectionCapture';
 import { TeamHeader } from './TeamHeader';
 import { LEAGUE_LIST_COLUMN, leagueZoom, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, type WidgetSize } from './widget';
 
-/** The slots a destination fills: its breadcrumb parts (header); What, How (sub) and date controls (page rows); the
+/** The slots a destination fills: its breadcrumb parts (header); What, How (sub) and date controls (the header's second row); the
  * options popover's button with its popover (the Schedule's only) and the ⓘ popover's own lines. */
 export interface BarSlots {
   crumbs: HTMLElement;
@@ -39,6 +40,8 @@ export interface DestinationProps {
   timeZone?: string;
   compact: boolean;
   barShort: boolean;
+  /** The destination's controls sit in the header's second row (a desktop window); else in the page rows under it. */
+  headRow: boolean;
   slateFits: boolean;
   state: CalendarState;
   update: (patch: Partial<CalendarState>) => void;

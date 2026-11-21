@@ -29,21 +29,24 @@ for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }]
         }
         return { out, scroll: document.documentElement.scrollHeight, sideways: document.documentElement.scrollWidth - document.documentElement.clientWidth, win: innerHeight };
       });
+    // on a Cup night the "Tonight in the Cup" line is the page's first line (it can't fit the header's row): the page
+    // may scroll by it, as it did when the line sat in the page rows
+    const tonight = () => page.evaluate(() => { const t = document.querySelector('[data-testid="cup-tonight"]'); return t ? Math.ceil(t.getBoundingClientRect().height + parseFloat(getComputedStyle(t).marginBottom)) : 0; });
     let r = await check();
     expect(r.out).toEqual([]);
-    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
+    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)) + (await tonight()));
     const requests: string[] = [];
     page.on('request', (q) => requests.push(q.url()));
     const games = page.locator('[data-testid="sim-game"]:not(.ck-sim-real)');
     const n = await games.count();
-    expect(n).toBeGreaterThan(30);
+    // the group games not played yet in the snapshot: fewer every Cup night, none once the groups are over
     for (let i = 0; i < n; i++) await games.nth(i).locator('.ck-sim-pick').nth(1).click();
     expect(requests).toEqual([]);
-    await expect(page.getByTestId('sim-depends').first()).toBeVisible();
+    if (n) await expect(page.getByTestId('sim-depends').first()).toBeVisible();
     await page.screenshot({ path: `test-output/simulator-${size.width}x${size.height}.png` });
     r = await check();
     expect(r.out).toEqual([]);
-    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
+    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)) + (await tonight()));
     expect(r.sideways).toBeLessThanOrEqual(0);
 
     // the bracket played through, with margins: QF → SF → Final → champion, every team big and whole
@@ -69,6 +72,6 @@ for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }]
     await page.screenshot({ path: `test-output/simulator-bracket-${size.width}x${size.height}.png` });
     r = await check();
     expect(r.out).toEqual([]);
-    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
+    expect(r.scroll).toBeLessThanOrEqual(r.win + (await scrollAway(page)) + (await tonight()));
     expect(r.sideways).toBeLessThanOrEqual(0);
   });

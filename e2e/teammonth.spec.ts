@@ -1,9 +1,10 @@
 // The Team List shows one calendar month, in a real browser against the served snapshot. Rows = that
-// month's games (+ rest days); the month title in the team header; the week strip's ‹ › and day clicks, the date picker
+// month's games (+ rest days); the month title in the header's controls row; the week strip's ‹ › and day clicks, the date picker
 // and Today switch months and put the row at the top; a B2B split across the month edge keeps its marks but no bracket;
 // the Team map's game in another month doesn't switch months; the whole-list copy = the month; month change timing.
 
 import { expect, test, type Page } from './fixtures';
+import { pickScope } from './nav';
 import { monthTitle as title, showMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
@@ -42,7 +43,7 @@ const topRow = (page: Page) =>
     const top = l.getBoundingClientRect().top;
     return [...l.querySelectorAll<HTMLElement>('.ck-team-rows > [data-row-date]')].find((r) => Math.abs(r.getBoundingClientRect().top - top) < 1.5)?.dataset.rowDate ?? null;
   });
-const monthTitle = (page: Page, compact: boolean) => (compact ? page.getByTestId('team-month') : page.getByTestId('team-header').getByTestId('team-month'));
+const monthTitle = (page: Page, compact: boolean) => (compact ? page.getByTestId('team-month') : page.getByTestId('top-bar').getByTestId('team-month'));
 
 test('every team × every month: the rows are exactly that month’s games (+ rest days), the title says the month', async ({ page }, info) => {
   test.setTimeout(240_000);
@@ -52,7 +53,7 @@ test('every team × every month: the rows are exactly that month’s games (+ re
   expect(Object.keys(snap)).toHaveLength(30);
   let checked = 0;
   for (const tri of Object.keys(snap).sort()) {
-    await page.getByTestId('what-row').locator('[data-testid="team-chip"]').filter({ hasText: new RegExp(`^${tri}$`) }).click();
+    await pickScope(page, tri);
     const { games, rest } = snap[tri]!;
     for (const m of monthsOf(games.map((g) => g.date))) {
       await showMonth(page, m);
@@ -178,7 +179,7 @@ test('a B2B split across a month edge: badge and chips on both nights, no bracke
   console.log(`[${info.project.name}] B2Bs split across a month edge in the snapshot: ${split.map((s) => s.join(' ')).join(', ')}`);
   expect(split.length).toBeGreaterThan(0);
   for (const [tri, first] of split.slice(0, 6)) {
-    await page.getByTestId('what-row').locator('[data-testid="team-chip"]').filter({ hasText: new RegExp(`^${tri}$`) }).click();
+    await pickScope(page, tri);
     const n = new Date(`${first}T00:00:00Z`);
     n.setUTCDate(n.getUTCDate() + 1);
     for (const [date, night] of [[first, '1'], [n.toISOString().slice(0, 10), '2']] as const) {

@@ -85,31 +85,43 @@ measurement; open it only when a question needs the backstory.
     (`ck-opp-b2b`, `ck-opp-tif`): `.ck-b2b-label` and `data-testid="tif"` stay the calendar's team's. A game further
     ahead than the opponent's next one shows its record as of now. The scale probe holds the line (month text 1.2 → 0.95
     at 1920 × 1080).
-  - **One menu layer** (`.ck-one-layer`, content ≥ `ONE_LAYER_MIN_WIDTH` 1800 px, Schedule only): How on the first line
-    and the dates on the second, right of the team chips; the page rows are 64 px (were 100). There the calendars no
-    longer stretch by what scrolls away: they fit the window with the rows on screen (no page scroll). Narrower, as before.
+  - **One menu layer**: replaced by v1.93.0 (the controls are in the header).
   - **Playoff games in the season-series popup** (`series.tsx`, `nbaHistory.ts` `pastPlayoffs` / `playoffLine`): a past
     season's play-in and series games from `public/data/history/<year>.json`, under the regular-season squares in the
     playoffs' colour; "View series" opens Standings on that season with the series outlined (`showSeries`, `series=`).
   - **Holidays and big dates** (`src/data/holidays.ts` — the one list; `src/slate/bigDay.tsx`): federal holidays by
     rule, NBA dates from the feed, and `EXTRA_DAYS` by hand per season (2026-27: trade deadline, play-in, playoffs
     start; **add the Finals dates when the NBA publishes them**, and next season's block).
+- **v1.93.0** (2026-11-21, CK-33; pictures and numbers in `docs/design/DESIGN_LOG.md`): **every page's controls are in
+  the header's second row**, after the Where tabs — nothing with controls sits under the header's line, the header is
+  92 px on every page, nothing scrolls away, the calendars fit the window (the page has no top padding any more: the
+  header starts at the window's edge, `.app` in `app.css`). The team chips are gone: an **"All teams"
+  button** (lit on the league view) and a **team box** (`TeamPicker.tsx`: logo + full name, tricode under 1560 px; its
+  list is the six divisions in three columns, no "All teams" entry) with the team's Injuries link. The team title row is
+  gone from the screen (`TeamHeader` stays in the copies and as the Cup team schedule's heading). The Team List's place
+  ("1st in the West", from 1560 px) and loaded months are plain text at the row's end. Owner's rules: nothing crosses the
+  header line, it never moves down, no always-on-screen team chips. Left where they were (a view's own strips, not the
+  page's controls): the Slate's notes row, the League List's week strip, the Cup's nights strip and — because a busy Cup
+  night's line can't fit the row — the Simulator's "Tonight in the Cup" line, now the page's first line.
 - **Waiting on Alex**: whether the League List rows look right (then they can leave "in flux").
 
 ## What the app is
-- **Destinations** (the header's Where tabs): **Schedule** (All teams or a team by the team chips; views List · Calendar · Slate), **Cup** (Groups ·
+- **Destinations** (the header's Where tabs): **Schedule** (All teams or a team by the "All teams" button and the team box; views List · Calendar · Slate), **Cup** (Groups ·
   Schedule · Simulator · History), **Standings** (West | East side by side, five column sets: Main · Splits · Extended · Form & scoring · Schedule & B2B). Page history ← → with
   real browser history entries.
 - **Header** (NAV_PATTERN.md; `Header.tsx`, `nav.ts`, `styles/nav.css`): pinned at the top (`position: sticky`), 92 px on
   every page. Row 1: page history ← →, the breadcrumb (place › team or All teams › view; Cup › view › list / team /
   season; Standings › column set — each part opens its siblings), "Go anywhere" (Ctrl+K: places, views, every team as
   Calendar and List, Cup views and seasons, column sets), then the icon buttons (Options — Schedule only: TV games
-  only, Rest days in the Team List —, ⓘ, Quick standings, Copy). Row 2: the Where tabs Schedule · Cup · Standings.
-- **Page rows** (under the header, scroll away): **What** = the team chips (`TeamChips.tsx`: All teams + 30 teams, East
-  | West by division; logo + tricode from 1600 px with East over West and How beside them, the logo alone below with
-  both conferences on one line; the Cup's Team schedule uses them too, without All teams); **How** = the view switch
-  (List · Calendar · Slate; the Cup's views and list switches; the standings' column sets), then the date block, weeks
-  or span. No `<select>` anywhere. The standings' column set is in the address (`set=`) and page history.
+  only, Rest days in the Team List —, ⓘ, Quick standings, Copy). Row 2: the Where tabs Schedule · Cup · Standings, then
+  the page's own controls (`.ck-hrow`, test id `head-controls`), one line that never wraps: **What** = "All teams" +
+  the team box (+ Injuries ↗ on a team's pages; the Cup's Team schedule has both too — its "All teams" opens the Cup's
+  League list; Standings: the season strip, scrolling inside the room left); **How** = the view switch (List · Calendar ·
+  Slate; the Cup's views and list switches; the standings' column sets); then weeks or span and the date block (a
+  month's name has a fixed width, so its arrows never move). No `<select>` anywhere. The standings' column set is in
+  the address (`set=`) and page history.
+- **Narrow windows** (content under `HEAD_ROW_MIN_WIDTH` 1200 px; tablets and phones, parked): the same controls in
+  **page rows** under the header (`.ck-prows`, test id `page-rows`), which wrap and scroll away.
 - **Quick standings popup**: drag the header to move, the edges / corners to resize (min 360 × 200), kept in the
   window; place and size in localStorage `ck:stpop:v1`; "↺" resets. It never starts a selection marquee
   (`data-no-marquee`).
@@ -123,7 +135,7 @@ measurement; open it only when a question needs the backstory.
   playoff tags, final scores, back-to-backs and 3-in-4 (Fatigue component), rest badge (2 days quiet, ≥ 3 days strong),
   season-series chip and popup, streaks (`StreakChip`: one element, colours and popup everywhere), moneyline odds on the Slate.
 - **Click rule**: game things (matchup, score, Cup square, series square, ↗) open the game's hoopsjunkie page in a new
-  tab; team names / logos / tricodes open that team's **Team Calendar** here (`TEAM_LINK_LAYOUT`; the team chips
+  tab; team names / logos / tricodes open that team's **Team Calendar** here (`TEAM_LINK_LAYOUT`; the team box
   keeps the current layout). Nothing with a pointer cursor is dead
   (`e2e/click-audit.spec.ts`).
 - **Road trips / homestands** (Team List and Team Calendar): `RUN_MIN_GAMES` (3) or more away / home games in a row
@@ -152,14 +164,14 @@ measurement; open it only when a question needs the backstory.
 - `src/App.tsx` — app shell, URL state (`?view=&layout=&team=&weeks=&span=&tv=&cup=&set=&season=…`; `date=` is written but never
   read on load), page history, the reload keeping its page (`reloadedState`).
 - `src/components/` — one file per view/component. `CalendarView.tsx` is the shell: the shared `CalendarState`, the
-  pinned header and the page rows' frame, "Go anywhere"'s entries, page history, team links, sizing,
+  pinned header with the controls' slots, "Go anywhere"'s entries, page history, team links, sizing,
   overlays; it re-exports the widgets (hosts and tests import from it). One component per destination, each owning its
   state and filling the slots (breadcrumb parts, What, How, date controls, Options, ⓘ lines) through portals:
   `ScheduleDestination.tsx` (League + Team),
   `CupDestination.tsx`, `StandingsDestination.tsx`. All three stay mounted (their state lasts as long as the page);
   only the active one renders. `destination.tsx` = the shell ↔ destination contract and the shared selection copy;
   `calendarState.ts` = state / page types and pure helpers; `Header.tsx` = the header's parts (breadcrumb parts, Go anywhere, Where tabs, page-row captions);
-  `nav.ts` = the places and Go anywhere's matching; `TeamChips.tsx` = the team chips; `TopBar.tsx` = ← →, ⓘ, the
+  `nav.ts` = the places and Go anywhere's matching; `TeamPicker.tsx` = the team box, the "All teams" button, the Injuries link; `TopBar.tsx` = ← →, ⓘ, the
   stale banner; `Popover.tsx` = the header's icon-button popovers.
   Styles: `calendar.css` is an ordered list of `@import`s of `styles/*.css`.
 - `src/data/` — pure derivations (`model.ts`, `cup*.ts` (`cupBracket.ts`: the simulator's playable bracket), `fatigue.ts`, `rest.ts`, `streak.ts`, `standings.ts`,
@@ -187,7 +199,10 @@ measurement; open it only when a question needs the backstory.
     console errors) and **no layout or position assertions** anywhere (e2e or unit). Unit tests of the logic behind
     them (fatigue, Cup rules, streaks, standings) are not affected. Currently in flux: **the League List rows** (and the legend's place). A view leaves the list when Alex says it is settled or locked;
     then it gets its full e2e back.
-- **The shared layout** (header, page rows) is settled by NAV_PATTERN.md: `e2e/nav.spec.ts` checks it as its §6 asks
+- **The header's controls row** (CK-33): `e2e/ck33.spec.ts` — the owner's window (1912 × 913) on the Lakers' month
+  (92 px header, no chips, nothing with controls under the line, day boxes ≥ 145 px, no page scroll, All teams, the team
+  box) and every page at 1912 and 1280 (controls in the row, on one line, inside the window).
+- **The shared layout** (header) is settled by NAV_PATTERN.md: `e2e/nav.spec.ts` checks it as its §6 asks
   (header on every main page, every Where / What / How / breadcrumb part, address round-trips, layout shift, names,
   390 px) and saves a screenshot of every main page to `test-output/nav-shots/`; the < 100 ms click is in the perf guard.
 - **Perf guard**: `npm run perf` (alone on the machine; compares main-thread time against a reference build run in the

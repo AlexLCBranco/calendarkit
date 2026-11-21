@@ -3,7 +3,7 @@
 
 import { expect, test, type Page } from './fixtures';
 import { isRotationkitConfigured } from '../src/config';
-import { pickScope, setOption } from './nav';
+import { pickScope, setOption, teamBox } from './nav';
 
 function collectErrors(page: Page) {
   const errors: string[] = [];
@@ -179,7 +179,7 @@ test('Rotations action on a finished day only when ROTATIONKIT_BASE_URL is set',
 test('deep link opens the team view for a team', async ({ page }) => {
   const errors = collectErrors(page);
   await page.goto('/calendar/?view=team&team=BOS');
-  await expect(page.getByTestId('what-row').getByRole('radio', { name: 'Boston Celtics' })).toHaveAttribute('aria-checked', 'true');
+  await expect(teamBox(page)).toHaveAttribute('data-team-id', '1610612738');
   await expect(page.locator('.ck-cell-game').first()).toBeVisible();
   expect(errors).toEqual([]);
 });

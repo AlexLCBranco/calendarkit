@@ -53,14 +53,16 @@ describe('League List rows', () => {
 });
 
 describe('Team List rows', () => {
-  it('the header shows the team’s position once, after its name; the Team Calendar’s header doesn’t', () => {
+  it('the header’s controls row shows the team’s position once, with the months loaded; the Team Calendar’s doesn’t', () => {
     const c = render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'list', teamId: ID.BOS, date: '2026-11-08' }} />).container;
-    const pos = c.querySelector('[data-testid="team-header"] [data-testid="team-pos"]')!;
+    expect(c.querySelectorAll('[data-testid="team-pos"]')).toHaveLength(1);
+    const pos = c.querySelector('[data-testid="what-row"] ~ [data-testid="bar-local"] [data-testid="team-pos"]')!;
     expect(pos.textContent).toBe('2nd in the East');
-    expect(pos.previousElementSibling!.textContent).toBe('Boston Celtics');
+    expect(pos.nextElementSibling!.getAttribute('data-testid')).toBe('team-month');
+    expect(c.querySelector('[data-testid="team-picker"]')!.textContent).toContain('Boston Celtics');
     cleanup();
     const cal = render(<CalendarView data={data} size={SIZE} now={NOW} timeZone="UTC" initial={{ mode: 'team', layout: 'calendar', teamId: ID.BOS, date: '2026-11-08' }} />).container;
-    expect(cal.querySelector('[data-testid="team-header"]')).not.toBeNull();
+    expect(cal.querySelector('[data-testid="team-picker"]')!.textContent).toContain('Boston Celtics');
     expect(cal.querySelector('[data-testid="team-pos"]')).toBeNull();
   });
   it('no position in the rows: they have no room', () => {

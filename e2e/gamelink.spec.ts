@@ -7,6 +7,7 @@
 // hoopsjunkie.io is stubbed here: only the URL is checked.
 
 import { expect, test, type Browser, type BrowserContext, type Locator, type Page } from './fixtures';
+import { pickScope } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -267,6 +268,6 @@ test('Cup schedule: League and Team rows get the "↗" icon too, no game link ar
   await rowsOk(page.getByTestId('cup-league'));
   await page.getByRole('tablist', { name: 'Cup layout' }).getByRole('tab', { name: 'By group' }).click();
   await page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' }).click();
-  await page.getByTestId('what-row').getByRole('radio', { name: 'Los Angeles Lakers', exact: true }).click();
+  await pickScope(page, 'Los Angeles Lakers');
   await rowsOk(page.getByTestId('cup-team'));
 });

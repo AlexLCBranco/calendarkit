@@ -11,7 +11,7 @@ import { DestinationFrame, SelectionCopyStage, useSelectionCopy, type Destinatio
 import { Segmented } from './Segmented';
 import { SelectionBar } from './SelectionBar';
 import type { SelectionKind } from './SelectionCapture';
-import { TeamChips } from './TeamChips';
+import { AllTeamsButton, TeamPicker } from './TeamPicker';
 import { Crumbs, PageRow } from './Header';
 import type { Crumb } from './nav';
 import { fullName } from './widget';
@@ -44,7 +44,7 @@ export const CUP_SEASONS = [2025, 2024, 2023];
 const TEAMS_BY_NAME = [...TEAMS].sort((a, b) => fullName(a).localeCompare(fullName(b)));
 
 export function CupDestination(p: DestinationProps & { initial?: Partial<CupState>; api: RefObject<CupApi | undefined> }) {
-  const { active, data, size, now, today, timeZone, compact, state, root, onOpenGame, gameLink, slots, selection, initial } = p;
+  const { active, data, size, now, today, timeZone, compact, headRow, state, root, onOpenGame, gameLink, slots, selection, initial } = p;
   // Standings | Schedule, the schedule's League | Team, its team and night — never remembered: leaving the Cup resets
   // them, so it always opens on Groups (then League; no team until one is picked).
   const [cupView, setCupView] = useState<CupState>(() => (initial ? { ...CUP_START, ...initial } : CUP_START));
@@ -103,12 +103,15 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
       what={
         cupTeam ? (
           <PageRow label="What" className=" ck-prow-what">
-            <TeamChips teamId={cupView.teamId} onPick={(teamId) => setCupView((v) => ({ ...v, teamId }))} />
+            {/* All teams: the Cup schedule of every team (the League list) */}
+            <AllTeamsButton on={false} onClick={() => setCupView((v) => ({ ...v, list: 'league' }))} />
+            <TeamPicker teamId={cupView.teamId} onChange={(teamId) => setCupView((v) => ({ ...v, teamId }))} compact={compact} />
           </PageRow>
         ) : undefined
       }
       date={
-        cupSim ? (
+        // a narrow window's page rows wrap around it; the header's row can't, so there it is the page's first line
+        cupSim && !headRow ? (
           <Suspense fallback={null}>
             <CupTonight data={data} today={today} gameLink={gameLink} inline />
           </Suspense>
@@ -127,6 +130,11 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
         </span>
       }
     >
+      {cupSim && headRow && (
+        <Suspense fallback={null}>
+          <CupTonight data={data} today={today} gameLink={gameLink} />
+        </Suspense>
+      )}
       <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>
         <CupView data={data} today={today} gameLink={gameLink} focus={cupView.focus} history={cupHist ? { season: cupView.hs, onSeason: (hs) => setCupView((v) => ({ ...v, hs })) } : undefined} sim={cupSim ? { picks: simPicks, onPicks: setSimPicks, mode: simMode, onMode: setSimMode, bracket: koPicks, onBracket: setKoPicks } : undefined} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
       </Suspense>

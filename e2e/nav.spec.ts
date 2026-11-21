@@ -1,5 +1,5 @@
 // The shared layout (backlogkit's NAV_PATTERN.md §6): the pinned header on every main page (same height, still there
-// after scrolling), every Where tab, What chip, How option and breadcrumb part navigates and the address round-trips
+// after scrolling), every Where tab, team in the team box, How option and breadcrumb part navigates and the address round-trips
 // (reload and back / forward), no layout shift (a click updating the screen in under 100 ms is timed alone, in
 // perf.spec.ts), no <select> for a What,
 // every icon-only control named, and 390 px still fits. It also saves a screenshot of every main page for the build
@@ -7,6 +7,8 @@
 
 import { expect, test, type Page } from './fixtures';
 import { APP } from './app';
+import { FEED_TEAMS } from './feedTeams';
+import { pickScope, teamBox } from './nav';
 
 test.beforeEach(({}, info) => test.skip(!['desktop', 'desktop-xl'].includes(info.project.name), 'desktop only'));
 
@@ -65,14 +67,14 @@ test('every main page: the header is there, the same height, and still at the to
   expect(errors).toEqual([]);
 });
 
-/** The page as the address and the screen say: the place, the breadcrumb, the checked chip, the selected How tabs. */
+/** The page as the address and the screen say: the place, the breadcrumb, the team in the team box, the selected How tabs. */
 const screenState = (page: Page) =>
   page.evaluate(() => ({
     url: location.search.replace(/&?date=[^&]*/, ''),
     place: document.querySelector('[data-testid="where-tabs"] [aria-current="page"]')?.textContent,
     crumbs: [...document.querySelectorAll('[data-testid="crumb-btn"]')].map((b) => b.textContent),
-    chip: document.querySelector('[data-testid="what-row"] [role="radio"][aria-checked="true"]')?.textContent ?? null,
-    how: [...document.querySelectorAll('[data-testid="page-rows"] [role="tab"][aria-selected="true"]')].map((t) => t.textContent),
+    chip: document.querySelector('[data-testid="team-picker"]')?.getAttribute('data-team-id') ?? null,
+    how: [...document.querySelectorAll('[data-testid="head-controls"] [role="tab"][aria-selected="true"]')].map((t) => t.textContent),
   }));
 
 /** Reload, then back and forward: the same screen each time. */
@@ -86,12 +88,12 @@ async function roundTrip(page: Page, what: string) {
   await expect.poll(() => screenState(page), `${what}: back, forward`).toEqual(want);
 }
 
-test('every Where tab, What chip, How option and breadcrumb part navigates; the address round-trips (reload, back / forward)', async ({ page }) => {
+test('every Where tab, team, How option and breadcrumb part navigates; the address round-trips (reload, back / forward)', async ({ page }) => {
   test.setTimeout(240_000);
   const errors = collectErrors(page);
   await open(page, `?view=league&layout=list&date=${DAY}`);
   const where = (name: string) => page.getByTestId('where-tabs').getByRole('button', { name, exact: true });
-  const how = (list: string, name: string) => page.getByTestId('page-rows').getByRole('tablist', { name: list }).getByRole('tab', { name, exact: true });
+  const how = (list: string, name: string) => page.getByTestId('head-controls').getByRole('tablist', { name: list }).getByRole('tab', { name, exact: true });
   // Where
   for (const [name, view] of [['Cup', 'cup'], ['Standings', 'standings'], ['Schedule', 'league']] as const) {
     await where(name).click();
@@ -99,18 +101,16 @@ test('every Where tab, What chip, How option and breadcrumb part navigates; the 
     await expect(page).toHaveURL(new RegExp(`view=${view}`));
     await roundTrip(page, `Where ${name}`);
   }
-  // What: every team chip, then All teams
-  const chips = page.getByTestId('what-row').getByTestId('team-chip');
-  await expect(chips).toHaveCount(30);
-  for (let i = 0; i < 30; i++) {
-    const c = chips.nth(i);
-    const tri = (await c.textContent())!;
-    await c.click();
-    await expect(c).toHaveAttribute('aria-checked', 'true');
-    await expect(page).toHaveURL(new RegExp(`team=${tri}`));
-    if (i % 10 === 0) await roundTrip(page, `What ${tri}`);
+  // What: every team in the team box's list, then All teams
+  const teams = Object.values(FEED_TEAMS).filter((t) => t.id > 1610000000); // the feed also has preseason guests
+  expect(teams).toHaveLength(30);
+  for (const [i, t] of teams.entries()) {
+    await pickScope(page, t.tri);
+    await expect(teamBox(page)).toHaveAttribute('data-team-id', String(t.id));
+    await expect(page).toHaveURL(new RegExp(`team=${t.tri}`));
+    if (i % 10 === 0) await roundTrip(page, `What ${t.tri}`);
   }
-  await page.getByTestId('team-chip-all').click();
+  await page.getByTestId('all-teams').click();
   await expect(page).toHaveURL(/view=league/);
   await roundTrip(page, 'What All teams');
   // How: Schedule's views, the Cup's views, the standings' column sets
@@ -182,7 +182,8 @@ test('no layout shift on load and after navigating', async ({ page }) => {
   await open(page, `?view=league&layout=list&date=${DAY}`);
   await page.waitForTimeout(400);
   const before = await cls();
-  for (const sel of ['[data-testid="team-chip"][aria-label="Boston Celtics"]', '[data-testid="where-cup"]', '[data-testid="where-standings"]', '[data-testid="where-schedule"]']) {
+  await teamBox(page).click();
+  for (const sel of ['[data-testid="team-picker-list"] [data-team-id="1610612738"]', '[data-testid="where-cup"]', '[data-testid="where-standings"]', '[data-testid="where-schedule"]']) {
     await page.locator(sel).click();
     await page.waitForTimeout(700); // past the 500 ms a click excuses
   }
@@ -195,7 +196,7 @@ test('no <select> picks a What; every icon-only control has a name and a tooltip
     await expect(page.locator(sel).first()).toBeVisible();
     expect(await page.locator('select').count(), name).toBe(0);
     const unnamed = await page.evaluate(() =>
-      [...document.querySelectorAll<HTMLElement>('[data-testid="top-bar"] button, [data-testid="page-rows"] button')]
+      [...document.querySelectorAll<HTMLElement>('[data-testid="top-bar"] button')]
         .filter((b) => b.offsetParent !== null && !b.textContent!.replace(/[←→‹›×]/g, '').trim())
         .filter((b) => !b.getAttribute('aria-label') || !(b.getAttribute('title') ?? b.getAttribute('data-tip')))
         .map((b) => b.outerHTML.slice(0, 100)),

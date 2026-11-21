@@ -8,6 +8,7 @@
 
 import { expect, test, type Locator, type Page } from './fixtures';
 import { APP, scrollAway } from './app';
+import { pickScope, teamBox } from './nav';
 
 const desktop = (name: string) => ['desktop', 'desktop-xl'].includes(name);
 
@@ -118,7 +119,7 @@ async function openSchedule(page: Page, list: 'league' | 'team' | 'date' = 'leag
   await page.evaluate(() => document.fonts.ready);
 }
 const pickTeam = async (page: Page, name: string) => {
-  await page.getByTestId('what-row').getByRole('radio', { name: name, exact: true }).click();
+  await pickScope(page, name);
   await expect(page.getByTestId('cup-team')).toBeVisible();
 };
 const rowIds = (scope: Locator) => scope.locator('[data-game-id]').evaluateAll((els) => els.map((e) => e.getAttribute('data-game-id')!));
@@ -155,7 +156,7 @@ test.describe('Cup schedule', () => {
     await layout.getByRole('tab', { name: 'By date' }).click();
     await page.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' }).click();
     await expect(page.getByRole('tablist', { name: 'Cup layout' })).toHaveCount(0);
-    await expect(page.getByTestId('what-row').locator('[aria-checked="true"]')).toHaveCount(0); // no team picked yet
+    await expect(teamBox(page)).toHaveText(/Pick a team/); // no team picked yet
     await expect(page.getByTestId('cup-pick')).toBeVisible();
     // The address names the sub-view, so a reload keeps it (no team picked yet: none in the address)
     await page.reload();
@@ -482,7 +483,7 @@ test.describe('Cup schedule fits the window', () => {
                 await page.evaluate(() => {
                   const h = (e: Element | null) => (e ? Math.round(e.getBoundingClientRect().height * 10) / 10 : null);
                   const q = (s: string) => document.querySelector(s);
-                  return { doc: document.documentElement.scrollHeight, header: h(q('[data-testid="top-bar"]')), rows: h(q('[data-testid="page-rows"]')), strip: h(q('.ck-cup-strip')), nights: h(q('.ck-cup-nights')), cards: [...document.querySelectorAll('.ck-cup-nights > .ck-cg-card')].map(h), heads: [...new Set([...document.querySelectorAll('.ck-cup-nights .ck-cg-head')].map(h))], viewTop: Math.round(q('[data-testid="cup-league"]')!.getBoundingClientRect().top + scrollY) };
+                  return { doc: document.documentElement.scrollHeight, header: h(q('[data-testid="top-bar"]')), rows: h(q('[data-testid="head-controls"]')), strip: h(q('.ck-cup-strip')), nights: h(q('.ck-cup-nights')), cards: [...document.querySelectorAll('.ck-cup-nights > .ck-cg-card')].map(h), heads: [...new Set([...document.querySelectorAll('.ck-cup-nights .ck-cg-head')].map(h))], viewTop: Math.round(q('[data-testid="cup-league"]')!.getBoundingClientRect().top + scrollY) };
                 }),
               )}`,
             );

@@ -1,0 +1,147 @@
+/* The team box (TeamPicker.tsx): its button, the list of teams by division, the "All teams" button beside it */
+.ck-picker {
+  position: relative;
+}
+.ck-picker-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  --ck-logo: 20px;
+  background: var(--ck-surface);
+  color: var(--ck-text);
+  border: 1px solid var(--ck-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ck-picker-button[aria-expanded='true'] {
+  border-color: var(--ck-accent);
+}
+.ck-picker-list {
+  position: fixed;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(3, 200px);
+  gap: 10px 14px;
+  padding: 10px;
+  background: var(--ck-bg);
+  border: 1px solid var(--ck-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  outline: none;
+  --ck-logo: 18px;
+}
+.ck-picker-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, auto);
+  width: calc(100vw - 16px);
+  max-height: 65vh;
+  gap: 8px;
+  font-size: 13px;
+}
+.ck-picker-head {
+  font-size: 11px;
+  color: var(--ck-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px 4px;
+}
+.ck-picker-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ck-picker-active {
+  background: var(--ck-surface-2);
+  outline: 1px solid var(--ck-accent);
+}
+.ck-picker-option[aria-selected='true'] {
+  font-weight: 700;
+  color: var(--ck-accent);
+}
+
+/* In the controls row: a fixed width (the longest name fits), so the controls after it never move */
+.ck-picker-scope {
+  display: inline-flex;
+  width: 282px;
+  flex: none;
+}
+.ck-picker-scope .ck-picker-button {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  box-sizing: border-box;
+  --ck-logo: 22px;
+  padding: 0 10px 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: rgb(78 161 255 / 0.16);
+  border-color: var(--ck-accent);
+}
+.ck-picker-scope .ck-picker-button:hover,
+.ck-picker-scope .ck-picker-button[aria-expanded='true'] {
+  background: rgb(78 161 255 / 0.26);
+}
+.ck-picker-scope .ck-picker-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+/* no team picked: a quiet box, the name's place taken by "Pick a team" */
+.ck-picker-scope .ck-picker-button:has(.ck-picker-none) {
+  background: var(--ck-surface);
+  border-color: var(--ck-border);
+  color: var(--ck-muted);
+  font-weight: 600;
+}
+.ck-picker-scope .ck-picker-button:has(.ck-picker-none):hover,
+.ck-picker-scope .ck-picker-button:has(.ck-picker-none)[aria-expanded='true'] {
+  border-color: var(--ck-accent);
+  color: var(--ck-text);
+}
+.ck-picker-scope .ck-caret {
+  color: var(--ck-accent);
+}
+/* the full name where the row has room; below, the tricode in a narrower box */
+.ck-picker-tri {
+  display: none;
+}
+.ck-bar-short .ck-picker-scope {
+  width: 112px;
+}
+.ck-bar-short .ck-picker-scope:has(.ck-picker-none) {
+  width: 132px;
+}
+.ck-bar-short .ck-picker-full {
+  display: none;
+}
+.ck-bar-short .ck-picker-tri {
+  display: inline;
+}
+.ck-all-teams {
+  border-radius: 16px;
+  color: var(--ck-muted);
+}
+.ck-all-teams:hover {
+  color: var(--ck-text);
+}
+.ck-all-teams-on,
+.ck-all-teams-on:hover {
+  background: var(--ck-accent);
+  border-color: var(--ck-accent);
+  color: #06121f;
+  cursor: default;
+}

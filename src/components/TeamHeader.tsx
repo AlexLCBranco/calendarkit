@@ -1,11 +1,12 @@
-// Team views: large logo on its light disc + the team's full name.
+// A team's heading: large logo on its light disc + the team's full name. The copies of the Team views (the screen has
+// the team box in the header instead) and the Cup's team schedule.
 
 import type { CSSProperties } from 'react';
 import type { ConfPosition } from '../data/standings';
 import { TEAM_BY_ID, teamLogo } from '../data/teams';
 import { fullName } from './widget';
 import { TeamLink } from '../slate/teamLink';
-import { injuryUrl } from '../slate/gameLinks';
+import { InjuriesLink } from './TeamPicker';
 
 /** Big team logo on its light disc (a team link when `link`). */
 function BigLogo({ teamId, px, link }: { teamId: number; px: number; link: boolean }) {
@@ -23,7 +24,7 @@ function BigLogo({ teamId, px, link }: { teamId: number; px: number; link: boole
  * `link`: logo and name link to the Team view — the Cup schedule's team; not the Team view's own header,
  * which would link to itself.
  */
-export function TeamHeader({ teamId, compact = false, period, link = false, position }: { teamId: number; compact?: boolean; period?: string; link?: boolean; position?: ConfPosition }) {
+export function TeamHeader({ teamId, compact = false, period, link = false, position, injuries = false }: { teamId: number; compact?: boolean; period?: string; link?: boolean; position?: ConfPosition; /** the team's Injuries link after its name (the Cup's team schedule) */ injuries?: boolean }) {
   const t = TEAM_BY_ID.get(teamId);
   const name = t ? fullName(t) : 'Team';
   return (
@@ -35,11 +36,7 @@ export function TeamHeader({ teamId, compact = false, period, link = false, posi
           {`${position.ordinal} in the ${position.conference}`}
         </span>
       )}
-      {injuryUrl(teamId) && (
-        <a className="ck-team-injuries" href={injuryUrl(teamId)} target="_blank" rel="noopener noreferrer" data-testid="team-injuries" data-capture-exclude="true" title="The team's injury report on ESPN">
-          Injuries ↗
-        </a>
-      )}
+      {injuries && <InjuriesLink teamId={teamId} />}
       {period && (
         <span className="ck-team-period" data-testid="team-month">
           {period}

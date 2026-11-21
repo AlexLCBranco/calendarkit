@@ -187,7 +187,7 @@ test.describe('Standings view', () => {
     await expect(row.locator('a[data-team-link]')).toHaveCount(2);
     await row.locator('.ck-st-name').click();
     await expect(destination(page, 'Schedule')).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByTestId('team-header')).toBeVisible();
+    await expect(page.getByTestId('team-picker')).toHaveAttribute('data-team-id', /\d+/);
     await expect(page).toHaveURL(new RegExp(`team=${tri}`));
   });
 

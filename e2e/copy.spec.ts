@@ -203,8 +203,10 @@ async function check(page: Page, name: string, { png, target }: { png: string; t
   return r;
 }
 
+// A week far ahead of the snapshot: a final line drops its TV pill, so a week stops having pills once played.
+const AHEAD = '2027-03-07';
 test('whole view: league week view (1 and 2 weeks)', async ({ page }) => {
-  await open(page, '?view=league&layout=calendar&date=2026-11-15');
+  await open(page, `?view=league&layout=calendar&date=${AHEAD}`);
   await expect(page.getByRole('region', { name: 'League week' })).toBeVisible();
   await check(page, 'view-league-week', await copyView(page), ['logo', 'text', 'b2b', 'tv']);
   await page.getByRole('tab', { name: '2 weeks' }).click();
@@ -289,7 +291,7 @@ test('whole view: league list copies the day on show, at its on-screen size', as
 });
 
 test('a single day: week view cell, team calendar cell, league list day', async ({ page }) => {
-  await open(page, '?view=league&layout=calendar&date=2026-11-15');
+  await open(page, `?view=league&layout=calendar&date=${AHEAD}`);
   // a day with a TV pill still on show (a final line drops its pill, so a fixed date stops having one once played)
   const cell = page.locator('.ck-month-cell:has(.ck-tv-pill)').first();
   await check(page, 'day-league-week', await copyPart(page, cell, 'copy-day'), ['logo', 'text', 'tv']);

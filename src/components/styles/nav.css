@@ -1,5 +1,5 @@
-/* The shared layout (backlogkit's NAV_PATTERN.md; Header.tsx, TeamChips.tsx): the pinned header, the page rows, the
-   team chips. Same look as footykit's (FK-65), so the apps read as one site. */
+/* The shared layout (backlogkit's NAV_PATTERN.md; Header.tsx): the pinned header with every page's controls in its
+   second row, and a narrow window's page rows. Same look as footykit's (FK-75), so the apps read as one site. */
 
 /* ---------- the pinned header ---------- */
 /* One fixed height on every page, so nothing under it ever jumps; it spans the page's side padding so rows scrolling
@@ -137,10 +137,80 @@
   color: var(--ck-accent);
   font-weight: 600;
 }
+/* The second row: the Where tabs, then the page's own controls (All teams, the team box, the views, the dates). One
+   line, never wrapping: the header's height never changes. */
+.ck-head-row2 {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 38px;
+  min-width: 0;
+}
 .ck-where {
   display: flex;
   gap: 4px;
   height: 38px;
+  flex: none;
+}
+.ck-toolbar.ck-hrow {
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: center;
+  column-gap: 14px;
+  min-width: 0;
+  min-height: 0;
+  height: 32px;
+  margin: 0 0 4px; /* level with the tabs' text, above their underline */
+  padding: 0;
+}
+.ck-hrow .ck-bar-what,
+.ck-hrow .ck-prow {
+  flex: none;
+  align-items: center;
+}
+.ck-hrow .ck-prow-label {
+  display: none;
+}
+.ck-hrow .ck-bar-date {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* a month's name between its arrows: a fixed width (the longest, "September 2026", fits), so the arrows never jump */
+.ck-hrow .ck-nav-title[data-testid='period-title'] {
+  width: 8.6em;
+}
+/* the Team List's plain text (the team's place, the months loaded), at the row's end */
+.ck-head-info {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.ck-head-info .ck-team-pos {
+  font-size: 13px;
+}
+.ck-head-info .ck-team-period {
+  margin-left: 0;
+  font-size: 15px;
+}
+/* the Standings' seasons: the strip takes the room left and scrolls inside it */
+.ck-hrow .ck-bar-what:has(> .ck-prow-strip) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.ck-hrow .ck-prow-strip {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ck-hrow .ck-season-strip {
+  scrollbar-width: none;
+  padding-bottom: 0;
+}
+.ck-hrow:has(.ck-prow-strip) .ck-bar-date {
+  flex: none;
 }
 .ck-where-tab {
   display: inline-flex;
@@ -249,7 +319,7 @@
   padding: 10px;
 }
 
-/* ---------- the page rows (What chips, How switch, dates), scrolling away with the page ---------- */
+/* ---------- a narrow window's page rows (What, How, dates), scrolling away with the page ---------- */
 .ck-toolbar.ck-prows {
   flex-direction: row;
   flex-wrap: wrap;
@@ -286,14 +356,8 @@
   letter-spacing: 0.04em;
   flex: none;
 }
-.ck-prow-what {
-  align-items: flex-start;
-}
-.ck-prow-what > .ck-prow-label {
-  line-height: 28px;
-}
 
-/* ---------- chips (a What: every option visible, one click away) ---------- */
+/* ---------- chips (the Standings' seasons) ---------- */
 .ck-chip-btn {
   display: inline-flex;
   flex-direction: column;
@@ -335,83 +399,6 @@
   transition: background-color 0.12s, color 0.12s;
 }
 
-/* The teams: All teams, then East over West (from 1600 px), a little gap between divisions */
-.ck-team-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 6px 12px;
-  min-width: 0;
-}
-.ck-chip-conf {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-}
-.ck-chip-conf-label {
-  width: 30px;
-  font-size: 12px;
-  color: var(--ck-muted);
-  flex: none;
-}
-.ck-chip-div {
-  display: flex;
-  gap: 3px;
-}
-.ck-team-chip {
-  flex-direction: row;
-  gap: 5px;
-  width: 60px;
-  padding: 0 5px 0 3px;
-  --ck-logo: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-.ck-team-chip::after {
-  content: none;
-}
-.ck-team-chip .ck-logo-backing {
-  flex: none;
-}
-@media (min-width: 1600px) {
-  /* East over West: the chips take two lines, How and the dates sit beside them */
-  .ck-team-chips {
-    display: grid;
-    grid-template-columns: auto auto;
-    column-gap: 12px;
-  }
-  .ck-chip-all {
-    grid-row: 1 / span 2;
-  }
-  /* without the All teams chip (the Cup's Team schedule) the two conferences are the grid's only cells: one column,
-     or West ran off the page beside East */
-  .ck-team-chips:not(:has(.ck-chip-all)) {
-    grid-template-columns: auto;
-  }
-}
-@media (max-width: 1599px) {
-  /* the logo alone (the team's name in its tooltip), both conferences on one line */
-  .ck-team-chip {
-    width: 30px;
-    padding: 0;
-    justify-content: center;
-  }
-  .ck-team-chip-tri {
-    display: none;
-  }
-  .ck-chip-div {
-    gap: 2px;
-  }
-  .ck-chip-conf {
-    gap: 6px;
-  }
-  .ck-chip-conf-label {
-    width: auto;
-  }
-}
-
 /* ---------- narrow windows (phones, parked): every place still visible, nothing in a hamburger ---------- */
 @media (max-width: 700px) {
   /* three lines: back / forward and the icon buttons, the breadcrumb, the places */
@@ -433,7 +420,11 @@
   .ck-head-end {
     gap: 4px;
   }
+  .ck-head-row2 {
+    height: auto;
+  }
   .ck-where {
+    flex: 1 1 auto;
     height: 52px;
     gap: 0;
   }
@@ -463,17 +454,16 @@
   .ck-go-kbd {
     display: none;
   }
-  /* a conference's divisions wrap under each other rather than push the page sideways */
   .ck-bar-what,
-  .ck-prow-what,
-  .ck-team-chips {
+  .ck-prow-what {
     min-width: 0;
     max-width: 100%;
   }
-  .ck-chip-conf {
-    flex: 1 1 100%;
+  .ck-prows .ck-prow {
     flex-wrap: wrap;
-    row-gap: 4px;
+  }
+  .ck-prows .ck-picker-scope {
+    width: auto;
   }
 }
 
@@ -492,23 +482,23 @@
   margin-bottom: 0;
 }
 
-/* ---------- one menu layer (a full-size window, .ck-one-layer): How on the first line and the dates on the second,
-   to the right of the team chips, in the chips' two lines' height — no row under them ---------- */
-.ck-one-layer .ck-toolbar.ck-prows:has(.ck-bar-local[data-destination='schedule']) {
-  flex-wrap: nowrap;
-  align-items: stretch;
+/* narrower desktops (short labels): tighter gaps, and the Team List's row has no room for the team's place */
+.ck-bar-short .ck-head-row2 {
+  gap: 10px;
 }
-.ck-one-layer .ck-prows:has(.ck-bar-local[data-destination='schedule']) .ck-team-chips {
-  row-gap: 8px; /* two 28 px lines + 8 = the two 32 px lines beside them */
+.ck-bar-short .ck-toolbar.ck-hrow {
+  column-gap: 8px;
 }
-.ck-one-layer .ck-prows:has(.ck-bar-local[data-destination='schedule']) .ck-bar-local {
-  flex-direction: column;
-  flex-wrap: nowrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0;
-  min-height: 0;
+.ck-bar-short .ck-head-info .ck-team-pos {
+  display: none;
 }
-.ck-one-layer .ck-prows:has(.ck-bar-local[data-destination='schedule']) .ck-bar-date {
-  flex-wrap: nowrap;
+/* the months loaded give way before the row overflows ("October 2026 – January 2027") */
+.ck-head-info .ck-team-period {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ck-bar-short .ck-head-info .ck-team-period {
+  font-size: 13px;
 }

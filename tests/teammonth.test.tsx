@@ -64,9 +64,9 @@ describe('one month at a time', () => {
     expect(screen.getByTestId('team-month').textContent).toBe('November 2026');
     expect(shownMonth()).toBe(monthOf(next.dateEt));
     expect(topRow()).toBe(next.dateEt);
-    // plain text in the header, not a control
+    // plain text in the header's controls row, not a control
     expect(screen.getByTestId('team-month').closest('button, a, [role="button"]')).toBeNull();
-    expect(screen.getByTestId('team-header').contains(screen.getByTestId('team-month'))).toBe(true);
+    expect(screen.getByTestId('top-bar').contains(screen.getByTestId('team-month'))).toBe(true);
   });
 
   it('TV filter and another team: back to the month of the (TV) next game', () => {

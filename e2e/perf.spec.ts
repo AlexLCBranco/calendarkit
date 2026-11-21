@@ -311,13 +311,13 @@ test('switching views: click → next frame', async ({ page }) => {
   await page.clock.setFixedTime(NOW);
   await page.goto('/calendar/?view=league&layout=list&team=BOS');
   await expect(page.getByTestId('day-title')).toBeVisible();
-  // League List → League Calendar (week view) → Team Calendar → Team List → League List. Team = BOS's chip, League =
-  // the "All teams" chip.
+  // League List → League Calendar (week view) → Team Calendar → Team List → League List. Team = Boston in the team
+  // box's list (opening the list is part of the switch), League = the "All teams" button.
   const steps: [string, string, string][] = [
     ['switch-league-calendar', '[role=tablist][aria-label="Layout"] [role=tab]', 'Calendar'],
-    ['switch-team-calendar', '[data-testid="team-chip"]', 'BOS'],
+    ['switch-team-calendar', '[data-testid="team-picker-list"] [role=option]', 'Boston Celtics'],
     ['switch-team-list', '[role=tablist][aria-label="Layout"] [role=tab]', 'List'],
-    ['switch-league-list', '[data-testid="team-chip-all"]', 'All teams'],
+    ['switch-league-list', '[data-testid="all-teams"]', 'All teams'],
   ];
   const times = new Map<string, number[]>();
   // round 0 warms up (first render of each view's code paths) and is not counted: the switch timings flaked on unchanged
@@ -325,13 +325,17 @@ test('switching views: click → next frame', async ({ page }) => {
   for (let run = 0; run <= RUNS; run++) {
     for (const [name, group, tab] of steps) {
       const t = await page.evaluate(
-        ([group, tab]) =>
-          new Promise<number>((resolve) => {
-            const el = [...document.querySelectorAll(group!)].find((b) => b.textContent!.trim() === tab) as HTMLElement;
+        async ([group, tab]) => {
+            const find = () => [...document.querySelectorAll(group!)].find((b) => b.textContent!.trim() === tab) as HTMLElement | undefined;
             const t0 = performance.now();
-            el.click();
-            requestAnimationFrame(() => setTimeout(() => resolve(performance.now() - t0), 0));
-          }),
+            // a team: its option is there once the team box is open (React renders a scripted click in a microtask)
+            if (!find()) {
+              document.querySelector<HTMLElement>('[data-testid="team-picker"]')!.click();
+              for (let i = 0; i < 20 && !find(); i++) await Promise.resolve();
+            }
+            find()!.click();
+            return new Promise<number>((resolve) => requestAnimationFrame(() => setTimeout(() => resolve(performance.now() - t0), 0)));
+          },
         [group, tab],
       );
       if (run) times.set(name, [...(times.get(name) ?? []), t]);
@@ -349,9 +353,9 @@ test('marquee drag across busy views: frame times and long tasks', async ({ page
   const gesture = async (search: string, start: [number, number] | 'view', to: [number, number], hold = 0) => {
     await page.goto(`/calendar/${search}`);
     await page.waitForFunction(() => [...document.images].every((i) => i.complete) && !!document.querySelector('[data-game-id]'));
-    // 'view': from the view's top-left corner, just under the page rows — a box never starts on the header or the
-    // rows (a fixed point there, (60, 150), stopped being in the view when the header grew)
-    const from: [number, number] = start === 'view' ? [60, Math.ceil(await page.getByTestId('page-rows').evaluate((el) => el.getBoundingClientRect().bottom)) + 10] : start;
+    // 'view': from the view's top-left corner, just under the header — a box never starts on the header (a fixed
+    // point there, (60, 150), stopped being in the view when the header grew)
+    const from: [number, number] = start === 'view' ? [60, Math.ceil(await page.getByTestId('top-bar').evaluate((el) => el.getBoundingClientRect().bottom)) + 8] : start; // 2 px into the view, above its day headings (buttons: no box starts on one)
     await page.evaluate(() => {
       const w = window as unknown as { __ck: { frames: number[]; long: number; stop: boolean } };
       w.__ck = { frames: [], long: 0, stop: false };
@@ -405,22 +409,25 @@ test('the shared layout: a click on loaded data is painted in under 100 ms (Leag
   await expect(page.locator('.ck-week-view')).toBeVisible();
   const clickTime = (sel: string) =>
     page.evaluate(
-      (sel) =>
-        new Promise<number>((resolve) => {
-          const el = document.querySelector<HTMLElement>(sel)!;
+      async (sel) => {
           const t0 = performance.now();
-          el.click();
+          // a team: its option is there once the team box is open (React renders a scripted click in a microtask)
+          if (!document.querySelector(sel)) {
+            document.querySelector<HTMLElement>('[data-testid="team-picker"]')!.click();
+            for (let i = 0; i < 20 && !document.querySelector(sel); i++) await Promise.resolve();
+          }
+          document.querySelector<HTMLElement>(sel)!.click();
           // the update is painted at the next frame
-          requestAnimationFrame(() => setTimeout(() => resolve(performance.now() - t0), 0));
-        }),
+          return new Promise<number>((resolve) => requestAnimationFrame(() => setTimeout(() => resolve(performance.now() - t0), 0)));
+        },
       sel,
     );
   const times: Record<string, number[]> = {};
   const steps: [string, string][] = [
-    ['team chip', '[data-testid="team-chip"][aria-label="Miami Heat"]'],
+    ['a team', '[data-testid="team-picker-list"] [data-team-id="1610612748"]'],
     ['How: List', '[role="tablist"][aria-label="Layout"] [role="tab"]:first-child'],
     ['How: Calendar', '[role="tablist"][aria-label="Layout"] [role="tab"]:nth-child(2)'],
-    ['All teams', '[data-testid="team-chip-all"]'],
+    ['All teams', '[data-testid="all-teams"]'],
     ['Where: Standings', '[data-testid="where-standings"]'],
     ['Where: Schedule', '[data-testid="where-schedule"]'],
   ];

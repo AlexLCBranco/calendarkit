@@ -1,4 +1,5 @@
-// The Schedule destination: League (List · Calendar · Slate) or Team (List · Calendar) by the scope picker.
+// The Schedule destination: League (List · Calendar · Slate) or Team (List · Calendar) by the "All teams" button and
+// the team box.
 
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { addDays, addMonths, hasNationalTv, isOver, localDate, monthOf, seasonMonths, sideLabel, teamGames, weekOf, type CalendarData } from '../data/model';
@@ -29,7 +30,7 @@ import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
 import { TeamHeader } from './TeamHeader';
 import { TeamListView, type TeamListHandle, type TeamListOpen } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
-import { TeamChips } from './TeamChips';
+import { AllTeamsButton, InjuriesLink, TeamPicker } from './TeamPicker';
 import { Crumbs, OptionsIcon, PageRow } from './Header';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
@@ -435,10 +436,21 @@ export function ScheduleDestination(p: ScheduleProps) {
   const teamListProps = { data, teamId: state.teamId, tvOnly: state.tvOnly, showRest: state.showRest && !compact, size, now, timeZone, onOpenGame, gameLink, handle: teamList, openAt: teamOpen, onAtNext: teamAtNext.set, topStore: teamTop, month: teamListMonth, monthTo: teamListTo, onLoadMonths: compact ? undefined : loadTeamMonths, onMonthChange: setTeamListMonth, runs: !compact };
   const leagueList = <LeagueListView data={data} date={state.date} onSelectDate={onSelectDate} tvOnly={state.tvOnly} size={size} now={now} today={today} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} nav={false} legend={false} />;
 
-  // The bar, in this order: sub-views (List · Calendar · Slate, the scope picker); date controls (the date block,
-  // then the week view's weeks or the Team Calendar's span); the options in the Options popover
+  // The controls, in this order: All teams, the team box (and the team's Injuries link); List · Calendar · Slate; the
+  // week view's weeks or the Team Calendar's span, then the date block; the options in the Options popover
+  const position = team && list && !compact ? conferencePositions(data).get(state.teamId) : undefined;
   const date = (
     <>
+      {weekView && <Segmented label="Weeks" className=" ck-tabs-small" value={String(state.weeks) as '1' | '2'} options={barShort ? [['1', '1w', '1 week'], ['2', '2w', '2 weeks']] : [['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
+      {team && !list && !compact && (
+        <Segmented
+          label="Span"
+          className=" ck-tabs-small"
+          value={String(state.teamSpan) as '1' | '2' | 'month'}
+          options={barShort ? [['1', '1w', '1 week'], ['2', '2w', '2 weeks'], ['month', 'Mo', 'Month']] : [['1', '1 week'], ['2', '2 weeks'], ['month', 'Month']]}
+          onChange={(v) => setTeamSpan(v === 'month' ? 'month' : v === '2' ? 2 : 1)}
+        />
+      )}
     <div className="ck-period-wrap ck-date-block" data-testid="date-block">
       {team && list && !compact ? (
         <TeamListNav short={barShort} store={teamTop} games={teamPickGames} atNext={teamAtNext} pick={{ open: datePick, onToggle: () => setDatePick((o) => !o) }} onDate={(d) => teamList.current?.toDate(d)} onToday={() => (jump(), teamList.current?.toNext())} />
@@ -482,27 +494,32 @@ export function ScheduleDestination(p: ScheduleProps) {
         />
       )}
     </div>
-      {weekView && <Segmented label="Weeks" className=" ck-tabs-small" value={String(state.weeks) as '1' | '2'} options={barShort ? [['1', '1w', '1 week'], ['2', '2w', '2 weeks']] : [['1', '1 week'], ['2', '2 weeks']]} onChange={(w) => update({ weeks: w === '2' ? 2 : 1 })} />}
-      {team && !list && !compact && (
-        <Segmented
-          label="Span"
-          className=" ck-tabs-small"
-          value={String(state.teamSpan) as '1' | '2' | 'month'}
-          options={barShort ? [['1', '1w', '1 week'], ['2', '2w', '2 weeks'], ['month', 'Mo', 'Month']] : [['1', '1 week'], ['2', '2 weeks'], ['month', 'Month']]}
-          onChange={(v) => setTeamSpan(v === 'month' ? 'month' : v === '2' ? 2 : 1)}
-        />
+      {/* Team List: the team's place in its conference (its rows have no room for it) and the months loaded, plain text */}
+      {team && list && !compact && (
+        <span className="ck-head-info">
+          {position && (
+            <span className="ck-team-pos" data-testid="team-pos" title="Current conference standings">
+              {`${position.ordinal} in the ${position.conference}`}
+            </span>
+          )}
+          <span className="ck-team-period" data-testid="team-month">
+            {teamListPeriod}
+          </span>
+        </span>
       )}
     </>
   );
 
-  // What: the teams as chips (All teams = the league views); How: List · Calendar · Slate. The breadcrumb repeats both,
-  // each part opening its siblings.
+  // What: All teams (the league views) or a team from the team box; How: List · Calendar · Slate. The breadcrumb
+  // repeats both, each part opening its siblings.
   const pickScope = (id: number | undefined) => (id === undefined ? toAllTeams() : team ? pickTeam(id) : openTeam(id, state.layout === 'calendar' && !slate ? 'calendar' : 'list'));
   const layouts: [CalendarLayout, string][] = [['list', 'List'], ['calendar', 'Calendar'], ...(!slateFits ? [] : ([['slate', 'Slate']] as [CalendarLayout, string][]))];
   const layoutOn: CalendarLayout = slate ? 'slate' : list ? 'list' : 'calendar';
   const what = (
     <PageRow label="What" className=" ck-prow-what">
-      <TeamChips all teamId={team ? state.teamId : undefined} onPick={pickScope} />
+      <AllTeamsButton on={!team} onClick={() => pickScope(undefined)} />
+      <TeamPicker teamId={team ? state.teamId : undefined} onChange={pickScope} compact={compact} />
+      {team && <InjuriesLink teamId={state.teamId} />}
     </PageRow>
   );
   const sub = (
@@ -581,7 +598,6 @@ export function ScheduleDestination(p: ScheduleProps) {
 
   return (
     <DestinationFrame slots={slots} crumbs={crumbs} what={what} sub={sub} date={date} options={options} info={leagueKey}>
-      {team && <TeamHeader teamId={state.teamId} compact={compact} period={list && !compact ? teamListPeriod : undefined} position={list ? conferencePositions(data).get(state.teamId) : undefined} />}
       {body}
       {!list && !slate && !compact && nav && <SideArrows nav={nav} />}
       {selKind && <SelectionBar store={selection} copy={copySelection} />}

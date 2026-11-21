@@ -118,7 +118,8 @@ test('cards: full team names, "@" before the home team, time or final score with
     await expect(rows.nth(win).locator('.ck-slate-score')).toHaveClass(/ck-score-win/);
   }
   // an upcoming day: the start time as in the League List, no score, no countdown anywhere
-  await openSlate(page, '2026-11-20');
+  const upcoming = Object.entries(all).find(([, gs]) => gs.every((g) => g.gameStatus === 1))![0]; // a fixed date stops being upcoming once played
+  await openSlate(page, upcoming);
   const card = page.locator('.ck-slate-card').first();
   await expect(card.locator('.ck-slate-score').first()).toHaveText('');
   await expect(card.getByTestId('tipoff')).toHaveText(/^\d\d:\d\d( \(\+1\))?$|^TBD$/);
@@ -243,9 +244,9 @@ test('marquee in the Slate: 3 selected games copy by the same rule as the whole 
 // gauntlet GT-5: a game over tonight shows its final score as soon as ESPN has it (the odds answer carries it), not
 // only the morning after with the daily snapshot.
 test('a game the snapshot still has upcoming shows ESPN\'s final score, OT included, when the odds answer brings it', async ({ page }) => {
-  const date = '2026-11-20';
   await openSlate(page);
-  const games = (await snapshot(page))[date]!;
+  // the first day the snapshot has nothing played on (a fixed date stops being upcoming once played)
+  const [date, games] = Object.entries(await snapshot(page)).find(([, gs]) => gs.length > 1 && gs.every((g) => g.gameStatus === 1))!;
   const [g, other] = games;
   await page.route('**/api/odds**', (r) =>
     r.fulfill({ json: { date, games: {}, live: true, finals: { [`${g!.awayTeam.teamTricode}@${g!.homeTeam.teamTricode}`]: { away: 118, home: 121, statusText: 'Final/OT' } } } }),

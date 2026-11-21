@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { teamLinkUrl } from '../src/App';
 import { CalendarView } from '../src/components/CalendarView';
 import { data } from './feed';
-import { goTo, pickScope } from './nav';
+import { goTo, pickScope, scopeTeam } from './nav';
 
 afterEach(cleanup);
 
@@ -24,7 +24,7 @@ describe('team links open the Calendar', () => {
     fireEvent.pointerDown(a);
     expect(a.getAttribute('href')).toMatch(/layout=calendar/);
     fireEvent.click(a);
-    expect(screen.getByTestId('team-header')).toBeTruthy();
+    expect(scopeTeam()).toBeDefined();
     expect(selected('Layout')).toBe('Calendar');
   });
 
@@ -40,7 +40,7 @@ describe('team links open the Calendar', () => {
     goTo('Standings');
     const table = await screen.findByTestId('standings');
     fireEvent.click(table.querySelector<HTMLAnchorElement>('[data-team-link]')!);
-    expect(screen.getByTestId('team-header')).toBeTruthy();
+    expect(scopeTeam()).toBeDefined();
     expect(selected('Layout')).toBe('Calendar');
   });
 });

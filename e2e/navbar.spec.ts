@@ -27,5 +27,5 @@ test('Slate from a team on a day it doesn’t play: the day’s Slate with "XXX 
   await tab(page, 'Layout', 'Slate').click();
   await expect(page.getByTestId('day-title')).toHaveText(titleFor(page, 'Sunday, November 15, 2026'));
   await expect(page.getByTestId('slate-no-team')).toHaveText(`${idle} doesn’t play today`);
-  await expect(page.getByTestId('team-chip-all')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByTestId('all-teams')).toHaveAttribute('aria-pressed', 'true');
 });

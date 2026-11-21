@@ -1,7 +1,7 @@
 // CalendarView: the widget's shell. It holds the state every destination shares (CalendarState: what the host stores
 // in the URL), the pinned header (page history ← →, the breadcrumb, "Go anywhere", the Options / ⓘ / Quick standings /
-// Copy buttons, the Where tabs) and the page rows' frame (What, How, dates), page history, team links, sizing and the
-// overlays; Schedule, Cup and Standings each own their own state and fill the slots with their own parts
+// Copy buttons; under them the Where tabs and the page's own controls: What, How, dates), page history, team links,
+// sizing and the overlays; Schedule, Cup and Standings each own their own state and fill the slots with their own parts
 // (ScheduleDestination, CupDestination, StandingsDestination). The layout is backlogkit's NAV_PATTERN.md.
 // Self-contained: inputs are the calendar data and a size. No routing, no global state, no page layout; the
 // host gets user intents through callbacks (onOpenGame, onStateChange, onNavigate).
@@ -49,7 +49,7 @@ export { MonthNavigator, type MonthNavigatorProps } from './MonthNavigator';
 export { TeamHeader } from './TeamHeader';
 export { TeamListView, type TeamListHandle, type TeamListViewProps } from './TeamListView';
 export { TEAM_CELL_MIN_HEIGHT, TEAM_SCALE_FILL, TEAM_SCALE_MAX, TEAM_SCALE_MIN, TeamMonthGrid, type TeamMonthGridProps } from './TeamMonthGrid';
-export { TeamChips } from './TeamChips';
+export { AllTeamsButton, TeamPicker } from './TeamPicker';
 export { COMPACT_WIDTH, fmtRange, LIST_MAX_WIDTH, TEAM_LIST_MAX_WIDTH, useNow, type WidgetSize } from './widget';
 export { BAR_SHORT_BELOW, fmtMonthSpan, seasonDay, STALE_AFTER_MS, teamListTarget, type CalendarHandle, type CalendarLayout, type CalendarMode, type CalendarState, type CupState, type Destination, type PageHistory, type PageHistoryLabels, type TeamLayout, type TeamSpan, type TeamTarget, type ViewSnapshot } from './calendarState';
 
@@ -103,10 +103,11 @@ export interface CalendarViewProps {
 
 const DEFAULT_TEAM = TEAMS[0]!.id;
 /**
- * The content width from which the page rows are one layer: the team chips (two lines, ~1130 px) with How over the
- * dates beside them (the widest date block, the Team Calendar's with its span switch: ~610 px).
+ * The content width from which a page's controls sit in the header's second row, after the Where tabs (the widest set,
+ * the Team Calendar's, fits with its short labels). Narrower (tablets and phones, parked): in page rows under the
+ * header, which wrap.
  */
-export const ONE_LAYER_MIN_WIDTH = 1800;
+export const HEAD_ROW_MIN_WIDTH = 1200;
 /** The Team mode a team link opens (names, logos, tricodes anywhere: game cards, standings, the Cup, popups). */
 export const TEAM_LINK_LAYOUT: TeamLayout = 'calendar';
 /** The condensed standings popup, in the Standings destination's chunk, loaded on first use. */
@@ -174,6 +175,7 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
   const today = useSyncExternalStore(clock.subscribe, () => localDate(clock.get(), timeZone));
   // Below BAR_SHORT_BELOW px the one-row bar takes the short date ("Fri, Nov 6, 2026") and "TV only"
   const barShort = !compact && size.width < BAR_SHORT_BELOW;
+  const headRow = !compact && size.width >= HEAD_ROW_MIN_WIDTH;
   const root = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLDivElement>(null);
   // The bar's slots, filled by the active destination (through portals) once they are in the page. They stay the same
@@ -183,7 +185,7 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
   useLayoutEffect(() => {
     const q = (sel: string) => root.current!.querySelector<HTMLElement>(sel)!;
     setSlots({ crumbs: q('.ck-crumbs-slot'), what: q('.ck-bar-what'), sub: q('.ck-bar-sub'), date: q('.ck-bar-date'), options: q('.ck-bar-options'), info: q('.ck-info-slot') });
-  }, [note]);
+  }, [note, headRow]);
 
   // What each destination tells the shell (its date on show, page label, copy, selection kind, page-history parts)
   const scheduleApi = useRef<ScheduleApi>(undefined);
@@ -392,15 +394,16 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
   // Standings grows with its content (a past season's page is long, and the pinned header sticks only inside the page's
   // own box); the other pages as before
   const fill = destination !== 'standings' && (list || slate);
-  // The page rows scroll away under the pinned header (NAV_PATTERN.md §2). A Schedule calendar fills the window under the
-  // header once they have: its height grows by what scrolls away (the page's top padding and the rows), so it keeps the
-  // size it had under the old one-row bar instead of shrinking for rows that are only on screen at the top.
+  // A narrow window's page rows scroll away under the pinned header. A Schedule calendar fills the window under the
+  // header once they have: its height grows by what scrolls away (the page's top padding and the rows). With the
+  // controls in the header nothing scrolls away: the calendars fit the window as it is.
   const [scrollAway, setScrollAway] = useState(0);
   const measureAway = useRef<() => void>(undefined);
   measureAway.current = () => {
     const rows = bar.current;
     const r = root.current;
     const header = r?.querySelector<HTMLElement>('.ck-header');
+    if (headRow) return setScrollAway(0);
     if (!rows || !r || !header) return;
     const px = (el: Element) => parseFloat(getComputedStyle(el).marginBottom) || 0;
     const contentTop = r.getBoundingClientRect().top + window.scrollY + rows.offsetTop + rows.offsetHeight + px(rows);
@@ -415,12 +418,8 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
     const ro = new ResizeObserver(() => measureAway.current!());
     ro.observe(bar.current);
     return () => ro.disconnect();
-  }, []);
-  // One menu layer (a full-size window): How and the dates sit beside the team chips, in their two lines' height, so a
-  // team's calendar fits the window with the rows on screen — no stretch, no page scroll. The League calendars keep
-  // filling the window under the header (their lines would shrink otherwise).
-  const oneLayer = !compact && size.width >= ONE_LAYER_MIN_WIDTH;
-  const stretch = destination === 'schedule' && !fill && !compact && !(oneLayer && state.mode === 'team') ? scrollAway : 0;
+  }, [headRow]);
+  const stretch = destination === 'schedule' && !fill && !compact && !headRow ? scrollAway : 0;
   const scheduleSize = useMemo(() => (stretch ? { width: size.width, height: size.height + stretch } : size), [size, stretch]);
   const onScrollCapture = (e: { target: EventTarget }) => {
     const el = e.target as HTMLElement;
@@ -428,7 +427,19 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
     if (id && el.hasAttribute('data-select-scroller')) scrollAt.current = { id, top: el.scrollTop };
   };
 
-  const shared: DestinationProps = { active: false, data, size, now, today, timeZone, compact, barShort, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, selection, jump: markJump, rendered };
+  const shared: DestinationProps = { active: false, data, size, now, today, timeZone, compact, barShort, headRow, slateFits, state, update, root, onOpenGame, gameLink, title, note, slots, selection, jump: markJump, rendered };
+
+  // The page's own controls (What, How, dates), filled by the active destination: in the header's second row, or (a
+  // narrow window) in page rows under it
+  const controls = (
+    <div className={`ck-toolbar ck-bar1 ${headRow ? 'ck-hrow' : 'ck-prows'}`} data-testid={headRow ? 'head-controls' : 'page-rows'} ref={bar}>
+      <div className="ck-bar-what" data-testid="what-row" />
+      <div className="ck-bar-local" data-testid="bar-local" data-destination={destination}>
+        <div className="ck-bar-sub" />
+        <div className="ck-bar-date" />
+      </div>
+    </div>
+  );
 
   return (
     <TeamLinkContext.Provider value={teamHref ? teamLinks : undefined}>
@@ -441,7 +452,7 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
         ref={root}
         onPointerDownCapture={teamHref ? teamPress : undefined}
         onClickCapture={teamHref || cupHref ? teamClick : undefined}
-        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${barShort ? ' ck-bar-short' : ''}${compact || size.width < 1200 ? ' ck-bar-wrap' : ''}${teamMap ? ' ck-team-side' : ''}${oneLayer ? ' ck-one-layer' : ''}${fill ? ' ck-root-fill' : ' ck-root-grow'}`}
+        className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${barShort ? ' ck-bar-short' : ''}${compact || size.width < 1200 ? ' ck-bar-wrap' : ''}${teamMap ? ' ck-team-side' : ''}${fill ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={(e) => {
           if (apiOf().selKind) onMarquee(e);
         }}
@@ -454,7 +465,7 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
       >
         {/* The pinned header (the same on every page, never changing height): ← →, the breadcrumb (the place, then the
             destination's parts), Go anywhere and the icon buttons — the Schedule's Options, ⓘ, Quick standings, Copy —
-            and the Where tabs under them. */}
+            and under them the Where tabs, then the page's own controls: nothing with controls sits under its line. */}
         <header className="ck-header" data-testid="top-bar" data-destination={destination}>
           {title && <h1 className="ck-title ck-sr">{title}</h1>}
           <div className="ck-head-row">
@@ -480,17 +491,12 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
               <CopyButton label="Copy as image" copy={(button) => apiOf().copy(button)} testId="copy-view" />
             </span>
           </div>
-          <WhereTabs value={destination} places={places} onChange={goDestination} />
-        </header>
-        {/* The page rows (scroll away with the page): What (the thing looked at, as chips), How (a small switch) and the
-            dates; a destination without a What leaves its row out. */}
-        <div className="ck-toolbar ck-bar1 ck-prows" data-testid="page-rows" ref={bar}>
-          <div className="ck-bar-what" data-testid="what-row" />
-          <div className="ck-bar-local" data-testid="bar-local" data-destination={destination}>
-            <div className="ck-bar-sub" />
-            <div className="ck-bar-date" />
+          <div className="ck-head-row2">
+            <WhereTabs value={destination} places={places} onChange={goDestination} />
+            {headRow && controls}
           </div>
-        </div>
+        </header>
+        {!headRow && controls}
         {/* every destination stays mounted, so its state lasts as long as the page; only the active one renders */}
         <ScheduleDestination {...shared} size={scheduleSize} active={destination === 'schedule'} odds={odds} cold={cold} teamDate={initial?.teamDate} initialSnap={initial?.snap} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
         <CupDestination {...shared} active={cup} initial={initial?.cup} api={cupApi} />

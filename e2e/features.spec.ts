@@ -5,7 +5,7 @@
 
 import { expect, test, type Page } from './fixtures';
 import { scrollAway } from './app';
-import { setOption } from './nav';
+import { setOption, teamBox } from './nav';
 import { eachTeamMonth } from './teamMonths';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
@@ -54,42 +54,39 @@ const cellSizes = (page: Page, sel: string) =>
     return { n: cells.length, wSpread: Math.max(...w) - Math.min(...w), hSpread: Math.max(...h) - Math.min(...h), h: Math.min(...h), w: Math.min(...w) };
   }, sel);
 
-test('team header and team picker: logos, mouse and keyboard, team change', async ({ page }, info) => {
+test('the team box: logos, mouse and keyboard, team change; no title row, no chips', async ({ page }, info) => {
   const errors = collectErrors(page);
   const p = info.project.name;
   await open(page, '?view=team&layout=list&team=BOS');
-  const header = page.getByTestId('team-header').locator('.ck-team-name'); // (the Team List adds its month)
-  await expect(header).toHaveText('Boston Celtics');
+  const header = teamBox(page);
+  await expect(header).toContainText('Boston Celtics');
+  await expect(page.getByTestId('team-header')).toHaveCount(0);
+  await expect(page.getByTestId('team-chip')).toHaveCount(0);
+  await expect(page.getByTestId('all-teams')).toHaveText('All teams');
   await imagesLoaded(page);
-  const h = await page.getByTestId('team-header').evaluate((el) => {
-    const img = el.querySelector('img')!;
-    const disc = img.parentElement!.getBoundingClientRect();
-    const name = el.querySelector('h2')!;
-    return { disc: disc.width, loaded: img.naturalWidth > 0, font: parseFloat(getComputedStyle(name).fontSize), visible: el.getBoundingClientRect().bottom <= innerHeight, biggestOther: Math.max(...[...document.querySelectorAll('.ck-toolbar *:not(.ck-arrow)')].map((e) => parseFloat(getComputedStyle(e).fontSize))) };
-  });
-  expect(h.loaded).toBe(true);
-  expect(h.disc).toBe(p === 'phone' ? 40 : 48);
-  expect(h.visible).toBe(true);
-  expect(h.font).toBeGreaterThan(h.biggestOther); // the most prominent text above the content
-  // the team chips: "All teams" + all 30 with loaded logos, inside the viewport
-  const chips = page.getByTestId('what-row').getByTestId('team-chip');
-  await expect(chips).toHaveCount(30);
-  await expect(page.getByTestId('team-chip-all')).toHaveText('All teams');
-  await expect(page.getByTestId('what-row').getByRole('radio', { name: 'Boston Celtics' })).toHaveAttribute('aria-checked', 'true');
+  // the list: all 30 teams with loaded logos, inside the viewport
+  await header.click();
+  const list = page.getByTestId('team-picker-list');
+  await expect(list.getByRole('option')).toHaveCount(30);
+  await expect(list.getByRole('option', { name: 'Boston Celtics' })).toHaveAttribute('aria-selected', 'true');
   await imagesLoaded(page);
-  expect(await page.getByTestId('team-chips').evaluate((l) => [...l.querySelectorAll('img')].filter((i) => i.naturalWidth > 0).length)).toBe(30);
-  const box = (await page.getByTestId('team-chips').boundingBox())!;
+  expect(await list.evaluate((l) => [...l.querySelectorAll('img')].filter((i) => i.naturalWidth > 0).length)).toBe(30);
+  const box = (await list.boundingBox())!;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   expect(await sideways(page)).toBeLessThanOrEqual(0);
-  await shot(page, 'team-chips', p);
-  await page.getByTestId('what-row').getByRole('radio', { name: 'Miami Heat' }).click();
-  await expect(header).toHaveText('Miami Heat');
+  await shot(page, 'team-box', p);
+  await list.getByRole('option', { name: 'Miami Heat' }).click();
+  await expect(header).toContainText('Miami Heat');
   await expect(page).toHaveURL(/team=MIA/);
-  // keyboard only: the chips are buttons
-  await page.getByTestId('what-row').getByRole('radio', { name: 'Orlando Magic' }).focus();
+  // keyboard only: open with ↓, a letter jumps to the next team starting with it, Enter picks
+  await header.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(list).toBeVisible();
+  await page.keyboard.press('o'); // Miami → Orlando (the next "O" after it)
   await page.keyboard.press('Enter');
-  await expect(header).toHaveText('Orlando Magic');
+  await expect(header).toContainText('Orlando Magic');
+  await expect(list).toHaveCount(0);
   await expect(page.getByRole('region', { name: 'Magic games' })).toBeVisible();
   expect(errors).toEqual([]);
 });

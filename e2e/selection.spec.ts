@@ -4,7 +4,7 @@
 // selects rows beyond the first screen; the bar's Copy and Ctrl+C put a PNG on the clipboard.
 
 import { expect, test, type Page } from './fixtures';
-import { clearScope, setOption } from './nav';
+import { clearScope, pickScope, setOption } from './nav';
 
 const NOW = new Date('2026-11-15T15:00:00Z');
 
@@ -215,7 +215,7 @@ test('changing view, team, period, span or a toggle clears the selection', async
     await expect(page.getByTestId('selection-bar')).toHaveCount(0);
   }
   await select(cell);
-  await page.getByTestId('what-row').getByRole('radio', { name: 'Miami Heat', exact: true }).click();
+  await pickScope(page, 'Miami Heat');
   expect(await highlighted(page)).toEqual([]);
   await select(cell);
   await page.getByRole('tab', { name: 'List', exact: true }).click();

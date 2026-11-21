@@ -37,5 +37,5 @@ test('hover a cell: the right games, links to the games; click pins; the team na
   await expect(pop).toHaveCount(0);
   // the team name is still the Team view
   await row.locator('.ck-st-name').click();
-  await expect(page.getByTestId('team-header')).toBeVisible();
+  await expect(page.getByTestId('team-picker')).toHaveAttribute('data-team-id', /\d+/);
 });

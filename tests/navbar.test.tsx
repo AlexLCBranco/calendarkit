@@ -107,13 +107,15 @@ describe('Schedule controls', () => {
     ['Team List', () => fireEvent.click(tabs('Layout').getByRole('tab', { name: 'List' }))],
   ];
 
-  it('every view: ‹ date › · calendar · Today; List · Calendar · Slate (always); the team chips', () => {
+  it('every view: ‹ date › · calendar · Today; List · Calendar · Slate (always); the team box with its All teams button, no team chips', () => {
     open();
     for (const [name, go] of views) {
       go();
       expect(screen.getAllByTestId('date-block'), name).toHaveLength(1);
-      expect(screen.getAllByTestId('team-chips'), name).toHaveLength(1);
-      expect(screen.getAllByTestId('team-chip'), name).toHaveLength(30);
+      expect(screen.getAllByTestId('team-picker'), name).toHaveLength(1);
+      expect(screen.getAllByTestId('all-teams'), name).toHaveLength(1);
+      expect(screen.queryAllByTestId('team-chip'), name).toHaveLength(0);
+      expect(screen.queryByTestId('team-header'), name).toBeNull(); // no title row under the header
       expect(globals(), name).toEqual(ALL);
       expect(blockParts(), name).toEqual(['Next', 'Previous', 'date-pick', 'title', 'today']);
       expect(tabs('Layout').getAllByRole('tab').map((t) => t.textContent), name).toEqual(['List', 'Calendar', 'Slate']);
@@ -145,23 +147,36 @@ describe('Schedule controls', () => {
     expect(within(block()).getByTestId('period-title').textContent).toBe('Dec 20 – 26, 2026');
   });
 
-  it('the team chips: "All teams" and every team, grouped East | West by division; picking a team keeps the view; "All teams" goes back to the league', () => {
+  it('the team box: its list has every team by division and no "All teams" entry; picking a team keeps the view; the "All teams" button is lit on the league view and goes back to it', () => {
     open({ layout: 'calendar' });
-    expect(screen.getByTestId('team-chip-all').getAttribute('aria-checked')).toBe('true');
-    const groups = screen.getByTestId('team-chips').querySelectorAll('[role="group"][aria-label$="Conference"]');
-    expect([...groups].map((g) => g.getAttribute('aria-label'))).toEqual(['Eastern Conference', 'Western Conference']);
-    expect([...groups[0]!.querySelectorAll('[role="group"]')].map((g) => g.getAttribute('aria-label'))).toEqual(['Atlantic division', 'Central division', 'Southeast division']);
-    expect([...groups[0]!.querySelectorAll('[data-testid="team-chip"]')].slice(0, 5).map((c) => c.textContent)).toEqual(['BOS', 'BKN', 'NYK', 'PHI', 'TOR']);
+    const all = () => screen.getByTestId('all-teams');
+    expect(all().getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByTestId('team-picker').textContent).toContain('Pick a team');
+    expect(screen.queryByTestId('team-picker-list')).toBeNull();
+    fireEvent.click(screen.getByTestId('team-picker'));
+    const list = screen.getByTestId('team-picker-list');
+    expect([...list.querySelectorAll('.ck-picker-head')].map((h) => h.textContent)).toEqual(['East · Atlantic', 'East · Central', 'East · Southeast', 'West · Northwest', 'West · Pacific', 'West · Southwest']);
+    expect(within(list).getAllByRole('option')).toHaveLength(30);
+    expect(within(list).getAllByRole('option').slice(0, 5).map((o) => o.textContent)).toEqual(['Boston Celtics', 'Brooklyn Nets', 'New York Knicks', 'Philadelphia 76ers', 'Toronto Raptors']);
+    expect(within(list).queryByText('All teams')).toBeNull();
+    fireEvent.keyDown(list, { key: 'Escape' });
+    expect(screen.queryByTestId('team-picker-list')).toBeNull();
     expect(crumbs()).toEqual(['Schedule', 'All teams', 'Calendar']);
     pickScope('Boston Celtics');
     expect(scopeTeam()).toBe(TEAM.BOS);
-    expect(screen.getByTestId('team-chip-all').getAttribute('aria-checked')).toBe('false');
+    expect(all().getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByTestId('team-picker').textContent).toContain('Boston Celtics');
     expect(crumbs()).toEqual(['Schedule', 'Boston Celtics', 'Calendar']);
     expect(selected('Layout', 'Calendar')).toBe(true);
-    expect(screen.getByTestId('team-header')).toBeTruthy();
+    // the open team is the one highlighted in the list
+    fireEvent.click(screen.getByTestId('team-picker'));
+    expect(within(screen.getByTestId('team-picker-list')).getByRole('option', { selected: true }).textContent).toBe('Boston Celtics');
+    fireEvent.keyDown(screen.getByTestId('team-picker-list'), { key: 'Escape' });
+    expect(screen.getByTestId('team-injuries').getAttribute('href')).toMatch(/espn\.com\/nba\/team\/injuries/);
     pickScope('All teams');
     expect(scopeTeam()).toBeUndefined();
-    expect(screen.queryByTestId('team-header')).toBeNull();
+    expect(all().getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByTestId('team-injuries')).toBeNull(); // team pages only
     pickScope('Miami Heat');
     clearScope();
     expect(scopeTeam()).toBeUndefined();

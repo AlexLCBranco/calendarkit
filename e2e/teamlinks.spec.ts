@@ -9,7 +9,7 @@
 
 import { expect, test, type Locator, type Page } from './fixtures';
 import { APP } from './app';
-import { clearScope, destination } from './nav';
+import { clearScope, destination, pickScope, teamBox } from './nav';
 import { FEED_TEAMS } from './feedTeams';
 
 const NOW = new Date('2026-11-15T15:00:00Z'); // Sun Nov 15, 12:00 in São Paulo (the tests' zone)
@@ -39,7 +39,7 @@ const plainTeamElements = (page: Page, scope: string) =>
     (roots, [sel, link]) =>
       roots.flatMap((r) =>
         [...r.querySelectorAll<HTMLElement>(sel!)]
-          .filter((e) => !e.closest('[data-testid="team-chips"], .ck-capture-stage'))
+          .filter((e) => !e.closest('[data-testid="what-row"], .ck-capture-stage'))
           .filter((e) => !(e.closest('[data-testid="team-header"]') && !e.closest('[data-testid="cup-team"]')))
           .filter((e) => e.offsetParent !== null && !e.matches(link!))
           .map((e) => e.outerHTML.slice(0, 120)),
@@ -108,9 +108,9 @@ async function checkLinks(page: Page, scope: string, want: { layout: 'list' | 'c
 
 /** After a team link's plain click: that Team view here, in that mode, showing `date`. */
 async function expectTeamView(page: Page, t: Team, layout: 'list' | 'calendar', date: string, title?: string) {
-  await expect(page.getByTestId('team-header')).toContainText(`${t.city} ${t.name}`);
+  await expect(teamBox(page)).toContainText(`${t.city} ${t.name}`);
   await expect(destination(page, 'Schedule')).toHaveAttribute('aria-current', 'page');
-  await expect(page.getByTestId('what-row').locator(`[data-team-id="${t.id}"]`)).toHaveAttribute('aria-checked', 'true');
+  await expect(teamBox(page)).toHaveAttribute('data-team-id', String(t.id));
   await expect(page.getByRole('tablist', { name: 'Layout' }).getByRole('tab', { name: layout === 'list' ? 'List' : 'Calendar' })).toHaveAttribute('aria-selected', 'true');
   expect(new URL(page.url()).searchParams.get('team')).toBe(t.tri);
   const month = new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -176,7 +176,7 @@ const VIEWS: { name: string; search: string; scope: string; layout?: 'calendar';
     prepare: async (p) => {
       await p.getByRole('tablist', { name: 'Cup view' }).getByRole('tab', { name: 'Schedule' }).click();
       await p.getByRole('tablist', { name: 'Cup list' }).getByRole('tab', { name: 'Team' }).click();
-      await p.getByTestId('what-row').getByRole('radio', { name: 'Los Angeles Lakers', exact: true }).click();
+      await pickScope(p, 'Los Angeles Lakers');
       await expect(p.getByTestId('cup-team')).toBeVisible();
     },
   },

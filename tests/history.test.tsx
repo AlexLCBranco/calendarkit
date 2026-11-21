@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readUrlState, urlOf } from '../src/App';
 import { CalendarView, type CalendarHandle, type ViewSnapshot } from '../src/components/CalendarView';
 import { data } from './feed';
-import { goTo, pickScope } from './nav';
+import { goTo, pickScope, scopeTeam } from './nav';
 import raw from './fixtures/feed-2026-10-23.json';
 import { TEAM } from './synthetic';
 
@@ -200,7 +200,7 @@ describe('the app: real history entries and the in-app ← →', () => {
       window.history.back();
       await new Promise((r) => window.addEventListener('popstate', r, { once: true }));
     });
-    expect(screen.queryByTestId('team-header')).toBeNull();
+    expect(scopeTeam()).toBeUndefined();
     expect(tabs('Layout').getByRole('tab', { name: 'Calendar' }).getAttribute('aria-selected')).toBe('true');
     expect(fwd().disabled).toBe(false);
     expect(fwd().title).toMatch(/^Forward to Boston Celtics, /);
@@ -209,7 +209,7 @@ describe('the app: real history entries and the in-app ← →', () => {
       fireEvent.click(fwd());
       await new Promise((r) => window.addEventListener('popstate', r, { once: true }));
     });
-    expect(screen.getByTestId('team-header')).toBeTruthy();
+    expect(scopeTeam()).toBe(TEAM.BOS);
     expect(fwd().disabled).toBe(true);
     // a day step doesn't add an entry
     const len = window.history.length;

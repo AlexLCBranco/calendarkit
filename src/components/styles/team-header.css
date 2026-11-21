@@ -32,7 +32,7 @@
 .ck-compact .ck-team-name {
   font-size: 20px;
 }
-/* the team's ESPN injury page, small and muted after its name (CK-15) */
+/* the team's ESPN injury page, small and muted after the team box (and after the name in a Cup team's heading) */
 .ck-team-injuries {
   font-size: 13px;
   font-weight: 600;

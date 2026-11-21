@@ -3,7 +3,7 @@
 //   CK-27  hovering a Cup label shows that group's table, the game's two teams highlighted
 //   CK-28  a team's record opens that team's List, rest days on, the day in view
 //   CK-29  a Team Calendar cell has the opponent's line (record, back-to-back night)
-//   CK-30  How and the dates sit right of the team chips; a Team Calendar month needs no page scroll
+//   CK-30  a Team Calendar month needs no page scroll (its controls are in the header since CK-33: ck33.spec.ts)
 //   CK-31  a past season's playoff games in the season-series popup, and "View series"
 //   CK-32  holidays and big NBA dates marked on the calendar and the Slate
 import { readFileSync } from 'node:fs';
@@ -153,18 +153,6 @@ test('CK-29: a Team Calendar cell shows the opponent\'s record and its back-to-b
 });
 
 test.describe('CK-30: one menu layer', () => {
-  test('How and the dates sit right of the team chips, in their two lines\' height', async ({ page }) => {
-    await at(page, '2026-11-20', '?view=team&layout=calendar&team=BOS');
-    await expect(page.locator('.ck-team-grid [data-game-id]').first()).toBeVisible();
-    const box = (sel: string) => page.locator(sel).evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
-    const [rows, what, how, dates] = [await box('[data-testid="page-rows"]'), await box('[data-testid="what-row"]'), await box('.ck-bar-sub'), await box('[data-testid="date-block"]')];
-    expect(how.left).toBeGreaterThanOrEqual(what.right);
-    expect(dates.left).toBeGreaterThanOrEqual(what.right);
-    expect(dates.top).toBeGreaterThanOrEqual(how.bottom - 0.5); // the dates under the view switch
-    expect(rows.height).toBeLessThanOrEqual(what.height + 0.5); // no row under the chips
-    expect(dates.bottom).toBeLessThanOrEqual(what.bottom + 0.5);
-  });
-
   for (const [name, search] of [['Team Calendar month', '?view=team&layout=calendar&team=BOS'], ['Team Calendar 2 weeks', '?view=team&layout=calendar&team=BOS&span=2w']] as const) {
     test(`${name}: fits the window, no page scroll`, async ({ page }) => {
       await at(page, '2026-11-20', search);
@@ -176,13 +164,6 @@ test.describe('CK-30: one menu layer', () => {
     });
   }
 
-  test('the Cup\'s Team schedule: every team chip inside the page (West no longer runs off beside East)', async ({ page }) => {
-    await at(page, '2026-11-20', '?view=cup&cup=schedule&cl=team&ct=BOS');
-    await expect(page.getByTestId('team-chip').first()).toBeVisible();
-    const m = await page.evaluate(() => ({ right: Math.max(...[...document.querySelectorAll('[data-testid="team-chip"]')].map((c) => c.getBoundingClientRect().right)), cw: document.documentElement.clientWidth, wide: document.documentElement.scrollWidth }));
-    expect(m.right).toBeLessThanOrEqual(m.cw);
-    expect(m.wide).toBeLessThanOrEqual(m.cw);
-  });
 });
 
 test('CK-31: a past season\'s playoff games in the season-series popup, apart from the regular season; "View series"', async ({ page }) => {
