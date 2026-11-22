@@ -48,7 +48,7 @@ export function playInLabel(games: HistGame[], g: HistGame): string {
 }
 
 /** A past game's page: NBA.com's scores of that day (hoopsjunkie's coverage of past seasons couldn't be checked). */
-export const pastGameUrl = (g: HistGame) => `https://www.nba.com/games?date=${g.date}`;
+export const pastGameUrl = (g: Pick<HistGame, 'date'>) => `https://www.nba.com/games?date=${g.date}`;
 
 /** A series' key in a season: its round and its two teams (the bracket's boxes carry it). */
 export const seriesKey = (s: HistSeries) => `${s.round}|${s.a}|${s.b}`;

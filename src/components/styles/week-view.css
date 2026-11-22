@@ -10,6 +10,21 @@
 .ck-month-cell:focus-within {
   z-index: 2; /* tooltips above the neighbouring cells */
 }
+/* The day's line: its button, then the big-day label (a link of its own) */
+.ck-wday-row {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+.ck-wday-row > .ck-wday {
+  flex: 1 1 auto;
+  width: auto;
+}
+.ck-wday-row > .ck-bigday {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0 4px 0 2px;
+}
 .ck-wday {
   display: flex;
   align-items: baseline;

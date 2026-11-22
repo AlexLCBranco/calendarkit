@@ -67,7 +67,7 @@ the grid in an element with class `ck-root` (the colours and font are variables 
 background: nothing is drawn between or around the cards, only the cards are opaque); import `src/slate/slate.css` once
 (calendarkit's widget stylesheet, every rule scoped to `.ck-*`, no html/body rules; 35.7 KB, 7.6 KB gz). Tooltips
 (records, streaks, fatigue — with the day strip): `useTooltip()` gives `handlers` to spread on the wrapper and a
-`node` to render inside it (as slate.html does). The tooltip, `useStreakPopup` and `useSeriesPopup` are one popup at a time across every widget on the page, and each
+`node` to render inside it (as slate.html does). The season-series popup's squares are links of their own (this season: the host's `gameLink`; an earlier season: NBA.com's games of that date, nothing to pass). The tooltip, `useStreakPopup` and `useSeriesPopup` are one popup at a time across every widget on the page, and each
 closes within 100 ms of the pointer leaving its element (an 80 ms grace, `POPUP_GRACE_MS`, for the trip into a popup's links; CK-6). `SlateCopy` is the copied image's layout; with `editNotes` (a host showing it live: the gauntlet widget, its GT-4) a click on a note opens it for typing in calendarkit's field, with ⇄, saved to the game's note as typed and at once when the field is left (`NoteLive`); without it (images): no controls, the note box as
 static text) if the widget ever copies.
 

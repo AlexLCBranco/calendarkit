@@ -1,7 +1,8 @@
 /* Cup view: the 3 × 2 group cards, team pills in the team's color, the rules and wild-card panels. The whole
-   view fits the window without scrolling (1920 × 950, 1600 × 1000; e2e/cup.spec.ts): the group grid keeps its full
-   size (the owner's call); the height comes from the panels below it — rules text in two columns, the
-   wild-card race West | East side by side. */
+   view fits the window without scrolling (1920 × 900 — the owner's real window —, 1920 × 950, 1600 × 1000;
+   e2e/cup.spec.ts): the names, game squares and numbers keep their full size (the owner's call); the height comes
+   from dead space (gaps between rows, cards and panels, paddings) and from the panels below the groups — rules text
+   in two columns, the wild-card race West | East side by side. */
 .ck-cupview {
   display: flex;
   flex-direction: column;
@@ -15,7 +16,7 @@
   display: flex;
   align-items: baseline;
   gap: 14px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .ck-cup-title {
   margin: 0;
@@ -33,16 +34,16 @@
 .ck-cup-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px 14px;
 }
 .ck-cup-card {
   background: var(--ck-surface);
   border: 1px solid var(--ck-border);
   border-radius: 12px;
-  padding: 10px 10px 12px;
+  padding: 8px 10px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 /* one grid for the header and every pill, so W, L and DIFF line up */
 .ck-cup-row {
@@ -182,17 +183,17 @@
   background: var(--ck-surface);
   border: 1px solid var(--ck-border);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 8px 14px;
   font-size: 13px;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 .ck-cup-panel h3 {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
   font-size: 14px;
 }
 .ck-cup-panel p,
 .ck-cup-panel ol {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 .ck-cup-panel ol {
   padding-left: 20px;
@@ -219,7 +220,7 @@
 .ck-cup-race {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 .ck-cup-race h4 {
   margin: 0;
@@ -235,7 +236,7 @@
   grid-template-columns: 24px 20px 34px max-content 30px 46px;
   align-items: center;
   column-gap: 6px;
-  padding: 3px 8px;
+  padding: 2px 8px;
   border: 1px solid transparent;
   border-radius: 8px;
 }

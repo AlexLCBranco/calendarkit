@@ -113,6 +113,16 @@ measurement; open it only when a question needs the backstory.
     game; start order) and `<SlateGame>` — the same `SlateCard`, with the night's odds / live scores / Cup track from
     `useNight`, which `SlateDay` uses too. 509 × 78 without notes. `SLATEKIT_API` still 1 (names added only).
     `slate.html?game=all` (or a game id) shows them.
+- **v1.95.0** (2026-11-22, CK-35, CK-36, CK-37):
+  - The season-series popup's **past-season squares** (`PastSquare`, `series.tsx`) are links to NBA.com's games of
+    that date (`pastGameUrl`), a new tab; this season's keep hoopsjunkie.
+  - **Big-day labels are links** to the league Slate of their day (`BigDayLinkContext` / `bigDayLinkTarget` in
+    `src/slate/bigDay.tsx`, handled by CalendarView's one click handler; `dayLinkUrl` in App.tsx, `on=` read once at
+    load). Plain text in the Slate's own header (`plain`), in images, in a host's widget and under the Slate's minimum
+    width. In the league week view the label sits beside the day's button (`.ck-wday-row`), in a month navigator's day
+    button it is a `role="link"` span.
+  - **Cup Groups fits 1920 × 900** (the owner's page area is about 1918 × 914): the height came from gaps and paddings
+    (`cup.css`); rows stay 38 px, text sizes unchanged. The fit test covers 1920 × 900 too.
 - **Waiting on Alex**: whether the League List rows look right (then they can leave "in flux").
 
 ## What the app is

@@ -4,6 +4,14 @@ Shipped work only, newest first. Planned work is in `FEATURE_BACKLOG.md`, never 
 Entries dated before 2026-11-16 were backfilled from the git commit messages (data, docs, test-only, merge and
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-22
+- CK-35 — Season-series popup: past-season games are clickable (v1.95.0)
+  In the season-series popup, every game of an earlier season (regular season, play-in, playoffs) opens that game's date on NBA.com in a new tab.
+- CK-36 — Holiday / big-date label opens that day's Slate (v1.95.0)
+  Clicking a holiday or big-date label (Christmas, MLK Day, Cup knockout nights...) in a team calendar, the league week view, the league list or a date picker opens the league Slate for that day; the back arrow returns.
+- CK-37 — Cup Groups page fits the owner's real window with no scroll bar (v1.95.0)
+  The Cup Groups page fits a 1920 × 900 window with every wild card row visible: the gaps and paddings are tighter, the names, game squares and numbers are the same size.
+
 ## 2026-11-21
 - CK-22 — Countdown to the Slate's first game (halftime-timer) (v1.94.0)
   The Slate's header line has a "⏱ Countdown" button that opens halftime-timer counting down to the night's first tip-off, or to the next game once that one has started.

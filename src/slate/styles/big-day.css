@@ -50,3 +50,13 @@
   right: 0;
   font-size: 10px;
 }
+
+/* The label as the way to that day's Slate: a pointer and a lit pill, never an underline */
+.ck-bigday-link {
+  cursor: pointer;
+  text-decoration: none;
+}
+.ck-bigday-link:hover {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--ck-bigday, #e0a458) 22%, transparent);
+}

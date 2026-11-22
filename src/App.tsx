@@ -82,6 +82,12 @@ export function seasonLinkUrl(year: number, series: string, pathname = window.lo
   return `${pathname}?${new URLSearchParams({ view: 'standings', season: String(year), series })}`;
 }
 
+/**
+ * A big-day label's URL: the league Slate of that day. `on=` is read once at load, like a team link's (a new tab opens
+ * on that day), and dropped from the address then.
+ */
+export const dayLinkUrl = (date: string, pathname = window.location.pathname) => `${pathname}?${new URLSearchParams({ view: 'league', layout: 'slate', on: date })}`;
+
 /** A Cup label's URL: the Cup page on a game's group (Groups) or on the bracket (Simulator). */
 export const cupLinkUrl = (focus: CupFocus, pathname = window.location.pathname) => cupPageUrl(focus, pathname);
 
@@ -89,6 +95,12 @@ export const cupLinkUrl = (focus: CupFocus, pathname = window.location.pathname)
  * End-to-end tests only: the day to open on, set by e2e/fixtures.ts before the page loads (`window.__ckOpenDate`), so a
  * test can start on a given day although the URL's date is ignored. Nothing in the app sets it.
  */
+/** A big-day label's link opened in a new tab (`dayLinkUrl`): the league view opens on that day. */
+const linkedDay = () => {
+  const u = readUrlState();
+  return u.mode === 'league' ? u.teamDate : undefined;
+};
+
 const e2eOpenDate = () => (window as { __ckOpenDate?: unknown }).__ckOpenDate as string | undefined;
 
 /**
@@ -253,7 +265,7 @@ export function App() {
   // bookmark doesn't pin an old day; view, layout, team, weeks and the toggles still come from it. A reload of the same
   // tab keeps the page it showed — its day, month or week — from the tab's own history entry (history.state, which a
   // reload keeps and a new visit doesn't have), never from the address.
-  const [initial] = useState(() => reloadedState(window.history.state) ?? { ...readUrlState(), date: e2eOpenDate() });
+  const [initial] = useState(() => reloadedState(window.history.state) ?? { ...readUrlState(), date: e2eOpenDate() ?? linkedDay() });
   // A team link's `on=` is for this load only — the widget's first page replaces the address (its
   // own URL, without `on=`) as it renders
   const view = useRef<CalendarHandle>(null);
@@ -312,6 +324,7 @@ export function App() {
             gameLink={appGameLink}
             teamHref={teamLinkUrl}
             cupHref={cupLinkUrl}
+            dayHref={dayLinkUrl}
             seasonHref={seasonLinkUrl}
             onNavigate={onNavigate}
             handle={view}

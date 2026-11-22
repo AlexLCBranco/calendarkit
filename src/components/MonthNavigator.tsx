@@ -92,7 +92,7 @@ export function MonthNavigator({ data, month, onMonthChange, selectedDate, selec
               aria-label={`${fmtDate(date, { month: 'long', day: 'numeric' })}: ${cell ? label || 'no game' : plural(n)}`}
             >
               <span className="ck-daynum">{Number(date.slice(8))}</span>
-              <BigDayLabel data={data} date={date} className=" ck-bigday-count" />
+              <BigDayLabel data={data} date={date} className=" ck-bigday-count" inButton plain={!enabled} />
               {label && <span className={`ck-count${cell ? " ck-count-label" : ""}`}>{label}</span>}
             </button>
           );

@@ -19,6 +19,7 @@ import { useStreakPopup } from '../slate/streakPopup';
 import { stripGamesOf } from '../slate/stripGames';
 import { TeamLinkContext, teamLinkTarget, type TeamLinks } from '../slate/teamLink';
 import { CupLinkContext, cupLinkTarget, useCupPopup, type CupLinks } from '../slate/cupLink';
+import { BigDayLinkContext, bigDayLinkTarget, type BigDayLinks } from '../slate/bigDay';
 import { cupFocusOf, cupFocusParam, type CupFocus } from '../data/cupPopup';
 import { useTooltip } from '../slate/tooltip';
 import { BAR_SHORT_BELOW, seasonDay, type CalendarHandle, type CalendarState, type CupState, type Destination, type PageHistory, type TeamLayout, type TeamTarget, type ViewSnapshot } from './calendarState';
@@ -73,6 +74,8 @@ export interface CalendarViewProps {
   teamHref?: (to: TeamTarget) => string;
   /** The URL of the Cup page on a group or the bracket (Cup labels: Ctrl / middle-click → new tab). None → the labels aren't links. */
   cupHref?: (focus: CupFocus) => string;
+  /** A big-day label's URL (the league Slate of its date); none: the labels stay plain. */
+  dayHref?: (date: string) => string;
   /** The URL of a past season's page in Standings, on one of its playoff series ("View series": Ctrl / middle-click → new tab). */
   seasonHref?: (year: number, series: string) => string;
   /** Fixed clock (ms) for tests or replays; default: live clock. */
@@ -113,7 +116,7 @@ export const TEAM_LINK_LAYOUT: TeamLayout = 'calendar';
 /** The condensed standings popup, in the Standings destination's chunk, loaded on first use. */
 const StandingsPopup = lazy(() => import('./Standings').then((m) => ({ default: m.StandingsPopup })));
 
-export function CalendarView({ data, odds, cold, size: outerSize, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, cupHref, seasonHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
+export function CalendarView({ data, odds, cold, size: outerSize, initial, now: fixedNow, timeZone, onOpenGame, gameLink, onStateChange, title, note, updatedAt, teamHref, cupHref, dayHref, seasonHref, onNavigate, handle, pageHistory }: CalendarViewProps) {
   // The clock (moves at local midnight and on waking, no minute tick); today's date and the stale stamp read it.
   // `now` (the default day, the next game, games over) is the time the widget opened.
   const clock = useClock(fixedNow, timeZone, localDate);
@@ -250,6 +253,11 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
   };
   const openCupRef = useRef(openCup);
   openCupRef.current = openCup;
+  // Big-day labels (holidays, big NBA dates): the league Slate of that day, as a new page (back returns here)
+  const dayHrefRef = useRef(dayHref);
+  dayHrefRef.current = dayHref;
+  const [dayLinks] = useState<BigDayLinks>(() => ({ href: (date) => dayHrefRef.current?.(date) ?? '' }));
+  const openBigDayRef = useRef<(date: string) => void>(() => {});
   // One handler pair for every team link of the widget (popups included: they render inside it), capture phase so it
   // runs before the game link around a team (MatchLink) or a calendar cell's own click.
   const teamPress = useCallback(
@@ -261,6 +269,15 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
   );
   const teamClick = useCallback(
     (e: ReactMouseEvent) => {
+      const dayHit = bigDayLinkTarget(e.target);
+      if (dayHit) {
+        // never the cell's or the day button's own click behind the label
+        e.stopPropagation();
+        if (dayHit.el instanceof HTMLAnchorElement && (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)) return; // the browser's new tab / window
+        e.preventDefault();
+        openBigDayRef.current(dayHit.date);
+        return;
+      }
       const cupHit = cupLinkTarget(e.target);
       if (cupHit) {
         e.stopPropagation();
@@ -285,6 +302,11 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
   const scrollAt = useRef<{ id: string; top: number }>(undefined);
   const jump = useRef(false); // a picked date or Today: a new page although only the date changed
   const markJump = useCallback(() => void (jump.current = true), []);
+  openBigDayRef.current = (date) => {
+    setStPop(false);
+    jump.current = true;
+    update({ mode: 'league', layout: 'slate', date });
+  };
   const restoring = useRef(false);
   // a reloaded page's scroll position comes back like a restored one's (the Team List uses its row at the top instead)
   const pendingScroll = useRef<{ id: string; top: number } | undefined>(initial?.snap?.scroll && initial.snap.scroll.id !== 'team-list' ? initial.snap.scroll : undefined);
@@ -445,13 +467,15 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
     <TeamLinkContext.Provider value={teamHref ? teamLinks : undefined}>
     {/* the Cup is a desktop page: narrower, its labels stay plain */}
     <CupLinkContext.Provider value={cupHref && slateFits ? cupLinks : undefined}>
+    {/* the Slate needs a desktop window: narrower, the big-day labels stay plain */}
+    <BigDayLinkContext.Provider value={dayHref && slateFits ? dayLinks : undefined}>
     {/* live scores (CK-21) from the odds store: every view reads them through useLive */}
     <LiveScores.Provider value={odds}>
     <ClockProvider clock={clock}>
       <div
         ref={root}
         onPointerDownCapture={teamHref ? teamPress : undefined}
-        onClickCapture={teamHref || cupHref ? teamClick : undefined}
+        onClickCapture={teamHref || cupHref || dayHref ? teamClick : undefined}
         className={`ck-root ck-select-area${compact ? ' ck-compact' : ''}${barShort ? ' ck-bar-short' : ''}${compact || size.width < 1200 ? ' ck-bar-wrap' : ''}${teamMap ? ' ck-team-side' : ''}${fill ? ' ck-root-fill' : ' ck-root-grow'}`}
         onPointerDown={(e) => {
           if (apiOf().selKind) onMarquee(e);
@@ -519,6 +543,7 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
       </div>
     </ClockProvider>
     </LiveScores.Provider>
+    </BigDayLinkContext.Provider>
     </CupLinkContext.Provider>
     </TeamLinkContext.Provider>
   );

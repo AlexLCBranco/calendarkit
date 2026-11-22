@@ -176,6 +176,8 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
               data-date={date}
               data-count={games.length}
             >
+              {/* the big-day label beside the day's button, not in it: a link can't sit in a button, and a day without games disables it */}
+              <div className="ck-wday-row">
               <button
                 type="button"
                 className="ck-wday"
@@ -187,8 +189,9 @@ export function LeagueWeekView({ data, start, weeks, tvOnly, size, today, timeZo
                 <span className="ck-wday-name">{fmtDate(date, { weekday: 'short' })}</span>
                 <span className="ck-wday-num">{first ? fmtDate(date, { month: 'short', day: 'numeric' }) : Number(date.slice(8))}</span>
                 {games.length > 0 && <span className="ck-wday-count">{plural(games.length)}</span>}
-                <BigDayLabel data={data} date={date} className=" ck-bigday-wday" />
               </button>
+              <BigDayLabel data={data} date={date} className=" ck-bigday-wday" />
+              </div>
               {games.length > 0 && <CopyButton hover label="Copy day as image" of=".ck-month-cell" testId="copy-day" />}
               {games.length > 0 && measured && (
                 <div className="ck-month-day" data-cols={cols} style={{ gridTemplateColumns: `repeat(${cols}, var(--ck-line))` }}>

@@ -306,7 +306,8 @@ test.describe('Cup standings: game slots', () => {
 test.describe('Cup view fits the window', () => {
   test.beforeEach(({}, info) => test.skip(info.project.name !== 'desktop-xl', 'fixed window sizes: one desktop project is enough'));
 
-  for (const size of [{ width: 1920, height: 950 }, { width: 1600, height: 1000 }])
+  // 1920 × 900: the owner's real window (its page area is about 1918 × 914)
+  for (const size of [{ width: 1920, height: 900 }, { width: 1920, height: 950 }, { width: 1600, height: 1000 }])
     for (const data of ['real', 'all played'] as const)
       test(`${size.width}×${size.height}, ${data} data: no page scroll, nothing clipped, rows compact`, async ({ page }) => {
         await page.setViewportSize(size);
@@ -340,6 +341,8 @@ test.describe('Cup view fits the window', () => {
           }
           // the wild-card rows: one compact unit — the record starts within 16 px of the group label; West left of East
           const gaps = [...document.querySelectorAll('.ck-cup-race-row')].map((row) => box(row.querySelector('.ck-cup-rec')!).left - box(row.querySelector('.ck-cup-sub')!).right);
+          // every wild-card row on screen, whole
+          const hiddenRows = [...document.querySelectorAll('.ck-cup-race-row')].filter((row) => box(row).top < 0 || box(row).bottom > innerHeight + 0.5).length;
           const races = [...document.querySelectorAll('.ck-cup-race')].map((e) => ({ c: e.getAttribute('data-conference'), x: box(e).left, y: box(e).top }));
           // the game slots: after the name with no overlap, inside the row's name column (before W), every
           // slot's text inside its box, the name at its full text width
@@ -365,7 +368,7 @@ test.describe('Cup view fits the window', () => {
           }
           const min = document.querySelector('.ck-cup-pill[data-team="MIN"]')!;
           const minTips = [...min.querySelectorAll<HTMLElement>('.ck-cup-slot')].map((e) => e.dataset.tip ?? '');
-          return { minSpare: Math.min(...slotGaps), minTips, slotFont: getComputedStyle(document.querySelector('.ck-cup-slots')!).fontSize, bottom: Math.round(box(view).bottom), pill: box(document.querySelector('.ck-cup-pill')!).height, scroll: document.documentElement.scrollHeight, win: innerHeight, out, gaps, races, fontSizes: [...new Set([...view.querySelectorAll('.ck-cup-name, .ck-cup-panel p, .ck-cup-panel li')].map((e) => getComputedStyle(e).fontSize))] };
+          return { hiddenRows, minSpare: Math.min(...slotGaps), minTips, slotFont: getComputedStyle(document.querySelector('.ck-cup-slots')!).fontSize, bottom: Math.round(box(view).bottom), pill: box(document.querySelector('.ck-cup-pill')!).height, scroll: document.documentElement.scrollHeight, win: innerHeight, out, gaps, races, fontSizes: [...new Set([...view.querySelectorAll('.ck-cup-name, .ck-cup-panel p, .ck-cup-panel li')].map((e) => getComputedStyle(e).fontSize))] };
         });
         await page.screenshot({ path: `test-output/cup-${size.width}x${size.height}-${data.replace(' ', '-')}.png` });
         console.log(`[cup fit] ${size.width}×${size.height} ${data}: scroll height ${r.scroll} / window ${r.win}, view bottom ${r.bottom}, pill ${r.pill} px, tightest name → slots ${r.minSpare.toFixed(1)} px`);
@@ -381,6 +384,7 @@ test.describe('Cup view fits the window', () => {
         expect(r.pill, 'group rows keep their v1.29.0 height').toBe(38);
         expect(r.scroll, 'page scrolls by more than the page rows').toBeLessThanOrEqual(r.win + away);
         expect(r.out).toEqual([]);
+        expect(r.hiddenRows, 'wild card rows cut off by the window').toBe(0);
         expect(r.gaps).toHaveLength(10);
         for (const g of r.gaps) expect(g).toBeLessThanOrEqual(16);
         expect(r.races.map((x) => x.c)).toEqual(['West', 'East']);

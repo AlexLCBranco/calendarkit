@@ -11,7 +11,7 @@ import { leagueRematches, leagueSeries, rematchesShown, seriesChip, seriesStatus
 import { TEAM_BY_ID, TEAMS, teamLogo } from '../data/teams';
 import { useEffect, useState } from 'react';
 import { loadPastSeasons, pastMeetings, pastStatus, PAST_SEASONS_BACK, seasonBefore, type PastGame, type PastSeasons } from '../data/pastSeries';
-import { loadSeason, pastPlayoffs, playInLabel, playoffLine, seriesKey, type HistGame, type HistSeason, type PastPlayoffs } from '../data/nbaHistory';
+import { loadSeason, pastGameUrl, pastPlayoffs, playInLabel, playoffLine, seriesKey, type HistGame, type HistSeason, type PastPlayoffs } from '../data/nbaHistory';
 import { playoffRound } from '../data/model';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import type { GameLink } from './links';
@@ -105,7 +105,10 @@ function Square({ g: snapshotGame, current, gameLink }: { g: ScheduleGame; curre
   );
 }
 
-/** An earlier season's meeting (CK-17): "BOS @ DEN", the winner, the score, the date; no link (ESPN's data has no NBA game id). */
+/**
+ * An earlier season's meeting: "BOS @ DEN", the winner, the score, the date. ESPN's past-season data has no NBA game id,
+ * so there is no hoopsjunkie page to point to: the whole square opens NBA.com's games of that date (a new tab).
+ */
 function PastSquare({ g, tag, playoff = false }: { g: PastGame; /** "G1" (a series game), "Play-in" */ tag?: string; playoff?: boolean }) {
   const [date, away, home, as, hs, ot] = g;
   const homeId = TEAMS.find((t) => t.tricode === home)?.id;
@@ -114,7 +117,7 @@ function PastSquare({ g, tag, playoff = false }: { g: PastGame; /** "G1" (a seri
   return (
     <div className={`ck-series-sq ck-series-played ck-series-past${playoff ? ' ck-series-po-sq' : ''}`} data-testid={playoff ? 'series-po-square' : 'series-square'} data-date={date}>
       {tag && <span className="ck-series-po-tag">{tag}</span>}
-      <span className="ck-series-pick ck-series-plain" aria-label={`${day}, ${away} @ ${home}: ${as > hs ? away : home} won ${Math.max(as, hs)}–${Math.min(as, hs)}${ot ? ` (${ot})` : ''}`}>
+      <a className="ck-series-pick" href={pastGameUrl({ date })} target="_blank" rel="noopener noreferrer" title="Open on NBA.com" aria-label={`${day}, ${away} @ ${home}: ${as > hs ? away : home} won ${Math.max(as, hs)}–${Math.min(as, hs)}${ot ? ` (${ot})` : ''}. Open on NBA.com`} data-testid="series-past-link">
         <span className="ck-series-match" data-testid="series-match">
           {logo && (
             <span className="ck-sq-logo">
@@ -129,7 +132,7 @@ function PastSquare({ g, tag, playoff = false }: { g: PastGame; /** "G1" (a seri
           {ot ? ` ${ot}` : ''}
         </span>
         <span className="ck-series-date">{day}</span>
-      </span>
+      </a>
     </div>
   );
 }

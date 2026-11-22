@@ -161,7 +161,7 @@ export function ScheduleDestination(p: ScheduleProps) {
   };
   const teamList = useRef<TeamListHandle>(null);
   // the picker closes when the view changes; Escape puts the focus back on its icon
-  useEffect(() => setDatePick(false), [state.mode, state.layout, state.teamId]);
+  useEffect(() => (setDatePick(false), setPicking(false)), [state.mode, state.layout, state.teamId]);
   const datePickOpen = useRef(false);
   datePickOpen.current = datePick || picking;
   const closeDatePick = (keyboard: boolean) => {

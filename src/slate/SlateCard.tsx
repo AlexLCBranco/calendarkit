@@ -188,7 +188,7 @@ function SlateHeader({ date, data, countdown, timeZone }: { date: string; data: 
   return (
     <div className="ck-slate-header" data-testid="slate-header">
       <span data-testid="slate-header-label">{slateHeaderLabel(date)}</span>
-      <BigDayLabel data={data} date={date} className=" ck-bigday-slate" />
+      <BigDayLabel data={data} date={date} className=" ck-bigday-slate" plain />
       {countdown && <CountdownLink games={countdown} timeZone={timeZone} />}
     </div>
   );

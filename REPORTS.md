@@ -2,6 +2,33 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-22 — CK-35, CK-36 and CK-37 built — v1.95.0
+
+**Built:**
+- CK-35 — Season-series popup: past-season games are clickable. Switch the popup to an earlier season: every square (regular season, play-in, playoffs) is now one link that opens NBA.com's games of that date in a new tab, with the same hover look as this season's squares (lit, no underline) and the title "Open on NBA.com". This season's squares still open hoopsjunkie. It is a plain link inside the popup, so it also works in the Slate kit the gauntlet loads (GT-22 needs nothing from the host).
+- CK-36 — Holiday / big-date label opens that day's Slate. The label is a link in the team calendar cells, the league week view, the league list day heading and the month of the date pickers: a click opens the league Slate of that day (all games, also from a team view) as a new page, so the back arrow returns to where you were. Pointer cursor, the pill lights up on hover, no underline, the hover sentence is kept. The click never also selects the cell or opens the day behind it. The label in the Slate's own header stays plain text.
+- CK-37 — Cup Groups page fits your real window. At 1920 × 900 the page now ends at 856 px (it needed 925 before), so it fits your 1918 × 914 page area with room to spare and all ten wild card rows show. The height came from dead space only: gaps between team rows 6 → 4 px, card padding, the gap between the two rows of groups 14 → 10, the heading row's gap, panel padding, the wild card rows' gaps, and slightly tighter line spacing in "Who advances". Team rows are still 38 px; names, game squares and W / L / DIFF are the same size.
+
+**Blocked:** nothing. The backlog is empty.
+
+**Choices I made (tell me if you want otherwise):**
+- A holiday with no NBA games (Thanksgiving) is a link too, but the Slate has no empty day: it shows the nearest day with games, as the Slate always does for a day without games.
+- Ctrl-click / "open in a new tab" on a label works: the new tab opens the Slate on that day (the address carries `on=`, read once at load like a team link's).
+- In the league week view the label moved from inside the day's button to right after it (a link can't sit inside a button, and a day with no games disables that button). It looks the same.
+- In a date picker's month the label is a link only on days that can be picked (inside the season).
+- Narrower than a desktop window (no Slate there) the labels stay plain text, like the Cup labels.
+- In the gauntlet's Slate widget and in copied images the labels stay plain text.
+
+**Ideas added:** none.
+
+**Checks:** build, lint, 917 unit tests and the whole browser suite at 1920 and 1280 pass. New tests: `e2e/ck35-36.spec.ts` (8 tests) and 1920 × 900 added to "Cup view fits the window" (it failed on the old layout: 925 px in a 900 px window).
+
+**To test by hand:** nothing has to be. If you want, look at the Cup Groups page in your own window to judge the tighter spacing.
+
+**Needs your attention:**
+- The first try at applying the CK-36 edits did nothing (a shell quoting error stopped the script before it ran); rerun from a file, then it applied.
+- `package-lock.json` still says version 1.73.0. Harmless; not touched.
+
 ## 2026-11-21 — CK-22 and CK-34 built — v1.94.0
 
 **Built:**
