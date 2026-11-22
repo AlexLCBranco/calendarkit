@@ -6,7 +6,7 @@ Specs are written here from Claude chat. Item IDs are CK-1, CK-2, ... (never reu
 ## Ready
 
 Items CK-38 to CK-42 are one redesign of the **team calendar, Month range** (`.ck-team-month`), designed live in the owner's
-browser on 2026-11-22 by editing the real page. Scope for all five: team calendar Month only. League views, List, Slate and
+browser on 2026-11-22 by editing the real page. Scope: team calendar Month only (except CK-41, which is site-wide). League views, List, Slate and
 the team 1 week / 2 weeks ranges must look exactly as they do now; if they share the cell component, branch on the range.
 Reference pictures of the agreed result (window 1920 wide, about 855 tall, v1.95.0 underneath):
 `docs/mocks/ck-38-team-month-fatigue-off.jpg` (whole page: header line, TV highlight, fatigue info off) and
@@ -62,14 +62,19 @@ Cell layout, top to bottom (the day number and road trip / homestand label row s
 - Finished TV games get it too. The `TV` chip stays.
 - If a TV game is on today's cell, today's blue outline stays as it is and the cell only gets the green tint.
 
-### CK-41 — Team month: team logos without the white circle
-**In short:** Team logos in the team's month calendar sit directly on the dark cell with no white circle behind them, with a hairline light outline so dark logos stay visible.
-- Remove the light disc (`.ck-logo-backing` background) in this view: transparent background, no border, no shadow.
-- Add a thin light outline that follows the logo's own shape. The mock used, on the `img`:
+### CK-41 — Team logos without the white circle, everywhere
+**In short:** Team logos across the whole site sit directly on the dark background with no white circle behind them, with a hairline light outline so dark logos stay visible.
+- Everywhere a team logo has the light disc today (`.ck-logo-backing` background and any equivalent): league and team
+  views, List, Calendar, Slate, Cup, Standings (page and quick pop-up), the team picker, pop-ups and the map. This item
+  is site-wide, unlike CK-38 to CK-40 and CK-42.
+- Remove the disc: transparent background, no border, no shadow. Keep the logo's size and position so nothing shifts.
+- Add a thin light outline that follows the logo's own shape. The mock (team month view only) used, on the `img`:
   `filter: drop-shadow(0 0 .6px rgba(255,255,255,.95)) drop-shadow(0 0 .6px rgba(255,255,255,.7))`.
-- Every logo must be easy to make out at cell size. In the mock UTA and CHA were fine, SAS and MEM were still faint:
-  strengthen the outline (for all logos, or for dark logos only) until those two read clearly, and check all 30.
-- Only this view for now; other views keep their circles.
+- Every logo must be easy to make out at every size it is shown. In the mock UTA and CHA were fine, SAS and MEM were
+  still faint at cell size: strengthen the outline (for all logos, or for dark logos only) until those two read
+  clearly, and check all 30 in each view.
+- "Copy as image" output (transparent background, pasted onto the gauntlet whiteboard): keep the circles there for
+  now. The outline is tuned for this site's dark background and was not tried on the whiteboard.
 
 ### CK-42 — Team month: "Fatigue info" on/off option
 **In short:** A new "Fatigue info" switch in Options hides the two per-team lines (streaks and fatigue chips) in the team's month calendar, and the remaining time and matchup text grows to use the space.
