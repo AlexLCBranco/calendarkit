@@ -27,6 +27,7 @@ Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas")
 
 **Needs your attention:**
 - The first try at applying the CK-36 edits did nothing (a shell quoting error stopped the script before it ran); rerun from a file, then it applied.
+- One old timing test failed once in the full run and once in a repeat run: "leave → gone within 100 ms: a tooltip with a day strip" measured 101–102 ms. It is not from this build: run alone it passed 12 of 12 on the old code and 12 of 12 on the new. It only misses its limit by 1–2 ms while other tests run beside it. Left as it is; say if you want the limit loosened.
 - `package-lock.json` still says version 1.73.0. Harmless; not touched.
 
 ## 2026-11-21 — CK-22 and CK-34 built — v1.94.0

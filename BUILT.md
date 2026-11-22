@@ -12,6 +12,9 @@ spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Featu
 - CK-37 — Cup Groups page fits the owner's real window with no scroll bar (v1.95.0)
   The Cup Groups page fits a 1920 × 900 window with every wild card row visible: the gaps and paddings are tighter, the names, game squares and numbers are the same size.
 
+### Internal
+- Report: note on a timing test that flakes under load (hover-close, 101–102 ms against a 100 ms limit)
+
 ## 2026-11-21
 - CK-22 — Countdown to the Slate's first game (halftime-timer) (v1.94.0)
   The Slate's header line has a "⏱ Countdown" button that opens halftime-timer counting down to the night's first tip-off, or to the next game once that one has started.
