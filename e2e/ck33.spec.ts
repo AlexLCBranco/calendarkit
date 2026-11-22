@@ -55,9 +55,10 @@ test('the Lakers\' month: a 92 px header, no chips, nothing with controls under 
   const m = await page.evaluate(() => {
     const head = document.querySelector('[data-testid="top-bar"]')!.getBoundingClientRect();
     const weekdays = document.querySelector('.ck-team-month .ck-grid-head')!.getBoundingClientRect();
-    // anything a person can press whose box lies between the header's line and the weekday names
+    // anything a person can press whose box lies between the header's line and the weekday names — apart from the
+    // month's own line (CK-38: team, record, standing and month, which the owner asked for there)
     const between = [...document.querySelectorAll<HTMLElement>('button, a, input, select, [role="tab"], [role="radio"]')]
-      .filter((e) => e.offsetParent !== null && !e.closest('[data-testid="top-bar"]'))
+      .filter((e) => e.offsetParent !== null && !e.closest('[data-testid="top-bar"], [data-testid="team-month-head"]'))
       .map((e) => e.getBoundingClientRect())
       .filter((r) => r.width > 0 && r.bottom > head.bottom && r.bottom <= weekdays.top + 1).length;
     const cells = [...document.querySelectorAll('.ck-team-grid .ck-day-cell')].map((c) => c.getBoundingClientRect().height);
@@ -65,8 +66,8 @@ test('the Lakers\' month: a 92 px header, no chips, nothing with controls under 
   });
   console.log(`[ck33] header ${h.height}px, calendar starts ${Math.round(h.bottom + m.gap)}px, day box ${Math.round(m.cell)}px`); // the design log's three numbers
   expect(m.between).toBe(0);
-  expect(m.gap).toBeLessThanOrEqual(12); // the weekday names start right under the line
-  expect(m.cell).toBeGreaterThanOrEqual(145);
+  expect(m.gap).toBeLessThanOrEqual(12); // the calendar (its own line first, CK-38) starts right under the header's line
+  expect(m.cell).toBeGreaterThanOrEqual(135); // 151 px before the month's line took its 48 px
   expect(m.doc).toBeLessThanOrEqual(m.win);
   expect(h.wide).toBeLessThanOrEqual(0);
   await page.screenshot({ path: 'test-output/ck33/lakers-month.png' });

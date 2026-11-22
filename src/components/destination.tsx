@@ -57,6 +57,8 @@ export interface DestinationProps {
   jump: () => void;
   /** Page history: after every render of a destination, so a change of its own state reaches the host. */
   rendered: () => void;
+  /** The Standings page on this season (the Team Calendar's record and place open it). */
+  openStandings?: () => void;
 }
 
 /** What a destination tells the shell; reassigned on every render. */

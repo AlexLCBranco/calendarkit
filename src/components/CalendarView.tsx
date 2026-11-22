@@ -522,7 +522,7 @@ export function CalendarView({ data, odds, cold, size: outerSize, initial, now: 
         </header>
         {!headRow && controls}
         {/* every destination stays mounted, so its state lasts as long as the page; only the active one renders */}
-        <ScheduleDestination {...shared} size={scheduleSize} active={destination === 'schedule'} odds={odds} cold={cold} teamDate={initial?.teamDate} initialSnap={initial?.snap} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
+        <ScheduleDestination {...shared} openStandings={() => (update({ mode: 'standings' }), standingsApi.current!.setSeason(undefined))} size={scheduleSize} active={destination === 'schedule'} odds={odds} cold={cold} teamDate={initial?.teamDate} initialSnap={initial?.snap} openTeam={openTeamStable} onTop={onTop} api={scheduleApi} />
         <CupDestination {...shared} active={cup} initial={initial?.cup} api={cupApi} />
         <StandingsDestination {...shared} active={standings} initial={initial?.st ?? initial?.snap?.st} initialSeason={initial?.sy ?? initial?.snap?.sy} initialSeries={initial?.ss} api={standingsApi} />
         {stPop && slateFits && (

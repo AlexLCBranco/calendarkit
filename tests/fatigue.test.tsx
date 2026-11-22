@@ -229,10 +229,12 @@ describe('Team Calendar: 3-in-4 chip next to the B2B label', () => {
           expect(chip.getAttribute('data-tip-days')).toMatch(/^(\d{4}-\d\d-\d\d:[grt] ?)+$/);
           expect(chip.getAttribute('aria-label')).toBe(chip.getAttribute('data-tip'));
           seen++;
-          const tags = [...chip.parentElement!.children];
-          const b2b = tags.filter((t) => t.classList.contains('ck-b2b-label'));
-          // right after the B2B label(s), before markers / TV
-          expect(tags.indexOf(chip)).toBe(b2b.length);
+          // on the team's own line: its logo, its streak, then the B2B label(s), then the chip
+          const line = chip.parentElement!;
+          expect(line.getAttribute('data-testid')).toBe('team-line');
+          const before = [...line.children].slice(0, [...line.children].indexOf(chip)).filter((t) => !t.classList.contains('ck-logo-backing') && !t.classList.contains('ck-streak'));
+          expect(before.every((t) => t.classList.contains('ck-b2b-label'))).toBe(true);
+          expect(before).toHaveLength(line.querySelectorAll('.ck-b2b-label').length);
         }
       }
       if (m !== months.at(-1)) fireEvent.click(screen.getByRole('button', { name: /next month/i }));

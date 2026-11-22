@@ -5,6 +5,16 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-22
+- CK-38 — Team month: header line with team name, record, standing and centred month (v1.96.0)
+  Above the team's month calendar there is a big line with the team's full name, its record and its place in the conference, and the month centred over the grid; each piece is clickable.
+- CK-39 — Team month: cleaner game cells (one-line matchup, one logo line per team, bigger text) (v1.96.0)
+  Each game in the team's month calendar is four tidy lines: time, the matchup with scores on one evenly spaced line, then one line per team that starts with its logo and shows its streak and fatigue chips.
+- CK-40 — Team month: TV games get the Slate's green highlight (v1.96.0)
+  In the team's month calendar a nationally televised game's whole cell has the Slate's green border and faint green tint.
+- CK-41 — Team logos without the white circle, everywhere (v1.96.0)
+  Team logos across the site sit directly on the dark background with a hairline light outline instead of a white circle; copied images keep the circles.
+- CK-42 — Team month: "Fatigue info" on/off option (v1.96.0)
+  A "Fatigue info" switch in Options hides the two per-team lines in the team's month calendar, and the time and matchup text grows into the space.
 - CK-35 — Season-series popup: past-season games are clickable (v1.95.0)
   In the season-series popup, every game of an earlier season (regular season, play-in, playoffs) opens that game's date on NBA.com in a new tab.
 - CK-36 — Holiday / big-date label opens that day's Slate (v1.95.0)

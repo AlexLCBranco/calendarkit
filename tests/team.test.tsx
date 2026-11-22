@@ -146,7 +146,8 @@ describe('selected team first, both logos', () => {
           const self = home ? g.homeTeam : g.awayTeam;
           const [sc, o] = g.status === 'final' ? [` ${self.score}`, ` ${opp.score}`] : ['', '']; // final scores (scores.test.tsx)
           expect(cell.querySelector('.ck-matchup')!.textContent!.replace(/\s+/g, ' ').trim()).toBe(`${tri}${sc} ${home ? 'vs' : '@'}${o} ${opp.teamTricode}`);
-          expect(imgs(cell)).toEqual([`/calendar/logos/${tri}.svg`, `/calendar/logos/${opp.teamTricode}.svg`]);
+          // the matchup's two logos; each team's own line under it starts with its logo again (CK-39)
+          expect(imgs(cell.querySelector('.ck-matchup')!)).toEqual([`/calendar/logos/${tri}.svg`, `/calendar/logos/${opp.teamTricode}.svg`]);
           n++;
         }
         if (i < months.length - 1) fireEvent.click(screen.getByLabelText('Next month'));

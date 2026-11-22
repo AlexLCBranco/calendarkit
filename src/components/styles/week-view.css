@@ -149,20 +149,33 @@
   display: inline-block;
   line-height: var(--ck-logo);
 }
-/* Logos sit on a subtle light disc so dark logos (SAS, MEM, NOP, UTA…) read on the dark background. */
+/* Logos sit directly on the dark background, in the slot the light disc used to fill (same size and place, so
+   nothing moved). A hairline light outline that follows the logo's own shape keeps the dark ones (SAS, MEM, UTA, CHA…)
+   readable: --ck-logo-outline, stacked drop-shadows (one is too faint for SAS and MEM at cell size). */
 .ck-logo-backing {
   display: grid;
   place-items: center;
   width: var(--ck-logo);
   height: var(--ck-logo);
   border-radius: 50%;
-  background: rgba(226, 231, 238, 0.92);
 }
 .ck-logo-backing img {
   display: block;
   width: calc(var(--ck-logo) * 0.8);
   height: calc(var(--ck-logo) * 0.8);
   object-fit: contain;
+  filter: var(--ck-logo-outline);
+}
+/* Images ("Copy as image") keep the light disc: they are pasted on other backgrounds (the gauntlet whiteboard), which
+   the outline isn't tuned for. */
+.ck-capture .ck-logo-backing,
+.ck-capturing .ck-logo-backing,
+.ck-capturing.ck-logo-backing {
+  background: rgba(226, 231, 238, 0.92);
+}
+.ck-capture .ck-logo-backing img,
+.ck-capturing .ck-logo-backing img {
+  filter: none;
 }
 .ck-logo-empty {
   width: var(--ck-logo);

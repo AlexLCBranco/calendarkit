@@ -517,7 +517,11 @@ test('selection images: only the selected games, in on-screen order, as drawn in
     expect(shot.stage.heads.length, `${k.name} headers`).toBe(k.heads ? days.length : 0);
     // 2 logos per game (the week view too: scores in their own slots), + the team header in team views
     const logos = shot.target.regions.filter((r) => r.kind === 'logo').length;
-    expect(logos, k.name).toBe(2 * picked.length + (k.search.includes('view=team') ? 1 : 0));
+    if (k.name === 'team-calendar-month') {
+      // month cells: the matchup's two, and one more at the start of each team's own line (CK-39)
+      expect(logos, k.name).toBeGreaterThan(2 * picked.length + 1);
+      expect(logos, k.name).toBeLessThanOrEqual(4 * picked.length + 1);
+    } else expect(logos, k.name).toBe(2 * picked.length + (k.search.includes('view=team') ? 1 : 0));
     console.log(`[copy] selection-${k.name}: ${picked.length} games, ${days.length} day(s)`);
     await check(page, `selection-${k.name}`, shot, ['logo', 'text']);
     await page.keyboard.press('Escape');

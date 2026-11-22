@@ -2,7 +2,7 @@
 // by division (East over West, three columns), and beside it the "All teams" button — always on screen with the box,
 // one click to the league view.
 
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { DIVISIONS, TEAMS, TEAM_BY_ID, type Team } from '../data/teams';
 import { injuryUrl } from '../slate/gameLinks';
@@ -11,6 +11,10 @@ import { clampX, fullName } from './widget';
 
 const PICKER_ORDER: Team[] = DIVISIONS.flatMap(({ division }) => TEAMS.filter((t) => t.division === division));
 
+export interface TeamPickerHandle {
+  open(): void;
+}
+
 /**
  * Team picker with logos: a button (logo + full name; the tricode on narrower windows and phones) opening a listbox
  * grouped by conference and division. Keyboard: Enter/Space/↓ open; arrows move (←/→ jump a division), Home/End, a
@@ -18,7 +22,7 @@ const PICKER_ORDER: Team[] = DIVISIONS.flatMap(({ division }) => TEAMS.filter((t
  * Without a team (the league view; the Cup's Team schedule before a pick) the button reads "Pick a team", no logo.
  * Fixed width, so the controls after it never move.
  */
-export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: number; onChange: (teamId: number) => void; compact?: boolean }) {
+export function TeamPicker({ teamId, onChange, compact = false, handle }: { teamId?: number; onChange: (teamId: number) => void; compact?: boolean; /** Set to a handle that opens the list (the Team Calendar's own team name does) */ handle?: RefObject<TeamPickerHandle | null> }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(teamId ?? PICKER_ORDER[0]!.id);
   const [pos, setPos] = useState({ left: 0, top: 0 });
@@ -42,6 +46,7 @@ export function TeamPicker({ teamId, onChange, compact = false }: { teamId?: num
     if (t !== teamId) onChange(t);
   };
   const order = PICKER_ORDER;
+  if (handle) handle.current = { open: () => !open && openList() };
   useLayoutEffect(() => {
     const el = list.current;
     if (!open || !el) return;

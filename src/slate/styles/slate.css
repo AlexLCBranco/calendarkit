@@ -642,21 +642,21 @@ a.ck-streak-game:hover {
   font-size: 10px;
   white-space: nowrap;
 }
-/* A logo inside a game square (day strips, season-series popup): the logo disc's look, but part of the square,
-   which is the game's link — not a team link (one can't sit inside the other), so not a .ck-logo-backing */
+/* A logo inside a game square (day strips, season-series popup): the team logo's look (no disc, the light outline),
+   but part of the square, which is the game's link — not a team link (one can't sit inside the other), so not a
+   .ck-logo-backing */
 .ck-sq-logo {
   display: grid;
   place-items: center;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
-  background: rgba(226, 231, 238, 0.92);
 }
 .ck-sq-logo img {
   display: block;
   width: 13px;
   height: 13px;
   object-fit: contain;
+  filter: var(--ck-logo-outline);
 }
 /* The Slate page's "First tip-off in 2h 14m" (SlateView, never in the Slate itself or a copy) */
 .ck-slate-countdown {

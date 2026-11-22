@@ -6,7 +6,8 @@
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import type { ScheduleGame } from '../shared/nba-schedule/parse';
 import { cupTag, hasNationalTv, leagueSeasonLines, opponentSecondNight, type CalendarData } from '../data/model';
-import { opponentSituation } from '../data/opponent';
+import { opponentSituation, teamStreak } from '../data/opponent';
+import { useFatigueInfo } from './fatigueInfo';
 import { cupNightHeading, cupNights, cupTeamTag } from '../data/cupSchedule';
 import { teamThreeInFour } from '../data/scheduleTags';
 import { timeGroups } from './dayflow';
@@ -81,13 +82,14 @@ export function SelectionCapture(p: SelectionCaptureProps) {
 function TeamDays({ data, teamId, now, timeZone, games, cellWidth, teamScale = 1, teamMonth = false }: SelectionCaptureProps & { games: ScheduleGame[] }) {
   const b2b = useTeamB2B(data, teamId);
   const tif = teamThreeInFour(data, teamId);
+  const fatigue = useFatigueInfo();
   return (
     <div className="ck-team-grid ck-sel-days" style={{ '--ck-team-scale': teamScale } as CSSProperties}>
       {byDay(games).map(([date, gs]) => (
         <div key={date} className="ck-cell ck-day-cell ck-sel-day" data-date={date} style={{ width: cellWidth }}>
           <span className="ck-sel-dayhead">{dayHead(date, gs.length)}</span>
           {gs.map((g) => (
-            <GameCard key={g.gameId} game={g} teamId={teamId} b2b={b2b.byGame.get(g.gameId)} tif={tif.get(g.gameId)} tvPill opponentB2B={opponentSecondNight(data, g, teamId)} lines={leagueSeasonLines(data).get(g.gameId)} opp={opponentSituation(data, g, teamId)} oppShort={teamMonth} now={now} timeZone={timeZone} teamFirst logos scores size="compact" />
+            <GameCard key={g.gameId} game={g} teamId={teamId} b2b={b2b.byGame.get(g.gameId)} tif={tif.get(g.gameId)} tvPill opponentB2B={opponentSecondNight(data, g, teamId)} lines={leagueSeasonLines(data).get(g.gameId)} opp={opponentSituation(data, g, teamId)} oppShort={teamMonth} month={teamMonth ? { fatigue, streak: teamStreak(data, g, teamId) } : undefined} now={now} timeZone={timeZone} teamFirst logos scores size="compact" />
           ))}
         </div>
       ))}

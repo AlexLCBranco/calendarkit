@@ -2,6 +2,44 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-22 — CK-38 to CK-42 built — v1.96.0
+
+**Built** (team calendar, Month range; the week ranges, the List, the Slate and the league views keep their cells):
+- CK-38 — Header line. Above the weekday names: the team's full name (34 px), its record (24 px), its place ("2nd West", 18 px, dimmed) and the month centred over the grid (26 px). Each piece lights up on hover and has a tooltip: the name opens the team picker, record and place open Standings (this season), the month opens the date picker. Record and place are read from the Standings table itself. The breadcrumb, the picker and the small month between the arrows are unchanged.
+- CK-39 — Game cells in four lines: time with the Cup / TV chips; the matchup with scores on one evenly spaced line (the cell's biggest text); the calendar team's line (logo, streak, back-to-back, N-in-M); the opponent's line (logo, streak, its chips, same chip style). No record in the cell: hover the matchup or the opponent's abbreviation ("TOR record: 3-3"). Streaks on every game: after a finished game, the current streak on every game to come. A team with nothing to show has no line.
+- CK-40 — TV games: the whole cell has the Slate's green border and tint, finished games too. Today's cell keeps its blue outline and takes only the tint.
+- CK-41 — Logos without the white circle on every page (league and team views, Slate, Cup, Standings and its pop-up, team picker, pop-ups), same size and place, with a thin light outline. Copied images keep the circles.
+- CK-42 — "Fatigue info" in Options (shown on the team's month, on by default, remembered between visits). Off hides both team lines and the time and matchup text grows.
+
+**Sizes measured at 1920 × 855** (no vertical scroll in any case): matchup text 14.8 px in a 5-week month (spec: about 14.6), 11.5 px in a 6-week month (January 2027, shrunk for that month only), 17.1 px with fatigue info off (spec: about 16.8). Day box 130 px (5 weeks), 108 px (6 weeks). At your 1912 × 913 window the day box is 142 px (151 before the new line).
+
+**Blocked:** nothing. The backlog is empty.
+
+**Choices I made (tell me if you want otherwise):**
+- The "OT" mark moved to the time line (after the Cup / TV chips). On the matchup line it is what would have limited the text size or wrapped, as it did in the fatigue-off mock.
+- The mock shows a "Fatigue info: off" pill at the right of the header line. Not built: the spec says the right side is empty and there is one switch only, in Options.
+- "Fatigue info" appears in Options only on the team's month (like "Rest days" only on the Team List).
+- Text size is fitted to the cell: the four lines use up to 85 % of the cell's free height and the widest line stays 4 px inside the cell. So a bigger window gets bigger text, and a 6-week month smaller text.
+- The opponent's chips keep their short forms in the month ("2/2", "6in9"), as in the mock; the full wording is in their tooltips.
+- A game to come in the play-in or playoffs shows no streak (streaks stay regular-season only).
+- Logo outline: stronger than the mock's (three stacked shadows instead of two) so San Antonio and Memphis read at cell size. In a finished game's dimmed cell they are dimmer, like everything in it.
+- The game squares in day-strip tooltips and the season-series pop-up lost their circle too (same look as the other logos).
+- The gauntlet's live Slate widget is not a copied image, so it will get the outlined logos when the gauntlet's pin moves to this version. The outline was not tried on the whiteboard. Say if the widget should keep the circles.
+- The CK-33 rule "nothing with controls under the header's line" now has this one exception (the new line), as CK-38 asks.
+
+**Ideas added:** none.
+
+**Checks:** build, lint, 931 unit tests pass. New tests: `tests/team-month-cells.test.tsx` (14) and `e2e/team-month.spec.ts` (18: no scroll and no wrapped line in a 5-week and a 6-week month with fatigue info on and off, sizes, the header line's clicks, the TV look against the Slate's own card, logos on seven pages, the switch surviving a reload). Old tests changed because the design changed: the opponent's record (now on hover), the logo count in a cell and in a selection image, the OT mark's place, the "day box at least 145 px" limit (now 135), the smallest text scale at 1280 px (0.8 → 0.7), and the Slate's pixel reference moved to this version (logos).
+
+**To test by hand:** nothing has to be. Worth a look in your own window, since it is a matter of taste: whether San Antonio's and Memphis's logos read well enough in the month cells.
+
+**Needs your attention:**
+- Two edit scripts failed on the first try and were rerun: one shell quoting error (nothing applied), and my first versions of the new tests had wrong expectations (my test data, not the app).
+- `e2e/notes.spec.ts` "two tabs: typing and switching…" failed twice in full parallel runs (typed characters lost in the background tab) and passed 5 of 5 alone. I could not tie it to this build, but I did not prove it fails on the old code either.
+- The dev console shows React's "a link inside a link" warning for team logos inside the matchup link. It was there before this build; not touched.
+- At a 1280 px window the month's text is 10–11 px (scale 0.77–0.79): the one-line matchup needs the width.
+- `package-lock.json` still says version 1.73.0. Harmless; not touched.
+
 ## 2026-11-22 — CK-35, CK-36 and CK-37 built — v1.95.0
 
 **Built:**

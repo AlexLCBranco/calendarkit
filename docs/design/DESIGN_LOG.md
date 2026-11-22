@@ -9,6 +9,10 @@ Rules:
 - Any shipped version can be rebuilt from git (check out the version's commit, `npm ci`, `npx vite`) to take a new screenshot. Mocks exist only as the pictures here.
 - Owner's standing rules (2026-11-21): nothing crosses the header line; the header line never moves down (92px is the most it can be); no always-on-screen team chips.
 
+## 2026-11-22 — v1.96.0 (CK-38 … CK-42): team month redesign — shipped
+![](shots/2026-11-22-v1.96.0-team-month-redesign.png)
+Header 92px · calendar starts 98px (its own line; the weekday names at 147px) · day box 142px. A line above the grid (team name 34px, record 24px, place 18px, the month 26px centred; all four clickable), four-line game cells (time + Cup / TV chips, one-line matchup, a logo line per team), TV cells with the Slate's green outline and tint, logos without the white disc (light outline), "Fatigue info" in Options. Designed live by the owner in his browser: `docs/mocks/ck-38-team-month-fatigue-off.jpg`, `docs/mocks/ck-39-cells-fatigue-on-closeup.png`.
+
 ## 2026-11-21 — v1.93.0 (CK-33): picker + "All teams" button, every control in the tabs row — shipped
 ![](shots/2026-11-21-v1.93.0-picker-all-teams.png)
 ![](shots/2026-11-21-v1.93.0-picker-open.png)

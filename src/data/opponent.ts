@@ -27,11 +27,20 @@ export interface OpponentSituation {
 
 const currentCache = new WeakMap<CalendarData, Map<number, SeasonLine | undefined>>();
 /** A team's record and streak as of now: its last season line that has a record. */
-function currentLine(data: CalendarData, teamId: number): SeasonLine | undefined {
+export function currentLine(data: CalendarData, teamId: number): SeasonLine | undefined {
   let byTeam = currentCache.get(data);
   if (!byTeam) currentCache.set(data, (byTeam = new Map()));
   if (!byTeam.has(teamId)) byTeam.set(teamId, [...teamSeason(data, teamId).values()].findLast((l) => l.record));
   return byTeam.get(teamId);
+}
+
+/**
+ * A team's streak for one of its games, the way the opponent's is read: after the game once final, going into it
+ * before — and its current streak on a game further ahead than its next one (the streak going in isn't known yet).
+ */
+export function teamStreak(data: CalendarData, game: ScheduleGame, teamId: number): SeasonLine['streak'] {
+  const own = leagueSeasonLines(data).get(game.gameId)?.get(teamId);
+  return (own?.record || game.gameType !== 'regular' ? own : currentLine(data, teamId))?.streak;
 }
 
 /** `teamId`'s opponent in `game`, or undefined when the team isn't in it or the opponent isn't decided. */

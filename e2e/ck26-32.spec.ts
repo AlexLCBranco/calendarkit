@@ -123,7 +123,7 @@ test.describe('CK-28: a record opens the team\'s List', () => {
   });
 });
 
-test('CK-29: a Team Calendar cell shows the opponent\'s record and its back-to-back night', async ({ page }) => {
+test('CK-29: a Team Calendar cell shows the opponent\'s line with its back-to-back night, its record on hover', async ({ page }) => {
   // a BOS game in November whose opponent also played the day before (its 2nd night)
   const played = (tri: string, day: string) => GAMES.some((g) => dateOf(g) === day && (g.homeTeam.teamTricode === tri || g.awayTeam.teamTricode === tri));
   const prevDay = (day: string) => new Date(Date.parse(`${day}T12:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
@@ -135,7 +135,8 @@ test('CK-29: a Team Calendar cell shows the opponent\'s record and its back-to-b
   await at(page, '2026-11-20', '?view=team&layout=calendar&team=BOS');
   const line = page.locator(`.ck-team-grid [data-date="${dateOf(game)}"] [data-testid="opp-line"]`);
   await expect(line).toHaveAttribute('data-team', opp);
-  await expect(line.getByTestId('opp-rec')).toHaveText(/^\d+-\d+$/);
+  // its record is no longer printed in the month cell (CK-39): the hover text of its tricode
+  await expect(page.locator(`.ck-team-grid [data-date="${dateOf(game)}"] .ck-opp`)).toHaveAttribute('title', new RegExp(`^${opp} record: \\d+-\\d+$`));
   await expect(line.getByTestId('opp-b2b')).toHaveAttribute('data-night', '2');
   // always on screen, inside its cell
   await expect(line).toBeInViewport();

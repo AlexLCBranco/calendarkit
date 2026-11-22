@@ -106,7 +106,10 @@ test('Team Calendar: every team with a final game, every final cell; scale print
       const home = g.home.teamTricode === tri;
       const [me, opp] = home ? [g.home, g.away] : [g.away, g.home];
       const cell = page.locator(`.ck-day-cell[data-date="${g.date}"]`);
-      expect(norm(await cell.locator('.ck-matchup').textContent())).toBe(`${tri} ${me.score} ${home ? 'vs' : '@'} ${opp.score} ${opp.teamTricode}${g.ot ? ` ${g.ot}` : ''}`);
+      expect(norm(await cell.locator('.ck-matchup').textContent())).toBe(`${tri} ${me.score} ${home ? 'vs' : '@'} ${opp.score} ${opp.teamTricode}`);
+      // the overtime mark is on the time line in a month cell (CK-39: the matchup stays one line)
+      if (g.ot) expect(norm(await cell.locator('.ck-mc-top .ck-ot').textContent())).toBe(g.ot);
+      else await expect(cell.locator('.ck-ot')).toHaveCount(0);
       // nothing clipped in the cell
       expect(await cell.evaluate((c) => c.scrollHeight <= c.clientHeight + 1 && c.scrollWidth <= c.clientWidth + 1)).toBe(true);
       n++;

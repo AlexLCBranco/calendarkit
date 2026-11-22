@@ -30,7 +30,9 @@ import { SlateCopy, slateGames, SlateView, SLATE_MIN_WIDTH } from './SlateView';
 import { TeamHeader } from './TeamHeader';
 import { TeamListView, type TeamListHandle, type TeamListOpen } from './TeamListView';
 import { TeamMonthGrid } from './TeamMonthGrid';
-import { AllTeamsButton, InjuriesLink, TeamPicker } from './TeamPicker';
+import { AllTeamsButton, InjuriesLink, TeamPicker, type TeamPickerHandle } from './TeamPicker';
+import { TeamMonthHead } from './TeamMonthHead';
+import { setFatigueInfo, useFatigueInfo } from './fatigueInfo';
 import { Crumbs, OptionsIcon, PageRow } from './Header';
 import { createValueStore, useValue, type ValueStore } from './valueStore';
 import { WeekPicker } from './WeekPicker';
@@ -103,6 +105,8 @@ export function ScheduleDestination(p: ScheduleProps) {
   const [picking, setPicking] = useState(false);
   // the lists' date picker
   const [datePick, setDatePick] = useState(false);
+  const teamPicker = useRef<TeamPickerHandle | null>(null);
+  const fatigueOn = useFatigueInfo();
   // Slate notes: the games' notes, saved in localStorage (notes.ts); "Hide all notes" is a view toggle, on at every
   // load and never stored (as "Show rest days"); the stored notes are untouched by it
   const [notes] = useState(localNotesStore);
@@ -518,7 +522,7 @@ export function ScheduleDestination(p: ScheduleProps) {
   const what = (
     <PageRow label="What" className=" ck-prow-what">
       <AllTeamsButton on={!team} onClick={() => pickScope(undefined)} />
-      <TeamPicker teamId={team ? state.teamId : undefined} onChange={pickScope} compact={compact} />
+      <TeamPicker teamId={team ? state.teamId : undefined} onChange={pickScope} compact={compact} handle={teamPicker} />
       {team && <InjuriesLink teamId={state.teamId} />}
     </PageRow>
   );
@@ -545,6 +549,11 @@ export function ScheduleDestination(p: ScheduleProps) {
       {team && list && !compact && (
         <label className="ck-check" title="Show the days without a game between the rows">
           <input type="checkbox" aria-label="Show rest days" checked={state.showRest} onChange={(e) => update({ showRest: e.target.checked })} /> Rest days (Team List)
+        </label>
+      )}
+      {team && !list && !compact && state.teamSpan === 'month' && (
+        <label className="ck-check" title="Each team's line in the month's game boxes: streak, back-to-back, games-in-days and rest">
+          <input type="checkbox" aria-label="Fatigue info" checked={fatigueOn} onChange={(e) => setFatigueInfo(e.target.checked)} /> Fatigue info (Team month)
         </label>
       )}
     </PopoverButton>
@@ -574,7 +583,7 @@ export function ScheduleDestination(p: ScheduleProps) {
     ) : list ? (
       <TeamListView {...teamListProps} />
     ) : (
-      <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} runs={!compact} />
+      <TeamMonthGrid data={data} teamId={state.teamId} month={teamMonth} onMonthChange={setTeamMonth} size={size} now={now} timeZone={timeZone} onOpenGame={onOpenGame} gameLink={gameLink} tvOnly={state.tvOnly} nav={false} weeks={teamWeeks} start={teamWeek} today={today} runs={!compact} head={<TeamMonthHead data={data} teamId={state.teamId} month={teamMonth} onTeam={() => teamPicker.current?.open()} onStandings={() => (p.openStandings ? p.openStandings() : update({ mode: 'standings' }))} onMonth={() => setDatePick((o) => !o)} />} />
     );
   } else if (slate) {
     body = <SlateView focusTeam={slateFocusTeam} today={today} data={data} date={nearestDay(days, state.date)} tvOnly={state.tvOnly} timeZone={timeZone} gameLink={gameLink} width={size.width} notes={notes} odds={odds} cold={cold} hideNotes={hideNotes} onHideNotes={setHideNotes} />;

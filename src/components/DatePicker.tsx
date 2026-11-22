@@ -32,7 +32,7 @@ export function DatePicker({ data, date, tvOnly, today, cell, onPick, onClose }:
   const [month, setMonth] = useState(monthOf(date));
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const outside = (e: Event) => !ref.current?.contains(e.target as Node) && !(e.target as Element).closest?.('[data-testid="date-pick"]') && onClose(false);
+    const outside = (e: Event) => !ref.current?.contains(e.target as Node) && !(e.target as Element).closest?.('[data-testid="date-pick"], [data-date-opener]') && onClose(false);
     document.addEventListener('mousedown', outside);
     return () => document.removeEventListener('mousedown', outside);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- set up once per opening (WeekPicker also focuses then); onClose only closes it

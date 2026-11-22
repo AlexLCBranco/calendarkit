@@ -213,7 +213,7 @@ test('team calendar: content scaled to the cell, nothing clipped in any cell —
       if (p === 'desktop-xl') {
         expect(r.scale, name).toBeGreaterThanOrEqual(0.95); // was 1.2; the opponent's line (CK-29) takes a line of every cell
         if (r.logo) expect(r.logo, name).toBeCloseTo(16 * r.scale, 1);
-      } else expect(r.scale, name).toBeGreaterThanOrEqual(0.8); // TEAM_SCALE_MIN: 1280 × 900 (a 2-line score line, see TeamMonthGrid)
+      } else expect(r.scale, name).toBeGreaterThanOrEqual(0.7); // 1280 × 900: the one-line matchup sets it (0.77–0.79; the floor is TEAM_MONTH_SCALE_MIN)
       const prev = seen.get(r.weeks);
       if (!prev || r.fill.used > prev.used) seen.set(r.weeks, { cell: `${name}: cell ${r.cell} px, scale ${r.scale}`, ...r.fill });
       const next = page.getByLabel('Next month');

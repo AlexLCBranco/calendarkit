@@ -123,6 +123,30 @@ measurement; open it only when a question needs the backstory.
     button it is a `role="link"` span.
   - **Cup Groups fits 1920 × 900** (the owner's page area is about 1918 × 914): the height came from gaps and paddings
     (`cup.css`); rows stay 38 px, text sizes unchanged. The fit test covers 1920 × 900 too.
+- **v1.96.0** (2026-11-22, CK-38 … CK-42; mocks in `docs/mocks/`): the **Team Calendar's Month range** redesigned
+  (desktop; the week ranges, phones and every other view keep the classic cell — `monthCell` in TeamMonthGrid, GameCard's
+  `month` prop, `styles/team-month.css`):
+  - **The line above the grid** (`TeamMonthHead.tsx`): full name, record, place ("2nd West"), the month centred — four
+    buttons: the team picker (`TeamPickerHandle`), Standings on this season (`openStandings`), the date picker. Record
+    and place come from `leagueStandings` / `conferencePositions` (`teamStanding`), never a second computation. On
+    screen only (not in a copy). It is the one thing with controls under the header's line, by the owner's spec.
+  - **Cells** as four lines: time + Cup / TV chips (+ the OT mark, moved here so the matchup stays one line); the
+    matchup on one line with equal gaps, 1.15 × the cell's text, no record (the opponent's is the `title` of the
+    matchup and of its tricode, "TOR record: 3-3"); the calendar team's line and the opponent's, each starting with its
+    logo, then its streak and chips (the opponent's in their short forms, own classes / test ids as before). Streaks on
+    every game: after a finished one, the current streak on every game to come (`teamStreak` in opponent.ts).
+  - **Text size** (`--ck-team-scale`): the probe is now the month cell itself (the calendar's team vs MEM, a finished
+    game, every chip), measured once at zoom 1 against the *shown* month's cells: the largest scale at which the lines
+    use `TEAM_MONTH_FILL` (0.85) of the cell's free height and the widest line stays `TEAM_MONTH_EDGE` (4 px) inside
+    it. So a 6-week month has smaller text instead of a scrollbar, and with "Fatigue info" off the width is the limit.
+    At 1920 × 855: matchup 14.8 px (5 weeks), 11.5 px (6 weeks), 17.1 px with fatigue info off.
+  - **TV cells** (`.ck-cell-tv`): the Slate TV card's inset green line and tint; today's keeps its blue outline.
+  - **"Fatigue info"** (Options, only on the team's month; `fatigueInfo.ts`, localStorage `ck:fatigue:v1` = "off"
+    when off): hides both team lines. The one stored default besides notes.
+  - **Logos have no disc** (site-wide, `.ck-logo-backing` in week-view.css and `.ck-sq-logo`): the slot and the logo
+    inside it are unchanged; a light outline from stacked drop-shadows (`--ck-logo-outline`, base.css). Copies keep the
+    disc (`.ck-capture`, `.ck-capturing`). The gauntlet's live Slate widget is not a copy: it gets the outline when
+    its pin moves.
 - **Waiting on Alex**: whether the League List rows look right (then they can leave "in flux").
 
 ## What the app is
@@ -259,7 +283,7 @@ measurement; open it only when a question needs the backstory.
 - Cup standings use NBA.com's rules; an OT game counts its regulation points (stored in the snapshot as
   `calendarkit.regulation`) and 0 differential for the OT margin. The simulator and stakes chips use the same engine
   (`cupEngine.ts`).
-- Team logos are local files (`public/logos/`), on a light disc; never the NBA CDN at runtime.
+- Team logos are local files (`public/logos/`), on the dark background with a light outline (a light disc only in copied images); never the NBA CDN at runtime.
 - Playoff round is read from the gameId (`playoffRound()`) until rotationkit's module provides it.
 
 **Behaviour**
@@ -267,7 +291,7 @@ measurement; open it only when a question needs the backstory.
   the same tab keeps its page (day, month / week, Team List row, scroll) from the tab's history entry (`history.state`,
   written on every change and a moment after scrolling stops); "Show rest days" still resets. Midnight with the tab
   open moves today along.
-- Defaults are never stored (rest days on, Hide all notes **on** — the Slate opens with notes hidden —, TV filter) until a settings page exists. Slate notes are
+- Defaults are never stored (rest days on, Hide all notes **on** — the Slate opens with notes hidden —, TV filter) until a settings page exists; the exception is "Fatigue info" (CK-42 asked for it to be remembered). Slate notes are
   stored (content): localStorage `ck:notes:v1`, per game, three slots (pre / live / post), the slot switched only by the
   person — format and rules in docs/slate-in-gauntlet.md.
 - No countdown on game rows (no minute tick in the widget clock; it moves at midnight and on waking). The one countdown

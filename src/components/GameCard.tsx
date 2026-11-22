@@ -131,6 +131,17 @@ export interface GameCardProps {
   oppShort?: boolean;
   /** List rows: the star of a holiday or a big NBA date (BigDayMark), last among the tags. */
   bigDay?: ReactNode;
+  /**
+   * Team Calendar, Month range (desktop): the cell as four lines — time with the game's Cup / TV chips, the matchup
+   * with its scores on one evenly spaced line, then a line per team that starts with its logo (streak, tired / rested
+   * chips). `fatigue` off leaves the two team lines out; `streak`: the calendar team's (its current one on a game to come).
+   */
+  month?: MonthCell;
+}
+
+export interface MonthCell {
+  fatigue: boolean;
+  streak?: SeasonLine['streak'];
 }
 
 /** A Team List row's place in a road trip or homestand: the band's stripe joins the rows; `label` on each game row. */
@@ -150,14 +161,16 @@ import type { GameLink } from '../slate/links';
  * never link-styled in images (`.ck-capturing`). Not draggable, so a press on it can start a marquee selection
  * (selection.ts swallows the click that ends a drag). Without a URL it is a plain `<span>` with the same class.
  */
-export function MatchLink({ game, gameLink, className, children }: { game: ScheduleGame; gameLink?: GameLink; className: string; children: ReactNode }) {
+export function MatchLink({ game, gameLink, className, title, children }: { game: ScheduleGame; gameLink?: GameLink; className: string; /** instead of the game page's hint */ title?: string; children: ReactNode }) {
   const url = gameLink?.(game);
   return url ? (
-    <a className={`${className} ck-mlink`} href={url} target="_blank" rel="noopener noreferrer" draggable={false} title="Game page: injury report, win probability, box score" data-testid="game-link" onClick={(e) => e.stopPropagation()}>
+    <a className={`${className} ck-mlink`} href={url} target="_blank" rel="noopener noreferrer" draggable={false} title={title ?? 'Game page: injury report, win probability, box score'} data-testid="game-link" onClick={(e) => e.stopPropagation()}>
       {children}
     </a>
   ) : (
-    <span className={className}>{children}</span>
+    <span className={className} title={title}>
+      {children}
+    </span>
   );
 }
 
@@ -265,7 +278,17 @@ export function OpponentLine({ o, gameId, final, short }: { o: OpponentSituation
   );
 }
 
-export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, positions, lines, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, rematch, seriesTip, run, opp, oppShort = false, bigDay }: GameCardProps) {
+/** A team's own line in a month cell: its logo first (what tells the two lines apart), then its streak and chips. */
+function MonthLine({ team, testId, tip, label, children }: { team: ScheduleGame['homeTeam']; testId: string; tip?: string; label?: string; children: ReactNode }) {
+  return (
+    <span className="ck-mc-line" data-testid={testId} data-team={teamLabel(team)} data-tip={tip} aria-label={label}>
+      <TeamLogo team={team} />
+      {children}
+    </span>
+  );
+}
+
+export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatigueSlots = false, scoreSlots = false, teamFatigue, b2b = [], shortB2B, opponentB2B, tif, tvPill = false, fatigueColumns = false, bracketNights, now, timeZone, size = 'regular', onOpenGame, logos, dateLabel, next, season, scores = !!season, copyable, records, positions, lines, rowDate, gameLink: gameLinkProp, linkIcon = false, cupTag, series, rematch, seriesTip, run, opp, oppShort = false, bigDay, month }: GameCardProps) {
   // live scores (CK-21): the game final once ESPN has it finished; `live` while it is being played
   const { game, live } = useLive(snapshotGame, now);
   const iconUrl = linkIcon ? gameLinkProp?.(game) : undefined;
@@ -333,7 +356,11 @@ export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatig
   const fx = !side && fatigueSlots && !!fatigue;
   // No dot on the opponent's tricode where its Fatigue component is shown (desktop Team List columns), as
   // no yellow tricode boxes beside the component; elsewhere it is the only mark of the opponent's 2nd night
-  const oppDot = !fatigueColumns && !opp && opponentB2B;
+  const mc = !!month && !!side;
+  const oppDot = !fatigueColumns && !opp && !mc && opponentB2B;
+  // month cells: the opponent's record is no longer printed; it is the hover text of the matchup and of its tricode
+  const oppRecord = mc ? opp?.record : undefined;
+  const oppRec = oppRecord ? `${opp!.tricode} record: ${oppRecord.wins}-${oppRecord.losses}` : undefined;
   const matchup =
     side && !teamFirst ? (
       <span className="ck-matchup">
@@ -358,7 +385,7 @@ export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatig
         {!side && positions && <>{pos(first.teamId)} </>}
         {!side && rec(first)}
         {(records || fx) && ' '}
-        <MatchLink game={game} gameLink={gameLink} className="ck-teams">
+        <MatchLink game={game} gameLink={gameLink} className="ck-teams" title={oppRec}>
           <span className="ck-side">
             {logos && <TeamLogo team={first} />}
             <TeamLink teamId={first.teamId} className={`ck-team${side ? ' ck-self' : ''}${loss(true)}`}>{fatigue ? <FatigueMark f={fatigue.get(first.teamId)} component={fx}>{teamLabel(first)}</FatigueMark> : teamLabel(first)}</TeamLink>
@@ -369,7 +396,7 @@ export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatig
             <span className="ck-vsat">{side ? (side.home ? 'vs' : '@') : '@'}</span>{' '}
             {score(shown?.oppScore, !!result && !result.win)}
             {(shown || scoreSlots) && ' '}
-            <TeamLink teamId={second.teamId} className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`}>
+            <TeamLink teamId={second.teamId} className={`ck-team${side ? ' ck-opp' : ''}${loss(false)}`} title={oppRec} data-opp-rec={oppRecord ? `${oppRecord.wins}-${oppRecord.losses}` : undefined}>
               {fatigue ? <FatigueMark f={fatigue.get(second.teamId)} component={fx}>{teamLabel(second)}</FatigueMark> : teamLabel(second)}
               {side && oppDot && <B2BDot tip={oppDot} />}
             </TeamLink>{' '}
@@ -382,7 +409,8 @@ export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatig
         {!side && lines && ' '}
         {!side && lines && <StreakChip base="ck-streak ck-lstreak ck-lstreak-home" teamId={second.teamId} gameId={game.gameId} streak={lines.get(second.teamId)?.streak} testId="row-streak" />}
         {fx && <Fatigue f={fatigue!.get(second.teamId)} team={teamLabel(second)} />}
-        {otMark}
+        {/* month cells: on the time line, so the matchup stays one line at the largest size */}
+        {!mc && otMark}
       </span>
     );
 
@@ -397,6 +425,90 @@ export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatig
   const cols = fatigueColumns && !!side;
   const b2bLabels = side && b2b.map((n) => <B2BLabel key={n.night} night={n} short={shortB2B} />);
   const tifChip = side && tif && <TifChip tif={tif} />;
+
+  const gameChips = (
+    <>
+      {marks.map((m) =>
+        m.kind === 'cup' || m.kind === 'cup-final' ? (
+          <CupLabel key={m.kind + m.short} game={game} className={`ck-tag ck-${m.kind}`} long={m.long}>
+            {size === 'compact' ? m.short : cupTag ?? m.long}
+          </CupLabel>
+        ) : (
+          <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
+            {size === 'compact' ? m.short : m.long}
+          </span>
+        ),
+      )}
+      {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}
+      {tv.length > 0 && tvPill && (
+        <span className="ck-tag ck-tv ck-tv-short" data-tip={tv.join(' · ')} aria-label={`US national TV: ${tv.join(', ')}`} role="img" tabIndex={0} data-testid="tv-badge">
+          TV
+        </span>
+      )}
+    </>
+  );
+  const timeEl = live ? (
+    // a game being played: the red LIVE label in the tip-off's place (the time no longer matters, the row keeps its columns)
+    <span className="ck-time ck-time-live" data-testid="tipoff">
+      <LiveLabel live={live} detail={size !== 'compact' || !!logos} score={!scores && liveScore ? `${liveScore.score}–${liveScore.oppScore}` : undefined} />
+    </span>
+  ) : (
+    <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
+      <TipTime tip={tip} />
+    </span>
+  );
+
+  if (mc) {
+    const o = month.fatigue ? opp : undefined;
+    const ownLine = month.fatigue && (!!month.streak || b2b.length > 0 || !!tif);
+    const oppLine = !!o && (!!o.streak || !!o.b2b || !!o.tif || !!o.rest);
+    const when = o?.now ? 'now' : result ? 'after the game' : 'going in';
+    const said = o && [o.record && `record ${o.record.wins}-${o.record.losses} ${when}`, o.streak && `${o.streak.kind}${o.streak.n}`, o.b2b && `back-to-back night ${o.b2b.night} (${o.b2b.pair.code})`, o.tif && mergedChip(o.tif.merged), o.rest && `${o.rest.days} days off`].filter(Boolean).join(', ');
+    return (
+      <article className={`ck-card ck-card-${size} ck-mcell${logos ? ' ck-card-logos' : ''}${result ? ' ck-card-final' : ''}${live ? ' ck-card-live' : ''}`} data-game-id={game.gameId} data-b2b={bracket} data-tip={seriesTip} data-fatigue={month.fatigue ? 'on' : 'off'} aria-label={label}>
+        <span className="ck-mc-top">
+          {timeEl}
+          {gameChips}
+          {otMark}
+        </span>
+        {matchup}
+        {ownLine && (
+          <MonthLine team={side.team} testId="team-line">
+            {month.streak && <StreakChip base="ck-streak ck-cstreak" teamId={side.team.teamId} gameId={game.gameId} streak={month.streak} testId="cell-streak" />}
+            {b2bLabels}
+            {tifChip}
+          </MonthLine>
+        )}
+        {oppLine && o && (
+          <MonthLine team={side.opponent} testId="opp-line" tip={o.tip} label={`Opponent ${o.tricode}${said ? `: ${said}` : ''}`}>
+            {o.streak && <StreakChip base="ck-streak ck-cstreak" teamId={o.teamId} gameId={game.gameId} streak={o.streak} testId="opp-streak" />}
+            {/* the opponent's marks have their own classes and test ids: ".ck-b2b-label" and "tif" stay the calendar's team's */}
+            {o.b2b && (
+              <span className={`ck-opp-b2b${o.b2b.night === 2 ? ' ck-opp-b2b-n2' : ''}`} data-testid="opp-b2b" data-night={o.b2b.night} data-code={o.b2b.pair.code} data-tip={`${o.tricode}: ${o.b2b.pair.tip}`}>
+                {o.b2b.night}/2
+                {o.b2b.pair.travels && <PlaneIcon />}
+              </span>
+            )}
+            {o.tif && (
+              <span className={`ck-opp-tif${o.tif.merged.position >= 3 ? ' ck-opp-tif-3' : ''}`} data-testid="opp-tif" data-tip={`${o.tricode}: ${mergedChip(o.tif.merged)}: ${mergedTip(o.tif.merged)}`} data-tip-days={mergedDays(o.tif.merged)} data-tip-games={o.tif.merged.ids.join(' ')}>
+                {mergedLabel(o.tif.merged)}
+              </span>
+            )}
+            {o.rest && (
+              <span className={`ck-opp-rest${o.rest.tier === 'short' ? ' ck-opp-rest-short' : ''}`} data-testid="opp-rest" data-days={o.rest.days} data-tip={`${o.tricode}: ${o.rest.tip}`}>
+                {o.rest.days}d
+              </span>
+            )}
+          </MonthLine>
+        )}
+        {canOpen && (
+          <button type="button" className="ck-open" onClick={() => onOpenGame!(game.gameId)} data-testid="open-game" title="Open rotations in rotationkit">
+            Rotations ↗
+          </button>
+        )}
+      </article>
+    );
+  }
 
   return (
     <article
@@ -414,16 +526,7 @@ export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatig
       {copyable && <CopyButton hover label="Copy game as image" of=".ck-card" testId="copy-game" />}
       {run?.label && <RunLabel kind={run.kind} {...run.label} />}
       {dateLabel && <span className="ck-date">{dateLabel}</span>}
-      {/* a game being played: the red LIVE label in the tip-off's place (the time no longer matters, the row keeps its columns) */}
-      {live ? (
-        <span className="ck-time ck-time-live" data-testid="tipoff">
-          <LiveLabel live={live} detail={size !== 'compact' || !!logos} score={!scores && liveScore ? `${liveScore.score}–${liveScore.oppScore}` : undefined} />
-        </span>
-      ) : (
-        <span className={`ck-time${tip.tbd ? ' ck-tbd' : ''}`} data-testid="tipoff">
-          <TipTime tip={tip} />
-        </span>
-      )}
+      {timeEl}
       {cols && (
         <span className="ck-fat ck-fat-team" data-testid="fatigue-team">
           <Fatigue f={teamFatigue?.get(side.team.teamId)} team={teamLabel(side.team)} badge="right" focusable />
@@ -441,23 +544,7 @@ export function GameCard({ game: snapshotGame, teamId, teamFirst, fatigue, fatig
         <SeriesChip s={series} gameId={game.gameId} rematch={rematch} focus={side ? teamId : undefined} />
         {!cols && b2bLabels}
         {!cols && tifChip}
-        {marks.map((m) =>
-          m.kind === 'cup' || m.kind === 'cup-final' ? (
-            <CupLabel key={m.kind + m.short} game={game} className={`ck-tag ck-${m.kind}`} long={m.long}>
-              {size === 'compact' ? m.short : cupTag ?? m.long}
-            </CupLabel>
-          ) : (
-            <span key={m.kind + m.short} className={`ck-tag ck-${m.kind}`} title={m.long}>
-              {size === 'compact' ? m.short : m.long}
-            </span>
-          ),
-        )}
-        {game.ifNecessary === 'true' && <span className="ck-tag">if nec.</span>}
-        {tv.length > 0 && tvPill && (
-          <span className="ck-tag ck-tv ck-tv-short" data-tip={tv.join(' · ')} aria-label={`US national TV: ${tv.join(', ')}`} role="img" tabIndex={0} data-testid="tv-badge">
-            TV
-          </span>
-        )}
+        {gameChips}
         {tv.length > 0 && !tvPill && (
           <span
             className="ck-tag ck-tv"

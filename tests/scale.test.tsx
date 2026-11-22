@@ -79,11 +79,16 @@ describe('week view sizes', () => {
 });
 
 describe('team calendar sizes', () => {
-  it('desktop: cell content scaled up (--ck-team-scale > 1); the measuring probe is gone after render', () => {
+  it('desktop: cell content scaled (--ck-team-scale); the measuring probe is gone after render', () => {
+    // a week range: jsdom measures nothing, so the probe "fits" at the largest scale
+    const wk = render(<TeamMonthGrid data={data} teamId={1610612747} month="2026-11" onMonthChange={() => {}} size={XL} now={NOW} timeZone="UTC" weeks={1} start="2026-11-01" />);
+    expect(Number(wk.container.querySelector('.ck-team-grid')!.getAttribute('data-scale'))).toBeGreaterThan(1);
+    wk.unmount();
+    // the Month range sizes its four-line cells from the probe's measured size; with nothing to measure: 1
     const el = render(<TeamMonthGrid data={data} teamId={1610612747} month="2026-11" onMonthChange={() => {}} size={XL} now={NOW} timeZone="UTC" />);
     const grid = el.container.querySelector<HTMLElement>('.ck-team-grid')!;
     const s = Number(grid.getAttribute('data-scale'));
-    expect(s).toBeGreaterThan(1);
+    expect(s).toBe(1);
     expect(s).toBeLessThanOrEqual(TEAM_SCALE_MAX);
     expect(grid.style.getPropertyValue('--ck-team-scale')).toBe(String(s));
     expect(el.container.querySelector('.ck-team-probe')).toBeNull();
