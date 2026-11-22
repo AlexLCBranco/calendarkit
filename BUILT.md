@@ -5,6 +5,10 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-21
+- CK-22 — Countdown to the Slate's first game (halftime-timer) (v1.94.0)
+  The Slate's header line has a "⏱ Countdown" button that opens halftime-timer counting down to the night's first tip-off, or to the next game once that one has started.
+- CK-34 — The Slate kit gives one game card on its own (v1.94.0)
+  Nothing changes on screen: the Slate kit can now hand the whiteboard a single game card and the night's list of games with exact start times.
 - CK-33 — Header: team picker instead of chips, every control above the line (v1.93.0)
   The 30 team chips are gone: an "All teams" button and a team box with the list of teams by division sit in the tabs row with every other control, nothing is left under the header line and the calendar's day boxes are tall again.
 

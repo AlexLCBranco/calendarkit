@@ -72,7 +72,7 @@ closes within 100 ms of the pointer leaving its element (an 80 ms grace, `POPUP_
 static text) if the widget ever copies.
 
 **Size:** a card = the info (`SLATE_INFO_WIDTH`) + the room right of it (the note's label and ⇄), the note box under both; 8 px padding and a 1 px border; **a tight grid (CK-7): the cards touch and share their border, one 1 px divider line between them, square corners** (`SLATE_GRID_GAP` = −1); 78 px tall. Info-only
-cards (no store) are `SLATE_CARD_WIDTH` (523 px) wide, as many per row as fit the width (`slateInfoColumns`: 3 in 1840 px).
+cards (no store) are `SLATE_CARD_WIDTH` (509 px) wide, as many per row as fit the width (`slateInfoColumns`: 3 in 1840 px).
 With notes: **Two columns while each note box keeps 300 px (`SLATE_NOTE_MIN`), i.e. a
 width ≥ 1588 px; else one column, cards as wide as the width.** (Measured in calendarkit: 1920 window → 2 columns, cards
 914 px, note box 426 px; 1280 → 1 column, card 1233 px, box 745 px.) On screen a long note grows its box up to 5 lines, then scrolls inside; in copies it grows its card
@@ -115,6 +115,32 @@ is not in the kit: it reads the page's from `globalThis.__calendarkitHost`. `SLA
 when a name the gauntlet uses is removed or changed (tests/slatekit.test.ts lists them); the gauntlet then keeps its
 pinned copy until it is updated. A page that stays open picks up a newer schedule snapshot with
 `refreshCalendarData` (every `SCHEDULE_CHECK_MS`).
+
+## One card on its own, and the night as a list (v1.94.0, CK-34)
+
+For a host that lays the cards out itself (gauntlet GT-21, the combined Slate: NBA and football games in time order):
+
+- `slateNight(data, date, tvOnly?)` → `{ id, start, startIso, game }[]` in start-time order: `id` is the NBA game id
+  (the card's `data-game-id`, the notes' key), `start` the tip-off as an exact instant (ms since the epoch),
+  `startIso` the same as ISO 8601 UTC; both undefined while the time is TBD (those games come last).
+- `<SlateGame data game={entry.game} timeZone gameLink odds notes width gameMenu cold />` draws that game's card alone:
+  the same `SlateCard` the whole-night Slate is built from (one card code), with its live score and odds when `odds` is
+  the page's `liveOddsStore()`. Without `notes` its box is the info-only card, **509 × 78** (`slateCardWidth()`); on a
+  Cup night it has the night's Cup track like every card of that night (`slateCardWidth(slateCopyCup(data, games))`).
+  With `notes` it is `width` wide with the note box under the rows. No header line: the host draws its own
+  (`slateHeaderLabel(date, ['NBA', 'Football'])`).
+- Wrap the cards in `ck-root ck-slate-widget` and the popups' handlers as for `SlateDay`.
+- `SLATEKIT_API` stays 1: names were added, none changed.
+- Try it: `/calendar/slate.html?date=2026-11-02&notes=0&game=all` (or `&game=<gameId>`).
+
+## Countdown to the first game (v1.94.0, CK-22)
+
+The header line of `SlateDay` — and of `SlateCopy` where it is shown live (`gameLink` or `editNotes` passed; never in
+an image) — has a "⏱ Countdown" link: halftime-timer in a new tab, on a timer ending at the night's first tip-off
+("First game · BOS @ DET 20:00"), or at the next game that hasn't started ("Next game · …"); with none left it is
+disabled ("No more games today"). Nothing ticks: the time is read when the link is drawn and when the pointer or the
+keyboard reaches it. A host with its own header: `<CountdownLink games timeZone />`, or `countdownTarget` /
+`countdownUrl` (src/slate/countdown.ts).
 
 ## Cup labels, record links and big days (v1.92.0)
 

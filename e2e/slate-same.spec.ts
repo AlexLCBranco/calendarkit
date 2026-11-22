@@ -99,10 +99,11 @@ const LIVE = !!process.env.E2E_BASE_URL;
 /**
  * The current top bar has two rows, so its Slate starts lower — and Chromium rasterizes the same card
  * up to 1 level apart (logo discs more) at another y. The screen is taken with the top bar out of the layout in both
- * builds (and the page's top padding the reference build has put back), so the Slate fills the same box in both; the bar is put back for the copies (their button is in it).
+ * builds — the header line's countdown button (CK-22), which the reference has not, with it —
+ * (and the page's top padding the reference build has put back), so the Slate fills the same box in both; the bar is put back for the copies (their button is in it).
  */
 const shoot = async (page: Page) => {
-  const off = await page.addStyleTag({ content: '[data-testid="top-bar"], [data-testid="live-popout"] { display: none !important; } .app { padding-top: 16px !important; } .ck-root { height: calc(100vh - 32px) !important; }' });
+  const off = await page.addStyleTag({ content: '[data-testid="top-bar"], [data-testid="live-popout"], [data-testid="slate-countdown"] { display: none !important; } .app { padding-top: 16px !important; } .ck-root { height: calc(100vh - 32px) !important; }' });
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   const png = await page.locator('.ck-slate').screenshot({ animations: 'disabled', caret: 'hide', ...(LIVE ? { mask: [page.locator('.ck-slate .ck-logo-backing')], maskColor: '#ff00ff' } : {}) });
   await off.evaluate((e) => (e as Element).remove());

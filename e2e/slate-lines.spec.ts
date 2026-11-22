@@ -68,7 +68,7 @@ test('CK-12: a final score starts right after the name; cards keep their width',
 
 test('CK-10: the header line tops the Slate on /calendar and in the gauntlet-style widget page', async ({ page }) => {
   await open(page, '2026-11-16');
-  await expect(page.locator('[data-testid="slate"] [data-testid="slate-header"]')).toHaveText('SLATE · 16-11 · NBA');
+  await expect(page.locator('[data-testid="slate"] [data-testid="slate-header-label"]')).toHaveText('SLATE · 16-11 · NBA');
   const top = await page.evaluate(() => {
     const h = document.querySelector('[data-testid="slate-header"]')!.getBoundingClientRect();
     const c = document.querySelector('.ck-slate-card')!.getBoundingClientRect();
@@ -76,7 +76,7 @@ test('CK-10: the header line tops the Slate on /calendar and in the gauntlet-sty
   });
   expect(top).toBe(true);
   await page.goto(`${APP}slate.html?date=2026-11-16&notes=0`);
-  await expect(page.getByTestId('slate-header')).toHaveText('SLATE · 16-11 · NBA');
+  await expect(page.getByTestId('slate-header-label')).toHaveText('SLATE · 16-11 · NBA');
 });
 
 test('CK-14: the first tip-off countdown is on the Slate page, never in the copied image', async ({ page }) => {

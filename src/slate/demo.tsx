@@ -3,11 +3,13 @@
 // working example for the gauntlet's Slate widget. URL: ?date=YYYY-MM-DD (the NBA / ET date; default today in ET)
 // &width=<px> (default: the window less the page's padding) &tz=<IANA zone> &notes=0 (info-only cards) &n=<widgets>
 // (that many grids of the same day, as on a whiteboard with several widgets) &copy=1 (the copy layout shown live, notes
-// open for typing on a click: what the gauntlet's Slate widget shows — 2 columns, its card width).
+// open for typing on a click: what the gauntlet's Slate widget shows — 2 columns, its card width) &game=<gameId> (that
+// game's card on its own, SlateGame: what a host mixing sports lays out itself; &game=all: every game of the night, one
+// card each, in slateNight's order).
 
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { hoopsjunkieLink, loadCalendarData, localNotesStore, SlateCopy, SlateDay, slateCopyCardWidth, slateGames, useGameLinksPopup, useTooltip, type CalendarData } from './index';
+import { hoopsjunkieLink, loadCalendarData, localNotesStore, SlateCopy, SlateDay, SlateGame, slateCopyCardWidth, slateGames, slateNight, useGameLinksPopup, useTooltip, type CalendarData } from './index';
 import { SLATE_GRID_GAP, slateCopyCup } from './kit';
 import './slate.css';
 
@@ -18,6 +20,7 @@ const timeZone = q.get('tz') ?? undefined;
 const notes = q.get('notes') === '0' ? undefined : localNotesStore();
 const count = Math.max(1, Number(q.get('n') ?? 1));
 const copy = q.get('copy') === '1';
+const one = q.get('game');
 
 /** The gauntlet's live copy (gauntlet src/slate/SlateWidget.tsx): 2 columns of calendarkit's copy card width. */
 function LiveCopy({ data }: { data: CalendarData }) {
@@ -26,12 +29,26 @@ function LiveCopy({ data }: { data: CalendarData }) {
   return <SlateCopy data={data} games={games} cols={Math.max(1, Math.min(2, games.length))} cardWidth={cardWidth} timeZone={timeZone} notes={notes} editNotes gameLink={hoopsjunkieLink} />;
 }
 
+/** Cards drawn alone, one under the other: the night's list (slateNight) with each game's start instant beside its card. */
+function Alone({ data }: { data: CalendarData }) {
+  const night = slateNight(data, date).filter((g) => one === 'all' || g.id === one);
+  return (
+    <>
+      {night.map((g) => (
+        <div key={g.id} data-testid="slate-alone" data-id={g.id} data-start={g.startIso ?? ''} style={{ marginBottom: 12 }}>
+          <SlateGame data={data} game={g.game} timeZone={timeZone} notes={notes} width={notes ? width : undefined} gameLink={hoopsjunkieLink} gameMenu />
+        </div>
+      ))}
+    </>
+  );
+}
+
 function Widget({ data }: { data: CalendarData }) {
   const tooltip = useTooltip();
   const links = useGameLinksPopup(data);
   return (
     <div className="ck-root ck-slate-widget" data-testid="slate-widget" style={{ width }} {...tooltip.handlers} onMouseOver={(e) => (tooltip.handlers.onMouseOver(e), links.handlers.onMouseOver(e))} onFocus={(e) => (tooltip.handlers.onFocus(e), links.handlers.onFocus(e))} onMouseLeave={() => (tooltip.handlers.onMouseLeave(), links.handlers.onMouseLeave())}>
-      {copy ? <LiveCopy data={data} /> : <SlateDay data={data} date={date} timeZone={timeZone} notes={notes} width={width} gameLink={hoopsjunkieLink} gameMenu />}
+      {one ? <Alone data={data} /> : copy ? <LiveCopy data={data} /> : <SlateDay data={data} date={date} timeZone={timeZone} notes={notes} width={width} gameLink={hoopsjunkieLink} gameMenu />}
       {tooltip.node}
       {links.node}
     </div>

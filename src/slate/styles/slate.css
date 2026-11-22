@@ -39,6 +39,40 @@
   line-height: 18px;
   white-space: nowrap;
 }
+/* The header's "⏱ Countdown" link (halftime-timer): a quiet pill after the label, the line's height unchanged */
+.ck-slate-countdown-link {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 0 7px;
+  border: 1px solid var(--ck-border);
+  border-radius: 999px;
+  color: var(--ck-muted);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0;
+  text-decoration: none;
+  vertical-align: top;
+  cursor: pointer;
+}
+.ck-slate-countdown-link:hover,
+.ck-slate-countdown-link:focus-visible {
+  color: var(--ck-text);
+  border-color: var(--ck-muted);
+  text-decoration: none;
+}
+.ck-slate-countdown-link.ck-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ck-slate-countdown-link.ck-disabled:hover {
+  color: var(--ck-muted);
+  border-color: var(--ck-border);
+}
+/* One card on its own (SlateGame): the card's box and nothing else — no neighbour to share a border with */
+.ck-slate-one > .ck-slate-card {
+  margin: 0;
+}
 /* With the note boxes, the grid fills the widget in 1 or 2 columns (slateColumns) */
 .ck-slate-grid.ck-slate-wide {
   max-width: none;

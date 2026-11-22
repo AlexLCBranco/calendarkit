@@ -24,7 +24,7 @@ describe('where it shows', () => {
     render(<SlateDay data={data} date={date} width={1840} timeZone="UTC" />);
     expect(screen.getAllByTestId('slate-header')).toHaveLength(1);
     expect(document.querySelector('.ck-slate-grid')!.firstElementChild!.getAttribute('data-testid')).toBe('slate-header');
-    expect(screen.getByTestId('slate-header').textContent).toBe(slateHeaderLabel(date));
+    expect(screen.getByTestId('slate-header-label').textContent).toBe(slateHeaderLabel(date));
   });
   it('in the copy (images and the gauntlet widget)', () => {
     render(<SlateCopy data={data} games={data.byDate.get(date)!} cols={2} cardWidth={500} timeZone="UTC" />);

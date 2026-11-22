@@ -37,6 +37,7 @@ import { slateHeaderLabel } from './header';
 import { isCold } from '../data/cold';
 import { ColdMark, GameMenuButton } from './gameLinks';
 import type { NightCold, SlateCold } from './weather';
+import { CountdownLink } from './CountdownLink';
 
 /** The day's games (TV games only when filtered), in tip-off order; [] on a day without games. */
 export const slateGames = (data: CalendarData, date: string, tvOnly = false) => {
@@ -86,7 +87,11 @@ function useDayOdds(odds: SlateOdds | undefined, date: string, raw: ScheduleGame
   return { day, games };
 }
 
-export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = false, gameLink, odds, gameMenu = false, cold }: SlateDayProps) {
+/**
+ * What every card of a night needs beyond its own game, for the grid and for a card drawn alone (SlateGame): the
+ * night's odds and live scores, its games as they stand now, its Cup track and its cold flags.
+ */
+function useNight(data: CalendarData, date: string, tvOnly: boolean, odds?: SlateOdds, cold?: SlateCold) {
   const nightCold = useNightCold(cold, date, data.byDate.get(date) ?? NO_GAMES);
   // The whole night decides when the refresh stops (tvOnly or not), as before; the cards are the games shown.
   const { day } = useDayOdds(odds, date, data.byDate.get(date) ?? NO_GAMES);
@@ -95,7 +100,11 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
   const night = isCupNight(games);
   const fates = useCupFates(data, night);
   const chips = useCupStakes(data, date, night);
-  const cup = cupKind(games, fates, chips);
+  return { nightCold, day, games, fates, chips, cup: cupKind(games, fates, chips) };
+}
+
+export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = false, gameLink, odds, gameMenu = false, cold }: SlateDayProps) {
+  const { nightCold, day, games, fates, chips, cup } = useNight(data, date, tvOnly, odds, cold);
   const cols = notes ? slateColumns(width, cup) : slateInfoColumns(width, cup);
   useEffect(() => notes?.listen?.(), [notes]);
   return (
@@ -107,7 +116,7 @@ export function SlateDay({ data, date, timeZone, notes, width = 1840, tvOnly = f
         </p>
       )}
       <div className={`ck-slate-grid${notes ? ' ck-slate-wide' : ''}`} data-cols={cols} data-cup={cup || undefined} style={slateVars(cols, cup)}>
-        {games.length > 0 && <SlateHeader date={date} data={data} />}
+        {games.length > 0 && <SlateHeader date={date} data={data} countdown={data.byDate.get(date) ?? NO_GAMES} timeZone={timeZone} />}
         {games.map((g) => (
           <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, g)} live={gameLive(g, day)} cupNight={cup} fates={fates} chips={chips} gameMenu={gameMenu} cold={nightCold?.get(g.gameId)} />
         ))}
@@ -165,7 +174,8 @@ export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, 
   const zoom = slateCopyZoom(cardWidth, cup, !!notes);
   return (
     <div className="ck-slate-copy" style={{ ...varsOf(cup), ...(zoom > 1 ? { '--ck-slate-info': `${slateInfoWidth(cup) * zoom}px`, '--ck-copy-zoom': zoom } : {}), width: slateImageSize(games.length, cols, { width: cardWidth, height: 0 }).width, '--ck-slate-cols': cols, '--ck-slate-card': `${cardWidth}px`, '--ck-slate-margin': `${SLATE_COPY_MARGIN}px` } as CSSProperties} data-zoom={zoom}>
-      {games[0] && <SlateHeader date={games[0].dateEt} data={data} />}
+      {/* the countdown button only where the copy layout is shown live (a host's widget), never in an image */}
+      {games[0] && <SlateHeader date={games[0].dateEt} data={data} countdown={gameLink || editNotes ? games : undefined} timeZone={timeZone} />}
       {games.map((g) => (
         <SlateCard key={g.gameId} data={data} game={g} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(odds, g)} live={gameLive(g, odds)} cupNight={cupKind(games, cupFatesNow(data), games[0] && cupStakesNow(data, games[0].dateEt))} fates={cupFatesNow(data)} chips={games[0] && cupStakesNow(data, games[0].dateEt)} copy editNotes={editNotes} cold={cold?.get(g.gameId)} />
       ))}
@@ -174,11 +184,44 @@ export function SlateCopy({ data, games: raw, cols, cardWidth, timeZone, notes, 
 }
 
 /** The header line across the top of the grid ("SLATE · 18-11 · NBA"), on screen, in copies and in host widgets. */
-function SlateHeader({ date, data }: { date: string; data: CalendarData }) {
+function SlateHeader({ date, data, countdown, timeZone }: { date: string; data: CalendarData; /** The night's games for the "⏱ Countdown" button; none: no button (images) */ countdown?: readonly ScheduleGame[]; timeZone?: string }) {
   return (
     <div className="ck-slate-header" data-testid="slate-header">
-      {slateHeaderLabel(date)}
+      <span data-testid="slate-header-label">{slateHeaderLabel(date)}</span>
       <BigDayLabel data={data} date={date} className=" ck-bigday-slate" />
+      {countdown && <CountdownLink games={countdown} timeZone={timeZone} />}
+    </div>
+  );
+}
+
+export interface SlateGameProps {
+  data: CalendarData;
+  /** The game (a `slateNight` entry's `game`). */
+  game: ScheduleGame;
+  timeZone?: string;
+  /** The game's notes; none: the info-only card. */
+  notes?: SlateNotes;
+  /** With notes: the card's width (CSS px); the info-only card is always its content's width (slateCardWidth). */
+  width?: number;
+  gameLink?: GameLink;
+  /** Moneyline odds and live scores (liveOddsStore()); none: no request, the game as the snapshot has it. */
+  odds?: SlateOdds;
+  gameMenu?: boolean;
+  cold?: SlateCold;
+}
+
+/**
+ * One game's card on its own — the card SlateDay draws for it that night (the same SlateCard: live score, odds, the
+ * night's Cup track), with nothing around it, for a host that lays cards out itself (a Slate mixing sports in time
+ * order). Its box is the card's: slateCardWidth(cup) wide without notes.
+ */
+export function SlateGame({ data, game, timeZone, notes, width, gameLink, odds, gameMenu = false, cold }: SlateGameProps) {
+  const { nightCold, day, games, fates, chips, cup } = useNight(data, game.dateEt, false, odds, cold);
+  const now = games.find((g) => g.gameId === game.gameId) ?? game;
+  useEffect(() => notes?.listen?.(), [notes]);
+  return (
+    <div className="ck-slate-one" data-testid="slate-one" data-cup={cup || undefined} style={{ ...varsOf(cup), width: notes && width ? width : slateCardWidth(cup) } as CSSProperties}>
+      <SlateCard data={data} game={now} timeZone={timeZone} gameLink={gameLink} notes={notes} odds={gameOdds(day, now)} live={gameLive(now, day)} cupNight={cup} fates={fates} chips={chips} gameMenu={gameMenu} cold={nightCold?.get(now.gameId)} />
     </div>
   );
 }

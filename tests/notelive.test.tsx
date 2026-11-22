@@ -24,7 +24,10 @@ describe('SlateCopy editNotes (NoteLive)', () => {
     store.set(games[0]!.gameId, { pre: 'Watch the starters' }, true);
     const live = render(<SlateCopy data={data} games={games} cols={2} cardWidth={944} timeZone="UTC" notes={store} editNotes />).container;
     const still = render(<SlateCopy data={data} games={games} cols={2} cardWidth={944} timeZone="UTC" notes={store} />).container;
-    const strip = (c: HTMLElement) => c.innerHTML.replace(/ data-editable="true"/g, '').replace(/<button[^>]*data-testid="note-switch"[^>]*>⇄<\/button>/g, '');
+    const strip = (c: HTMLElement) => c.innerHTML.replace(/ data-editable="true"/g, '').replace(/<button[^>]*data-testid="note-switch"[^>]*>⇄<\/button>/g, '').replace(/<(a|span)[^>]*data-testid="slate-countdown"[^>]*>[^<]*<\/\1>/, '');
+    // the live copy's header also has the countdown link (CK-22); never in images
+    expect(live.querySelectorAll('[data-testid="slate-countdown"]')).toHaveLength(1);
+    expect(still.querySelectorAll('[data-testid="slate-countdown"]')).toHaveLength(0);
     expect(strip(live)).toBe(still.innerHTML);
     expect(live.querySelectorAll('textarea')).toHaveLength(0);
     // CK-11: the switch is always there in the live copy, stacked under the label; never in images

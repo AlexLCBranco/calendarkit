@@ -6,7 +6,12 @@
 export { calendarDataFromRaw, loadCalendarData, refreshCalendarData, SCHEDULE_CHECK_MS } from '../data/load';
 export type { CalendarData } from '../data/model';
 export { SCHEDULE_DATA_URL } from '../data/address';
-export { SlateCard, SlateCopy, SlateDay, slateGames, type SlateDayProps } from './SlateCard';
+export { SlateCard, SlateCopy, SlateDay, SlateGame, slateGames, type SlateDayProps, type SlateGameProps } from './SlateCard';
+// A night as a list (id, start instant, game) for a host that lays the cards out itself; SlateGame draws one of them
+export { slateNight, type SlateNightGame } from './night';
+// The header's "⏱ Countdown" link (halftime-timer), for a host with a header of its own
+export { CountdownLink } from './CountdownLink';
+export { countdownName, countdownTarget, countdownUrl, HALFTIME_TIMER_URL, type CountdownTarget } from './countdown';
 export { gameLinkUrl, hoopsjunkieLink, type GameLink } from './links';
 // "SLATE · 18-11 · NBA" — the header line's text; a combined Slate passes every sport ("NBA + Football")
 export { slateHeaderLabel } from './header';

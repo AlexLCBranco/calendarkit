@@ -2,6 +2,33 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-21 — CK-22 and CK-34 built — v1.94.0
+
+**Built:**
+- CK-22 — Countdown to the Slate's first game. The Slate's header line ("SLATE · 25-11 · NBA") has a small "⏱ Countdown" button after the label. It opens halftime-timer in a new tab with a timer ending at the night's first tip-off, named like "First game · BOS @ DET 20:00". Once that game has started it goes to the next game that hasn't ("Next game · …"); with none left it is greyed out and says "No more games today". It is also in the gauntlet's Slate widget (through the kit, no change needed there) and never in a copied image.
+- CK-34 — The Slate kit gives one game card on its own. Nothing changes on screen. The kit now also gives the night's list of games (id and exact start time, in start order) and can draw one game's card alone: the very same card the Slate shows, live score included, 509 × 78. The whole-night Slate is built from that same card. `SLATEKIT_API` stays 1 (names were only added). For gauntlet GT-21: `slateNight` and `SlateGame`, described in `docs/slate-in-gauntlet.md`; to see it: /calendar/slate.html?date=2026-11-02&notes=0&game=all.
+
+**Blocked:** nothing. The backlog is empty.
+
+**Choices I made (tell me if you want otherwise):**
+- The time in the timer's name is the tip-off as the cards show it (your time zone), and the link's end time carries that zone's offset. It is the same moment as the spec's "-05:00" example.
+- The countdown counts the whole night even with "TV games only" on, like the "First tip-off in …" text beside it.
+- The page never ticks for this: the link is worked out when the Slate is drawn and again when the pointer reaches the button, so it is right when clicked.
+- A game with no time yet (TBD) is never the countdown's target and comes last in the kit's list.
+- On an NBA Cup night a card drawn alone is wider than 509 (it has the night's Cup squares, as every card of that night has in the Slate). 509 × 78 is every other night. GT-21 has to allow for that or ask for a card without the squares.
+
+**Ideas added:** none.
+
+**Checks:** build, lint, 917 unit tests and the whole browser suite at 1920 and 1280 pass. One old test failed on the first full run because it read the header line's whole text, which now includes the button; it now reads the label. Two more old tests were updated for the same reason.
+
+**To test by hand:** nothing has to be. If you want, click "⏱ Countdown" once to see halftime-timer open on the right timer (the tests check the link, not the other site).
+
+**Needs your attention:**
+- "CK-34" was used before for the plane item you dropped this morning (commit 4dcb19d) and is now this item. The rule says IDs are never reused; the list check doesn't catch it because the old one was never built. Left as you wrote it.
+- The first run of the new browser test didn't start: a type error in the test file itself stopped the build. Fixed, then it passed.
+- `package-lock.json` still says version 1.73.0. Harmless; not touched.
+- `docs/slate-in-gauntlet.md` said info-only cards are 523 px wide; they are 509. Corrected.
+
 ## 2026-11-21 — CK-33 built (CK-22 still blocked) — v1.93.0
 
 **Built:**

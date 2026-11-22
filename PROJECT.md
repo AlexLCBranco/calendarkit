@@ -103,6 +103,16 @@ measurement; open it only when a question needs the backstory.
   header line, it never moves down, no always-on-screen team chips. Left where they were (a view's own strips, not the
   page's controls): the Slate's notes row, the League List's week strip, the Cup's nights strip and — because a busy Cup
   night's line can't fit the row — the Simulator's "Tonight in the Cup" line, now the page's first line.
+- **v1.94.0** (2026-11-21, CK-22, CK-34; docs/slate-in-gauntlet.md has both for a host):
+  - **"⏱ Countdown"** in the Slate's header line (`src/slate/countdown.ts`, `CountdownLink.tsx`): a link to halftime-timer
+    (`?end=<ISO with offset>&name=`) on a timer ending at the night's first tip-off ("First game · BOS @ DET 20:00"), or
+    at the next game not started ("Next game · …"); none left: disabled, "No more games today". The whole night counts
+    (TV filter or not). No timer: the time is read when drawn and when the pointer / keyboard reaches the link. In
+    `SlateDay` and in a `SlateCopy` shown live (the gauntlet widget); never in an image.
+  - **One card on its own** for the gauntlet's combined Slate (GT-21): `slateNight(data, date)` (id, start instant,
+    game; start order) and `<SlateGame>` — the same `SlateCard`, with the night's odds / live scores / Cup track from
+    `useNight`, which `SlateDay` uses too. 509 × 78 without notes. `SLATEKIT_API` still 1 (names added only).
+    `slate.html?game=all` (or a game id) shows them.
 - **Waiting on Alex**: whether the League List rows look right (then they can leave "in flux").
 
 ## What the app is

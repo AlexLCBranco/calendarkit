@@ -17,6 +17,10 @@ describe('the Slate kit', () => {
     expect(kit.SLATEKIT_API).toBe(1);
   });
 
+  it('gives a night as a list and one card on its own (gauntlet GT-21), without a new API version', () => {
+    for (const name of ['slateNight', 'SlateGame', 'CountdownLink', 'countdownUrl']) expect(kit, name).toHaveProperty(name);
+  });
+
   it('is built with the app, with a manifest, React from the page, and no cache on the manifest', () => {
     expect(JSON.parse(readFileSync('package.json', 'utf8')).scripts.build).toContain('vite build --config vite.slatekit.config.ts');
     const config = readFileSync('vite.slatekit.config.ts', 'utf8');
