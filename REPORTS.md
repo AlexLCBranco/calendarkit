@@ -24,6 +24,7 @@ Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas")
 **To test by hand:** nothing has to be. If you want, click "⏱ Countdown" once to see halftime-timer open on the right timer (the tests check the link, not the other site).
 
 **Needs your attention:**
+- CI had been failing since the two backlog commits before this build (00:43 and 00:57 UTC), not because of them: the check against the live site read the week view while a real game was on ("POR 21 @ 37 NYK LIVE") and only knew upcoming and finished games. The check now allows a game in progress (test only, no app change).
 - "CK-34" was used before for the plane item you dropped this morning (commit 4dcb19d) and is now this item. The rule says IDs are never reused; the list check doesn't catch it because the old one was never built. Left as you wrote it.
 - The first run of the new browser test didn't start: a type error in the test file itself stopped the build. Fixed, then it passed.
 - `package-lock.json` still says version 1.73.0. Harmless; not touched.

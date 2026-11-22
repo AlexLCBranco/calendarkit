@@ -136,7 +136,8 @@ test('league week view: every game listed with local logos, no broken images, no
     expect(r.lineWidths).toHaveLength(1); // every line the same width → columns line up across cells
     expect(r.visibleText).not.toMatch(/ESPN|NBC|Peacock|Prime Video|NBA TV|ABC|Telemundo/);
     // "HOU@ATL" on every line, a played game with its scores and any OT ("IND124@131PHI", "NYK112@108TOROT")
-    const line = /^[A-Z]{3}(?:@[A-Z]{3}|\d{2,3}@\d{2,3}[A-Z]{3}(?:\d?OT\d?)?)(TV)?$/;
+    // against the live site a game of the week may be on: its score so far (from 0) and "LIVE" ("POR21@37NYKLIVE")
+    const line = /^[A-Z]{3}(?:@[A-Z]{3}|\d{1,3}@\d{1,3}[A-Z]{3}(?:\d?OT\d?)?)(?:TV|LIVE)*$/;
     expect(r.lineTexts.every((t) => line.test(t)), r.lineTexts.find((t) => !line.test(t))).toBe(true);
     if (project === 'desktop' || project === 'desktop-xl') {
       expect(r.font).toBe('11px'); // same game-line size at 1280 and 1920
