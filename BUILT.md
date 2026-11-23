@@ -4,6 +4,10 @@ Shipped work only, newest first. Planned work is in `FEATURE_BACKLOG.md`, never 
 Entries dated before 2026-11-16 were backfilled from the git commit messages (data, docs, test-only, merge and
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-23
+- CK-43 — Cup history: each season laid out like the Groups page, plus a full-screen bracket (v1.97.0)
+  Each past season in Cup › History looks like the Groups page with a small knockout bracket in place of the rules, and a Groups | Bracket switch opens a full-screen bracket with dates, venues, seeds, records going in, rest and travel for every knockout game.
+
 ## 2026-11-22
 - CK-38 — Team month: header line with team name, record, standing and centred month (v1.96.0)
   Above the team's month calendar there is a big line with the team's full name, its record and its place in the conference, and the month centred over the grid; each piece is clickable.

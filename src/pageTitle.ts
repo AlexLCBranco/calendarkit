@@ -23,7 +23,7 @@ const CUP_TAB = { standings: 'Cup standings', schedule: 'Cup schedule', simulato
 export function pagePart(snap: ViewSnapshot): string {
   const s = snap.state;
   if (s.mode === 'standings') return 'Standings';
-  if (s.mode === 'cup') return snap.cup.tab === 'history' && snap.cup.hs ? `Cup history · ${snap.cup.hs}` : CUP_TAB[snap.cup.tab] ?? 'Cup';
+  if (s.mode === 'cup') return snap.cup.tab === 'history' && snap.cup.hs ? `Cup history · ${snap.cup.hs}${snap.cup.hv === 'bracket' ? ' bracket' : ''}` : CUP_TAB[snap.cup.tab] ?? 'Cup';
   if (s.mode === 'team') {
     const tri = TEAM_BY_ID.get(s.teamId)?.tricode ?? 'Team';
     if (s.layout !== 'calendar') return `${tri} schedule · ${months(snap.teamListMonth, snap.teamListTo ?? snap.teamListMonth)}`;

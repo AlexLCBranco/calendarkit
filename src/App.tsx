@@ -56,7 +56,7 @@ export function readUrlState(search = window.location.search): Partial<CalendarS
     // Standings, a past season: the playoff series a "View series" link asked for
     ss: view === 'standings' ? p.get('series') ?? undefined : undefined,
     // The Cup's sub-view
-    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : p.get('cup') === 'simulator' ? 'simulator' : p.get('cup') === 'history' ? 'history' : 'standings', hs: /^\d{4}$/.test(p.get('hs') ?? '') ? Number(p.get('hs')) : undefined, list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id, focus: p.get('cg') ?? undefined } : undefined,
+    cup: view === 'cup' ? { tab: p.get('cup') === 'schedule' ? 'schedule' : p.get('cup') === 'simulator' ? 'simulator' : p.get('cup') === 'history' ? 'history' : 'standings', hs: /^\d{4}$/.test(p.get('hs') ?? '') ? Number(p.get('hs')) : undefined, hv: /^\d{4}$/.test(p.get('hs') ?? '') && p.get('hv') === 'bracket' ? 'bracket' : undefined, list: p.get('cl') === 'team' ? 'team' : 'league', by: p.get('by') === 'date' ? 'date' : 'group', teamId: cupTeam?.id, focus: p.get('cg') ?? undefined } : undefined,
   };
 }
 
@@ -123,6 +123,7 @@ export function urlOf(snap: ViewSnapshot, pathname = window.location.pathname): 
   if (s.mode === 'cup') {
     p.set('cup', snap.cup.tab);
     if (snap.cup.tab === 'history' && snap.cup.hs) p.set('hs', String(snap.cup.hs));
+    if (snap.cup.tab === 'history' && snap.cup.hs && snap.cup.hv) p.set('hv', snap.cup.hv);
     if (snap.cup.focus && (snap.cup.tab === 'standings' || snap.cup.tab === 'simulator')) p.set('cg', snap.cup.focus);
     if (snap.cup.tab === 'schedule') {
       p.set('cl', snap.cup.list);

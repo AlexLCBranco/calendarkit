@@ -2,6 +2,29 @@
 
 Build reports, newest first (CLAUDE.md, "Feature backlog, built list and ideas").
 
+## 2026-11-23 — CK-43 built — v1.97.0
+
+**Built:** CK-43 — Cup › History.
+- Each past season (2023, 2024, 2025) has a Groups | Bracket switch (in the page's title line, and in the breadcrumb). Both are their own page-history entries with their own tab title ("Cup history · 2024 bracket") and address (`hv=bracket`).
+- Groups: the same layout as Cup › Groups. The six group cards use the same team pills and squares, with that season's final tables. Bottom left, in place of "Who advances", a small bracket: QF → SF → Final with scores, HOST tags and the champion. Next to it are the neutral-venue badge, that season's prize line and the rules note (below). Clicking the panel's title or empty area opens the full bracket. Game links (↗) and team names keep their usual click. Bottom right: that season's final wild-card race, in the NBA's own wild-card order.
+- Bracket: West QF → SF → Final ← SF ← QF East, with the champion large in the middle. Every game box shows the round and date (the header links to the game page), the venue (arena and city with HOST on the home team, or the neutral badge), and both teams. Each team line has: seed, logo, tricode, regular-season record going in, score (winner highlighted, OT mark if any), its group, group winner or wild card, group record and differential, and rest/travel ("2d rest · ✈ 990 mi, CT→PT"). The round's prize line sits under each column.
+- No scroll bar anywhere: checked automatically for all 3 seasons, both views, at 1920 × 900, 1920 × 950 and 1600 × 1000, plus the summary page.
+- Data: the history build script now also stores, for every knockout team, its record going in and its previous game (date and arena), from that season's NBA schedule, plus the NBA's wild-card order. Seeds were already stored (the NBA's own knockout rank). Items 7, 8 and 9 exist for every season, so none was left out.
+
+**Rules summary:** NBA.com confirms only one difference for 2023-24, 2024-25 and 2025-26: the semifinals and final were at a neutral site (T-Mobile Arena, Las Vegas). From 2026-27 the semifinals are at the higher seed's arena (NBA.com, 2025-09-10). That is the only note shown. No other rule details of the 2023-24 and 2024-25 Cups could be found on NBA.com, so nothing else is claimed. The old note "Group games on Tue, Fri", worked out from the schedule rather than from published rules, is gone.
+
+**Blocked:** nothing. The backlog is empty.
+
+**Choices I made (tell me if you want otherwise):**
+- History now opens on the summary ("Who usually makes the cut") as its own page, with tabs Summary · 2025 · 2024 · 2023. The summary and a no-scroll Groups layout can't share one screen. It used to open on the summary plus the newest season.
+- Game links stay on hoopsjunkie, as the history already did. Whether hoopsjunkie has pages for 2023–2025 games couldn't be checked: its bot check blocks automated visits. If those pages don't load, they can switch to NBA.com.
+- Phoenix's arena was named Footprint Center in 2023. It is matched to today's Mortgage Matchup Center (same building) to work out travel.
+- Rest is shown as full days off between games, the same as the current Cup's line.
+
+**Ideas added:** none.
+
+**Test by hand:** nothing needed. Optional: open a season's Bracket and judge whether the boxes should be bigger. There is spare room at 1920 × 900.
+
 ## 2026-11-22 — CK-38 to CK-42 built — v1.96.0
 
 **Built** (team calendar, Month range; the week ranges, the List, the Slate and the league views keep their cells):

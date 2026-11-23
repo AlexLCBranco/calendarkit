@@ -4,14 +4,13 @@
 // Standings | Schedule (the switch is in the top bar); the Schedule (CupSchedule.tsx) is worked out only once
 // its tab is opened.
 
-import { lazy, Suspense, useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, type ReactNode } from 'react';
 /** The history and its data file, their own chunk, loaded when the tab is opened. */
 const CupHistory = lazy(() => import('./CupHistory'));
 import { CupTonight } from './CupTonight';
-import { cupStandings, type CupSlot, type CupTeamLine, type Tiebreak, type WildCardRace } from '../data/cup';
+import { cupStandings, type CupSlot, type Tiebreak, type WildCardRace } from '../data/cup';
+import { GroupCard, ordinal, TeamPill, WildCardPanel } from './CupGroupParts';
 import { dateFormat, type CalendarData } from '../data/model';
-import { TEAM_BY_ID, teamLogo } from '../data/teams';
-import { TeamLink } from '../slate/teamLink';
 import { CupSquare, cupSquareNow } from '../slate/CupSquare';
 import { useLive } from '../slate/live';
 import type { GameLink } from '../slate/links';
@@ -19,14 +18,7 @@ import CupSchedule, { type CupScheduleProps } from './CupSchedule';
 import CupSimulator, { type CupSimulatorProps } from './CupSimulator';
 import './styles/cup.css';
 
-/** Pill colors: each team's main color, lifted where it is near black or too light for white text on the dark page. */
-export const TEAM_COLOR: Readonly<Record<string, string>> = {
-  ATL: '#c8102e', BOS: '#007a33', BKN: '#5a5f66', CHA: '#00788c', CHI: '#ce1141', CLE: '#860038', DAL: '#00538c',
-  DEN: '#1d4e89', DET: '#c8102e', GSW: '#1d428a', HOU: '#ce1141', IND: '#1f4f9a', LAC: '#c8102e', LAL: '#552583',
-  MEM: '#5d76a9', MIA: '#98002e', MIL: '#00471b', MIN: '#236192', NOP: '#2b4a7a', NYK: '#006bb6', OKC: '#007ac1',
-  ORL: '#0077c0', PHI: '#006bb6', PHX: '#e56020', POR: '#e03a3e', SAC: '#5a2d81', SAS: '#6b7177', TOR: '#ce1141',
-  UTA: '#4b2e83', WAS: '#e31837',
-};
+export { TEAM_COLOR } from './CupGroupParts';
 
 const TIEBREAK_TEXT: Record<Tiebreak, string> = {
   h2h: 'head-to-head',
@@ -36,8 +28,6 @@ const TIEBREAK_TEXT: Record<Tiebreak, string> = {
 };
 
 const fmtThrough = (date: string) => dateFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(Date.parse(`${date}T12:00:00Z`));
-const ordinal = (n: number) => `${n}${n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'}`;
-const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 export interface CupViewProps {
   data: CalendarData;
@@ -48,7 +38,7 @@ export interface CupViewProps {
   /** The schedule instead of the standings (default: standings). */
   schedule?: Omit<CupScheduleProps, 'data'>;
   /** The history instead (its season, and the season picked). */
-  history?: { season?: number; onSeason: (year: number) => void };
+  history?: { season?: number; view?: 'groups' | 'bracket'; onSeason: (year: number | undefined) => void; onView: (view: 'groups' | 'bracket') => void };
   /** The simulator instead. */
   sim?: Omit<CupSimulatorProps, 'data' | 'gameLink' | 'focusBracket'>;
   /** A Cup label's target, brought into view: a group ("West Group A") or "bracket" (the simulator's). */
@@ -87,17 +77,11 @@ function CupStandingsView({ data, gameLink, tonight, focus }: { data: CalendarDa
         </header>
         <div className="ck-cup-grid" ref={grid}>
           {s.groups.map((g) => (
-            <div key={g.group} className={`ck-cup-card${g.group === focus ? ' ck-cup-card-focus' : ''}`} data-group={g.group} data-focus={g.group === focus || undefined} data-testid="cup-group">
-              <div className="ck-cup-row ck-cup-cols">
-                <span className="ck-cup-group-name">{g.short}</span>
-                <span className="ck-cup-num">W</span>
-                <span className="ck-cup-num">L</span>
-                <span className="ck-cup-num ck-cup-diff-col">DIFF</span>
-              </div>
+            <GroupCard key={g.group} group={g.group} short={g.short} focus={g.group === focus}>
               {g.teams.map((t) => (
-                <TeamPill key={t.teamId} t={t} gameLink={gameLink} />
+                <TeamPill key={t.teamId} t={t} why={t.tied ? 'Tied: no tiebreaker separates them yet' : t.tiebreak ? `Placed by ${TIEBREAK_TEXT[t.tiebreak]}` : undefined} slots={<Slots slots={t.slots} gameLink={gameLink} />} />
               ))}
-            </div>
+            </GroupCard>
           ))}
         </div>
       </div>
@@ -109,68 +93,6 @@ function CupStandingsView({ data, gameLink, tonight, focus }: { data: CalendarDa
   );
 }
 
-function Marker({ t }: { t: CupTeamLine }) {
-  if (t.status === 'leader')
-    return (
-      <span className="ck-cup-mark ck-cup-star" aria-label="Leads group" title="Leads its group">
-        ★
-      </span>
-    );
-  if (t.status === 'wild-card')
-    return (
-      <span className="ck-cup-mark ck-cup-wc" aria-label="Holds wild card" title="Holds the wild card">
-        WC
-      </span>
-    );
-  return <span className="ck-cup-mark">{t.rank}</span>;
-}
-
-function DiffChip({ diff }: { diff: number }) {
-  return <span className={`ck-cup-chip ${diff > 0 ? 'ck-cup-pos' : diff < 0 ? 'ck-cup-neg' : 'ck-cup-zero'}`}>{signed(diff)}</span>;
-}
-
-function Logo({ teamId }: { teamId: number }) {
-  const src = teamLogo(teamId);
-  return (
-    <TeamLink teamId={teamId} className="ck-logo-backing" aria-label={TEAM_BY_ID.get(teamId)?.tricode}>
-      {src && <img src={src} alt="" width={20} height={20} />}
-    </TeamLink>
-  );
-}
-
-function TeamPill({ t, gameLink }: { t: CupTeamLine; gameLink?: GameLink }) {
-  const team = TEAM_BY_ID.get(t.teamId);
-  const why = t.tied ? 'Tied: no tiebreaker separates them yet' : t.tiebreak ? `Placed by ${TIEBREAK_TEXT[t.tiebreak]}` : undefined;
-  return (
-    <div
-      className="ck-cup-row ck-cup-pill"
-      style={{ '--ck-team': TEAM_COLOR[t.tricode] ?? '#3a3f4a' } as CSSProperties}
-      data-team={t.tricode}
-      data-status={t.status ?? ''}
-      data-tied={t.tied || undefined}
-      title={why}
-    >
-      {/* "tied" sits under the marker, not after the name: the name's row space holds the game slots */}
-      <span className="ck-cup-markcell">
-        <Marker t={t} />
-        {t.tied && <span className="ck-cup-tied">tied</span>}
-      </span>
-      <Logo teamId={t.teamId} />
-      <span className="ck-cup-main">
-        <span className="ck-cup-namebox">
-          <TeamLink teamId={t.teamId} className="ck-cup-name">{team ? `${team.city} ${team.name}` : t.tricode}</TeamLink>
-        </span>
-        <Slots slots={t.slots} gameLink={gameLink} />
-      </span>
-      <span className="ck-cup-num">{t.w}</span>
-      <span className="ck-cup-num">{t.l}</span>
-      <span className="ck-cup-diff-col">
-        <DiffChip diff={t.diff} />
-      </span>
-    </div>
-  );
-}
-
 /**
  * The team's 4 group games in date order, between the name and W / L — the shared CupSquare
  * ("@PHX" / "vs HOU" over W / L; upcoming games the opponent alone, muted), each one its game page. No per-game margin
@@ -178,11 +100,11 @@ function TeamPill({ t, gameLink }: { t: CupTeamLine; gameLink?: GameLink }) {
  */
 function Slots({ slots, gameLink }: { slots: readonly CupSlot[]; gameLink?: GameLink }) {
   return (
-    <span className="ck-cup-slots" data-testid="cup-slots">
+    <>
       {slots.map((s) => (
         <LiveSquare key={s.gameId} s={s} url={gameLink?.(s.game)} />
       ))}
-    </span>
+    </>
   );
 }
 
@@ -218,41 +140,12 @@ function Rules({ otPending }: { otPending: number }) {
 
 function WildCards({ races }: { races: WildCardRace[] }) {
   return (
-    <div className="ck-cup-panel" data-testid="cup-wildcards">
-      <h3>Wild card race</h3>
-      <div className="ck-cup-races">
-        {races.map((r) => (
-          <div key={r.conference} className="ck-cup-race" data-conference={r.conference}>
-            <h4>{r.conference}</h4>
-            {r.teams.map((t, i) => (
-              <div key={t.teamId} className={`ck-cup-race-row${i === 0 ? ' ck-cup-holder' : ''}`} data-team={t.tricode} title={t.wcTied ? 'Tied: no tiebreaker separates them yet' : t.wcTiebreak ? `Placed by ${TIEBREAK_TEXT[t.wcTiebreak]}` : undefined}>
-                <span className="ck-cup-mark">{i === 0 ? 'WC' : ''}</span>
-                <Logo teamId={t.teamId} />
-                <TeamLink teamId={t.teamId} className="ck-cup-tri">{t.tricode}</TeamLink>
-                <span className="ck-cup-sub">2nd, {t.group.replace(' Group ', ' ')}</span>
-                <span className="ck-cup-rec">
-                  {t.w}-{t.l}
-                </span>
-                <DiffChip diff={t.diff} />
-              </div>
-            ))}
-            {r.chasing.map((t) => (
-              <div key={t.teamId} className="ck-cup-race-row ck-cup-chaser" data-team={t.tricode} title={`${ordinal(t.rank)} in its group today: in the race only by moving up to 2nd`}>
-                <span className="ck-cup-mark" />
-                <Logo teamId={t.teamId} />
-                <TeamLink teamId={t.teamId} className="ck-cup-tri">{t.tricode}</TeamLink>
-                <span className="ck-cup-sub">
-                  {ordinal(t.rank)}, {t.group.replace(' Group ', ' ')}
-                </span>
-                <span className="ck-cup-rec">
-                  {t.w}-{t.l}
-                </span>
-                <DiffChip diff={t.diff} />
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
+    <WildCardPanel
+      races={races.map((r) => ({
+        conference: r.conference,
+        teams: r.teams.map((t) => ({ ...t, group: t.group, rank: 2, tip: t.wcTied ? 'Tied: no tiebreaker separates them yet' : t.wcTiebreak ? `Placed by ${TIEBREAK_TEXT[t.wcTiebreak]}` : undefined })),
+        chasing: r.chasing.map((t) => ({ ...t, tip: `${ordinal(t.rank)} in its group today: in the race only by moving up to 2nd` })),
+      }))}
+    />
   );
 }

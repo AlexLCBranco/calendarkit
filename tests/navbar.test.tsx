@@ -249,10 +249,14 @@ describe('the pinned header: breadcrumb and Go anywhere', () => {
     await screen.findByTestId('cup');
     expect(crumbs()).toEqual(['Cup', 'Groups']);
     jump('cup-view', 'History');
-    expect(crumbs()).toEqual(['Cup', 'History', '2025']);
+    expect(crumbs()).toEqual(['Cup', 'History', 'Summary']);
     jump('cup-season', '2023');
     expect(await screen.findByTestId('hist-season')).toBeTruthy();
     expect(screen.getByTestId('hist-season').getAttribute('data-year')).toBe('2023');
+    expect(crumbs()).toEqual(['Cup', 'History', '2023', 'Groups']);
+    jump('cup-hview', 'Bracket');
+    expect(screen.getByTestId('hist-season').getAttribute('data-view')).toBe('bracket');
+    expect(crumbs()).toEqual(['Cup', 'History', '2023', 'Bracket']);
     jump('cup-view', 'Schedule');
     jump('cup-list', 'Team');
     pickScope('Boston Celtics');

@@ -69,7 +69,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
 
   p.api.current = {
     state: cupView,
-    pageKey: () => [cupView.tab, cupView.list, cupView.by, cupView.teamId, cupView.hs, cupView.focus],
+    pageKey: () => [cupView.tab, cupView.list, cupView.by, cupView.teamId, cupView.hs, cupView.hv, cupView.focus],
     teamScoped: cupView.list === 'team',
     night: cupView.night,
     restore: setCupView,
@@ -80,7 +80,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
     },
     label: () => {
       const ct = cupView.teamId !== undefined ? TEAM_BY_ID.get(cupView.teamId)?.tricode : undefined;
-      return cupView.tab === 'standings' ? 'Cup · Groups' : cupView.tab === 'simulator' ? 'Cup · Simulator' : cupView.tab === 'history' ? `Cup · History${cupView.hs ? ` ${cupView.hs}` : ''}` : `Cup · Schedule · ${cupView.list === 'team' ? ct ?? 'Team' : cupView.by === 'date' ? 'By date' : 'By group'}`;
+      return cupView.tab === 'standings' ? 'Cup · Groups' : cupView.tab === 'simulator' ? 'Cup · Simulator' : cupView.tab === 'history' ? `Cup · History${cupView.hs ? ` ${cupView.hs}${cupView.hv === 'bracket' ? ' · Bracket' : ''}` : ''}` : `Cup · Schedule · ${cupView.list === 'team' ? ct ?? 'Team' : cupView.by === 'date' ? 'By date' : 'By group'}`;
     },
     // The group cards under their heading, as on screen (the rules and wild-card panels stay out); the Schedule: the
     // night on show as the League List copies its day, or the team's Cup games with its header — as on screen (the
@@ -136,7 +136,7 @@ export function CupDestination(p: DestinationProps & { initial?: Partial<CupStat
         </Suspense>
       )}
       <Suspense fallback={<p className="ck-empty">Loading the Cup standings…</p>}>
-        <CupView data={data} today={today} gameLink={gameLink} focus={cupView.focus} history={cupHist ? { season: cupView.hs, onSeason: (hs) => setCupView((v) => ({ ...v, hs })) } : undefined} sim={cupSim ? { picks: simPicks, onPicks: setSimPicks, mode: simMode, onMode: setSimMode, bracket: koPicks, onBracket: setKoPicks } : undefined} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
+        <CupView data={data} today={today} gameLink={gameLink} focus={cupView.focus} history={cupHist ? { season: cupView.hs, view: cupView.hv ?? 'groups', onSeason: (hs) => setCupView((v) => ({ ...v, hs, hv: hs ? v.hv : undefined })), onView: (view) => setCupView((v) => ({ ...v, hv: view === 'bracket' ? 'bracket' : undefined })) } : undefined} sim={cupSim ? { picks: simPicks, onPicks: setSimPicks, mode: simMode, onMode: setSimMode, bracket: koPicks, onBracket: setKoPicks } : undefined} schedule={cupSchedule ? { list: cupView.list, by: cupView.by, teamId: cupView.teamId, size, now, today, timeZone, onOpenGame, gameLink, onNight: onCupNight } : undefined} />
       </Suspense>
       {selKind && <SelectionBar store={selection} copy={copySelection} />}
       {selCapture && selKind && <SelectionCopyStage capture={selCapture} kind={selKind} list team={cupTeam} teamId={selTeamId} cup p={p} />}
@@ -158,8 +158,8 @@ function cupCrumbs(v: CupState, set: (f: (v: CupState) => CupState) => void): Cr
     if (t) out.push({ id: 'cup-team', label: fullName(t), items: TEAMS_BY_NAME.map((x) => ({ label: fullName(x), on: x.id === t.id, go: go({ teamId: x.id }) })) });
   }
   if (v.tab === 'history') {
-    const year = v.hs ?? CUP_SEASONS[0]!;
-    out.push({ id: 'cup-season', label: String(year), items: CUP_SEASONS.map((y) => ({ label: String(y), on: y === year, go: go({ hs: y }) })) });
+    out.push({ id: 'cup-season', label: v.hs ? String(v.hs) : 'Summary', items: [{ label: 'Summary', on: !v.hs, go: go({ hs: undefined, hv: undefined }) }, ...CUP_SEASONS.map((y) => ({ label: String(y), on: y === v.hs, go: go({ hs: y }) }))] });
+    if (v.hs) out.push({ id: 'cup-hview', label: v.hv === 'bracket' ? 'Bracket' : 'Groups', items: [{ label: 'Groups', on: v.hv !== 'bracket', go: go({ hv: undefined }) }, { label: 'Bracket', on: v.hv === 'bracket', go: go({ hv: 'bracket' }) }] });
   }
   return out;
 }

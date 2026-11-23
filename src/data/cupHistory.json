@@ -8,7 +8,7 @@
     "https://stats.nba.com/stats/iststandings?LeagueID=00&Season=2023-24&Section=group",
     "https://stats.nba.com/stats/scheduleleaguev2?Season=2023-24&LeagueID=00"
    ],
-   "fetched": "2026-11-06",
+   "fetched": "2026-11-23",
    "teams": [
     {
      "teamId": 1610612737,
@@ -22,6 +22,7 @@
      "points": 499,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 11,
      "games": [
       {
        "gameId": "0022300018",
@@ -78,6 +79,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 3,
+     "wildCardRank": 3,
      "games": [
       {
        "gameId": "0022300010",
@@ -133,6 +135,7 @@
      "points": 474,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 5,
      "games": [
       {
        "gameId": "0022300001",
@@ -189,6 +192,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 3,
+     "wildCardRank": 3,
      "games": [
       {
        "gameId": "0022300011",
@@ -244,6 +248,7 @@
      "points": 409,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 15,
      "games": [
       {
        "gameId": "0022300004",
@@ -299,6 +304,7 @@
      "points": 489,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 8,
      "games": [
       {
        "gameId": "0022300006",
@@ -354,6 +360,7 @@
      "points": 432,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 9,
      "games": [
       {
        "gameId": "0022300006",
@@ -409,6 +416,7 @@
      "points": 483,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 7,
      "games": [
       {
        "gameId": "0022300005",
@@ -464,6 +472,7 @@
      "points": 424,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 6,
      "games": [
       {
        "gameId": "0022300011",
@@ -519,6 +528,7 @@
      "points": 446,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 12,
      "games": [
       {
        "gameId": "0022300014",
@@ -575,6 +585,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 1,
+     "wildCardRank": 1,
      "games": [
       {
        "gameId": "0022300015",
@@ -630,6 +641,7 @@
      "points": 454,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 9,
      "games": [
       {
        "gameId": "0022300003",
@@ -686,6 +698,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 1,
+     "wildCardRank": 1,
      "games": [
       {
        "gameId": "0022300002",
@@ -741,6 +754,7 @@
      "points": 438,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 5,
      "games": [
       {
        "gameId": "0022300013",
@@ -796,6 +810,7 @@
      "points": 455,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 7,
      "games": [
       {
        "gameId": "0022300004",
@@ -852,6 +867,7 @@
      "groupWinner": false,
      "wildCard": true,
      "seed": 4,
+     "wildCardRank": 4,
      "games": [
       {
        "gameId": "0022300002",
@@ -907,6 +923,7 @@
      "points": 446,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 6,
      "games": [
       {
        "gameId": "0022300020",
@@ -963,6 +980,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 2,
+     "wildCardRank": 2,
      "games": [
       {
        "gameId": "0022300001",
@@ -1018,6 +1036,7 @@
      "points": 485,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 8,
      "games": [
       {
        "gameId": "0022300008",
@@ -1074,6 +1093,7 @@
      "groupWinner": false,
      "wildCard": true,
      "seed": 4,
+     "wildCardRank": 4,
      "games": [
       {
        "gameId": "0022300015",
@@ -1129,6 +1149,7 @@
      "points": 416,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 13,
      "games": [
       {
        "gameId": "0022300007",
@@ -1185,6 +1206,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 2,
+     "wildCardRank": 2,
      "games": [
       {
        "gameId": "0022300016",
@@ -1240,6 +1262,7 @@
      "points": 429,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 15,
      "games": [
       {
        "gameId": "0022300013",
@@ -1295,6 +1318,7 @@
      "points": 463,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 11,
      "games": [
       {
        "gameId": "0022300005",
@@ -1350,6 +1374,7 @@
      "points": 436,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 10,
      "games": [
       {
        "gameId": "0022300031",
@@ -1405,6 +1430,7 @@
      "points": 469,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 10,
      "games": [
       {
        "gameId": "0022300012",
@@ -1460,6 +1486,7 @@
      "points": 430,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 14,
      "games": [
       {
        "gameId": "0022300007",
@@ -1515,6 +1542,7 @@
      "points": 458,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 13,
      "games": [
       {
        "gameId": "0022300003",
@@ -1570,6 +1598,7 @@
      "points": 439,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 14,
      "games": [
       {
        "gameId": "0022300008",
@@ -1625,6 +1654,7 @@
      "points": 419,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 12,
      "games": [
       {
        "gameId": "0022300009",
@@ -1681,12 +1711,34 @@
      "home": {
       "teamId": 1610612754,
       "tricode": "IND",
-      "score": 122
+      "score": 122,
+      "record": {
+       "w": 10,
+       "l": 8
+      },
+      "prev": {
+       "date": "2023-12-02",
+       "home": false,
+       "opponent": "MIA",
+       "arena": "Kaseya Center",
+       "city": "Miami"
+      }
      },
      "away": {
       "teamId": 1610612738,
       "tricode": "BOS",
-      "score": 112
+      "score": 112,
+      "record": {
+       "w": 15,
+       "l": 4
+      },
+      "prev": {
+       "date": "2023-12-01",
+       "home": true,
+       "opponent": "PHI",
+       "arena": "TD Garden",
+       "city": "Boston"
+      }
      }
     },
     {
@@ -1700,12 +1752,34 @@
      "home": {
       "teamId": 1610612758,
       "tricode": "SAC",
-      "score": 117
+      "score": 117,
+      "record": {
+       "w": 11,
+       "l": 7
+      },
+      "prev": {
+       "date": "2023-12-02",
+       "home": true,
+       "opponent": "DEN",
+       "arena": "Golden 1 Center",
+       "city": "Sacramento"
+      }
      },
      "away": {
       "teamId": 1610612740,
       "tricode": "NOP",
-      "score": 127
+      "score": 127,
+      "record": {
+       "w": 11,
+       "l": 10
+      },
+      "prev": {
+       "date": "2023-12-02",
+       "home": false,
+       "opponent": "CHI",
+       "arena": "United Center",
+       "city": "Chicago"
+      }
      }
     },
     {
@@ -1719,12 +1793,34 @@
      "home": {
       "teamId": 1610612749,
       "tricode": "MIL",
-      "score": 146
+      "score": 146,
+      "record": {
+       "w": 14,
+       "l": 6
+      },
+      "prev": {
+       "date": "2023-12-02",
+       "home": true,
+       "opponent": "ATL",
+       "arena": "Fiserv Forum",
+       "city": "Milwaukee"
+      }
      },
      "away": {
       "teamId": 1610612752,
       "tricode": "NYK",
-      "score": 122
+      "score": 122,
+      "record": {
+       "w": 12,
+       "l": 7
+      },
+      "prev": {
+       "date": "2023-12-01",
+       "home": false,
+       "opponent": "TOR",
+       "arena": "Scotiabank Arena",
+       "city": "Toronto"
+      }
      }
     },
     {
@@ -1738,12 +1834,34 @@
      "home": {
       "teamId": 1610612747,
       "tricode": "LAL",
-      "score": 106
+      "score": 106,
+      "record": {
+       "w": 12,
+       "l": 9
+      },
+      "prev": {
+       "date": "2023-12-02",
+       "home": true,
+       "opponent": "HOU",
+       "arena": "Crypto.com Arena",
+       "city": "Los Angeles"
+      }
      },
      "away": {
       "teamId": 1610612756,
       "tricode": "PHX",
-      "score": 103
+      "score": 103,
+      "record": {
+       "w": 12,
+       "l": 8
+      },
+      "prev": {
+       "date": "2023-12-02",
+       "home": true,
+       "opponent": "MEM",
+       "arena": "Footprint Center",
+       "city": "Phoenix"
+      }
      }
     },
     {
@@ -1757,12 +1875,34 @@
      "home": {
       "teamId": 1610612749,
       "tricode": "MIL",
-      "score": 119
+      "score": 119,
+      "record": {
+       "w": 15,
+       "l": 6
+      },
+      "prev": {
+       "date": "2023-12-05",
+       "home": true,
+       "opponent": "NYK",
+       "arena": "Fiserv Forum",
+       "city": "Milwaukee"
+      }
      },
      "away": {
       "teamId": 1610612754,
       "tricode": "IND",
-      "score": 128
+      "score": 128,
+      "record": {
+       "w": 11,
+       "l": 8
+      },
+      "prev": {
+       "date": "2023-12-04",
+       "home": true,
+       "opponent": "BOS",
+       "arena": "Gainbridge Fieldhouse",
+       "city": "Indianapolis"
+      }
      }
     },
     {
@@ -1776,12 +1916,34 @@
      "home": {
       "teamId": 1610612747,
       "tricode": "LAL",
-      "score": 133
+      "score": 133,
+      "record": {
+       "w": 13,
+       "l": 9
+      },
+      "prev": {
+       "date": "2023-12-05",
+       "home": true,
+       "opponent": "PHX",
+       "arena": "Crypto.com Arena",
+       "city": "Los Angeles"
+      }
      },
      "away": {
       "teamId": 1610612740,
       "tricode": "NOP",
-      "score": 89
+      "score": 89,
+      "record": {
+       "w": 12,
+       "l": 10
+      },
+      "prev": {
+       "date": "2023-12-04",
+       "home": false,
+       "opponent": "SAC",
+       "arena": "Golden 1 Center",
+       "city": "Sacramento"
+      }
      }
     },
     {
@@ -1794,12 +1956,34 @@
      "home": {
       "teamId": 1610612747,
       "tricode": "LAL",
-      "score": 123
+      "score": 123,
+      "record": {
+       "w": 14,
+       "l": 9
+      },
+      "prev": {
+       "date": "2023-12-07",
+       "home": true,
+       "opponent": "NOP",
+       "arena": "T-Mobile Arena",
+       "city": "Las Vegas"
+      }
      },
      "away": {
       "teamId": 1610612754,
       "tricode": "IND",
-      "score": 109
+      "score": 109,
+      "record": {
+       "w": 12,
+       "l": 8
+      },
+      "prev": {
+       "date": "2023-12-07",
+       "home": false,
+       "opponent": "MIL",
+       "arena": "T-Mobile Arena",
+       "city": "Las Vegas"
+      }
      }
     }
    ],
@@ -1820,7 +2004,7 @@
     "https://stats.nba.com/stats/iststandings?LeagueID=00&Season=2024-25&Section=group",
     "https://stats.nba.com/stats/scheduleleaguev2?Season=2024-25&LeagueID=00"
    ],
-   "fetched": "2026-11-06",
+   "fetched": "2026-11-23",
    "teams": [
     {
      "teamId": 1610612737,
@@ -1835,6 +2019,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 3,
+     "wildCardRank": 3,
      "games": [
       {
        "gameId": "0022400001",
@@ -1890,6 +2075,7 @@
      "points": 482,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 5,
      "games": [
       {
        "gameId": "0022400001",
@@ -1945,6 +2131,7 @@
      "points": 480,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 7,
      "games": [
       {
        "gameId": "0022400013",
@@ -2000,6 +2187,7 @@
      "points": 409,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 14,
      "games": [
       {
        "gameId": "0022400017",
@@ -2055,6 +2243,7 @@
      "points": 518,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 9,
      "games": [
       {
        "gameId": "0022400013",
@@ -2111,6 +2300,7 @@
      "groupWinner": false,
      "wildCard": true,
      "seed": 4,
+     "wildCardRank": 4,
      "games": [
       {
        "gameId": "0022400007",
@@ -2166,6 +2356,7 @@
      "points": 455,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 7,
      "games": [
       {
        "gameId": "0022400017",
@@ -2222,6 +2413,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 3,
+     "wildCardRank": 3,
      "games": [
       {
        "gameId": "0022400007",
@@ -2278,6 +2470,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 2,
+     "wildCardRank": 2,
      "games": [
       {
        "gameId": "0022400016",
@@ -2333,6 +2526,7 @@
      "points": 427,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 6,
      "games": [
       {
        "gameId": "0022400016",
@@ -2388,6 +2582,7 @@
      "points": 437,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 10,
      "games": [
       {
        "gameId": "0022400015",
@@ -2443,6 +2638,7 @@
      "points": 459,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 8,
      "games": [
       {
        "gameId": "0022400002",
@@ -2499,6 +2695,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 1,
+     "wildCardRank": 1,
      "games": [
       {
        "gameId": "0022400005",
@@ -2554,6 +2751,7 @@
      "points": 418,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 9,
      "games": [
       {
        "gameId": "0022400008",
@@ -2609,6 +2807,7 @@
      "points": 436,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 12,
      "games": [
       {
        "gameId": "0022400014",
@@ -2665,6 +2864,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 2,
+     "wildCardRank": 2,
      "games": [
       {
        "gameId": "0022400004",
@@ -2721,6 +2921,7 @@
      "groupWinner": false,
      "wildCard": true,
      "seed": 4,
+     "wildCardRank": 4,
      "games": [
       {
        "gameId": "0022400003",
@@ -2776,6 +2977,7 @@
      "points": 445,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 14,
      "games": [
       {
        "gameId": "0022400009",
@@ -2831,6 +3033,7 @@
      "points": 408,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 10,
      "games": [
       {
        "gameId": "0022400004",
@@ -2886,6 +3089,7 @@
      "points": 434,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 5,
      "games": [
       {
        "gameId": "0022400006",
@@ -2941,6 +3145,7 @@
      "points": 430,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 11,
      "games": [
       {
        "gameId": "0022400008",
@@ -2996,6 +3201,7 @@
      "points": 429,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 13,
      "games": [
       {
        "gameId": "0022400020",
@@ -3051,6 +3257,7 @@
      "points": 446,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 8,
      "games": [
       {
        "gameId": "0022400015",
@@ -3107,6 +3314,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 1,
+     "wildCardRank": 1,
      "games": [
       {
        "gameId": "0022400018",
@@ -3162,6 +3370,7 @@
      "points": 413,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 11,
      "games": [
       {
        "gameId": "0022400005",
@@ -3217,6 +3426,7 @@
      "points": 451,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 15,
      "games": [
       {
        "gameId": "0022400006",
@@ -3272,6 +3482,7 @@
      "points": 464,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 12,
      "games": [
       {
        "gameId": "0022400019",
@@ -3327,6 +3538,7 @@
      "points": 408,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 15,
      "games": [
       {
        "gameId": "0022400012",
@@ -3382,6 +3594,7 @@
      "points": 447,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 6,
      "games": [
       {
        "gameId": "0022400002",
@@ -3437,6 +3650,7 @@
      "points": 406,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 13,
      "games": [
       {
        "gameId": "0022400003",
@@ -3493,12 +3707,34 @@
      "home": {
       "teamId": 1610612749,
       "tricode": "MIL",
-      "score": 114
+      "score": 114,
+      "record": {
+       "w": 12,
+       "l": 11
+      },
+      "prev": {
+       "date": "2024-12-08",
+       "home": false,
+       "opponent": "BKN",
+       "arena": "Barclays Center",
+       "city": "Brooklyn"
+      }
      },
      "away": {
       "teamId": 1610612753,
       "tricode": "ORL",
-      "score": 109
+      "score": 109,
+      "record": {
+       "w": 17,
+       "l": 9
+      },
+      "prev": {
+       "date": "2024-12-08",
+       "home": true,
+       "opponent": "PHX",
+       "arena": "Kia Center",
+       "city": "Orlando"
+      }
      }
     },
     {
@@ -3512,12 +3748,34 @@
      "home": {
       "teamId": 1610612760,
       "tricode": "OKC",
-      "score": 118
+      "score": 118,
+      "record": {
+       "w": 18,
+       "l": 5
+      },
+      "prev": {
+       "date": "2024-12-07",
+       "home": false,
+       "opponent": "NOP",
+       "arena": "Smoothie King Center",
+       "city": "New Orleans"
+      }
      },
      "away": {
       "teamId": 1610612742,
       "tricode": "DAL",
-      "score": 104
+      "score": 104,
+      "record": {
+       "w": 16,
+       "l": 8
+      },
+      "prev": {
+       "date": "2024-12-07",
+       "home": false,
+       "opponent": "TOR",
+       "arena": "Scotiabank Arena",
+       "city": "Toronto"
+      }
      }
     },
     {
@@ -3531,12 +3789,34 @@
      "home": {
       "teamId": 1610612752,
       "tricode": "NYK",
-      "score": 100
+      "score": 100,
+      "record": {
+       "w": 15,
+       "l": 9
+      },
+      "prev": {
+       "date": "2024-12-09",
+       "home": false,
+       "opponent": "TOR",
+       "arena": "Scotiabank Arena",
+       "city": "Toronto"
+      }
      },
      "away": {
       "teamId": 1610612737,
       "tricode": "ATL",
-      "score": 108
+      "score": 108,
+      "record": {
+       "w": 13,
+       "l": 12
+      },
+      "prev": {
+       "date": "2024-12-08",
+       "home": true,
+       "opponent": "DEN",
+       "arena": "State Farm Arena",
+       "city": "Atlanta"
+      }
      }
     },
     {
@@ -3550,12 +3830,34 @@
      "home": {
       "teamId": 1610612745,
       "tricode": "HOU",
-      "score": 91
+      "score": 91,
+      "record": {
+       "w": 16,
+       "l": 8
+      },
+      "prev": {
+       "date": "2024-12-08",
+       "home": false,
+       "opponent": "LAC",
+       "arena": "Intuit Dome",
+       "city": "Inglewood"
+      }
      },
      "away": {
       "teamId": 1610612744,
       "tricode": "GSW",
-      "score": 90
+      "score": 90,
+      "record": {
+       "w": 14,
+       "l": 9
+      },
+      "prev": {
+       "date": "2024-12-08",
+       "home": true,
+       "opponent": "MIN",
+       "arena": "Chase Center",
+       "city": "San Francisco"
+      }
      }
     },
     {
@@ -3569,12 +3871,34 @@
      "home": {
       "teamId": 1610612749,
       "tricode": "MIL",
-      "score": 110
+      "score": 110,
+      "record": {
+       "w": 13,
+       "l": 11
+      },
+      "prev": {
+       "date": "2024-12-10",
+       "home": true,
+       "opponent": "ORL",
+       "arena": "Fiserv Forum",
+       "city": "Milwaukee"
+      }
      },
      "away": {
       "teamId": 1610612737,
       "tricode": "ATL",
-      "score": 102
+      "score": 102,
+      "record": {
+       "w": 14,
+       "l": 12
+      },
+      "prev": {
+       "date": "2024-12-11",
+       "home": false,
+       "opponent": "NYK",
+       "arena": "Madison Square Garden",
+       "city": "New York"
+      }
      }
     },
     {
@@ -3588,12 +3912,34 @@
      "home": {
       "teamId": 1610612760,
       "tricode": "OKC",
-      "score": 111
+      "score": 111,
+      "record": {
+       "w": 19,
+       "l": 5
+      },
+      "prev": {
+       "date": "2024-12-10",
+       "home": true,
+       "opponent": "DAL",
+       "arena": "Paycom Center",
+       "city": "Oklahoma City"
+      }
      },
      "away": {
       "teamId": 1610612745,
       "tricode": "HOU",
-      "score": 96
+      "score": 96,
+      "record": {
+       "w": 17,
+       "l": 8
+      },
+      "prev": {
+       "date": "2024-12-11",
+       "home": true,
+       "opponent": "GSW",
+       "arena": "Toyota Center",
+       "city": "Houston"
+      }
      }
     },
     {
@@ -3606,12 +3952,34 @@
      "home": {
       "teamId": 1610612760,
       "tricode": "OKC",
-      "score": 81
+      "score": 81,
+      "record": {
+       "w": 20,
+       "l": 5
+      },
+      "prev": {
+       "date": "2024-12-14",
+       "home": true,
+       "opponent": "HOU",
+       "arena": "T-Mobile Arena",
+       "city": "Las Vegas"
+      }
      },
      "away": {
       "teamId": 1610612749,
       "tricode": "MIL",
-      "score": 97
+      "score": 97,
+      "record": {
+       "w": 14,
+       "l": 11
+      },
+      "prev": {
+       "date": "2024-12-14",
+       "home": true,
+       "opponent": "ATL",
+       "arena": "T-Mobile Arena",
+       "city": "Las Vegas"
+      }
      }
     }
    ],
@@ -3632,7 +4000,7 @@
     "https://stats.nba.com/stats/iststandings?LeagueID=00&Season=2025-26&Section=group",
     "https://stats.nba.com/stats/scheduleleaguev2?Season=2025-26&LeagueID=00"
    ],
-   "fetched": "2026-11-06",
+   "fetched": "2026-11-23",
    "teams": [
     {
      "teamId": 1610612737,
@@ -3646,6 +4014,7 @@
      "points": 468,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 5,
      "games": [
       {
        "gameId": "0022500020",
@@ -3701,6 +4070,7 @@
      "points": 441,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 6,
      "games": [
       {
        "gameId": "0022500021",
@@ -3756,6 +4126,7 @@
      "points": 492,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 7,
      "games": [
       {
        "gameId": "0022500022",
@@ -3811,6 +4182,7 @@
      "points": 465,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 14,
      "games": [
       {
        "gameId": "0022500027",
@@ -3866,6 +4238,7 @@
      "points": 468,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 14,
      "games": [
       {
        "gameId": "0022500023",
@@ -3921,6 +4294,7 @@
      "points": 455,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 11,
      "games": [
       {
        "gameId": "0022500034",
@@ -3976,6 +4350,7 @@
      "points": 484,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 6,
      "games": [
       {
        "gameId": "0022500026",
@@ -4031,6 +4406,7 @@
      "points": 436,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 12,
      "games": [
       {
        "gameId": "0022500037",
@@ -4086,6 +4462,7 @@
      "points": 463,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 8,
      "games": [
       {
        "gameId": "0022500032",
@@ -4141,6 +4518,7 @@
      "points": 465,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 9,
      "games": [
       {
        "gameId": "0022500027",
@@ -4197,6 +4575,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 2,
+     "wildCardRank": 2,
      "games": [
       {
        "gameId": "0022500024",
@@ -4253,6 +4632,7 @@
      "groupWinner": false,
      "wildCard": true,
      "seed": 4,
+     "wildCardRank": 4,
      "games": [
       {
        "gameId": "0022500033",
@@ -4308,6 +4688,7 @@
      "points": 467,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 9,
      "games": [
       {
        "gameId": "0022500035",
@@ -4363,6 +4744,7 @@
      "points": 479,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 7,
      "games": [
       {
        "gameId": "0022500036",
@@ -4418,6 +4800,7 @@
      "points": 421,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 11,
      "games": [
       {
        "gameId": "0022500031",
@@ -4474,6 +4857,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 3,
+     "wildCardRank": 3,
      "games": [
       {
        "gameId": "0022500023",
@@ -4530,6 +4914,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 1,
+     "wildCardRank": 1,
      "games": [
       {
        "gameId": "0022500028",
@@ -4585,6 +4970,7 @@
      "points": 431,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 10,
      "games": [
       {
        "gameId": "0022500020",
@@ -4640,6 +5026,7 @@
      "points": 431,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 13,
      "games": [
       {
        "gameId": "0022500021",
@@ -4696,6 +5083,7 @@
      "groupWinner": false,
      "wildCard": true,
      "seed": 4,
+     "wildCardRank": 4,
      "games": [
       {
        "gameId": "0022500025",
@@ -4751,6 +5139,7 @@
      "points": 454,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 10,
      "games": [
       {
        "gameId": "0022500026",
@@ -4806,6 +5195,7 @@
      "points": 430,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 15,
      "games": [
       {
        "gameId": "0022500038",
@@ -4862,6 +5252,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 3,
+     "wildCardRank": 3,
      "games": [
       {
        "gameId": "0022500032",
@@ -4918,6 +5309,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 1,
+     "wildCardRank": 1,
      "games": [
       {
        "gameId": "0022500038",
@@ -4974,6 +5366,7 @@
      "groupWinner": true,
      "wildCard": false,
      "seed": 2,
+     "wildCardRank": 2,
      "games": [
       {
        "gameId": "0022500022",
@@ -5029,6 +5422,7 @@
      "points": 433,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 13,
      "games": [
       {
        "gameId": "0022500025",
@@ -5084,6 +5478,7 @@
      "points": 464,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 5,
      "games": [
       {
        "gameId": "0022500024",
@@ -5139,6 +5534,7 @@
      "points": 443,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 15,
      "games": [
       {
        "gameId": "0022500029",
@@ -5194,6 +5590,7 @@
      "points": 462,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 8,
      "games": [
       {
        "gameId": "0022500031",
@@ -5249,6 +5646,7 @@
      "points": 461,
      "groupWinner": false,
      "wildCard": false,
+     "wildCardRank": 12,
      "games": [
       {
        "gameId": "0022500033",
@@ -5305,12 +5703,34 @@
      "home": {
       "teamId": 1610612753,
       "tricode": "ORL",
-      "score": 117
+      "score": 117,
+      "record": {
+       "w": 14,
+       "l": 10
+      },
+      "prev": {
+       "date": "2025-12-07",
+       "home": false,
+       "opponent": "NYK",
+       "arena": "Madison Square Garden",
+       "city": "New York"
+      }
      },
      "away": {
       "teamId": 1610612748,
       "tricode": "MIA",
-      "score": 108
+      "score": 108,
+      "record": {
+       "w": 14,
+       "l": 10
+      },
+      "prev": {
+       "date": "2025-12-06",
+       "home": true,
+       "opponent": "SAC",
+       "arena": "Kaseya Center",
+       "city": "Miami"
+      }
      }
     },
     {
@@ -5324,12 +5744,34 @@
      "home": {
       "teamId": 1610612761,
       "tricode": "TOR",
-      "score": 101
+      "score": 101,
+      "record": {
+       "w": 15,
+       "l": 10
+      },
+      "prev": {
+       "date": "2025-12-07",
+       "home": true,
+       "opponent": "BOS",
+       "arena": "Scotiabank Arena",
+       "city": "Toronto"
+      }
      },
      "away": {
       "teamId": 1610612752,
       "tricode": "NYK",
-      "score": 117
+      "score": 117,
+      "record": {
+       "w": 16,
+       "l": 7
+      },
+      "prev": {
+       "date": "2025-12-07",
+       "home": true,
+       "opponent": "ORL",
+       "arena": "Madison Square Garden",
+       "city": "New York"
+      }
      }
     },
     {
@@ -5343,12 +5785,34 @@
      "home": {
       "teamId": 1610612760,
       "tricode": "OKC",
-      "score": 138
+      "score": 138,
+      "record": {
+       "w": 23,
+       "l": 1
+      },
+      "prev": {
+       "date": "2025-12-07",
+       "home": false,
+       "opponent": "UTA",
+       "arena": "Delta Center",
+       "city": "Salt Lake City"
+      }
      },
      "away": {
       "teamId": 1610612756,
       "tricode": "PHX",
-      "score": 89
+      "score": 89,
+      "record": {
+       "w": 14,
+       "l": 10
+      },
+      "prev": {
+       "date": "2025-12-08",
+       "home": false,
+       "opponent": "MIN",
+       "arena": "Target Center",
+       "city": "Minneapolis"
+      }
      }
     },
     {
@@ -5362,12 +5826,34 @@
      "home": {
       "teamId": 1610612747,
       "tricode": "LAL",
-      "score": 119
+      "score": 119,
+      "record": {
+       "w": 17,
+       "l": 6
+      },
+      "prev": {
+       "date": "2025-12-07",
+       "home": false,
+       "opponent": "PHI",
+       "arena": "Xfinity Mobile Arena",
+       "city": "Philadelphia"
+      }
      },
      "away": {
       "teamId": 1610612759,
       "tricode": "SAS",
-      "score": 132
+      "score": 132,
+      "record": {
+       "w": 16,
+       "l": 7
+      },
+      "prev": {
+       "date": "2025-12-08",
+       "home": false,
+       "opponent": "NOP",
+       "arena": "Smoothie King Center",
+       "city": "New Orleans"
+      }
      }
     },
     {
@@ -5381,12 +5867,34 @@
      "home": {
       "teamId": 1610612753,
       "tricode": "ORL",
-      "score": 120
+      "score": 120,
+      "record": {
+       "w": 15,
+       "l": 10
+      },
+      "prev": {
+       "date": "2025-12-09",
+       "home": true,
+       "opponent": "MIA",
+       "arena": "Kia Center",
+       "city": "Orlando"
+      }
      },
      "away": {
       "teamId": 1610612752,
       "tricode": "NYK",
-      "score": 132
+      "score": 132,
+      "record": {
+       "w": 17,
+       "l": 7
+      },
+      "prev": {
+       "date": "2025-12-09",
+       "home": false,
+       "opponent": "TOR",
+       "arena": "Scotiabank Arena",
+       "city": "Toronto"
+      }
      }
     },
     {
@@ -5400,12 +5908,34 @@
      "home": {
       "teamId": 1610612760,
       "tricode": "OKC",
-      "score": 109
+      "score": 109,
+      "record": {
+       "w": 24,
+       "l": 1
+      },
+      "prev": {
+       "date": "2025-12-10",
+       "home": true,
+       "opponent": "PHX",
+       "arena": "Paycom Center",
+       "city": "Oklahoma City"
+      }
      },
      "away": {
       "teamId": 1610612759,
       "tricode": "SAS",
-      "score": 111
+      "score": 111,
+      "record": {
+       "w": 17,
+       "l": 7
+      },
+      "prev": {
+       "date": "2025-12-10",
+       "home": false,
+       "opponent": "LAL",
+       "arena": "Crypto.com Arena",
+       "city": "Los Angeles"
+      }
      }
     },
     {
@@ -5418,12 +5948,34 @@
      "home": {
       "teamId": 1610612752,
       "tricode": "NYK",
-      "score": 124
+      "score": 124,
+      "record": {
+       "w": 18,
+       "l": 7
+      },
+      "prev": {
+       "date": "2025-12-13",
+       "home": false,
+       "opponent": "ORL",
+       "arena": "T-Mobile Arena",
+       "city": "Las Vegas"
+      }
      },
      "away": {
       "teamId": 1610612759,
       "tricode": "SAS",
-      "score": 113
+      "score": 113,
+      "record": {
+       "w": 18,
+       "l": 7
+      },
+      "prev": {
+       "date": "2025-12-13",
+       "home": false,
+       "opponent": "OKC",
+       "arena": "T-Mobile Arena",
+       "city": "Las Vegas"
+      }
      }
     }
    ],

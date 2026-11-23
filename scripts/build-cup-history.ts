@@ -11,7 +11,7 @@ import { DEFAULT_HEADERS } from '../src/shared/nba-schedule/node';
 const H = { ...DEFAULT_HEADERS, Origin: 'https://www.nba.com', Accept: 'application/json, text/plain, */*', 'x-nba-stats-origin': 'stats', 'x-nba-stats-token': 'true' };
 const seasons = process.argv.slice(2).length ? process.argv.slice(2) : ['2023-24', '2024-25', '2025-26'];
 
-type RawTeam = { teamId: number; teamAbbreviation: string; conference: string; istGroup: string; istGroupRank: number; wins: number; losses: number; diff: number; pts: number; oppPts: number; clinchedIstGroup: number; clinchedIstWildcard: number; istKnockoutRank: number | null; games: { gameId: string; opponentTeamAbbreviation: string; location: 'H' | 'A'; gameStatus: number; outcome: 'W' | 'L' }[] };
+type RawTeam = { teamId: number; teamAbbreviation: string; conference: string; istGroup: string; istGroupRank: number; wins: number; losses: number; diff: number; pts: number; oppPts: number; clinchedIstGroup: number; clinchedIstWildcard: number; istWildcardRank: number | null; istKnockoutRank: number | null; games: { gameId: string; opponentTeamAbbreviation: string; location: 'H' | 'A'; gameStatus: number; outcome: 'W' | 'L' }[] };
 type RawGame = { gameId: string; gameDateEst: string; gameStatusText: string; gameSubtype: string; gameSubLabel: string; arenaName: string; arenaCity: string; homeTeam: { teamId: number; teamTricode: string; score: number }; awayTeam: { teamId: number; teamTricode: string; score: number } };
 
 const get = async (url: string) => {
@@ -42,6 +42,7 @@ for (const season of seasons) {
     groupWinner: t.clinchedIstGroup === 1,
     wildCard: t.clinchedIstWildcard === 1,
     seed: t.istKnockoutRank ?? undefined,
+    wildCardRank: t.istWildcardRank ?? undefined,
     games: t.games.map((x) => {
       const g = games.get(x.gameId);
       const home = x.location === 'H';
@@ -50,6 +51,22 @@ for (const season of seasons) {
       return { gameId: x.gameId, opponent: x.opponentTeamAbbreviation, home, win: x.outcome === 'W', date: g?.gameDateEst.slice(0, 10), score: me?.score, oppScore: opp?.score, status: g?.gameStatusText.trim() };
     }),
   }));
+  // CK-43: each knockout team's previous game (its date and arena: rest and travel) and its regular-season record going
+  // into the game — from the same season schedule. Regular-season games are the 002… ids (the Cup's quarterfinals and
+  // semifinals count; the 006… Championship doesn't); only finished games before the knockout game's date count.
+  const all = [...games.values()].filter((g) => g.homeTeam.teamId && g.awayTeam.teamId);
+  const done = (g: RawGame) => /^Final/i.test(g.gameStatusText.trim()) && g.homeTeam.score + g.awayTeam.score > 0;
+  const before = (teamId: number, date: string) => all.filter((g) => (g.homeTeam.teamId === teamId || g.awayTeam.teamId === teamId) && g.gameDateEst.slice(0, 10) < date && done(g)).sort((a, b) => a.gameDateEst.localeCompare(b.gameDateEst));
+  const into = (teamId: number, date: string) => {
+    const prior = before(teamId, date);
+    const reg = prior.filter((g) => /^002/.test(g.gameId));
+    const w = reg.filter((g) => (g.homeTeam.teamId === teamId ? g.homeTeam.score > g.awayTeam.score : g.awayTeam.score > g.homeTeam.score)).length;
+    const p = prior.at(-1);
+    return {
+      record: { w, l: reg.length - w },
+      prev: p && { date: p.gameDateEst.slice(0, 10), home: p.homeTeam.teamId === teamId, opponent: p.homeTeam.teamId === teamId ? p.awayTeam.teamTricode : p.homeTeam.teamTricode, arena: p.arenaName, city: p.arenaCity },
+    };
+  };
   const knockout = cup
     .filter((g) => g.gameSubtype !== 'in-season')
     .map((g) => ({
@@ -60,8 +77,8 @@ for (const season of seasons) {
       arena: g.arenaName,
       city: g.arenaCity,
       status: g.gameStatusText.trim(),
-      home: { teamId: g.homeTeam.teamId, tricode: g.homeTeam.teamTricode, score: g.homeTeam.score },
-      away: { teamId: g.awayTeam.teamId, tricode: g.awayTeam.teamTricode, score: g.awayTeam.score },
+      home: { teamId: g.homeTeam.teamId, tricode: g.homeTeam.teamTricode, score: g.homeTeam.score, ...into(g.homeTeam.teamId, g.gameDateEst.slice(0, 10)) },
+      away: { teamId: g.awayTeam.teamId, tricode: g.awayTeam.teamTricode, score: g.awayTeam.score, ...into(g.awayTeam.teamId, g.gameDateEst.slice(0, 10)) },
     }))
     .sort((a, b) => a.date.localeCompare(b.date) || a.gameId.localeCompare(b.gameId));
   out.push({ season, year: Number(season.slice(0, 4)), sources: [standingsUrl, scheduleUrl], fetched: new Date().toISOString().slice(0, 10), teams, knockout, groupDates: [...new Set(cup.filter((g) => g.gameSubtype === 'in-season').map((g) => g.gameDateEst.slice(0, 10)))].sort() });
