@@ -43,7 +43,8 @@ describe('wiring', () => {
   });
   it('the odds live check runs only with E2E_LIVE=1, which CI\'s live job and e2e:live set', () => {
     expect(readFileSync('e2e/smoke.spec.ts', 'utf8')).toMatch(/test\.skip\(process\.env\.E2E_LIVE !== '1', 'live only: runs only in the CI live job/);
-    expect(readFileSync('.github/workflows/ci.yml', 'utf8')).toMatch(/E2E_BASE_URL: https:\/\/gauntlet-home\.vercel\.app\s*\n\s*E2E_LIVE: '1'/);
-    expect(readFileSync('scripts/e2e-live.ts', 'utf8')).toMatch(/E2E_LIVE: '1'/);
+    // CI's live job runs scripts/e2e-live.ts, which sets both
+    expect(readFileSync('.github/workflows/ci.yml', 'utf8')).toMatch(/npx tsx scripts\/e2e-live\.ts https:\/\/gauntlet-home\.vercel\.app/);
+    expect(readFileSync('scripts/e2e-live.ts', 'utf8')).toMatch(/E2E_BASE_URL: url, E2E_LIVE: '1'/);
   });
 });
