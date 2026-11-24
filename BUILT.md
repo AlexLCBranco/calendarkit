@@ -5,6 +5,8 @@ Entries dated before 2026-11-16 were backfilled from the git commit messages (da
 spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Feature backlog, built list and ideas").
 
 ## 2026-11-24
+- Fix: Cup schedule rows show tonight's stakes as a purple dot (v1.97.1)
+  On a Cup night, a game that can decide something has a small purple dot before its ↗ (the word "stakes" didn't fit and covered the time); the line under the schedule says "● Big game tonight: it can decide something in the Cup. Point at the row to see what."
 ### Internal
 - docs: new "Blocked" rule in CLAUDE.md: a Blocked line that only waits for other items unblocks itself at the next build; a question needs a "?" and still waits for the owner
 

@@ -371,8 +371,21 @@
 }
 .ck-cg-link {
   display: inline-flex;
-  width: 1.2em;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  min-width: 1.2em;
+}
+/* tonight's stakes: a purple dot before the ↗ (the word "stakes" didn't fit the one-line rows and covered the time); the
+   line under the schedule says what it means, the row's tooltip what is at stake */
+.ck-cg-stakes {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #a06eff;
+  vertical-align: middle;
 }
 /* By date: every night at once, down four balanced columns; the time first, the group pill right after the teams, a
    little air between groups; the strip's night outlined */
@@ -426,6 +439,15 @@
 }
 .ck-cup-sched .ck-fm-legend {
   height: auto;
+}
+/* the legend line: the fatigue keys, then the stakes dot's key beside them (a second line made By date taller than the window) */
+.ck-cup-keys {
+  display: flex;
+  gap: 18px;
+  min-width: 0;
+}
+.ck-cg-stakes-key .ck-cg-stakes {
+  margin-right: 2px;
 }
 /* every Cup night in one row (11 in 2026-27), not the strip's fixed week */
 .ck-cup-strip {

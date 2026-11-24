@@ -522,5 +522,44 @@ test.describe('Cup schedule fits the window', () => {
       expect(r.out).toEqual([]);
       expect([r.font, r.zoom], 'rows at the Team List’s size').toEqual([ref.font, ref.zoom]);
     });
+
+    // A Cup night with stakes on its rows (fixed: 24 Nov 2026 at noon ET, that night's Cup games not played yet), so the
+    // check runs every day, not only on nights the real clock lands on (CI went red on 24 Nov: "stakes" cut off, ↗ out of its row)
+    test(`${size.width}×${size.height}: rows with tonight's stakes show a purple dot that covers nothing, explained under the schedule`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await page.clock.setFixedTime(new Date('2026-11-24T17:00:00Z'));
+      await page.route('**/data/schedule.json', async (route) => {
+        const raw = await (await route.fetch()).json();
+        for (const d of raw.leagueSchedule.gameDates as { games: RawGame[] }[])
+          for (const g of d.games)
+            if (g.gameSubtype === 'in-season' && g.gameDateEst.startsWith('2026-11-24')) {
+              g.gameStatus = 1;
+              g.gameStatusText = '7:30 pm ET';
+              g.homeTeam.score = 0;
+              g.awayTeam.score = 0;
+            }
+        await route.fulfill({ json: raw });
+      });
+      for (const by of ['group', 'date'] as const) {
+        await openSchedule(page, by === 'date' ? 'date' : 'league');
+        await expect(page.getByTestId('cg-stakes').first()).toBeVisible();
+        const r = await measure(page, '[data-testid="cup-league"]', '.ck-cg');
+        await page.screenshot({ path: `test-output/cupschedule-stakes-by${by}-${size.width}x${size.height}.png` });
+        expect(r.out, `by ${by}`).toEqual([]);
+        expect(r.heights, `by ${by}: every row one line`).toHaveLength(1);
+        expect(r.scroll, `by ${by}: page scrolls by more than the page rows`).toBeLessThanOrEqual(r.win + (await scrollAway(page)));
+        // the mark covers nothing: it starts right of the row's time / score and the teams
+        const overlaps = await page.evaluate(() =>
+          [...document.querySelectorAll<HTMLElement>('[data-testid="cg-stakes"]')].flatMap((d) => {
+            const row = d.closest('.ck-cg')!;
+            const left = d.getBoundingClientRect().left;
+            return [...row.querySelectorAll('.ck-cg-res, .ck-cg-match, .ck-cg-pill')].filter((e) => e.getBoundingClientRect().right > left + 0.5).map((e) => `${e.className} "${row.textContent}"`);
+          }),
+        );
+        expect(overlaps, `by ${by}: the dot covers part of its row`).toEqual([]);
+        await expect(page.getByTestId('stakes-legend')).toHaveText('Big game tonight: it can decide something in the Cup. Point at the row to see what.');
+        await expect(page.getByTestId('cg-stakes').first()).toHaveAttribute('title', /\S/);
+      }
+    });
   }
 });

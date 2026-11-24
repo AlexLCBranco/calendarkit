@@ -141,11 +141,7 @@ function CupRow({ g: snapshotGame, data, fatigue, by, pill, timeZone, gameLink, 
       </span>
       {by === 'group' ? result : pill ? <CupLabel game={g} className="ck-tag ck-cup ck-cg-pill" long={`NBA Cup · ${pill}`}>{pill}</CupLabel> : venue?.kind === 'tbd' ? <VenueBadge venue={venue} /> : <span />}
       <span className="ck-cg-link">
-        {stakes.length > 0 && (
-          <span className="ck-stake" data-testid="cg-stakes" title={stakes.join(' · ')}>
-            stakes
-          </span>
-        )}
+        {stakes.length > 0 && <span className="ck-cg-stakes" data-testid="cg-stakes" role="img" aria-label="Big game tonight" title={stakes.join(' · ')} />}
         {url && <GameLinkIcon url={url} />}
       </span>
     </article>
@@ -177,7 +173,18 @@ function Panel({ title, games, testId, group, ...row }: { title: string; games: 
   );
 }
 
-function CupByGroup({ data, size, timeZone, gameLink }: CupScheduleProps) {
+/** Tonight has a Cup game that can decide something: the rows show a purple dot, explained by this line under the schedule. */
+function StakesKey({ data, today }: { data: CalendarData; today: string }) {
+  const chips = cupStakesNow(data, today);
+  if (!chips || ![...chips.values()].some((c) => c.length)) return null;
+  return (
+    <div className="ck-fm-legend ck-cg-stakes-key" data-testid="stakes-legend">
+      <span className="ck-cg-stakes" /> Big game tonight: it can decide something in the Cup. Point at the row to see what.
+    </div>
+  );
+}
+
+function CupByGroup({ data, size, today, timeZone, gameLink }: CupScheduleProps) {
   const board = useMemo(() => cupBoard(data), [data]);
   const fatigue = leagueFatigue(data); // once per data set
   if (!board.groups.length) return <p className="ck-empty">The schedule has no Cup games.</p>;
@@ -202,7 +209,11 @@ function CupByGroup({ data, size, timeZone, gameLink }: CupScheduleProps) {
           </div>
           {board.groups.slice(6).map((_, k) => panel(6 + k))}
         </div>
-        <FatigueLegend />
+        {/* one line: the fatigue keys, then (on a night with stakes) the dot's key */}
+        <div className="ck-cup-keys">
+          <FatigueLegend />
+          <StakesKey data={data} today={today} />
+        </div>
       </div>
     </section>
   );
@@ -285,7 +296,11 @@ function CupByDate({ data, size, today, timeZone, gameLink, onNight }: CupSchedu
             </div>
           ))}
         </div>
-        <FatigueLegend />
+        {/* one line: the fatigue keys, then (on a night with stakes) the dot's key */}
+        <div className="ck-cup-keys">
+          <FatigueLegend />
+          <StakesKey data={data} today={today} />
+        </div>
       </div>
     </section>
   );
