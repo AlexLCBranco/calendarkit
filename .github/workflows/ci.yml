@@ -66,9 +66,10 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test --project=perf --no-deps
 
-  # The live site at its address (gauntlet-home.vercel.app/calendar/, through the gauntlet's rewrite) once
-  # Vercel has deployed this push: the old address's redirect and notes hand-off, the gauntlet page's access to the data
-  # and notes, the smoke test and the version file. Pushes to main only (that's what deploys).
+  # The live site at its address (gauntlet-home.vercel.app/calendar/, through the gauntlet's rewrite) once Vercel has
+  # deployed this push: a small smoke check only, the smoke test and the version file (Vercel requests are a budget,
+  # CLAUDE.md). The fuller live check is by hand: `npm run e2e:live -- <url> --full`. Pushes to main only (that's what
+  # deploys). The data-freshness alarm runs on its own schedule (data-freshness.yml).
   live:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -81,8 +82,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # polls the live version.json every 30 s until it names this commit
       - run: npx tsx scripts/wait-live.ts ${{ github.sha }}
-      # the live check (its list is in scripts/e2e-live.ts, so `npm run e2e:live -- <url>` runs the same tests)
+      # the live check: version + smoke (its list is LIVE_TESTS in scripts/e2e-live.ts)
       - run: npx tsx scripts/e2e-live.ts https://gauntlet-home.vercel.app
-      # the live data is no more than 1 day behind the latest snapshot (scripts/check-live-data.ts)
-      - run: npx tsx scripts/check-live-data.ts

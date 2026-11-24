@@ -3,7 +3,7 @@
 //    1 day behind the latest committed snapshot (public/data/schedule.json on main), or
 //  - the latest committed snapshot itself is more than 2 days old (the daily job stopped: GitHub disables scheduled
 //    workflows of a public repo after 60 days without activity, or the job keeps failing).
-// Runs every 4 hours (.github/workflows/data-freshness.yml) and in CI's live job after every push to main.
+// Runs every 4 hours (.github/workflows/data-freshness.yml).
 // Usage: npx tsx scripts/check-live-data.ts [liveUrl] [file]
 
 import { readFileSync } from 'node:fs';

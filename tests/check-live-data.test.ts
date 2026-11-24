@@ -42,9 +42,9 @@ describe('liveMetaTime', () => {
 });
 
 describe('wiring', () => {
-  it('runs every 4 hours and after each push to main (CI live job)', () => {
+  it('runs every 4 hours on its own schedule, not in CI\'s live job (Vercel requests are a budget)', () => {
     expect(readFileSync('.github/workflows/data-freshness.yml', 'utf8')).toMatch(/cron: '17 \*\/4 \* \* \*'[\s\S]*npx tsx scripts\/check-live-data\.ts/);
-    expect(readFileSync('.github/workflows/ci.yml', 'utf8')).toMatch(/live:[\s\S]*run: npx tsx scripts\/check-live-data\.ts/);
+    expect(readFileSync('.github/workflows/ci.yml', 'utf8')).not.toContain('check-live-data');
   });
   it('the snapshot may be served stale for minutes, not a day, after a deploy', () => {
     // was stale-while-revalidate=86400: through the gauntlet's rewrite, the first visitor after a quiet spell got the

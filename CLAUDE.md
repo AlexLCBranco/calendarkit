@@ -2,6 +2,20 @@
 
 Read PROJECT.md first.
 
+## Vercel requests are a budget (owner's rule, 2026-11-24)
+
+Vercel's free plan gives 1M CDN requests per rolling 30 days, shared by all the owner's projects; going over pauses
+all of them. Every page, file, API call and prefetch on a `*.vercel.app` site (gauntlet-home.vercel.app included)
+counts; local runs cost nothing.
+- The full Playwright suite runs **locally** (against a local production build), never against the live site unless
+  the owner asks for it.
+- After a push, the live site gets only a **small smoke check**: CI's `live` job runs `npm run e2e:live -- <url>`
+  (version + smoke specs, `LIVE_TESTS` in `scripts/e2e-live.ts`). The fuller live check (adds `move.spec.ts`) is
+  `npm run e2e:live -- <url> --full`, run by hand only when the owner asks.
+- Don't poll live URLs: check the live `/calendar/version.json` at most every 30 s (`scripts/wait-live.ts`), and stop
+  once it shows the new version. Don't open live pages in a browser to look around when a local run shows the same.
+- The odds refresh, the data-freshness workflow and the daily schedule update stay as they are.
+
 ## Feature backlog, built list and ideas (owner's standing workflow, updated 2026-11-15)
 
 Three lists, never mixed:

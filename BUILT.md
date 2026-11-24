@@ -8,6 +8,7 @@ spec commits left out). New entries name their backlog ID (see CLAUDE.md, "Featu
 - Fix: Cup schedule rows show tonight's stakes as a purple dot (v1.97.1)
   On a Cup night, a game that can decide something has a small purple dot before its ↗ (the word "stakes" didn't fit and covered the time); the line under the schedule says "● Big game tonight: it can decide something in the Cup. Point at the row to see what."
 ### Internal
+- CI: Vercel requests are a budget: CI's live job after a push to main runs only the version + smoke check (no move.spec, no data-freshness step); `npm run e2e:live -- <url> --full` keeps the fuller check by hand; `wait-live` polls every 30 s (was 15 s); the rule is in CLAUDE.md
 - tooling: `npm run e2e:live -- <url>` runs the live check CI runs (move, smoke, version), not the whole suite; `--all` for everything; CI's live job calls the same script
 - docs: new "Blocked" rule in CLAUDE.md: a Blocked line that only waits for other items unblocks itself at the next build; a question needs a "?" and still waits for the owner
 
